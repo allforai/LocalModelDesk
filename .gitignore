@@ -1,0 +1,38 @@
+# Virtual environments
+.venv*/
+venv/
+env/
+
+# Agent / local runtime
+.pi/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Logs and local state
+*.log
+media-gui/chat-history.json
+
+# Generated media
+outputs/
+*.mp4
+*.wav
+*.flac
+
+# Downloaded model trees — restore with ./initModels.sh
+llms/
+minimax-h3/
+minimax-music3/
+
+# Weight files if they ever land outside those trees
+*.safetensors
+*.bin
+*.gguf
+*.pt
+*.pth
+*.onnx
+*.mlx
