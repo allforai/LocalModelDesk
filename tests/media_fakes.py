@@ -1,0 +1,109 @@
+"""Fakes for MediaService tests; no real subprocesses or model weights."""
+from __future__ import annotations
+
+import queue
+import threading
+import time
+from pathlib import Path
+from types import SimpleNamespace
+
+from desk.media.service import MediaService
+
+FIXED_TIME = 1756600000.0
+STAMP = time.strftime("%Y%m%d-%H%M%S", time.localtime(FIXED_TIME))
+
+
+class FakeHandle:
+    def __init__(self, script: str, output: Path, lines, *, ignore_term: bool):
+        self.script, self.lines, self.ignore_term = script, list(lines), ignore_term
+        self.terminated = self.killed = False
+        self._queue: queue.Queue[str] = queue.Queue()
+        self._exited = threading.Event()
+        self._code: int | None = None
+        if script == "success":
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_bytes(b"fake-media-bytes")
+        if script != "block":
+            self._exit(3 if script == "fail" else 0)
+
+    def _exit(self, code: int) -> None:
+        self._code = code
+        self._exited.set()
+
+    def iter_output(self):
+        yield from self.lines
+        while self.script == "block":
+            try:
+                yield self._queue.get(timeout=0.02)
+            except queue.Empty:
+                if self._exited.is_set():
+                    return
+
+    def wait(self) -> int:
+        assert self._exited.wait(10.0)
+        return self._code
+
+    def poll(self) -> int | None:
+        return self._code if self._exited.is_set() else None
+
+    def terminate(self) -> None:
+        self.terminated = True
+        if self.script == "block" and not self.ignore_term:
+            self._exit(0)
+
+    def kill(self) -> None:
+        self.killed = True
+        self._exit(-9)
+
+
+class FakeExecutor:
+    def __init__(self, script="success", lines=("line-1", "line-2"), *, ignore_term=False):
+        self.script, self.lines, self.ignore_term = script, lines, ignore_term
+        self.spawned: list[dict] = []
+
+    def spawn(self, cmd, *, extra_env=None):
+        self.spawned.append({"cmd": list(cmd), "extra_env": dict(extra_env or {})})
+        return FakeHandle(self.script, Path(cmd[-1]), self.lines, ignore_term=self.ignore_term)
+
+
+class FakeArbiter:
+    def __init__(self):
+        self.acquired: list[tuple] = []
+        self.released: list[str] = []
+
+    def can_start_heavy(self, kind):
+        return {"ok": True, "reason": None}
+
+    def acquire_heavy(self, kind, label):
+        token = f"permit-{len(self.acquired) + 1}"
+        self.acquired.append((kind, label, token))
+        return {"ok": True, "token": token}
+
+    def release_heavy(self, token):
+        self.released.append(token)
+        return {"ok": True}
+
+
+class FakeHistory:
+    def __init__(self): self.entries: list[dict] = []
+    def append(self, entry): self.entries.append(entry); return entry
+
+
+def make_service(tmp_path: Path, *, executor=None):
+    executor = executor or FakeExecutor()
+    arbiter, history = FakeArbiter(), FakeHistory()
+    roots = SimpleNamespace(outputs_root=tmp_path / "outputs", models_root=tmp_path / "models",
+        mlx_h3_cmd=("/fake/bin/mlx-h3",), mlx_h3_env={"PYTHONPATH": "/fake/pylibs/h3"})
+    caps = {"mlx_h3": SimpleNamespace(present=True, detail="")}
+    service = MediaService(resolve_paths=lambda: roots, probe_capabilities=lambda: caps,
+        arbiter=arbiter, list_catalog=lambda: [SimpleNamespace(key="h3", relpath="minimax-h3")],
+        append_history=history.append, executor=executor, clock=lambda: FIXED_TIME)
+    return service, SimpleNamespace(executor=executor, arbiter=arbiter, history=history)
+
+
+def finished_snapshot(service, start_fn, timeout=5.0):
+    done, box = threading.Event(), {}
+    service.on_job_finished(lambda snap: (box.update(snap), done.set()))
+    start_fn()
+    assert done.wait(timeout), "job never finished"
+    return box
