@@ -33,7 +33,11 @@ else
       exit 1
     fi
   fi
-  SIGN_ARGS=(--force --options runtime --timestamp --entitlements "$ENTITLEMENTS" -s "$IDENTITY")
+  if [[ "${MEGASTORM_OFFLINE_CODESIGN:-}" == "1" ]]; then
+    SIGN_ARGS=(--force --options runtime --timestamp=none --entitlements "$ENTITLEMENTS" -s "$IDENTITY")
+  else
+    SIGN_ARGS=(--force --options runtime --timestamp --entitlements "$ENTITLEMENTS" -s "$IDENTITY")
+  fi
 fi
 
 is_macho() {
