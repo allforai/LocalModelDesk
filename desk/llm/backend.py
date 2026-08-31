@@ -1,9 +1,15 @@
 """Subprocess boundary for the local mlx-lm server."""
 from __future__ import annotations
 
+import http.client
+import json
 import subprocess
 from pathlib import Path
 from typing import Iterator, Protocol
+
+
+class BackendHttpError(Exception):
+    """An mlx-lm HTTP request failed."""
 
 
 class BackendProcess(Protocol):
@@ -56,3 +62,74 @@ class MlxLmBackend:
         if not log_path.exists():
             return f"日志文件不存在: {log_path}"
         return "\n".join(log_path.read_text(encoding="utf-8", errors="replace").splitlines()[-max_lines:])
+
+    def health(self, port: int) -> bool:
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=1.0)
+        try:
+            conn.request("GET", "/v1/models")
+            return conn.getresponse().status == 200
+        except OSError:
+            return False
+        finally:
+            conn.close()
+
+    def chat(self, port: int, payload: dict) -> dict:
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=300.0)
+        try:
+            try:
+                conn.request(
+                    "POST", "/v1/chat/completions", body=json.dumps(payload),
+                    headers={"Content-Type": "application/json"},
+                )
+                response = conn.getresponse()
+                body = response.read()
+            except OSError as exc:
+                raise BackendHttpError(f"连接 mlx-lm 失败: {exc}") from exc
+            if response.status != 200:
+                raise BackendHttpError(f"上游状态码 {response.status}: {body[:200]!r}")
+            try:
+                return json.loads(body)
+            except ValueError as exc:
+                raise BackendHttpError(f"上游返回非 JSON: {exc}") from exc
+        finally:
+            conn.close()
+
+    def chat_stream(self, port: int, payload: dict) -> Iterator[dict]:
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=300.0)
+        try:
+            conn.request(
+                "POST", "/v1/chat/completions", body=json.dumps(payload),
+                headers={"Content-Type": "application/json"},
+            )
+            response = conn.getresponse()
+        except OSError as exc:
+            conn.close()
+            raise BackendHttpError(f"连接 mlx-lm 失败: {exc}") from exc
+        if response.status != 200:
+            head = response.read(2048)
+            conn.close()
+            raise BackendHttpError(f"上游状态码 {response.status}: {head[:200]!r}")
+        return self._iter_sse(conn, response)
+
+    @staticmethod
+    def _iter_sse(conn: http.client.HTTPConnection, response: http.client.HTTPResponse) -> Iterator[dict]:
+        try:
+            while True:
+                try:
+                    raw = response.readline()
+                except OSError as exc:
+                    raise BackendHttpError(f"上游流中断: {exc}") from exc
+                if not raw:
+                    return
+                line = raw.decode("utf-8", "replace").strip()
+                if not line.startswith("data:"):
+                    continue
+                data = line[len("data:"):].strip()
+                if data == "[DONE]":
+                    return
+                try:
+                    yield json.loads(data)
+                except ValueError:
+                    continue
+        finally:
+            conn.close()
