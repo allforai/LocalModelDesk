@@ -20,5 +20,10 @@ export function createMusicPane(root, ctx = {}) {
     if (fields.lyrics != null) els.lyrics.value = fields.lyrics;
     if (fields.duration != null) els.duration.value = String(fields.duration);
   }
-  return { fill, jobView };
+  function setHeavyAllowed(allowed, reason = "") {
+    els.startBtn.disabled = !allowed;
+    if (!allowed) els.error.textContent = reason;
+    else if (els.error.textContent === reason || reason === "") els.error.textContent = "";
+  }
+  return { fill, jobView, setHeavyAllowed };
 }

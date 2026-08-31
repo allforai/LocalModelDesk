@@ -55,6 +55,18 @@ test("chat 面板初始化、加载和卸载模型会调用对应 API 并更新�
   } finally { globalThis.fetch = oldFetch; }
 });
 
+test("聊天面板在媒体作业期间禁用加载，并在作业结束后恢复", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const pane = createChatPane(root);
+  pane.setHeavyAllowed(false, "媒体作业进行中");
+  assert.equal(controls.get("[data-load]").disabled, true);
+  assert.equal(controls.get("[data-chat-error]").textContent, "媒体作业进行中");
+  pane.setHeavyAllowed(true);
+  assert.equal(controls.get("[data-load]").disabled, false);
+  assert.equal(controls.get("[data-chat-error]").textContent, "");
+});
+
 test("chat 面板发送流式回复、折叠思考并把完整消息写回当前会话", async () => {
   const oldFetch = globalThis.fetch;
   const patches = [];

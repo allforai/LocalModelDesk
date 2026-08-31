@@ -38,6 +38,15 @@ test("可/不可开下一件 + tone", () => {
   assert.equal(busy.tone, "busy");
 });
 
+test("仲裁器的按种类拒绝会在状态条显示拒绝原因", () => {
+  const view = renderState({
+    holder: { kind: "video", label: "3" },
+    media_busy: true,
+    can_start: { media: { ok: false, reason: { code: "media_busy", message: "视频作业进行中" } } },
+  }, snapA);
+  assert.equal(view.nextText, "不可：媒体作业进行中");
+});
+
 test("未知拒绝码原样透出，不吞", () => {
   const v = renderState({ holder: null, media_busy: false, can_start: { ok: false, reason: "weird_code" } }, snapA);
   assert.ok(v.nextText.includes("weird_code"));

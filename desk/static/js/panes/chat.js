@@ -247,5 +247,11 @@ export function createChatPane(root) {
     try { await refreshSessions(); } catch (error) { setError(error.message); }
   }
 
-  return { init, refreshModels };
+  function setHeavyAllowed(allowed, reason = "") {
+    els.loadBtn.disabled = !allowed;
+    if (!allowed) setError(reason);
+    else if (els.error.textContent === reason || reason === "") setError("");
+  }
+
+  return { init, refreshModels, setHeavyAllowed };
 }
