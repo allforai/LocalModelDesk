@@ -11,6 +11,21 @@ struct ShellHarness {
     }
     switch command {
     case "map-status": runMapStatus()
+    case "listeners":
+      guard args.count >= 2, let port = Int(args[1]) else { exit(64) }
+      for pid in PortGuard.listeners(onPort: port) { print(pid) }
+    case "ensure-free":
+      guard args.count >= 2, let port = Int(args[1]) else { exit(64) }
+      exit(PortGuard.ensureFree(port: port) ? 0 : 3)
+    case "family":
+      guard args.count >= 2 else { exit(64) }
+      let pgrepTool = args.count >= 3 ? args[2] : "/usr/bin/pgrep"
+      for pid in PortGuard.family(matching: args[1], pgrepTool: pgrepTool) { print(pid) }
+    case "reap-family":
+      guard args.count >= 2 else { exit(64) }
+      let pgrepTool = args.count >= 3 ? args[2] : "/usr/bin/pgrep"
+      PortGuard.reap(pids: PortGuard.family(matching: args[1], pgrepTool: pgrepTool), grace: 2.0)
+      exit(PortGuard.family(matching: args[1], pgrepTool: pgrepTool).isEmpty ? 0 : 3)
     default:
       FileHandle.standardError.write(Data("unknown subcommand \(command)\n".utf8))
       exit(64)
