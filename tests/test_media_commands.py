@@ -1,0 +1,53 @@
+"""H3 命令构造的逐参数断言。"""
+from pathlib import Path
+
+from desk.media.commands import H3_BUDGET_GB, build_h3_command
+
+
+def test_h3_budget_constant():
+    assert H3_BUDGET_GB == 70
+
+
+def test_build_h3_command_full_argv_equality():
+    argv = build_h3_command(
+        ("/opt/py/bin/python3.13", "-s", "-c", "from mlx_h3.cli import main; main()"),
+        Path("/m/minimax-h3"),
+        prompt="rain on a quiet street",
+        width=512,
+        height=288,
+        frames=73,
+        steps=10,
+        output=Path("/out/h3-20260831-101500.mp4"),
+    )
+    assert argv == [
+        "/opt/py/bin/python3.13", "-s", "-c", "from mlx_h3.cli import main; main()",
+        "rain on a quiet street",
+        "--tokenizer", "/m/minimax-h3/tokenizer/tokenizer.json",
+        "--text-encoder", "/m/minimax-h3/mlx-8bit/te_qwen3vl_a8g32.safetensors",
+        "--dit", "/m/minimax-h3/mlx-8bit/dit_fl2va_a8g32.safetensors",
+        "--ref-dit", "/m/minimax-h3/mlx-8bit/dit_ref2va_a8g32.safetensors",
+        "--video-vae", "/m/minimax-h3/bf16/vae/minimax_h3_video_vae_fp16.safetensors",
+        "--audio-vae", "/m/minimax-h3/bf16/vae/minimax_h3_audio_vae_fp32.safetensors",
+        "--width", "512",
+        "--height", "288",
+        "--frames", "73",
+        "--steps", "10",
+        "--budget", "70",
+        "--output", "/out/h3-20260831-101500.mp4",
+    ]
+
+
+def test_build_h3_command_single_element_dev_prefix():
+    argv = build_h3_command(
+        ("/Users/x/.local/bin/mlx-h3",),
+        Path("/m/minimax-h3"),
+        prompt="p",
+        width=1024,
+        height=576,
+        frames=124,
+        steps=20,
+        output=Path("/out/v.mp4"),
+    )
+    assert argv[0] == "/Users/x/.local/bin/mlx-h3"
+    assert argv[1] == "p"
+    assert argv[argv.index("--frames") + 1] == "124"
