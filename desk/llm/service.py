@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from .backend import BackendHttpError
 from .state import (
     DEFAULT_LLM_PORT,
     ERR_BACKEND_EXITED,
@@ -13,8 +14,10 @@ from .state import (
     ERR_LOAD_IN_PROGRESS,
     ERR_LOAD_TIMEOUT,
     ERR_MEDIA_BUSY,
+    ERR_MODEL_MISMATCH,
     ERR_MODEL_DIR_MISSING,
     ERR_MODEL_NOT_FOUND,
+    ERR_NO_MODEL_LOADED,
     ERR_PORT_NOT_RELEASED,
     STATUS_ERROR,
     STATUS_IDLE,
@@ -24,6 +27,7 @@ from .state import (
     LlmRejected,
     LlmState,
     LoadedModel,
+    UpstreamError,
 )
 
 
@@ -310,6 +314,60 @@ class LlmService:
                     ),
                 )
             return self._state.to_dict()
+
+    def _chat_precheck(self, request: dict[str, Any]) -> Any:
+        """Reject chat requests that cannot use the currently resident model."""
+        desk_state = self._arbiter.desk_state() or {}
+        if desk_state.get("media_busy"):
+            raise LlmRejected(ERR_MEDIA_BUSY, "媒体作业进行中，聊天请求被拒绝")
+        with self._lock:
+            if self._state.status != STATUS_LOADED or self._entry is None:
+                raise LlmRejected(ERR_NO_MODEL_LOADED, "当前没有加载模型")
+            entry = self._entry
+        requested_model = request.get("model")
+        if requested_model and requested_model not in (entry.key, entry.hf_repo):
+            raise LlmRejected(
+                ERR_MODEL_MISMATCH,
+                f"请求模型 {requested_model!r} 与驻留模型 {entry.key!r} 不符",
+            )
+        return entry
+
+    @staticmethod
+    def _upstream_payload(request: dict[str, Any], entry: Any) -> dict[str, Any]:
+        payload: dict[str, Any] = {"model": entry.hf_repo, "messages": request["messages"]}
+        for key in ("temperature", "top_p", "max_tokens"):
+            if request.get(key) is not None:
+                payload[key] = request[key]
+        return payload
+
+    def chat_completion(self, request: dict[str, Any]) -> dict[str, Any]:
+        """Forward a non-streaming chat request without fabricating response data."""
+        entry = self._chat_precheck(request)
+        payload = self._upstream_payload(request, entry)
+        payload["stream"] = False
+        try:
+            raw = self._backend.chat(self._port, payload)
+        except BackendHttpError as exc:
+            raise UpstreamError(str(exc)) from exc
+        try:
+            choice = raw["choices"][0]
+            message = choice["message"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise UpstreamError(f"上游响应缺 choices/message: {exc}") from exc
+        usage = raw.get("usage")
+        finish_reason = choice.get("finish_reason")
+        if usage is None or finish_reason is None:
+            raise UpstreamError("上游响应缺 usage/finish_reason")
+        reasoning = message.get("reasoning_content")
+        if reasoning is None:
+            reasoning = message.get("reasoning")
+        return {
+            "content": message.get("content") if message.get("content") is not None else "",
+            "reasoning": reasoning,
+            "usage": usage,
+            "finish_reason": finish_reason,
+            "model": entry.key,
+        }
 
     def wait_settled(self, timeout_s: float = 5.0) -> dict[str, Any]:
         """Wait for an in-flight load; intended for polling callers and tests."""
