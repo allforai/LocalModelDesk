@@ -383,3 +383,55 @@ class TestLogCursor:
         assert service.job_status(log_from=state["next_log_from"])["log"] == ""
         service.cancel_job()
         assert done.wait(5.0)
+
+
+class TestJobFinishedEvent:
+    VALID = dict(prompt="p", width=512, height=288, frames=73, steps=10)
+
+    def test_payload_is_terminal_snapshot(self, tmp_path):
+        service, _ = make_service(tmp_path)
+        events: list[dict] = []
+        service.on_job_finished(events.append)
+
+        finished_snapshot(service, lambda: service.start_video_job(**self.VALID))
+
+        assert len(events) == 1
+        snap = events[0]
+        assert snap["status"] == "done"
+        assert snap["output"] == f"h3-{STAMP}.mp4"
+        assert snap["params"]["prompt"] == "p"
+
+    def test_broken_subscriber_does_not_break_others_or_job(self, tmp_path):
+        service, deps = make_service(tmp_path)
+        seen: list[dict] = []
+
+        def bad(_snap):
+            raise RuntimeError("subscriber bug")
+
+        service.on_job_finished(bad)
+        service.on_job_finished(seen.append)
+        snap = finished_snapshot(service, lambda: service.start_video_job(**self.VALID))
+
+        assert snap["status"] == "done"
+        assert len(seen) == 1
+        assert deps.history.entries[0]["status"] == "done"
+
+    def test_unsubscribe_stops_delivery(self, tmp_path):
+        service, _ = make_service(tmp_path)
+        seen: list[dict] = []
+        unsubscribe = service.on_job_finished(seen.append)
+        unsubscribe()
+
+        finished_snapshot(service, lambda: service.start_video_job(**self.VALID))
+
+        assert seen == []
+
+    @pytest.mark.parametrize(("script", "status"), [
+        ("success", "done"), ("no_output", "error"), ("fail", "error"),
+    ])
+    def test_event_fires_for_every_terminal_state(self, tmp_path, script, status):
+        service, _ = make_service(tmp_path / script, executor=FakeExecutor(script))
+
+        snap = finished_snapshot(service, lambda: service.start_video_job(**self.VALID))
+
+        assert snap["status"] == status
