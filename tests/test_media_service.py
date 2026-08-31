@@ -1,6 +1,9 @@
 """MediaService video success path."""
 import threading
 
+import pytest
+
+from desk.media.service import MediaError
 from media_fakes import FIXED_TIME, STAMP, FakeExecutor, finished_snapshot, make_service
 
 
@@ -46,3 +49,69 @@ def test_video_argv_and_running_state(tmp_path):
         "extra_env": {"PYTHONPATH": "/fake/pylibs/h3"}}]
     service.cancel_job()
     assert completed.wait(5)
+
+
+class TestStartDiscipline:
+    VALID = dict(prompt="p", width=512, height=288, frames=73, steps=10)
+
+    @pytest.mark.parametrize("bad", [
+        dict(prompt=""), dict(prompt="   "), dict(prompt=None),
+        dict(width=0), dict(width=-1), dict(width="512"), dict(width=True),
+        dict(height=0), dict(frames=0), dict(steps=0),
+    ])
+    def test_invalid_video_params_never_touch_arbiter_or_spawn(self, tmp_path, bad):
+        service, deps = make_service(tmp_path)
+        with pytest.raises(MediaError) as err:
+            service.start_video_job(**{**self.VALID, **bad})
+        assert err.value.code == "invalid_params"
+        assert err.value.http_status == 400
+        assert deps.arbiter.acquired == []
+        assert deps.executor.spawned == []
+        assert service.job_status()["status"] == "idle"
+
+    @pytest.mark.parametrize("bad", [
+        dict(caption=""), dict(caption=None), dict(lyrics=None),
+        dict(duration=0), dict(duration=-3.0), dict(duration="30"),
+    ])
+    def test_invalid_music_params_never_spawns(self, tmp_path, bad):
+        service, deps = make_service(tmp_path)
+        valid = dict(caption="c", lyrics="l", duration=30.0)
+        with pytest.raises(MediaError) as err:
+            service.start_music_job(**{**valid, **bad})
+        assert err.value.code == "invalid_params"
+        assert err.value.http_status == 400
+        assert deps.executor.spawned == []
+
+    def test_missing_capability_is_503_and_arbiter_untouched(self, tmp_path):
+        service, deps = make_service(tmp_path)
+        service._probe_capabilities = lambda: {}
+        with pytest.raises(MediaError) as err:
+            service.start_video_job(**self.VALID)
+        assert err.value.code == "capability_missing"
+        assert err.value.http_status == 503
+        assert deps.arbiter.acquired == []
+        assert deps.executor.spawned == []
+
+    def test_can_start_refusal_passes_code_and_holder_through(self, tmp_path):
+        service, deps = make_service(tmp_path)
+        reason = {"code": "transition_in_progress", "message": "evicting now", "holder": {"kind": "llm"}}
+        deps.arbiter.can_start_heavy = lambda _: {"ok": False, "reason": reason}
+        with pytest.raises(MediaError) as err:
+            service.start_video_job(**self.VALID)
+        assert err.value.code == "transition_in_progress"
+        assert err.value.http_status == 409
+        assert err.value.detail == reason
+        assert deps.arbiter.acquired == []
+        assert deps.executor.spawned == []
+
+    def test_acquire_refusal_never_spawns_and_state_unchanged(self, tmp_path):
+        service, deps = make_service(tmp_path)
+        reason = {"code": "evict_failed", "message": "still listening", "holder": {"kind": "llm"}}
+        deps.arbiter.acquire_heavy = lambda *_: {"ok": False, "reason": reason}
+        with pytest.raises(MediaError) as err:
+            service.start_video_job(**self.VALID)
+        assert err.value.code == "evict_failed"
+        assert err.value.detail == reason
+        assert deps.executor.spawned == []
+        assert deps.arbiter.released == []
+        assert service.job_status()["status"] == "idle"

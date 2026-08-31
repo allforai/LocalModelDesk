@@ -68,12 +68,12 @@ class MediaService:
             pre = self._arbiter.can_start_heavy(kind)
             if not pre.get("ok"):
                 reason = pre.get("reason") or {}
-                raise MediaError(reason.get("code", "refused"), reason.get("message", "arbiter refused"), 409)
+                raise MediaError(reason.get("code", "refused"), reason.get("message", "arbiter refused"), 409, reason)
             job_id = self._state["job_id"] + 1
             grant = self._arbiter.acquire_heavy(kind, f"job-{job_id}")
             if not grant.get("ok"):
                 reason = grant.get("reason") or {}
-                raise MediaError(reason.get("code", "acquire_refused"), reason.get("message", "arbiter refused"), 409)
+                raise MediaError(reason.get("code", "acquire_refused"), reason.get("message", "arbiter refused"), 409, reason)
             permit, now = grant["token"], self._clock()
             try:
                 stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(now))
