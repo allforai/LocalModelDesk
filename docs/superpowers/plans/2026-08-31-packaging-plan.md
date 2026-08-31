@@ -10,7 +10,7 @@
 
 - T-packaging-12/13 的精确 acceptance 由 runner 在 trusted host 的候选接纳阶段执行，以访问锁定 cache 与 Developer ID keychain；失败候选不发布。
 - T-packaging-12 的 pytest 必须通过 `"$MEGASTORM_TEST_PYTHON"` 选择锁定 CPython 3.13，不能依赖宿主 `/bin/sh` 的 `python3` 解析。
-- 复制锁定 CPython 后必须删除其 `__pycache__`/`.pyc`，将 `libpython3.13.dylib` install-id 改为 bundle 相对值，并净化 `_sysconfigdata` 与依赖源码注释中的构建机绝对串；之后再签名。源前缀必须由 `SRC_PY` 推导，不能依赖 runner scratch `HOME`；文本枚举必须兼容 macOS 工具，不能把不支持的 `grep -Z` 错误吞掉。这些位置均由 V3 精确证据定位。
+- 复制锁定 CPython 后必须删除其 `__pycache__`/`.pyc`，将 `libpython3.13.dylib` install-id 改为 bundle 相对值，并净化 `_sysconfigdata` 与依赖源码注释中的构建机绝对串；之后再签名。源前缀必须由 `SRC_PY` 推导，不能依赖 runner scratch `HOME`；文本枚举使用 macOS 可用的 `grep --null` 与 `read -d ''` 配对，禁止会输出换行却被 NUL reader 忽略的 `grep -Z`。这些位置均由 V3 精确证据定位。
 - 绝不触碰真实权重（`/Users/aa/LocalModelDesk/llms`、`minimax-h3`、`minimax-music3`）与真实 `outputs/`；
   一切破坏性验收只对 `tmp_path` 假目录执行。
 - 任何 acceptance_cmd 不写 `/Applications`、`~/Applications`、`~/Library/LaunchAgents`。
