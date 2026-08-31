@@ -6,7 +6,15 @@ import pytest
 from desk.foundation import config as config_mod
 from desk.foundation import firstrun
 from desk.foundation import paths as paths_mod
-from desk.foundation.errors import AdoptConflictError, AdoptError, LegacyRootError
+from desk.foundation.errors import (
+    AdoptConflictError,
+    AdoptError,
+    InsufficientSpaceError,
+    LegacyRootError,
+)
+
+
+GIB = 1 << 30
 
 
 @pytest.fixture()
@@ -38,6 +46,16 @@ def snapshot(root):
         for path in root.rglob("*")
         if path.is_file()
     )
+
+
+def force_cross_volume(monkeypatch, free_bytes):
+    monkeypatch.setattr(firstrun, "_same_volume", lambda _a, _b: False)
+
+    class FakeUsage:
+        def __init__(self, free):
+            self.free = free
+
+    monkeypatch.setattr(firstrun.shutil, "disk_usage", lambda _path: FakeUsage(free_bytes))
 
 
 def test_point_mode_repoints_without_touching_source(roots, tmp_path):
@@ -159,3 +177,67 @@ def test_move_midway_failure_reports_ledger_and_retry_completes(roots, tmp_path,
     result = firstrun.adopt_legacy_models(roots, legacy, mode="move", target_root=target)
     assert sorted(result.adopted) == ["llms", "minimax-h3", "minimax-music3"]
     assert config_mod.read_config(roots).first_run_done is True
+
+
+def test_cross_volume_copy_retains_source(roots, tmp_path, monkeypatch):
+    legacy, total = make_legacy(tmp_path)
+    target = tmp_path / "other-volume"
+    before = snapshot(legacy)
+    force_cross_volume(monkeypatch, free_bytes=10 * GIB)
+
+    result = firstrun.adopt_legacy_models(roots, legacy, mode="move", target_root=target)
+
+    assert result.source_retained is True
+    assert result.moved_bytes == total
+    assert snapshot(legacy) == before
+    assert snapshot(target) == before
+    assert config_mod.read_config(roots).models_root == target.resolve()
+
+
+def test_cross_volume_insufficient_space_exact_shortfall(roots, tmp_path, monkeypatch):
+    legacy, total = make_legacy(tmp_path)
+    target = tmp_path / "small-volume"
+    force_cross_volume(monkeypatch, free_bytes=GIB)
+
+    with pytest.raises(InsufficientSpaceError) as exc:
+        firstrun.adopt_legacy_models(roots, legacy, mode="move", target_root=target)
+
+    payload = exc.value.payload
+    assert payload["needed_bytes"] == total + GIB
+    assert payload["free_bytes"] == GIB
+    assert payload["shortfall_bytes"] == total
+    assert not roots.config_path.exists()
+
+
+def test_cross_volume_failure_then_resumed_retry_skips_copied(roots, tmp_path, monkeypatch):
+    legacy, _total = make_legacy(tmp_path)
+    target = tmp_path / "flaky-volume"
+    force_cross_volume(monkeypatch, free_bytes=10 * GIB)
+    real_copy2 = firstrun._copy2
+    state = {"copies": 0}
+
+    def flaky_copy2(src, dst):
+        state["copies"] += 1
+        if state["copies"] == 3:
+            raise OSError("injected copy failure")
+        return real_copy2(src, dst)
+
+    monkeypatch.setattr(firstrun, "_copy2", flaky_copy2)
+    with pytest.raises(AdoptError) as exc:
+        firstrun.adopt_legacy_models(roots, legacy, mode="move", target_root=target)
+
+    assert exc.value.payload["remaining"]
+    assert not roots.config_path.exists()
+
+    counted = {"copies": 0}
+
+    def counting_copy2(src, dst):
+        counted["copies"] += 1
+        return real_copy2(src, dst)
+
+    monkeypatch.setattr(firstrun, "_copy2", counting_copy2)
+    result = firstrun.adopt_legacy_models(roots, legacy, mode="move", target_root=target)
+
+    assert sorted(result.adopted) == ["llms", "minimax-h3", "minimax-music3"]
+    assert counted["copies"] == 2
+    assert snapshot(legacy)

@@ -4,13 +4,22 @@ from __future__ import annotations
 from dataclasses import dataclass
 import os
 from pathlib import Path
+import shutil
 
 from . import config as config_mod
-from .errors import AdoptConflictError, AdoptError, LegacyRootError, NotWritableError
+from .errors import (
+    AdoptConflictError,
+    AdoptError,
+    InsufficientSpaceError,
+    LegacyRootError,
+    NotWritableError,
+)
 from .paths import normalize_user_path
 
 
 LEGACY_SUBTREES = ("llms", "minimax-h3", "minimax-music3")
+_SAFETY_MARGIN_BYTES = 1 << 30
+_copy2 = shutil.copy2
 
 
 @dataclass(frozen=True)
@@ -66,6 +75,10 @@ def _tree_bytes(root: Path) -> int:
     return total
 
 
+def _same_volume(left: Path, right: Path) -> bool:
+    return left.stat().st_dev == right.stat().st_dev
+
+
 def _adopt_move(roots, legacy: Path, found: list[str], target_root) -> AdoptResult:
     target = normalize_user_path(target_root) if target_root else roots.data_root / "models"
     if target == legacy or target.is_relative_to(legacy):
@@ -80,10 +93,8 @@ def _adopt_move(roots, legacy: Path, found: list[str], target_root) -> AdoptResu
         for name in LEGACY_SUBTREES
         if (legacy / name).is_dir() or (target / name).is_dir()
     ]
-    if legacy.stat().st_dev != target.stat().st_dev:
-        raise AdoptError(
-            "cross-volume move not yet supported", adopted=[], remaining=list(found)
-        )
+    if not _same_volume(legacy, target):
+        return _move_cross_volume(roots, legacy, found, target)
     return _move_same_volume(roots, legacy, found, target)
 
 
@@ -114,3 +125,49 @@ def _move_same_volume(roots, legacy: Path, found: list[str], target: Path) -> Ad
         moved_bytes += size
     config_mod.update_config(roots, models_root=target, first_run_done=True)
     return AdoptResult("move", target, adopted, moved_bytes, False)
+
+
+def _copy_tree_resumable(src: Path, dst: Path) -> int:
+    """Copy files while retaining matching files from an interrupted attempt."""
+    copied = 0
+    for dirpath, _dirnames, filenames in os.walk(src):
+        relative = Path(dirpath).relative_to(src)
+        destination_dir = dst / relative
+        destination_dir.mkdir(parents=True, exist_ok=True)
+        for name in sorted(filenames):
+            source = Path(dirpath) / name
+            destination = destination_dir / name
+            if destination.exists() and destination.stat().st_size == source.stat().st_size:
+                continue
+            _copy2(source, destination)
+            copied += source.stat().st_size
+    return copied
+
+
+def _move_cross_volume(roots, legacy: Path, found: list[str], target: Path) -> AdoptResult:
+    total = sum(_tree_bytes(legacy / name) for name in found)
+    needed = total + _SAFETY_MARGIN_BYTES
+    free = shutil.disk_usage(target).free
+    if free < needed:
+        raise InsufficientSpaceError(
+            f"not enough space on target volume: need {needed} bytes, free {free} bytes, "
+            f"short {needed - free} bytes",
+            needed_bytes=needed,
+            free_bytes=free,
+            shortfall_bytes=needed - free,
+        )
+
+    adopted: list[str] = []
+    moved_bytes = 0
+    for name in found:
+        try:
+            moved_bytes += _copy_tree_resumable(legacy / name, target / name)
+        except OSError as exc:
+            raise AdoptError(
+                f"copy failed on subtree {name!r}: {exc}",
+                adopted=list(adopted),
+                remaining=[item for item in found if item not in adopted],
+            ) from exc
+        adopted.append(name)
+    config_mod.update_config(roots, models_root=target, first_run_done=True)
+    return AdoptResult("move", target, adopted, moved_bytes, True)
