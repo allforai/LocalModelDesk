@@ -182,3 +182,23 @@ def test_verify_reports_all_failures_at_once(tmp_path):
     assert result.returncode != 0
     assert "leak.txt" in result.stderr
     assert "pyvenv.cfg" in result.stderr
+
+
+def test_build_failure_leaves_no_half_product(tmp_path):
+    output = tmp_path / "dist"
+    output.mkdir()
+    existing = output / "LocalModelDesk.app"
+    existing.mkdir()
+    marker = existing / "marker.txt"
+    marker.write_text("intact prior product")
+
+    result = run([
+        REPO / "scripts" / "build-app.sh",
+        "--output", output,
+        "--adhoc",
+        "--python-version", "cpython-0.0.0-bogus",
+    ])
+
+    assert result.returncode != 0
+    assert marker.read_text() == "intact prior product"
+    assert [path.name for path in output.iterdir() if path.name.startswith(".staging")] == []

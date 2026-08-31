@@ -23,6 +23,9 @@ outputs/
 *.wav
 *.flac
 
+# Local build products
+dist/
+
 # Downloaded model trees — restore with ./initModels.sh
 llms/
 minimax-h3/
