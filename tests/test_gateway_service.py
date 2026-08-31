@@ -1,0 +1,137 @@
+"""GatewayService：生命周期、data:gatewayStatus、0.0.0.0 局域网可达（R-gateway-07）。"""
+import socket
+import subprocess
+
+import pytest
+
+from desk.gateway.service import GatewayService
+from gateway_client import json_request
+from gateway_fakes import FakeBackend
+
+
+def _config(enabled=True, host="127.0.0.1", port=0):
+    holder = {"gateway": {"enabled": enabled, "host": host, "port": port}}
+    return holder, (lambda: holder)
+
+
+def _connect_refused(host, port):
+    with socket.socket() as s:
+        s.settimeout(2)
+        return s.connect_ex((host, port)) != 0
+
+
+@pytest.fixture
+def service_factory():
+    services = []
+
+    def make(read_config, backend=None):
+        svc = GatewayService(backend or FakeBackend(), read_config)
+        services.append(svc)
+        return svc
+
+    yield make
+    for svc in services:
+        svc.stop()
+
+
+def test_disabled_does_not_listen(service_factory):
+    _, read = _config(enabled=False, port=18999)
+    svc = service_factory(read)
+    svc.start_from_config()
+    st = svc.status()
+    assert st["enabled"] is False
+    assert st["listening"] is False
+    assert st["last_error"] is None
+    assert _connect_refused("127.0.0.1", 18999)
+
+
+def test_start_serves_models_and_reports_real_port(service_factory):
+    _, read = _config()
+    svc = service_factory(read)
+    svc.start_from_config()
+    st = svc.status()
+    assert st["listening"] is True
+    assert st["port"] > 0
+    status, _, payload = json_request(st["port"], "GET", "/v1/models")
+    assert status == 200
+    assert payload["object"] == "list"
+
+
+def test_status_shape(service_factory):
+    _, read = _config()
+    svc = service_factory(read)
+    svc.start_from_config()
+    st = svc.status()
+    port = st["port"]
+    assert st == {
+        "enabled": True,
+        "listening": True,
+        "host": "127.0.0.1",
+        "port": port,
+        "openai_base_url": f"http://127.0.0.1:{port}/v1",
+        "anthropic_base_url": f"http://127.0.0.1:{port}",
+        "auth": "none",
+        "last_error": None,
+    }
+
+
+def test_bind_failure_recorded_not_fatal(service_factory):
+    blocker = socket.socket()
+    blocker.bind(("127.0.0.1", 0))
+    blocker.listen(1)
+    occupied = blocker.getsockname()[1]
+    try:
+        _, read = _config(port=occupied)
+        svc = service_factory(read)
+        svc.start_from_config()
+        st = svc.status()
+        assert st["enabled"] is True
+        assert st["listening"] is False
+        assert st["last_error"] is not None
+        assert str(occupied) in st["last_error"]
+    finally:
+        blocker.close()
+
+
+def test_stop_closes_listener(service_factory):
+    _, read = _config()
+    svc = service_factory(read)
+    svc.start_from_config()
+    port = svc.status()["port"]
+    svc.stop()
+    assert svc.status()["listening"] is False
+    assert _connect_refused("127.0.0.1", port)
+
+
+def _lan_ip():
+    try:
+        proc = subprocess.run(["ipconfig", "getifaddr", "en0"],
+                              capture_output=True, text=True, timeout=5)
+    except OSError:
+        return None
+    ip = proc.stdout.strip()
+    return ip if proc.returncode == 0 and ip else None
+
+
+def _spec_port_or_ephemeral():
+    with socket.socket() as s:
+        try:
+            s.bind(("0.0.0.0", 8770))
+        except OSError:
+            return 0
+    return 8770
+
+
+def test_lan_reachability_via_en0_ip(service_factory):
+    """Decision D-0002: prove wildcard binding through a non-loopback LAN path."""
+    ip = _lan_ip()
+    if not ip:
+        pytest.skip("'ipconfig getifaddr en0' did not return a LAN IP")
+    _, read = _config(host="0.0.0.0", port=_spec_port_or_ephemeral())
+    svc = service_factory(read)
+    svc.start_from_config()
+    st = svc.status()
+    assert st["listening"] is True
+    status, _, payload = json_request(st["port"], "GET", "/v1/models", host=ip)
+    assert status == 200
+    assert payload["object"] == "list"

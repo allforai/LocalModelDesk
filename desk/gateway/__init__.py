@@ -1,5 +1,7 @@
 """gateway：OpenAI + Anthropic 兼容对外推理接口（纯翻译层，不加载、不排队）。"""
 
+from .backend import GatewayBackend  # noqa: F401
+
 from .errors import (  # noqa: F401
     REASON_HEADER,
     REASON_INVALID_REQUEST,
@@ -12,3 +14,4 @@ from .errors import (  # noqa: F401
     RETRY_AFTER_SECONDS,
     GatewayReject,
 )
+from .service import GatewayService  # noqa: F401
