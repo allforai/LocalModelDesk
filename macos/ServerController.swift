@@ -87,6 +87,38 @@ final class ServerController {
     return fail(.healthTimeout(lastError: "\(Int(spec.spawnTimeout))s elapsed without 200 JSON from \(spec.healthPath)"))
   }
 
+  /// Synchronously shuts down the owned process and confirms no server listeners remain.
+  func terminateEmbeddedServer() -> TerminateReport {
+    let wasOwned: Bool
+    if case .runningOwned = state { wasOwned = true } else { wasOwned = false }
+
+    var killed: [Int32] = []
+    if let process = child, process.isRunning {
+      let pid = process.processIdentifier
+      kill(pid, SIGTERM)
+      let deadline = Date().addingTimeInterval(spec.termGrace)
+      while Date() < deadline && process.isRunning { usleep(100_000) }
+      if process.isRunning { kill(pid, SIGKILL) }
+      process.waitUntilExit()
+      killed.append(pid)
+    }
+    child = nil
+
+    if wasOwned, let prefix = spec.launch?.familyPathPrefix {
+      let stragglers = PortGuard.family(matching: prefix)
+      if !stragglers.isEmpty {
+        killed.append(contentsOf: PortGuard.reap(pids: stragglers, grace: 2.0))
+      }
+    }
+
+    let portFree = PortGuard.ensureFree(port: spec.port, grace: 2.0)
+    let llmPortFree = wasOwned && spec.llmPort != nil
+      ? PortGuard.listeners(onPort: spec.llmPort!).isEmpty
+      : nil
+    state = .stopped
+    return TerminateReport(portFree: portFree, llmPortFree: llmPortFree, killedPids: killed)
+  }
+
   private func fail(_ failure: ServerFailure) -> Result<ServerState, ServerFailure> {
     state = .failed(failure)
     return .failure(failure)

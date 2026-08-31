@@ -1,13 +1,58 @@
-"""ServerController lifecycle: spawn, attach, and classified failures."""
+"""ServerController lifecycle: spawn, attach, terminate, and classified failures."""
+import json
+import os
+import signal
 import subprocess
+
+import pytest
 
 from shell_helpers import (FAKE_BAD_LISTENER, free_port, harness_path,
                            port_listening, start_fake_desk, start_script)
 
 
+FAMILY_LAUNCHER = """\
+#!/usr/bin/env python3
+import http.server, json, subprocess, sys, time
+if "--worker" in sys.argv:
+    time.sleep(300)
+    sys.exit(0)
+port = int(sys.argv[1])
+subprocess.Popen([sys.executable, sys.argv[0], "--worker"], start_new_session=True)
+class H(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        body = json.dumps({"holder": None, "media_busy": False, "can_start": {}}).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+    def log_message(self, *a):
+        pass
+http.server.HTTPServer(("127.0.0.1", port), H).serve_forever()
+"""
+
+
 def probe(*extra, timeout=60):
     return subprocess.run([harness_path(), "spawn-probe", *extra],
                           capture_output=True, text=True, timeout=timeout)
+
+
+def run_harness(*extra):
+    return subprocess.Popen([harness_path(), "run", *extra],
+                            stdout=subprocess.PIPE, text=True)
+
+
+def read_line(proc):
+    line = proc.stdout.readline().strip()
+    assert line, "harness did not output a status line"
+    return line
+
+
+def write_launcher(tmp_path):
+    launcher = tmp_path / "python3.13-embedded"
+    launcher.write_text(FAMILY_LAUNCHER)
+    launcher.chmod(0o755)
+    return launcher
 
 
 def test_attach_to_existing_service():
@@ -61,3 +106,51 @@ def test_spawn_writes_log(tmp_path):
                    "--spawn-timeout", "1")
     assert result.returncode == 1
     assert log.exists()
+
+
+def test_owned_sigterm_reaps_child_family_and_ports(tmp_path):
+    port, llm_port = free_port(), free_port()
+    launcher = write_launcher(tmp_path)
+    harness = run_harness("--port", str(port), "--llm-port", str(llm_port),
+                          "--launcher", str(launcher), "--launcher-arg", str(port),
+                          "--family-path", str(launcher), "--term-grace", "0.2",
+                          "--log", str(tmp_path / "server.log"))
+    try:
+        line = read_line(harness)
+        assert line.startswith("RUNNING "), line
+        child_pid = int(line.split()[1])
+        assert port_listening(port)
+        harness.send_signal(signal.SIGTERM)
+        assert harness.wait(timeout=60) == 0
+        report = json.loads(read_line(harness))
+        assert report["port_free"] is True
+        assert report["llm_port_free"] is True
+        assert child_pid in report["killed_pids"]
+        assert not port_listening(port)
+        with pytest.raises(ProcessLookupError):
+            os.kill(child_pid, 0)
+        left = subprocess.run(["pgrep", "-f", str(launcher)], capture_output=True, text=True)
+        assert left.stdout.strip() == ""
+    finally:
+        if harness.poll() is None:
+            harness.kill()
+        subprocess.run(["pkill", "-f", str(launcher)], capture_output=True)
+
+
+def test_attached_sigterm_reaps_listener(tmp_path):
+    port = free_port()
+    fake = start_fake_desk(port)
+    harness = run_harness("--port", str(port), "--log", str(tmp_path / "server.log"))
+    try:
+        assert read_line(harness) == "ATTACHED"
+        harness.send_signal(signal.SIGTERM)
+        assert harness.wait(timeout=60) == 0
+        report = json.loads(read_line(harness))
+        assert report["port_free"] is True
+        assert report["llm_port_free"] is None
+        assert not port_listening(port)
+        fake.wait(timeout=10)
+    finally:
+        for proc in (harness, fake):
+            if proc.poll() is None:
+                proc.kill()
