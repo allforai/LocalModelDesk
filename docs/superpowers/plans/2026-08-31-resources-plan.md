@@ -2804,14 +2804,15 @@ git commit -m "test(resources): repo-wide guard against catalog copies and weak 
 
 ---
 
-### Task 14（T-resources-14, reality_gate）: RG-1 真树全量校验助手与 runbook
+### Task 14（T-resources-14）: RG-1 真树全量校验助手（代码侧）
 
 **Files:**
 - Create: `scripts/verify_real_models.py`
 
 **Interfaces:**
 - Consumes: `ResourcesService`（Task 10）
-- Produces: 人工验证助手脚本（只读 stat；**只许人工运行**，自动验收永不触碰真树）。runbook 见本文末尾「RG-1 人工验收 runbook」。
+- Produces: 人工验证助手脚本（只读 stat；**只许人工运行**，自动验收永不触碰真树）。
+  本任务只以 `py_compile` 自动验收 helper；真实树证明拆到 T-resources-16。
 
 - [ ] **Step 1: Write the helper script**
 
@@ -2876,13 +2877,14 @@ git commit -m "chore(resources): RG-1 helper for human verification against the 
 
 ---
 
-### Task 15（T-resources-15, reality_gate）: RG-2 真实断点续传冒烟脚本与 runbook
+### Task 15（T-resources-15）: RG-2 真实断点续传冒烟助手（代码侧）
 
 **Files:**
 - Create: `scripts/resources_resume_smoke.sh`
 
 **Interfaces:**
-- Produces: 人工断点续传冒烟脚本（真实网络 + 真实 hf CLI + 小 repo + 临时目录；**只许人工运行**）。runbook 见本文末尾「RG-2 人工验收 runbook」。R-05 的「已完整文件不得重下」由 hf CLI 原生行为承担，FakeExecutor 测不到它——这是发布前必做一次的真实验证点。
+- Produces: 人工断点续传冒烟脚本（真实网络 + 真实 hf CLI + 小 repo + 临时目录；**只许人工运行**）。
+  本任务只以 `bash -n` 自动验收 helper；真实中断/续传证明拆到 T-resources-17。
 
 - [ ] **Step 1: Write the helper script**
 
@@ -2926,7 +2928,11 @@ git commit -m "chore(resources): RG-2 real resume smoke helper for pre-release v
 
 ---
 
-## RG-1 人工验收 runbook（T-resources-14）
+## T-resources-16 reality gate：RG-1 人工验收
+
+- **depends_on**：T-resources-14
+- **runbook_ptr**：`docs/superpowers/runbooks/2026-08-31-resources-rg1-runbook.md`
+- **自动侧行为**：不触碰真实权重；若人工签核缺席，诚实记录为 proof-pending。
 
 **目的**：对真实 8 项跑一次 `verifyAllModels`，与磁盘吻合（spec 验收取向最后一条）。
 **为什么是 reality gate**：要 stat 整棵 339G 目录树（慢），且结论取决于真实磁盘状态与 HF 网络；自动验收被授权红线禁止扫描真权重。
@@ -2952,7 +2958,11 @@ git commit -m "chore(resources): RG-2 real resume smoke helper for pre-release v
 `docs/superpowers/runs/2026-08-31-localmodeldesk-app/signoffs/resources-rg1.md`；通过时单独写
 `VERDICT: PASS`。该签核路径不在任务 artifact contract 内，agent 无权代写。
 
-## RG-2 人工验收 runbook（T-resources-15）
+## T-resources-17 reality gate：RG-2 人工验收
+
+- **depends_on**：T-resources-15
+- **runbook_ptr**：`docs/superpowers/runbooks/2026-08-31-resources-rg2-runbook.md`
+- **自动侧行为**：不触网、不启动真实 hf；若人工签核缺席，诚实记录为 proof-pending。
 
 **目的**：R-05「中断后再次发起必须续传，已完整的文件不得重下」的真实验证。单测里 hf 是 FakeExecutor，跳过/续传是 hf CLI 的原生行为，必须真跑一次。
 **为什么是 reality gate**：需要真实网络与真实 hf 二进制，且中断时机靠人手。
