@@ -1,6 +1,7 @@
 """Local model loading and chat service package."""
 
 from .backend import BackendProcess, LlmBackend, MlxLmBackend
+from .service import LlmService
 
 from .state import (
     DEFAULT_LLM_PORT,
@@ -48,6 +49,7 @@ __all__ = [
     "STATUS_LOADED",
     "STATUS_LOADING",
     "LlmError",
+    "LlmService",
     "LlmBackend",
     "LlmRejected",
     "LlmState",
