@@ -156,3 +156,47 @@ class TestStartDiscipline:
         assert deps.executor.spawned == []
         assert deps.arbiter.released == []
         assert service.job_status()["status"] == "idle"
+
+
+@pytest.mark.parametrize(("script", "code"), [("no_output", "no_output"), ("fail", "exit_nonzero")])
+def test_failed_process_releases_permit_and_records_terminal_failure(tmp_path, script, code):
+    service, deps = make_service(tmp_path, executor=FakeExecutor(script))
+
+    snap = finished_snapshot(service, lambda: start_video(service))
+
+    assert snap["status"] == "error"
+    assert snap["output"] is None
+    assert snap["error"]["code"] == code
+    assert deps.arbiter.released == ["permit-1"]
+    assert deps.history.entries[0]["status"] == "failed"
+
+
+def test_spawn_failure_is_terminal_and_releases_permit(tmp_path):
+    class SpawnFailure:
+        def spawn(self, *_args, **_kwargs):
+            raise OSError("executor unavailable")
+
+    service, deps = make_service(tmp_path, executor=SpawnFailure())
+
+    with pytest.raises(MediaError) as err:
+        start_video(service)
+
+    assert err.value.code == "spawn_failed"
+    assert service.job_status()["status"] == "error"
+    assert service.job_status()["error"]["code"] == "spawn_failed"
+    assert deps.arbiter.released == ["permit-1"]
+
+
+def test_history_failure_does_not_change_terminal_status_or_leak_permit(tmp_path):
+    service, deps = make_service(tmp_path, executor=FakeExecutor("fail"))
+
+    def fail_history(_entry):
+        raise OSError("history disk full")
+
+    service._append_history = fail_history
+    snap = finished_snapshot(service, lambda: start_video(service))
+
+    assert snap["status"] == "error"
+    assert snap["error"]["code"] == "exit_nonzero"
+    assert service.job_status()["status"] == "error"
+    assert deps.arbiter.released == ["permit-1"]
