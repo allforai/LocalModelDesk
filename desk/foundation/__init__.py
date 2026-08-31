@@ -12,4 +12,4 @@ from .errors import (
     LegacyRootError,
     NotWritableError,
 )
-from .config import DeskConfig, GatewayConfig, default_config, read_config
+from .config import DeskConfig, GatewayConfig, default_config, read_config, update_config, write_config

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -115,3 +116,48 @@ def read_config(roots) -> DeskConfig:
     with _LOCK:
         raw = _load_raw(roots.config_path)
     return _from_raw(raw, roots.data_root)
+
+
+def _atomic_write(config_path: Path, payload: dict) -> None:
+    """Write via a same-directory temporary file so readers never see torn JSON."""
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = config_path.with_name(
+        f"{config_path.name}.tmp-{os.getpid()}-{os.urandom(4).hex()}"
+    )
+    try:
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(payload, fh, indent=2, ensure_ascii=False)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, config_path)
+    except BaseException:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise
+
+
+def write_config(roots, config: DeskConfig) -> None:
+    """api:writeConfig — atomically write a complete configuration document."""
+    with _LOCK:
+        _atomic_write(roots.config_path, config.to_json())
+
+
+def update_config(roots, **fields) -> DeskConfig:
+    """Locked read-modify-write so concurrent updates cannot drop fields."""
+    with _LOCK:
+        raw = _load_raw(roots.config_path)
+        current = _from_raw(raw, roots.data_root)
+        merged = current.to_json()
+        for key, value in fields.items():
+            if key == "gateway" and isinstance(value, dict):
+                gateway = dict(merged["gateway"])
+                gateway.update({key: val for key, val in value.items() if key in _GATEWAY_KEYS})
+                merged["gateway"] = gateway
+            elif isinstance(value, Path):
+                merged[key] = str(value)
+            else:
+                merged[key] = value
+        _atomic_write(roots.config_path, merged)
+        return _from_raw(merged, roots.data_root)
