@@ -58,6 +58,8 @@ FAKE_DESK_SERVER = textwrap.dedent("""\
     http.server.ThreadingHTTPServer(("127.0.0.1", int(sys.argv[1])), H).serve_forever()
 """)
 
+FAKE_BAD_LISTENER = "import socket, sys; s = socket.socket(); s.bind(('127.0.0.1', int(sys.argv[1]))); s.listen(); __import__('time').sleep(300)"
+
 
 def port_listening(port: int) -> bool:
     try:
@@ -84,3 +86,7 @@ def start_script(source: str, port: int) -> subprocess.Popen:
         proc.kill()
         raise
     return proc
+
+
+def start_fake_desk(port: int) -> subprocess.Popen:
+    return start_script(FAKE_DESK_SERVER, port)
