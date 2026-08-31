@@ -53,6 +53,45 @@ def test_video_argv_and_running_state(tmp_path):
     assert completed.wait(5)
 
 
+def test_concurrent_start_allows_one_running_job_and_releases_its_permit_once(tmp_path):
+    service, deps = make_service(tmp_path, executor=FakeExecutor("block"))
+    start = threading.Barrier(2)
+    finished = threading.Event()
+    results, errors = [], []
+    lock = threading.Lock()
+    service.on_job_finished(lambda _: finished.set())
+
+    def attempt_start():
+        start.wait(timeout=5)
+        try:
+            result = start_video(service)
+            with lock:
+                results.append(result)
+        except MediaError as exc:
+            with lock:
+                errors.append(exc)
+
+    starters = [threading.Thread(target=attempt_start) for _ in range(2)]
+    for starter in starters:
+        starter.start()
+    for starter in starters:
+        starter.join(timeout=5)
+
+    assert not any(starter.is_alive() for starter in starters)
+    assert len(results) == 1
+    assert results[0]["status"] == "running"
+    assert len(errors) == 1
+    assert errors[0].code == "media_busy"
+    assert errors[0].http_status == 409
+    assert len(deps.executor.spawned) == 1
+    assert len(deps.arbiter.acquired) == 1
+
+    service.cancel_job()
+
+    assert finished.wait(5)
+    assert deps.arbiter.released == ["permit-1"]
+
+
 def test_start_music_job_argv_output_and_runtime_capability(tmp_path):
     """Music jobs use the dedicated runtime, argv, and WAV output convention."""
     from desk.media.commands import build_music_command
