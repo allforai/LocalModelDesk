@@ -225,3 +225,36 @@ class FakeArbiter:
     def emit(self, state: dict) -> None:
         for callback in tuple(self._subscribers):
             callback(state)
+
+
+def make_service(tmp_path: Path, *, entries: Iterable[Any] | None = None,
+                 backend_kw: dict[str, Any] | None = None,
+                 arbiter_kw: dict[str, Any] | None = None, **service_kw: Any) -> SimpleNamespace:
+    """Build an LLM service with local fake collaborators."""
+    from desk.llm.service import LlmService
+
+    calls: list = []
+    proc = FakeProcess(calls=calls)
+    backend = FakeBackend(process=proc, calls=calls, **(backend_kw or {}))
+    arbiter = FakeArbiter(calls=calls, **(arbiter_kw or {}))
+    paths = FakePaths(tmp_path)
+    entries = list(entries) if entries is not None else [make_entry()]
+    for entry in entries:
+        (paths.models_root / entry.relpath).mkdir(parents=True, exist_ok=True)
+    service = LlmService(
+        backend=backend, arbiter=arbiter, catalog=FakeCatalog(entries), paths=paths,
+        load_timeout_s=service_kw.pop("load_timeout_s", 2.0),
+        poll_interval_s=service_kw.pop("poll_interval_s", 0.001),
+        term_grace_s=service_kw.pop("term_grace_s", 0.05), **service_kw,
+    )
+    return SimpleNamespace(service=service, backend=backend, arbiter=arbiter, paths=paths,
+                           calls=calls, proc=proc, entries=entries)
+
+
+def make_loaded(tmp_path: Path, **kwargs: Any) -> SimpleNamespace:
+    """Build a service and wait for its default model to load."""
+    testbed = make_service(tmp_path, **kwargs)
+    testbed.service.load(testbed.entries[0].key)
+    final = testbed.service.wait_settled()
+    assert final["status"] == "loaded", final
+    return testbed
