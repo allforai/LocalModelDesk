@@ -249,3 +249,73 @@ def test_install_to_tmp_dest(tmp_path):
     repeated = run([REPO / "scripts" / "install-app.sh", "--app", app,
                     "--dest", dest, "--source-root", source_root])
     assert repeated.returncode == 0, repeated.stderr
+
+
+def uninstall(app, launch_agents, data_root, env, *extra):
+    return subprocess.run([
+        str(REPO / "scripts" / "uninstall-app.sh"),
+        "--app-path", app,
+        "--launch-agents-dir", launch_agents,
+        "--data-root", data_root,
+        *extra,
+    ], capture_output=True, text=True, env=env)
+
+
+def uninstall_layout(tmp_path, bundle_id=BUNDLE_ID):
+    apps = tmp_path / "Applications"
+    apps.mkdir()
+    app = make_fake_bundle(apps, sign=False)
+    plist = app / "Contents" / "Info.plist"
+    plist.write_bytes(plist.read_bytes().replace(BUNDLE_ID.encode(), bundle_id.encode()))
+    launch_agents = tmp_path / "LaunchAgents"
+    launch_agents.mkdir()
+    (launch_agents / f"{BUNDLE_ID}.plist").write_text("<plist/>")
+    data = tmp_path / "data"
+    (data / "models").mkdir(parents=True)
+    (data / "models" / "weights.bin").write_bytes(b"weights")
+    (data / "sessions").mkdir()
+    (data / "sessions" / "session.json").write_text("{}")
+    stub_bin = tmp_path / "stubbin"
+    stub_bin.mkdir()
+    launchctl_log = tmp_path / "launchctl.log"
+    launchctl = stub_bin / "launchctl"
+    launchctl.write_text(f'#!/bin/sh\necho "$@" >> "{launchctl_log}"\n')
+    launchctl.chmod(0o755)
+    env = os.environ.copy()
+    env["PATH"] = f"{stub_bin}:{env['PATH']}"
+    return app, launch_agents, data, env, launchctl_log
+
+
+def test_uninstall_removes_app_and_plist(tmp_path):
+    app, launch_agents, data, env, launchctl_log = uninstall_layout(tmp_path)
+    result = uninstall(app, launch_agents, data, env)
+    assert result.returncode == 0, result.stderr
+    assert not app.exists()
+    assert not (launch_agents / f"{BUNDLE_ID}.plist").exists()
+    assert "bootout" in launchctl_log.read_text()
+
+
+def test_uninstall_keeps_data_by_default(tmp_path):
+    app, launch_agents, data, env, _ = uninstall_layout(tmp_path)
+    result = uninstall(app, launch_agents, data, env)
+    assert result.returncode == 0, result.stderr
+    assert (data / "models" / "weights.bin").read_bytes() == b"weights"
+    assert (data / "sessions" / "session.json").read_text() == "{}"
+
+
+def test_uninstall_dry_run_touches_nothing(tmp_path):
+    app, launch_agents, data, env, launchctl_log = uninstall_layout(tmp_path)
+    result = uninstall(app, launch_agents, data, env, "--purge-data", "--dry-run")
+    assert result.returncode == 0, result.stderr
+    assert "[dry-run]" in result.stdout
+    assert app.exists()
+    assert (launch_agents / f"{BUNDLE_ID}.plist").exists()
+    assert (data / "models" / "weights.bin").exists()
+    assert not launchctl_log.exists()
+
+
+def test_uninstall_wrong_bundle_id_refuses(tmp_path):
+    app, launch_agents, data, env, _ = uninstall_layout(tmp_path, "com.other.app")
+    result = uninstall(app, launch_agents, data, env)
+    assert result.returncode != 0
+    assert app.exists()
