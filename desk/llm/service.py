@@ -19,6 +19,7 @@ from .state import (
     ERR_MODEL_NOT_FOUND,
     ERR_NO_MODEL_LOADED,
     ERR_PORT_NOT_RELEASED,
+    ERR_UPSTREAM_ERROR,
     STATUS_ERROR,
     STATUS_IDLE,
     STATUS_LOADED,
@@ -28,6 +29,9 @@ from .state import (
     LlmState,
     LoadedModel,
     UpstreamError,
+    delta_event,
+    done_event,
+    error_event,
 )
 
 
@@ -368,6 +372,40 @@ class LlmService:
             "finish_reason": finish_reason,
             "model": entry.key,
         }
+
+    def chat_stream(self, request: dict[str, Any]):
+        """Yield separated chat deltas and one terminal event from the resident model."""
+        entry = self._chat_precheck(request)
+        payload = self._upstream_payload(request, entry)
+        payload["stream"] = True
+        return self._stream_events(payload)
+
+    def _stream_events(self, payload: dict[str, Any]):
+        usage = None
+        finish_reason = None
+        try:
+            for chunk in self._backend.chat_stream(self._port, payload):
+                choices = chunk.get("choices") or []
+                choice = choices[0] if choices else {}
+                delta = choice.get("delta") or {}
+                text = delta.get("content") or None
+                reasoning = delta.get("reasoning_content")
+                if reasoning is None:
+                    reasoning = delta.get("reasoning")
+                reasoning = reasoning or None
+                if text is not None or reasoning is not None:
+                    yield delta_event(text, reasoning)
+                if choice.get("finish_reason") is not None:
+                    finish_reason = choice["finish_reason"]
+                if chunk.get("usage") is not None:
+                    usage = chunk["usage"]
+        except BackendHttpError as exc:
+            yield error_event(ERR_UPSTREAM_ERROR, str(exc))
+            return
+        if usage is None or finish_reason is None:
+            yield error_event(ERR_UPSTREAM_ERROR, "上游流终止但缺 usage/finish_reason")
+            return
+        yield done_event(usage, finish_reason)
 
     def wait_settled(self, timeout_s: float = 5.0) -> dict[str, Any]:
         """Wait for an in-flight load; intended for polling callers and tests."""
