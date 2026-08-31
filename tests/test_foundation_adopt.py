@@ -1,10 +1,12 @@
 """Adoption tests using tiny fake model files."""
+import os
+
 import pytest
 
 from desk.foundation import config as config_mod
 from desk.foundation import firstrun
 from desk.foundation import paths as paths_mod
-from desk.foundation.errors import LegacyRootError
+from desk.foundation.errors import AdoptConflictError, AdoptError, LegacyRootError
 
 
 @pytest.fixture()
@@ -27,7 +29,7 @@ def make_legacy(tmp_path, name="legacy"):
         path = legacy / rel
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(content)
-    return legacy
+    return legacy, sum(len(content) for content in files.values())
 
 
 def snapshot(root):
@@ -39,7 +41,7 @@ def snapshot(root):
 
 
 def test_point_mode_repoints_without_touching_source(roots, tmp_path):
-    legacy = make_legacy(tmp_path)
+    legacy, _ = make_legacy(tmp_path)
     before = snapshot(legacy)
 
     result = firstrun.adopt_legacy_models(roots, legacy, mode="point")
@@ -77,7 +79,83 @@ def test_no_known_subtree_raises(roots, tmp_path):
 
 
 def test_unknown_mode_raises(roots, tmp_path):
-    legacy = make_legacy(tmp_path)
+    legacy, _ = make_legacy(tmp_path)
 
     with pytest.raises(LegacyRootError):
         firstrun.adopt_legacy_models(roots, legacy, mode="copy")
+
+
+def test_move_same_volume_renames_everything(roots, tmp_path):
+    legacy, total = make_legacy(tmp_path)
+    target = tmp_path / "new-home"
+    before = snapshot(legacy)
+
+    result = firstrun.adopt_legacy_models(roots, legacy, mode="move", target_root=target)
+
+    assert result.mode == "move"
+    assert sorted(result.adopted) == ["llms", "minimax-h3", "minimax-music3"]
+    assert result.moved_bytes == total
+    assert result.source_retained is False
+    for name in ("llms", "minimax-h3", "minimax-music3"):
+        assert not (legacy / name).exists()
+    assert snapshot(target) == before
+    assert config_mod.read_config(roots).models_root == target.resolve()
+
+
+def test_move_default_target_is_data_root_models(roots, tmp_path):
+    legacy, _ = make_legacy(tmp_path)
+
+    result = firstrun.adopt_legacy_models(roots, legacy, mode="move")
+
+    assert result.models_root == roots.data_root / "models"
+    assert (roots.data_root / "models" / "llms").is_dir()
+
+
+def test_move_conflict_on_nonempty_target_subtree(roots, tmp_path):
+    legacy, _ = make_legacy(tmp_path)
+    target = tmp_path / "occupied"
+    (target / "llms" / "already").mkdir(parents=True)
+    (target / "llms" / "already" / "x.bin").write_bytes(b"1")
+
+    with pytest.raises(AdoptConflictError) as exc:
+        firstrun.adopt_legacy_models(roots, legacy, mode="move", target_root=target)
+
+    assert exc.value.code == "adopt_conflict"
+    assert exc.value.payload["subtree"] == "llms"
+    assert (legacy / "llms").is_dir()
+    assert not roots.config_path.exists()
+
+
+def test_move_target_inside_legacy_rejected(roots, tmp_path):
+    legacy, _ = make_legacy(tmp_path)
+
+    with pytest.raises(LegacyRootError):
+        firstrun.adopt_legacy_models(roots, legacy, mode="move", target_root=legacy / "sub")
+    with pytest.raises(LegacyRootError):
+        firstrun.adopt_legacy_models(roots, legacy, mode="move", target_root=legacy)
+
+
+def test_move_midway_failure_reports_ledger_and_retry_completes(roots, tmp_path, monkeypatch):
+    legacy, _ = make_legacy(tmp_path)
+    target = tmp_path / "halfway"
+    real_rename = os.rename
+    calls = {"n": 0}
+
+    def flaky_rename(src, dst):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise OSError("injected rename failure")
+        return real_rename(src, dst)
+
+    monkeypatch.setattr(firstrun.os, "rename", flaky_rename)
+    with pytest.raises(AdoptError) as exc:
+        firstrun.adopt_legacy_models(roots, legacy, mode="move", target_root=target)
+
+    assert exc.value.code == "adopt_failed"
+    assert len(exc.value.payload["adopted"]) == 1
+    assert len(exc.value.payload["remaining"]) == 2
+    assert not roots.config_path.exists()
+    monkeypatch.setattr(firstrun.os, "rename", real_rename)
+    result = firstrun.adopt_legacy_models(roots, legacy, mode="move", target_root=target)
+    assert sorted(result.adopted) == ["llms", "minimax-h3", "minimax-music3"]
+    assert config_mod.read_config(roots).first_run_done is True
