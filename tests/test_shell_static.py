@@ -90,3 +90,19 @@ def test_main_window_registers_retry_bridge_before_webview_creation():
     assert text.index(bridge) < text.index("WKWebView(frame:"), (
         "shellRetry must be registered before WKWebView initializes its configuration"
     )
+
+
+# ---- T-07 ui:menuBarItem ----
+def test_status_item_mechanism():
+    text = _read("StatusItemController.swift")
+    assert "NSStatusBar.system.statusItem" in text
+    assert "menuTitle(for:" in text
+    assert "打开窗口" in text
+    assert "退出" in text
+    assert "menuWillOpen" in text
+
+
+def test_status_poller_interval():
+    text = _read("StatusPoller.swift")
+    assert "3.0" in text
+    assert "consecutiveFailures" in text
