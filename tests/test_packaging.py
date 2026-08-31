@@ -361,3 +361,16 @@ def test_uninstall_purge_refuses_on_corrupt_config(tmp_path):
     assert result.returncode != 0
     assert (data / "models" / "weights.bin").exists()
     assert (data / "sessions" / "session.json").exists()
+
+
+def test_readme_states_real_behavior():
+    text = (REPO / "README.md").read_text()
+    for statement in (
+        "安装后不会自动启动",
+        "菜单栏",
+        "选择模型目录",
+        "收编已有模型目录",
+        "0.0.0.0:8770",
+        "无鉴权",
+    ):
+        assert statement in text
