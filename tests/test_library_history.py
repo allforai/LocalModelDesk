@@ -1,5 +1,6 @@
 """library.history — HistoryStore tests (R-library-03 / R-library-04)."""
 import json
+import threading
 from pathlib import Path
 
 import pytest
@@ -54,3 +55,35 @@ def test_list_skips_bad_lines_and_never_rewrites_file(tmp_path):
     before = history_file.read_bytes()
     assert [entry["n"] for entry in history.list()] == [1, 0]
     assert history_file.read_bytes() == before
+
+
+def test_concurrent_append_is_line_atomic(tmp_path):
+    history = store(tmp_path)
+
+    def worker():
+        for _ in range(50):
+            history.append({"kind": "video", "status": "done"})
+
+    threads = [threading.Thread(target=worker) for _ in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    lines = (tmp_path / "history.jsonl").read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 400
+    ids = {json.loads(line)["id"] for line in lines}
+    assert len(ids) == 400
+
+
+def test_by_output_maps_filename_to_entry_and_skips_null(tmp_path):
+    history = store(tmp_path)
+    entry = history.append(
+        {"kind": "video", "status": "done", "output": "h3-a.mp4"}
+    )
+    history.append({"kind": "music", "status": "failed", "output": None})
+
+    mapping = history.by_output()
+
+    assert set(mapping) == {"h3-a.mp4"}
+    assert mapping["h3-a.mp4"]["id"] == entry["id"]
