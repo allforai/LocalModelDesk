@@ -13,5 +13,6 @@ from .errors import (
     NotWritableError,
 )
 from .config import DeskConfig, GatewayConfig, default_config, read_config, update_config, write_config
+from .capabilities import Capability, probe_capabilities
 from .firstrun import AdoptResult, adopt_legacy_models, complete_first_run
 from .paths import PathRoots, normalize_user_path, resolve_paths, setup_logging
