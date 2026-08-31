@@ -1,12 +1,41 @@
-# LLM real-load acceptance
+# LLM 真模型加载与流式 token 人工验收
 
-This is a human-only reality gate. Do not run it from an implementation agent.
+这是人工作业的 reality gate：真实加载会占用十几到几十 GB 的统一内存并独占重活许可，
+实现代理不得执行，也不得代写验收证据。
 
-1. Start LocalModelDesk and confirm one chat model is reported as complete.
-2. Load it and observe `loading` then `loaded`, with resident-memory growth consistent with the model.
-3. Send one prompt. Confirm tokens stream incrementally and reasoning, when present, is separated from final text.
-4. Confirm `lsof -tiTCP:8767 -sTCP:LISTEN` reports the resident server.
-5. Unload it. Confirm state returns to idle, port 8767 has no listener, and memory falls.
-6. Record timestamps, model id, observations, and command output in
-   `docs/superpowers/runs/2026-08-31-localmodeldesk-app/human-acceptance/llm-real-load.md`.
-7. Only when every check passes, add a standalone line: `VERDICT: PASS`.
+## 前置条件
+
+- 启动 LocalModelDesk（或开发态 desk 服务）。
+- 打开资源面板，确认至少一个聊天模型已显示为完整；建议选择加载较快的 `qwen27`。
+- 打开 Activity Monitor，便于观察模型加载前后的内存占用。
+
+## 验收步骤
+
+1. 在聊天面板选择该模型并点“加载”。记录时间、模型 ID，以及状态从 `loading` 变为
+   `loaded` 的实际观察；加载期间状态条应出现驻留标识，内存增长应大致与模型体积一致。
+2. 加载完成后发送“用一句话介绍你自己”。确认回复的 token 逐个增量出现，而非整段一次性
+   显示；若模型产生推理内容，确认其显示在独立的展开区，未与最终正文混排；回复结束后界面
+   不应报错。
+3. 在终端执行：
+
+   ```sh
+   lsof -tiTCP:8767 -sTCP:LISTEN
+   ```
+
+   记录输出；此时必须有监听进程，表示 mlx-lm 服务仍驻留。
+4. 点“卸载”。确认状态回到 `idle`，Activity Monitor 内存回落；再次执行上述 `lsof` 命令，
+   这次必须无输出。
+
+## 记录与判定
+
+将每一步的时间戳、模型 ID、界面观察和两次 `lsof` 的原始输出写入：
+
+`docs/superpowers/runs/2026-08-31-localmodeldesk-app/human-acceptance/llm-real-load.md`
+
+只有在所有通过判据均满足时，人工记录才可包含独立的一行：
+
+```text
+VERDICT: PASS
+```
+
+缺少该人工证据或任一观察失败时，不得判定通过。
