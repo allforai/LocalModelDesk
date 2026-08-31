@@ -81,3 +81,34 @@ def test_corrupt_cache_treated_as_missing(tmp_path):
     assert manifest.source == "fresh"
     raw = json.loads((tmp_path / "manifests" / "glm.json").read_text())
     assert raw["files"] == [{"path": "a", "size": 2}]
+
+
+def test_default_fetcher_follows_pagination_and_uses_lfs_size():
+    from desk.resources.manifest import HF_TREE_URL, default_fetcher
+
+    base = HF_TREE_URL.format(repo="org/repo")
+    page2 = base + "&cursor=abc"
+    pages = {
+        base: (json.dumps([
+            {"type": "file", "path": "config.json", "size": 123},
+            {"type": "file", "path": "model.safetensors", "size": 134,
+             "lfs": {"size": 5000000, "oid": "x"}},
+            {"type": "directory", "path": "sub"},
+        ]).encode(), page2),
+        page2: (json.dumps([{"type": "file", "path": "sub/x.bin", "size": 7}]).encode(), None),
+    }
+
+    files = default_fetcher("org/repo", http_get=lambda url: pages[url])
+
+    assert files == [ManifestFile("config.json", 123),
+                     ManifestFile("model.safetensors", 5000000),
+                     ManifestFile("sub/x.bin", 7)]
+
+
+def test_default_fetcher_is_manifest_store_default():
+    import inspect
+
+    from desk.resources.manifest import ManifestStore, default_fetcher
+
+    sig = inspect.signature(ManifestStore.__init__)
+    assert sig.parameters["fetcher"].default is default_fetcher
