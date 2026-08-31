@@ -194,6 +194,8 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
             req.body.get("title"), req.body.get("model"))),
         ("PATCH", "/api/sessions", lambda req: library.update_chat_session(
             req.path.rsplit("/", 1)[-1], req.body)),
+        ("DELETE", "/api/sessions", lambda req: library.delete_chat_session(
+            req.path.rsplit("/", 1)[-1])),
         ("POST", "/api/gateway/config", lambda _req: gateway.handle_config_request("POST")[1]),
         ("GET", "/api/gateway/config", lambda _req: gateway.handle_config_request("GET")[1]),
     ]
