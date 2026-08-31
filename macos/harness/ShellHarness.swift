@@ -12,6 +12,7 @@ struct ShellHarness {
     switch command {
     case "map-status": runMapStatus()
     case "spawn-probe": runSpawn(Array(args.dropFirst()))
+    case "run": runServer(Array(args.dropFirst()))
     case "listeners":
       guard args.count >= 2, let port = Int(args[1]) else { exit(64) }
       for pid in PortGuard.listeners(onPort: port) { print(pid) }
@@ -70,6 +71,9 @@ struct ShellHarness {
     var launcherArgs: [String] = []
     var logPath = NSTemporaryDirectory() + "shellharness-server.log"
     var spawnTimeout: TimeInterval = 15
+    var termGrace: TimeInterval = 5
+    var llmPort: Int?
+    var familyPath: String?
     var index = 0
 
     while index < args.count {
@@ -81,6 +85,9 @@ struct ShellHarness {
       case "--launcher-arg": launcherArgs.append(value)
       case "--log": logPath = value
       case "--spawn-timeout": spawnTimeout = TimeInterval(value) ?? 15
+      case "--term-grace": termGrace = TimeInterval(value) ?? 5
+      case "--llm-port": llmPort = Int(value)
+      case "--family-path": familyPath = value
       default:
         FileHandle.standardError.write(Data("unknown flag \(args[index])\n".utf8))
         exit(64)
@@ -94,12 +101,12 @@ struct ShellHarness {
     }
     let launch = launcher.map {
       ServerLaunchCommand(executableURL: URL(fileURLWithPath: $0), arguments: launcherArgs,
-                          environment: [:], familyPathPrefix: nil)
+                          environment: [:], familyPathPrefix: familyPath)
     }
-    return ServerLaunchSpec(launch: launch, port: port, llmPort: nil,
+    return ServerLaunchSpec(launch: launch, port: port, llmPort: llmPort,
                             healthPath: "/api/state",
                             logFileURL: URL(fileURLWithPath: logPath),
-                            spawnTimeout: spawnTimeout)
+                            spawnTimeout: spawnTimeout, termGrace: termGrace)
   }
 
   static func runSpawn(_ args: [String]) {
@@ -118,5 +125,49 @@ struct ShellHarness {
     }
     fflush(stdout)
     if case .failed = controller.state { exit(1) }
+  }
+
+  static func runServer(_ args: [String]) {
+    let controller = ServerController(spec: parseSpec(args))
+    switch controller.spawnEmbeddedServer() {
+    case .success(.runningAttached): print("ATTACHED")
+    case .success(.runningOwned(let pid)): print("RUNNING \(pid)")
+    case .success:
+      print("UNEXPECTED")
+      exit(70)
+    case .failure(.noEmbeddedRuntime): print("NO_RUNTIME")
+    case .failure(.portConflict(let pids)):
+      print("PORT_CONFLICT \(pids.map(String.init).joined(separator: ","))")
+    case .failure(.healthTimeout): print("HEALTH_TIMEOUT")
+    case .failure(.spawnFailed(let reason)): print("SPAWN_FAILED \(reason)")
+    }
+    fflush(stdout)
+    if case .failed = controller.state { exit(1) }
+    waitForSignalThenTerminate(controller)
+  }
+
+  static func waitForSignalThenTerminate(_ controller: ServerController) -> Never {
+    signal(SIGTERM, SIG_IGN)
+    signal(SIGINT, SIG_IGN)
+    let finish: () -> Void = {
+      let report = controller.terminateEmbeddedServer()
+      let object: [String: Any] = [
+        "port_free": report.portFree,
+        "llm_port_free": report.llmPortFree as Any? ?? NSNull(),
+        "killed_pids": report.killedPids.map(Int.init),
+      ]
+      if let data = try? JSONSerialization.data(withJSONObject: object) {
+        FileHandle.standardOutput.write(data)
+        FileHandle.standardOutput.write(Data("\n".utf8))
+      }
+      exit(report.portFree && report.llmPortFree != false ? 0 : 3)
+    }
+    let term = DispatchSource.makeSignalSource(signal: SIGTERM)
+    let interrupt = DispatchSource.makeSignalSource(signal: SIGINT)
+    term.setEventHandler(handler: finish)
+    interrupt.setEventHandler(handler: finish)
+    term.resume()
+    interrupt.resume()
+    dispatchMain()
   }
 }
