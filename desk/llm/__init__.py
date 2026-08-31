@@ -1,5 +1,7 @@
 """Local model loading and chat service package."""
 
+from .backend import BackendProcess, LlmBackend, MlxLmBackend
+
 from .state import (
     DEFAULT_LLM_PORT,
     ERR_BACKEND_EXITED,
@@ -28,6 +30,7 @@ from .state import (
 )
 
 __all__ = [
+    "BackendProcess",
     "DEFAULT_LLM_PORT",
     "ERR_BACKEND_EXITED",
     "ERR_EVICTED",
@@ -45,9 +48,11 @@ __all__ = [
     "STATUS_LOADED",
     "STATUS_LOADING",
     "LlmError",
+    "LlmBackend",
     "LlmRejected",
     "LlmState",
     "LoadedModel",
+    "MlxLmBackend",
     "UpstreamError",
     "delta_event",
     "done_event",
