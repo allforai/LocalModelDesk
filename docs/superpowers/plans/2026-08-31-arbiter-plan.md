@@ -426,7 +426,8 @@ class MemoryReader:
 绿 → commit `arbiter: real memory snapshot via sysctl/vm_stat, kills ram_gb:128 (R-arbiter-02, A09)`
 
 **implements** `data:memorySnapshot`
-**acceptance_cmd** `python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_memory.py`
+**acceptance_cmd** `python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_memory.py -k comes_from_probe && python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_memory.py`
+（`-k comes_from_probe` 钉死 A09 防写死用例：该用例缺席时 pytest 以退出码 5 失败，验收不可能空转变绿。）
 
 ---
 
@@ -598,7 +599,8 @@ def reap_port(port: int, *, term_timeout: float = 5.0,
 
 绿 → commit `arbiter: by-port reaper TERM->KILL->verify, orphan-proof (R-arbiter-03, A06/A07)`
 
-**acceptance_cmd** `python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_reaper.py`
+**acceptance_cmd** `python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_reaper.py -k foreign_listener && python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_reaper.py`
+（`-k foreign_listener` 钉死孤儿收割用例，缺席即退出码 5。）
 
 ---
 
@@ -1038,7 +1040,8 @@ class Arbiter:
 绿 → commit `arbiter: tokened facade with eviction orchestration and events (R-arbiter-01/05/06)`
 
 **implements** `api:acquireHeavy`、`api:releaseHeavy`、`api:currentHolder`、`data:deskState`、`event:heavyStateChanged`
-**acceptance_cmd** `python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py`
+**acceptance_cmd** `python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py -k evict && python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py`
+（`-k evict` 钉死驱逐编排用例——本任务的心脏；缺席即退出码 5。）
 
 ---
 
@@ -1104,15 +1107,19 @@ def test_fast_reject_and_live_desk_state_during_slow_eviction():
         # re-plans once inside and is refused by the table — mutex unaffected.
         pre = self._read_holder()
         if pre is not None and pre.phase == PHASE_ACQUIRING:
-            return _refusal("transition_in_progress",
-                            "a heavy-work transition is in progress; retry shortly")
+            # plan_acquire refuses EVERY kind while phase == acquiring, so the
+            # fast path answers from the SAME transition table as the slow path
+            # (an unknown kind still gets unknown_kind, never a bogus code).
+            d = plan_acquire(pre, kind)
+            return _refusal(d.reason_code, d.reason_message)
         events: list[dict] = []
         ...  # rest unchanged from T-arbiter-04
 ```
 
 绿 → commit `arbiter: non-queueing fast reject while an eviction is in flight`
 
-**acceptance_cmd** `python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py`
+**acceptance_cmd** `python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py -k fast_reject && python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py`
+（`-k fast_reject` 钉死本任务的快速拒绝用例。没有它，本命令在 T-04 的旧套件上也会绿——那是恒真验收。）
 
 ---
 
@@ -1182,7 +1189,8 @@ def test_late_release_of_loser_token_cannot_unseat_winner():
 
 commit `arbiter: race proof — concurrent acquires grant exactly one (R-arbiter-01)`
 
-**acceptance_cmd** `python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py`
+**acceptance_cmd** `python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py -k sixteen_simultaneous && python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py -k mixed_media_race && python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py -k late_release && python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py`
+（三个 `-k` 分别钉死 16 线程竞态、混合媒体竞态、迟到 token 重放三用例，任一缺席即退出码 5。）
 
 ---
 
@@ -1301,7 +1309,8 @@ def test_can_start_during_eviction_is_transition_in_progress():
 绿 → commit `arbiter: read-only can_start pre-check with pre-load memory warning (R-arbiter-04/07)`
 
 **implements** `api:canStartHeavy`
-**acceptance_cmd** `python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py`
+**acceptance_cmd** `python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py -k can_start && python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py -k oversized_model && python3 -m pytest /Users/aa/LocalModelDesk/tests/test_arbiter_core.py`
+（`-k can_start` 与 `-k oversized_model` 钉死 R-arbiter-04/07 的预检与警告用例。）
 
 ---
 
@@ -1407,7 +1416,8 @@ grep -rn 'ram_gb\|137438953472\|128' /Users/aa/LocalModelDesk/desk/arbiter/  # 1
 绿 → commit `arbiter: memory_snapshot/reap_llm_port wrappers + package exports (R-arbiter-02/03 api)`
 
 **implements** `api:memorySnapshot`、`api:reapLlmPort`　**requires** `api:resolvePaths`
-**acceptance_cmd** 上述四文件 pytest（见任务 JSON）
+**acceptance_cmd** 三个 `-k` 钉死包装/导出用例 + 四文件全套回归 + 两条 `! grep` 单点自查
+（`8767`、`ram_gb|137438953472` 在 `desk/arbiter/` 内必须零命中——design Assumption 1 与 A09 由验收机械强制；见任务 JSON）
 
 ---
 

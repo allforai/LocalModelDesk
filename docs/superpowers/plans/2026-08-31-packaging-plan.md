@@ -1204,6 +1204,9 @@ macOS 菜单栏 App：本地聊天、文生视频、文生歌曲收在一张台�
 `reality_gate: true`。acceptance_cmd 只复核产物仍然有效（`verify-app.sh dist/LocalModelDesk.app`）；
 真正验收按下述 runbook 由人工执行。runbook 同时检入
 `docs/superpowers/runbooks/2026-08-31-packaging-install-runbook.md`（内容如下）。
+人工观察另写入
+`docs/superpowers/runs/2026-08-31-localmodeldesk-app/signoffs/packaging-reality.md`，通过时单独写
+`VERDICT: PASS`；签核路径不在任务 artifact contract 内，agent 无权代写。
 
 #### 人工验收 runbook（不得伪造，不得由 agent 对真实 /Applications 执行）
 

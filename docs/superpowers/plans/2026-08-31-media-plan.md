@@ -1768,6 +1768,10 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
 **需求** spec 验收第 7 项。真实 H3 / Music 3 生成以分钟计并独占 128GB 统一内存，
 环境测定为 NOT AVAILABLE 的自动验收项——**不进自动验收，不伪造证据**。
 
+本任务先把下述步骤固化到
+`docs/superpowers/runbooks/2026-08-31-media-reality-runbook.md`；该文件是 agent 可提交的
+运行说明，不是验收证据。签核路径不在任务 artifact contract 内，agent 无权代写。
+
 ### 人工验收 runbook（RG-media）
 
 前置：全模块装配完成（foundation/arbiter/resources/library/media 真实现在跑），
@@ -1796,8 +1800,8 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
 
 **通过标准**：三步全部符合观察项，且期间无任何「exit 0 无文件却报成功」类假成功。
 **签核**：人工通过后，把观察记录（日期、三步各自的输出文件名/历史 id）写入
-`docs/superpowers/runs/2026-08-31-localmodeldesk-app/signoffs/media-reality.md`。
-验收命令仅检查签核文件存在且非空——**由人写，不得由 agent 代写**。
+`docs/superpowers/runs/2026-08-31-localmodeldesk-app/signoffs/media-reality.md`，并单独写一行
+`VERDICT: PASS`。验收命令检查 runbook、非空签核及该标记——**由人写，不得由 agent 代写**。
 
 **验收** `test -s /Users/aa/LocalModelDesk/docs/superpowers/runs/2026-08-31-localmodeldesk-app/signoffs/media-reality.md`
 
@@ -1827,4 +1831,5 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
 4. **测试态 `term_grace_s=0.2`**：TERM→KILL 宽限经构造注入，生产默认 5.0 秒。
 5. **单点守卫的范围是 `desk/` 树**：根目录旧脚本（run-h3.sh 等）的删除属清理阶段，
    由 census 重跑命令把守；media 的静态测试只保证 desk/ 内不出现第二份 H3 参数。
-6. **签核文件即 reality-gate 验收**：自动命令只验证人工签核存在，绝不伪造生成证据。
+6. **签核文件即 reality-gate 验收**：命令要求人工签核与 `VERDICT: PASS`，且签核路径不在
+   agent 的 artifact contract 内，机械阻止伪造生成证据。

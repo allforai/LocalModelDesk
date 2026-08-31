@@ -2070,6 +2070,12 @@ synthetic input（unverified），断言全部落在**进程/端口/树文本**�
 `orca computer capabilities` 报 `menubar/dock/dialogs = false`——这些表面**无法自动读取，
 不得伪造证据**（决策 D-0002）。机制面已由 T-01/T-07/T-08/T-09 自动覆盖；本任务只验外观与真实交互。
 
+本任务先把下述步骤固化到
+`docs/superpowers/runbooks/2026-08-31-shell-visual-runbook.md`；该文件是 agent 可提交的
+运行说明，不是验收证据。人工观察写入
+`docs/superpowers/runs/2026-08-31-localmodeldesk-app/signoffs/shell-visual.md`，该路径不在任务
+artifact contract 内，agent 无权代写。
+
 ### 人工验收 runbook（Phase 2 附证据：照片/录屏 + 命令输出）
 
 前置：用 packaging 产出的真 `.app`（或 `scripts/build-shell-app.sh` 的二进制 + 假服务）启动。
@@ -2092,9 +2098,10 @@ synthetic input（unverified），断言全部落在**进程/端口/树文本**�
    `lsof -iTCP:8766 -sTCP:LISTEN; lsof -iTCP:8767 -sTCP:LISTEN` 双双为空。
 
 通过标准：六条全部亲眼观察吻合；任何一条不符即 shell 模块不算完成，回修后重跑。
+通过后在签核文件中单独写一行 `VERDICT: PASS`。
 
-- **acceptance_cmd** `grep -q '人工验收 runbook' /Users/aa/LocalModelDesk/docs/superpowers/plans/2026-08-31-shell-plan.md`
-  （静态在场检查；真正的验收是上面的人工步骤，reality_gate:true）
+- **acceptance_cmd** 同时检查独立 runbook、非空人工签核及 `VERDICT: PASS`；签核缺席时
+  诚实进入 proof-pending，绝不能以计划文档里的静态文字自动变绿。
 
 ---
 

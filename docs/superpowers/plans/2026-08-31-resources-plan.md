@@ -2948,12 +2948,18 @@ git commit -m "chore(resources): RG-2 real resume smoke helper for pre-release v
 - `disk.free_bytes` 与 `df -k` 的 avail（×1024）吻合（±2% 内，磁盘在动属正常）。
 - 断网复跑（可选）：关 Wi-Fi 后不带 `--refresh` 重跑 → 各项 `manifest_source` 应为 `cached` 且结论不变；删掉 `/tmp/lmd-rg1` 再断网跑 → 全部 `unknown` + `reason: manifest_unavailable`，绝无假 present。
 
-**记录**：把 `/tmp/lmd-rg1.json`、`du`/`df` 输出与结论存档进执行记录。
+**记录**：把 `/tmp/lmd-rg1.json`、`du`/`df` 输出与结论写入
+`docs/superpowers/runs/2026-08-31-localmodeldesk-app/signoffs/resources-rg1.md`；通过时单独写
+`VERDICT: PASS`。该签核路径不在任务 artifact contract 内，agent 无权代写。
 
 ## RG-2 人工验收 runbook（T-resources-15）
 
 **目的**：R-05「中断后再次发起必须续传，已完整的文件不得重下」的真实验证。单测里 hf 是 FakeExecutor，跳过/续传是 hf CLI 的原生行为，必须真跑一次。
 **为什么是 reality gate**：需要真实网络与真实 hf 二进制，且中断时机靠人手。
+
+**记录**：把两次下载的日志、临时目录与结论写入
+`docs/superpowers/runs/2026-08-31-localmodeldesk-app/signoffs/resources-rg2.md`；通过时单独写
+`VERDICT: PASS`。该签核路径不在任务 artifact contract 内，agent 无权代写。
 
 **步骤**：
 
