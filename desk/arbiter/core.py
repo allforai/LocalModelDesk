@@ -1,0 +1,154 @@
+"""Thread-safe facade for heavy-work ownership and LLM eviction."""
+from __future__ import annotations
+
+import logging
+import threading
+import time
+import uuid
+from collections.abc import Callable
+
+from .reaper import ReapResult, reap_port
+from .state import Holder, PHASE_ACQUIRING, PHASE_HELD, plan_acquire
+
+
+class Arbiter:
+    """Serialize heavy work, replacing an LLM holder before media work starts."""
+
+    def __init__(
+        self,
+        llm_port: int,
+        *,
+        reaper: Callable[[int], ReapResult] = reap_port,
+        clock: Callable[[], float] = time.time,
+        logger: logging.Logger | None = None,
+    ):
+        self.llm_port = llm_port
+        self._reaper = reaper
+        self._clock = clock
+        self._logger = logger or logging.getLogger(__name__)
+        self._transition_lock = threading.Lock()
+        self._state_lock = threading.Lock()
+        self._holder: Holder | None = None
+        self._subscribers: list[Callable[[dict], None]] = []
+
+    @staticmethod
+    def _reason(code: str, message: str) -> dict:
+        return {"code": code, "message": message}
+
+    @staticmethod
+    def _public_holder(holder: Holder | None) -> dict | None:
+        if holder is None:
+            return None
+        return {
+            "kind": holder.kind,
+            "label": holder.label,
+            "since": holder.since,
+            "phase": holder.phase,
+        }
+
+    def _state_for(self, holder: Holder | None) -> dict:
+        def can_start(kind: str) -> dict:
+            decision = plan_acquire(holder, kind)
+            if decision.action != "refuse":
+                return {"ok": True, "reason": None}
+            return {
+                "ok": False,
+                "reason": self._reason(decision.reason_code, decision.reason_message),
+            }
+
+        return {
+            "holder": self._public_holder(holder),
+            "media_busy": holder is not None and holder.kind in {"video", "music"},
+            "can_start": {"llm": can_start("llm"), "media": can_start("video")},
+        }
+
+    def _read_holder(self) -> Holder | None:
+        with self._state_lock:
+            return self._holder
+
+    def _set_holder(self, holder: Holder | None) -> dict:
+        with self._state_lock:
+            self._holder = holder
+            return self._state_for(holder)
+
+    def _dispatch(self, states: list[dict]) -> None:
+        if not states:
+            return
+        with self._state_lock:
+            subscribers = tuple(self._subscribers)
+        for state in states:
+            for callback in subscribers:
+                try:
+                    callback(state)
+                except Exception:
+                    self._logger.exception("heavy-state subscriber failed")
+
+    def subscribe(self, callback: Callable[[dict], None]) -> Callable[[], None]:
+        """Subscribe to state changes and return an idempotent unsubscribe callback."""
+        with self._state_lock:
+            self._subscribers.append(callback)
+
+        def unsubscribe() -> None:
+            with self._state_lock:
+                try:
+                    self._subscribers.remove(callback)
+                except ValueError:
+                    pass
+
+        return unsubscribe
+
+    def current_holder(self) -> dict | None:
+        return self._public_holder(self._read_holder())
+
+    def desk_state(self) -> dict:
+        return self._state_for(self._read_holder())
+
+    def acquire_heavy(self, kind: str, label: str) -> dict:
+        """Acquire a token, evicting the active LLM first for media requests."""
+        holder = self._read_holder()
+        decision = plan_acquire(holder, kind)
+        if holder is not None and holder.phase == PHASE_ACQUIRING:
+            return {"ok": False, "reason": self._reason(
+                decision.reason_code, decision.reason_message)}
+
+        states: list[dict] = []
+        with self._transition_lock:
+            holder = self._read_holder()
+            decision = plan_acquire(holder, kind)
+            if decision.action == "refuse":
+                return {"ok": False, "reason": self._reason(
+                    decision.reason_code, decision.reason_message)}
+
+            token = uuid.uuid4().hex
+            if decision.action == "grant":
+                state = self._set_holder(Holder(kind, label, token, self._clock(), PHASE_HELD))
+                states.append(state)
+                result = {"ok": True, "token": token, "state": state}
+            else:
+                acquiring = Holder(kind, label, token, self._clock(), PHASE_ACQUIRING)
+                states.append(self._set_holder(acquiring))
+                reaped = self._reaper(self.llm_port)
+                if reaped.ok:
+                    state = self._set_holder(
+                        Holder(kind, label, token, self._clock(), PHASE_HELD))
+                    states.append(state)
+                    result = {"ok": True, "token": token, "state": state}
+                else:
+                    states.append(self._set_holder(holder))
+                    result = {"ok": False, "reason": self._reason(
+                        "evict_failed", reaped.error or "LLM eviction failed")}
+
+        self._dispatch(states)
+        return result
+
+    def release_heavy(self, token: str) -> dict:
+        """Release only the currently held matching token."""
+        states: list[dict] = []
+        with self._transition_lock:
+            holder = self._read_holder()
+            if holder is None or holder.token != token:
+                return {"ok": False, "reason": self._reason(
+                    "not_holder", "token does not hold the current heavy-work lease")}
+            states.append(self._set_holder(None))
+        self._dispatch(states)
+        return {"ok": True}
