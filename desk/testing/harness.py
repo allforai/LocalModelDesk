@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+import json
 from pathlib import Path
 import socket
 from types import SimpleNamespace
@@ -161,8 +162,8 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
             if req.body.get("models_root") else None,
         ).to_json()),
         ("POST", "/api/adopt", adopt),
-        ("GET", "/api/resources/catalog", lambda _req: {
-            "models": [entry.to_json() for entry in resources.list_catalog()]}),
+        ("GET", "/api/resources/catalog", lambda _req: [
+            entry.to_json() for entry in resources.list_catalog()]),
         ("GET", "/api/resources/status", lambda _req: {
             "models": [status.to_json() for status in resources.verify_all_models()],
             "disk": resources.disk_usage().to_json()}),
@@ -191,6 +192,8 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
         ("GET", "/api/sessions", lambda _req: library.list_chat_sessions()),
         ("POST", "/api/sessions", lambda req: library.create_chat_session(
             req.body.get("title"), req.body.get("model"))),
+        ("PATCH", "/api/sessions", lambda req: library.update_chat_session(
+            req.path.rsplit("/", 1)[-1], req.body)),
         ("POST", "/api/gateway/config", lambda _req: gateway.handle_config_request("POST")[1]),
         ("GET", "/api/gateway/config", lambda _req: gateway.handle_config_request("GET")[1]),
     ]
@@ -269,6 +272,19 @@ def launch_test_harness(
     def dispatch_with_static(handler, method: str) -> None:
         resolved = static_assets.resolve(handler.path)
         if resolved is None:
+            if method == "POST" and handler.path.split("?", 1)[0] == "/api/llm/chat/stream":
+                length = int(handler.headers.get("Content-Length") or 0)
+                body = json.loads(handler.rfile.read(length).decode("utf-8")) if length else {}
+                handler.send_response(200)
+                handler.send_header("Content-Type", "text/event-stream; charset=utf-8")
+                handler.send_header("Cache-Control", "no-cache")
+                handler.end_headers()
+                for event in llm.chat_stream(body):
+                    handler.wfile.write(
+                        b"data: " + json.dumps(event, ensure_ascii=False).encode("utf-8") + b"\n\n"
+                    )
+                    handler.wfile.flush()
+                return
             dispatch_json(handler, method)
             return
         asset, content_type = resolved
@@ -280,6 +296,7 @@ def launch_test_harness(
         handler.wfile.write(data)
 
     handler_type._dispatch = dispatch_with_static
+    handler_type.do_PATCH = lambda handler: handler._dispatch("PATCH")
     gateway = GatewayService(
         _GatewayBackend(llm, arbiter),
         lambda: config.read_config(roots).to_json(),
