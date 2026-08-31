@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import plistlib
+import re
 import subprocess
 
 from packaging_fixture import BUNDLE_ID, REPO, render_info_plist
@@ -43,3 +44,24 @@ def test_icon_source_is_1024_png():
     assert result.returncode == 0, result.stderr
     assert "pixelWidth: 1024" in result.stdout
     assert "pixelHeight: 1024" in result.stdout
+
+
+def test_requirements_locks_are_pinned():
+    tops = {
+        "desk": "mlx-lm==0.31.3",
+        "music": "mlx-minimax-music3==0.0.1a0",
+        "h3": "mlx-h3==0.0.1a3",
+    }
+    for name, top in tops.items():
+        lock = REPO / "packaging" / f"requirements-{name}.txt"
+        text = lock.read_text()
+        lines = [line.strip() for line in text.splitlines()
+                 if line.strip() and not line.strip().startswith("#")]
+        assert lines, f"{lock} is empty"
+        for line in lines:
+            assert re.fullmatch(r"[A-Za-z0-9._\[\],-]+==[A-Za-z0-9.!+-]+", line), (
+                f"{lock}: unpinned line {line!r}"
+            )
+        assert top in text, f"{lock} is missing top-level pin {top}"
+        for banned in ("file://", "/Users/", "/opt/"):
+            assert banned not in text, f"{lock} contains {banned!r}"
