@@ -1,0 +1,132 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+
+class Element {
+  constructor(tag = "div") {
+    this.tagName = tag; this.dataset = {}; this.value = ""; this.textContent = "";
+    this.children = []; this.listeners = {}; this.className = ""; this.disabled = false;
+    this.hidden = false; this.open = false; this.scrollTop = 0; this.scrollHeight = 1;
+    this.classList = { toggle: (name, on) => { if (on) this.className += ` ${name}`; } };
+  }
+  append(...nodes) { for (const node of nodes) { node.parentNode = this; this.children.push(node); if (this.tagName === "select" && !this.value) this.value = node.value; } }
+  replaceChildren(...nodes) { this.children = []; this.append(...nodes); }
+  addEventListener(type, listener) { this.listeners[type] = listener; }
+  click() { return this.listeners.click?.({ preventDefault() {} }); }
+  remove() { this.parentNode?.children.splice(this.parentNode.children.indexOf(this), 1); }
+  focus() {}
+}
+
+function makePane() {
+  const controls = new Map();
+  for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
+  const doc = { body: new Element("body"), createElement: (tag) => new Element(tag) };
+  return { controls, doc, root: { ownerDocument: doc, querySelector: (selector) => controls.get(selector) } };
+}
+const json = (payload) => new Response(JSON.stringify(payload), { status: 200 });
+const stream = (lines) => new Response(new ReadableStream({ start(controller) {
+  controller.enqueue(new TextEncoder().encode(lines.map((line) => `data: ${line}\n\n`).join(""))); controller.close();
+} }), { status: 200 });
+
+test("chat 面板初始化、加载和卸载模型会调用对应 API 并更新可见状态", async () => {
+  const oldFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (path, options = {}) => {
+    calls.push([path, options.method ?? "GET", options.body]);
+    if (path === "/api/resources/catalog") return json([{ key: "chat-a", group: "chat", name: "聊天 A", gb: 1, params: "7B" }]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [{ key: "chat-a", state: "present" }] });
+    if (path === "/api/llm/status") return json({ state: { status: calls.some(([p]) => p === "/api/llm/load") ? "loaded" : "idle", model_key: "chat-a" }, loaded_model: { name: "聊天 A" } });
+    if (path === "/api/sessions") return json([{ id: "s1", title: "第一会话", messages: [], updated: "2026-01-01" }]);
+    if (path === "/api/memory") return json({ available_bytes: 99 * 1024 ** 3 });
+    if (path === "/api/llm/load" || path === "/api/llm/unload") return json({});
+    throw new Error(`unexpected request ${path}`);
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { root, controls } = makePane();
+    const pane = createChatPane(root);
+    await pane.init();
+    assert.equal(controls.get("[data-model-state]").textContent, "未加载");
+    assert.equal(controls.get("[data-model-select]").children[0].textContent.includes("聊天 A"), true);
+    await controls.get("[data-load]").click();
+    assert.deepEqual(calls.find(([path]) => path === "/api/llm/load").slice(0, 2), ["/api/llm/load", "POST"]);
+    assert.equal(controls.get("[data-model-state]").textContent, "已加载：聊天 A");
+    await controls.get("[data-unload]").click();
+    assert.deepEqual(calls.find(([path]) => path === "/api/llm/unload").slice(0, 2), ["/api/llm/unload", "POST"]);
+  } finally { globalThis.fetch = oldFetch; }
+});
+
+test("chat 面板发送流式回复、折叠思考并把完整消息写回当前会话", async () => {
+  const oldFetch = globalThis.fetch;
+  const patches = [];
+  globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/resources/catalog") return json([]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    if (path === "/api/sessions") return json([{ id: "s1", title: "第一会话", messages: [], updated: "2026-01-01" }]);
+    if (path === "/api/llm/chat/stream") {
+      assert.deepEqual(JSON.parse(options.body).messages, [{ role: "user", content: "你好" }]);
+      return stream(['{"type":"delta","reasoning":"先想"}', '{"type":"delta","text":"你好"}', '{"type":"done"}']);
+    }
+    if (path === "/api/sessions/s1") { patches.push(JSON.parse(options.body)); return json({ id: "s1", title: "第一会话", updated: "2026-01-02", ...patches.at(-1) }); }
+    throw new Error(`unexpected request ${path}`);
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { root, controls } = makePane();
+    const pane = createChatPane(root);
+    await pane.init();
+    controls.get("[data-chat-input]").value = "  你好  ";
+    await controls.get("[data-send]").click();
+    assert.deepEqual(patches, [{ messages: [{ role: "user", content: "你好" }, { role: "assistant", content: "你好", reasoning: "先想" }], model: null }]);
+    const assistant = controls.get("[data-messages]").children[1];
+    assert.equal(assistant.children[0].hidden, false);
+    assert.equal(assistant.children[0].open, false);
+    assert.equal(assistant.children[1].textContent, "你好");
+  } finally { globalThis.fetch = oldFetch; }
+});
+
+test("chat 面板的新建、改名和确认删除会写入会话 API 并重绘列表", async () => {
+  const oldFetch = globalThis.fetch;
+  let sessions = [{ id: "s1", title: "旧标题", messages: [], updated: "2026-01-01" }];
+  const calls = [];
+  globalThis.fetch = async (path, options = {}) => {
+    calls.push([path, options.method ?? "GET", options.body]);
+    if (path === "/api/resources/catalog") return json([]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    if (path === "/api/sessions" && (options.method ?? "GET") === "GET") return json(sessions);
+    if (path === "/api/sessions" && options.method === "POST") {
+      const created = { id: "s2", title: "新会话", messages: [], updated: "2026-01-02" }; sessions = [created, ...sessions]; return json(created);
+    }
+    if (path === "/api/sessions/s2" && options.method === "PATCH") {
+      sessions = sessions.map((session) => session.id === "s2" ? { ...session, ...JSON.parse(options.body) } : session); return json(sessions[0]);
+    }
+    if (path === "/api/sessions/s2" && options.method === "DELETE") { sessions = sessions.filter((session) => session.id !== "s2"); return json({}); }
+    throw new Error(`unexpected request ${path}`);
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { root, controls, doc } = makePane();
+    const pane = createChatPane(root);
+    await pane.init();
+    await controls.get("[data-session-new]").click();
+    let list = controls.get("[data-session-list]");
+    assert.equal(list.children[0].children[0].textContent, "新会话");
+
+    list.children[0].children[1].click();
+    const input = list.children[0].children[0];
+    input.value = "已改名";
+    input.listeners.keydown({ key: "Enter" });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.deepEqual(JSON.parse(calls.find(([path, method]) => path === "/api/sessions/s2" && method === "PATCH")[2]), { title: "已改名" });
+
+    list = controls.get("[data-session-list]");
+    const removing = list.children[0].children[2].click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const confirm = doc.body.children[0].children[0].children[2].children[1];
+    confirm.click();
+    await removing;
+    assert.equal(calls.some(([path, method]) => path === "/api/sessions/s2" && method === "DELETE"), true);
+    assert.equal(controls.get("[data-session-list]").children[0].children[0].textContent, "旧标题");
+  } finally { globalThis.fetch = oldFetch; }
+});
