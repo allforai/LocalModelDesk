@@ -40,11 +40,11 @@ def make_stores(tmp_path):
     history = HistoryStore(tmp_path / "history.jsonl")
     root = tmp_path / "outputs"
     root.mkdir()
-    return OutputsStore(root, history), root
+    return OutputsStore(root, history), root, history
 
 
 def test_resolve_returns_existing_regular_file(tmp_path):
-    outputs, root = make_stores(tmp_path)
+    outputs, root, _ = make_stores(tmp_path)
     (root / "h3-a.mp4").write_bytes(b"x" * 8)
 
     assert outputs.resolve("h3-a.mp4") == (root / "h3-a.mp4").resolve()
@@ -52,7 +52,7 @@ def test_resolve_returns_existing_regular_file(tmp_path):
 
 
 def test_resolve_rejects_escapes(tmp_path):
-    outputs, root = make_stores(tmp_path)
+    outputs, root, _ = make_stores(tmp_path)
     secret = tmp_path / "secret.txt"
     secret.write_text("s")
     (root / "link.mp4").symlink_to(secret)
@@ -68,3 +68,40 @@ def test_resolve_rejects_escapes(tmp_path):
         "",
     ):
         assert outputs.resolve(name) is None, name
+
+
+def test_list_joins_history_and_marks_orphans(tmp_path):
+    outputs, root, history = make_stores(tmp_path)
+    entry = history.append(
+        {"kind": "video", "status": "done", "output": "h3-known.mp4"}
+    )
+    (root / "h3-known.mp4").write_bytes(b"a" * 10)
+    (root / "h3-orphan.mp4").write_bytes(b"b" * 20)
+    (root / "music3-orphan.wav").write_bytes(b"c" * 30)
+    (root / "mystery.webm").write_bytes(b"d" * 5)
+    (root / "notes.txt").write_text("skip me")
+    history.append(
+        {"kind": "video", "status": "done", "output": "h3-gone.mp4"}
+    )
+
+    items = {item["name"]: item for item in outputs.list()}
+
+    assert set(items) == {
+        "h3-known.mp4", "h3-orphan.mp4", "music3-orphan.wav", "mystery.webm"
+    }
+    assert items["h3-known.mp4"] == {
+        "name": "h3-known.mp4", "kind": "video", "bytes": 10,
+        "ts": entry["ts"], "orphan": False, "history_id": entry["id"],
+    }
+    assert items["h3-orphan.mp4"]["orphan"] is True
+    assert items["h3-orphan.mp4"]["kind"] == "video"
+    assert items["h3-orphan.mp4"]["history_id"] is None
+    assert items["music3-orphan.wav"]["kind"] == "music"
+    assert items["mystery.webm"]["kind"] == "file"
+    assert items["h3-orphan.mp4"]["ts"]
+
+
+def test_list_missing_root_returns_empty(tmp_path):
+    history = HistoryStore(tmp_path / "history.jsonl")
+
+    assert OutputsStore(tmp_path / "nonexistent", history).list() == []
