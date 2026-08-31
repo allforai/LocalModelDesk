@@ -1,0 +1,1 @@
+"""LocalModelDesk test assembly root."""
