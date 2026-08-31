@@ -36,3 +36,6 @@ minimax-music3/
 *.pth
 *.onnx
 *.mlx
+
+# Megastorm run-local machine state (ledgers, locks)
+docs/superpowers/runs/*/decision-ledger.lock
