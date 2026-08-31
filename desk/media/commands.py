@@ -36,3 +36,25 @@ def build_h3_command(
         "--budget", str(H3_BUDGET_GB),
         "--output", str(output),
     ]
+
+
+def build_music_command(
+    music_python: Path,
+    music3_cli: Path,
+    music3_root: Path,
+    *,
+    caption: str,
+    lyrics: str,
+    duration: float,
+    output: Path,
+) -> list[str]:
+    """Build the complete argv for a Music 3 generation invocation."""
+    return [
+        str(music_python),
+        str(music3_cli),
+        "--root", str(music3_root),
+        "--caption", caption,
+        "--lyrics", lyrics,
+        "--duration", str(duration),
+        "--output", str(output),
+    ]
