@@ -1,4 +1,5 @@
 """Static shell contracts for path, route, and Swift syntax boundaries."""
+import os
 import pathlib
 import subprocess
 
@@ -125,3 +126,42 @@ def test_first_run_three_branches():
     assert "point" in text and "move" in text
     assert "completeFirstRun" in text and "adoptLegacyModels" in text
     assert "重选" in text
+
+
+# ---- T-09 AppDelegate + main ----
+def test_activation_policy_regular():
+    combined = "\n".join(read_all(app_sources()).values())
+    assert "setActivationPolicy(.regular)" in combined
+    assert "LSUIElement" not in combined
+    assert ".accessory" not in combined
+
+
+def test_last_window_closed_does_not_terminate():
+    text = _read("AppDelegate.swift")
+    assert "applicationShouldTerminateAfterLastWindowClosed" in text
+    import re
+    match = re.search(r"applicationShouldTerminateAfterLastWindowClosed[^{]*\{[^}]*\}", text)
+    assert match and "false" in match.group(0)
+
+
+def test_signal_paths_reap():
+    main_text = _read("main.swift")
+    assert "SIGTERM" in main_text and "SIGINT" in main_text
+    assert "makeSignalSource" in main_text
+    app_text = _read("AppDelegate.swift")
+    assert "applicationWillTerminate" in app_text
+    assert "terminateEmbeddedServer" in app_text
+    assert "applicationShouldHandleReopen" in app_text
+    assert "performClose" in app_text
+
+
+def test_swiftc_typecheck_app():
+    environment = os.environ.copy()
+    environment["CLANG_MODULE_CACHE_PATH"] = "/private/tmp/lmd-swift-module-cache"
+    result = subprocess.run(
+        ["xcrun", "swiftc", "-typecheck"] + [str(file) for file in app_sources()],
+        capture_output=True,
+        text=True,
+        env=environment,
+    )
+    assert result.returncode == 0, result.stderr
