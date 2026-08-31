@@ -13,4 +13,4 @@ from .errors import (
     NotWritableError,
 )
 from .config import DeskConfig, GatewayConfig, default_config, read_config, update_config, write_config
-from .paths import PathRoots, normalize_user_path, resolve_paths
+from .paths import PathRoots, normalize_user_path, resolve_paths, setup_logging
