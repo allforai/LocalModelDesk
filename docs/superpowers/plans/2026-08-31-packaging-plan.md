@@ -29,7 +29,7 @@
 | T-packaging-09 | `uninstall-app.sh` purge 模型多重保护 | 08 | api:uninstallApp |
 | T-packaging-10 | README 改写为安装后真实行为 | — | |
 | T-packaging-11 | 删除五个旧脚本（R-packaging-08 执行半） | — | |
-| T-packaging-12 | 离线复用锁定 CPython + 真实全量构建 + V1–V7 全绿（design §5.2） | 06, 11, shell-09 | api:buildAppBundle |
+| T-packaging-12 | 离线复用锁定 CPython + Developer ID 无在线 timestamp 全量构建 + V1–V7 全绿（design §5.2） | 06, 11, shell-09 | api:buildAppBundle |
 | T-packaging-13 | reality gate：真机安装/首运/菜单栏/卸载 runbook | 07, 09, 12 | |
 
 跨模块 requires（不猜任务 id，只写注册表接口）：
@@ -1192,7 +1192,7 @@ macOS 菜单栏 App：本地聊天、文生视频、文生歌曲收在一张台�
 ### T-packaging-12 真实全量构建（design §5.2；implements `api:buildAppBundle`）
 
 - 无新代码；acceptance 即完整机器证明：
-  `python3 -m pytest tests/test_packaging.py && scripts/build-app.sh --output dist && scripts/verify-app.sh dist/LocalModelDesk.app`。构建器优先复用 `MEGASTORM_EMBEDDED_PYTHON` 指向的锁定 standalone CPython 根目录；未提供时才由 `uv` 安装，worker 不因此获得公网权限。
+  `python3 -m pytest tests/test_packaging.py && scripts/build-app.sh --output dist && scripts/verify-app.sh dist/LocalModelDesk.app`。构建器优先复用 `MEGASTORM_EMBEDDED_PYTHON` 指向的锁定 standalone CPython 根目录；未提供时才由 `uv` 安装。`MEGASTORM_OFFLINE_CODESIGN=1` 时仍使用 Developer ID 身份，但明确关闭在线 timestamp；worker 不因此获得公网权限，真实 Gatekeeper/安装由 T-packaging-13 reality gate 收口。
   Developer ID 正式签名（本机证书实测在）、`--timestamp` 走网络、uv 拉 PBS CPython 与三套 PyPI 依赖
   （环境实测网络可用；uv 有缓存，二次构建不重复下载）。
   V1–V7 全绿 = R-packaging-01/02/03/04/05 完成；V6 用内嵌解释器真实导入
