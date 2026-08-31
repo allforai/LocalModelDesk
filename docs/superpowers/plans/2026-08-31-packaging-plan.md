@@ -1195,7 +1195,7 @@ macOS 菜单栏 App：本地聊天、文生视频、文生歌曲收在一张台�
 ### T-packaging-12 真实全量构建（design §5.2；implements `api:buildAppBundle`）
 
 - 修复构建时 relocation/sanitization 后，以完整机器证明收口：
-  `"$MEGASTORM_TEST_PYTHON" -m pytest tests/test_packaging.py && scripts/build-app.sh --output dist && scripts/verify-app.sh dist/LocalModelDesk.app`。实现先 cherry-pick task commit `3055593`，完整保留 `MEGASTORM_EMBEDDED_PYTHON` 离线 runtime、bytecode 清理、install-id 与 `MEGASTORM_OFFLINE_CODESIGN` 三文件修复；不能只重写 sanitizer。全部三套依赖安装后、签名前，从 `SRC_PY` 推导并删除真实 source prefix，使用 `grep --null`/`read -d ''` 净化 `/opt/homebrew`，不得用 runner scratch `HOME` 猜源路径，也不得以 `grep -Z ... || true` 吞掉未执行的净化。真实 Gatekeeper/安装由 T-packaging-13 reality gate 收口。
+  `"$MEGASTORM_TEST_PYTHON" -m pytest tests/test_packaging.py && scripts/build-app.sh --output dist && scripts/verify-app.sh dist/LocalModelDesk.app`。实现 cherry-pick 已完成离线 runtime、bytecode 清理、install-id、portable sanitizer、offline Developer ID 且内部 V1–V7 OK 的 task commit `b6ef9b6`。随后只需让 `build-app.sh` 的内部 `verify-app.sh` 调用带 `PYTHONDONTWRITEBYTECODE=1`，并加静态回归断言：V6 import 不得在已经签名的 bundle 内生成 `__pycache__`，否则紧随构建的外部复验会触发 V4。真实 Gatekeeper/安装由 T-packaging-13 reality gate 收口。
   Developer ID 正式签名（本机证书实测在）、`--timestamp` 走网络、uv 拉 PBS CPython 与三套 PyPI 依赖
   （环境实测网络可用；uv 有缓存，二次构建不重复下载）。
   V1–V7 全绿 = R-packaging-01/02/03/04/05 完成；V6 用内嵌解释器真实导入
