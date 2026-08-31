@@ -1,5 +1,7 @@
 """MediaService video success path."""
 import threading
+from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -49,6 +51,45 @@ def test_video_argv_and_running_state(tmp_path):
         "extra_env": {"PYTHONPATH": "/fake/pylibs/h3"}}]
     service.cancel_job()
     assert completed.wait(5)
+
+
+def test_start_music_job_argv_output_and_runtime_capability(tmp_path):
+    """Music jobs use the dedicated runtime, argv, and WAV output convention."""
+    from desk.media.commands import build_music_command
+
+    service, deps = make_service(tmp_path)
+    roots = SimpleNamespace(
+        outputs_root=tmp_path / "outputs", models_root=tmp_path / "models",
+        music_python=Path("/fake/bin/music-python"), media_cli_dir=Path("/fake/media"),
+        music_env={"PYTHONPATH": "/fake/pylibs/music"},
+    )
+    service._resolve_paths = lambda: roots
+    service._probe_capabilities = lambda: {
+        "music_runtime": SimpleNamespace(present=True, detail=""),
+    }
+    service._list_catalog = lambda: [
+        SimpleNamespace(key="music3", relpath="minimax-music3"),
+    ]
+
+    snap = finished_snapshot(service, lambda: service.start_music_job(
+        caption="ambient piano", lyrics="instrumental", duration=30.0))
+
+    output = tmp_path / "outputs" / f"music3-{STAMP}.wav"
+    assert snap["status"] == "done"
+    assert snap["output"] == output.name
+    assert deps.executor.spawned == [{"cmd": build_music_command(
+        roots.music_python, roots.media_cli_dir / "music3_cli.py",
+        tmp_path / "models" / "minimax-music3", caption="ambient piano",
+        lyrics="instrumental", duration=30.0, output=output),
+        "extra_env": roots.music_env}]
+
+    service, deps = make_service(tmp_path)
+    service._probe_capabilities = lambda: {}
+    with pytest.raises(MediaError) as err:
+        service.start_music_job(caption="ambient piano", lyrics="", duration=30.0)
+    assert err.value.code == "capability_missing"
+    assert err.value.http_status == 503
+    assert deps.executor.spawned == []
 
 
 class TestStartDiscipline:
