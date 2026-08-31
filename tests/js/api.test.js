@@ -34,6 +34,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["deleteModel", ["glm"], "/api/resources/delete", "POST", { key: "glm", confirm: "glm" }],
     ["diskUsage", [], "/api/resources/disk", "GET"],
     ["memorySnapshot", [], "/api/memory", "GET"],
+    ["deskState", [], "/api/state", "GET"],
     ["loadLlm", ["glm"], "/api/llm/load", "POST", { key: "glm" }],
     ["unloadLlm", [], "/api/llm/unload", "POST"],
     ["llmStatus", [], "/api/llm/status", "GET"],
@@ -54,7 +55,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
   ];
   const names = [
     "readConfig", "writeConfig", "completeFirstRun", "adoptLegacyModels", "listCatalog", "verifyAllModels",
-    "startDownload", "cancelDownload", "deleteModel", "diskUsage", "memorySnapshot", "loadLlm", "unloadLlm",
+    "startDownload", "cancelDownload", "deleteModel", "diskUsage", "memorySnapshot", "deskState", "loadLlm", "unloadLlm",
     "llmStatus", "chatStream", "startVideoJob", "startMusicJob", "cancelJob", "jobStatus", "listOutputs",
     "serveOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
   ];
@@ -63,6 +64,12 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     for (const [name, args, url, method, body] of expected) {
       const result = await api[name](...args);
       const call = calls.at(-1);
+      if (name === "verifyAllModels") {
+        assert.equal(calls.at(-2).url, url, name);
+        assert.equal(calls.at(-2).options.method, method, name);
+        assert.equal(call.url, "/api/resources/download", name);
+        continue;
+      }
       assert.equal(call.url, url, name);
       assert.equal(call.options.method, method, name);
       assert.deepEqual(call.options.body && JSON.parse(call.options.body), body, name);
@@ -71,6 +78,27 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     }
   });
   assert.equal(api.serveOutput("clip one.mp4"), "/api/outputs/clip%20one.mp4");
+});
+
+test("模型状态读取会携带当前下载进度", async () => {
+  const previous = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url) => {
+    calls.push(url);
+    return {
+      ok: true,
+      json: async () => url === "/api/resources/status?refresh=0"
+        ? { models: [{ key: "glm", state: "partial" }] }
+        : { key: "glm", state: "running", percent: 42 },
+    };
+  };
+  try {
+    const status = await api.verifyAllModels();
+    assert.deepEqual(calls, ["/api/resources/status?refresh=0", "/api/resources/download"]);
+    assert.deepEqual(status.download, { key: "glm", state: "running", percent: 42 });
+  } finally {
+    globalThis.fetch = previous;
+  }
 });
 
 test("DeskApiError 保留 HTTP 状态与服务端 error 信封", async () => {

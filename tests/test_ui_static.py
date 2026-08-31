@@ -72,3 +72,67 @@ def test_escape_urlencoded_dotdot(assets):
 
 def test_escape_absolute_path(assets):
     assert assets.resolve("/static//etc/passwd") is None
+
+
+# ---------- 仓库级断言（T-ui-19 起生效） ----------
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+STATIC_ROOT = REPO_ROOT / "desk" / "static"
+
+REQUIRED_STATIC = [
+    "index.html", "app.css",
+    "js/main.js", "js/api.js", "js/store.js", "js/stream.js",
+    "js/panes/chat.js", "js/panes/video.js", "js/panes/music.js",
+    "js/panes/resources.js", "js/panes/library.js", "js/panes/firstrun.js", "js/panes/settings.js",
+    "js/widgets/statusbar.js", "js/widgets/confirm.js", "js/widgets/jobview.js",
+    "js/pure/chat_stream.js", "js/pure/model_status.js", "js/pure/desk_state.js",
+    "js/pure/mem_warn.js", "js/pure/history_fill.js", "js/pure/base_url.js",
+    "js/pure/sessions.js", "js/pure/format.js",
+]
+
+
+def test_required_static_files_exist():
+    missing = [rel for rel in REQUIRED_STATIC if not (STATIC_ROOT / rel).is_file()]
+    assert missing == []
+
+
+def test_real_static_tree_fully_served():
+    assets = StaticAssets(STATIC_ROOT)
+    served = 0
+    for f in STATIC_ROOT.rglob("*"):
+        if not f.is_file():
+            continue
+        rel = f.relative_to(STATIC_ROOT).as_posix()
+        hit = assets.resolve(f"/static/{rel}")
+        assert hit is not None, rel
+        assert hit[1] == CONTENT_TYPES[f.suffix], rel
+        served += 1
+    assert served >= len(REQUIRED_STATIC)
+    assert assets.resolve("/")[0].name == "index.html"
+
+
+def test_no_inline_html_in_python():
+    offenders = []
+    for p in (REPO_ROOT / "desk").rglob("*.py"):
+        if "testing" in p.relative_to(REPO_ROOT / "desk").parts:
+            continue
+        src = p.read_text(encoding="utf-8", errors="replace").lower()
+        if "<!doctype" in src or "<html" in src:
+            offenders.append(str(p))
+    assert offenders == []
+
+
+def test_no_direct_llm_port_in_frontend():
+    offenders = []
+    for f in STATIC_ROOT.rglob("*"):
+        if f.is_file() and "8767" in f.read_text(encoding="utf-8", errors="replace"):
+            offenders.append(str(f))
+    assert offenders == []
+
+
+def test_shell_tick_refreshes_resource_download_progress():
+    source = (STATIC_ROOT / "js" / "main.js").read_text(encoding="utf-8")
+    assert "await panes.resources.refresh()" in source
+
+    api_source = (STATIC_ROOT / "js" / "api.js").read_text(encoding="utf-8")
+    assert "request(ROUTES.download)" in api_source
