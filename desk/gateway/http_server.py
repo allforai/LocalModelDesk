@@ -133,7 +133,12 @@ class _Handler(BaseHTTPRequestHandler):
         model_out = parsed["model"] or loaded["served_id"]
 
         if parsed["stream"]:
-            events = self.server.backend.chat_stream(parsed["chat_request"])
+            try:
+                events = self.server.backend.chat_stream(parsed["chat_request"])
+            except Exception as exc:
+                raise GatewayReject(
+                    REASON_UPSTREAM_ERROR, 500, f"chat backend failed: {exc}"
+                ) from exc
             if dialect_mod is openai_dialect:
                 frames = openai_dialect.stream_chunks(
                     events, "chatcmpl-" + self.server.new_id(), int(self.server.now()), model_out

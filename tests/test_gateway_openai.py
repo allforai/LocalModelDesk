@@ -5,7 +5,7 @@ import pytest
 
 from desk.gateway import openai_dialect
 from desk.gateway.errors import REASON_HEADER, REASON_INVALID_REQUEST, GatewayReject
-from gateway_client import json_request, serve
+from gateway_client import json_request, serve, sse_request
 from gateway_fakes import IDLE_STATUS, FakeBackend
 
 LOADED = {
@@ -184,3 +184,84 @@ def test_http_oversized_body_400():
         status, _, payload = json_request(port, "POST", "/v1/chat/completions", body=big)
     assert status == 400
     assert payload["error"]["code"] == "invalid_request"
+
+
+def test_http_chat_completions_full_paths_and_never_loads():
+    body = {"messages": [{"role": "user", "content": "hi"}]}
+    backend = FakeBackend()
+    with serve(backend) as port:
+        status, _, payload = json_request(port, "POST", "/v1/chat/completions", body=body)
+    assert status == 200
+    assert payload == {
+        "id": "chatcmpl-fixedfixedfixedfixedfixedfixed00",
+        "object": "chat.completion",
+        "created": 1756605000,
+        "model": "mlx-community/Qwen3-30B-A3B-8bit",
+        "choices": [{"index": 0, "message": {
+            "role": "assistant", "content": "你好！", "reasoning_content": "用户在打招呼。"
+        }, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 12, "completion_tokens": 7, "total_tokens": 19},
+    }
+    assert backend.called_methods() == ["desk_state", "llm_status", "chat_completion"]
+
+    backend = FakeBackend(events=EVENTS)
+    with serve(backend) as port:
+        status, headers, frames = sse_request(port, "/v1/chat/completions", {**body, "stream": True})
+    assert status == 200
+    assert headers["content-type"] == "text/event-stream; charset=utf-8"
+    assert frames[-1] == "data: [DONE]\n\n"
+    chunks = [json.loads(frame[6:-2]) for frame in frames[:-1]]
+    assert [chunk["choices"][0]["delta"] for chunk in chunks] == [
+        {"role": "assistant"}, {"reasoning_content": "用户在"},
+        {"reasoning_content": "打招呼。"}, {"content": "你"},
+        {"content": "好！"}, {},
+    ]
+    assert backend.called_methods() == ["desk_state", "llm_status", "chat_stream"]
+
+    rejected = FakeBackend(llm=IDLE_STATUS)
+    with serve(rejected) as port:
+        status, headers, payload = json_request(port, "POST", "/v1/chat/completions", body=body)
+    assert status == 503
+    assert headers[REASON_HEADER.lower()] == "no_model_loaded"
+    assert headers["retry-after"] == "30"
+    assert payload["error"] == {
+        "type": "service_unavailable_error",
+        "code": "no_model_loaded",
+        "message": "no chat model is loaded; the gateway never auto-loads",
+    }
+    rejected.assert_no_inference_calls()
+
+    invalid = FakeBackend()
+    with serve(invalid) as port:
+        status, headers, payload = json_request(port, "POST", "/v1/chat/completions", body={})
+    assert status == 400
+    assert headers[REASON_HEADER.lower()] == "invalid_request"
+    assert payload["error"]["type"] == "invalid_request_error"
+    assert invalid.calls == []
+
+    failed = FakeBackend(completion_error=RuntimeError("mlx-lm died"))
+    with serve(failed) as port:
+        status, headers, payload = json_request(port, "POST", "/v1/chat/completions", body=body)
+    assert status == 500
+    assert headers[REASON_HEADER.lower()] == "upstream_error"
+    assert payload["error"] == {
+        "type": "api_error", "code": "upstream_error", "message": "chat backend failed: mlx-lm died"
+    }
+
+
+def test_http_chat_stream_setup_error_uses_openai_envelope():
+    class BrokenStreamBackend(FakeBackend):
+        def chat_stream(self, req):
+            self.calls.append(("chat_stream", req))
+            raise RuntimeError("stream could not start")
+
+    with serve(BrokenStreamBackend()) as port:
+        status, headers, payload = json_request(
+            port, "POST", "/v1/chat/completions",
+            body={"stream": True, "messages": [{"role": "user", "content": "hi"}]},
+        )
+    assert status == 500
+    assert headers[REASON_HEADER.lower()] == "upstream_error"
+    assert payload["error"] == {
+        "type": "api_error", "code": "upstream_error", "message": "chat backend failed: stream could not start"
+    }
