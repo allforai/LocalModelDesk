@@ -25,11 +25,13 @@ async function boot() {
 
 function enterFirstRun(config) {
   const root = $("#pane-firstrun");
+  setDeskShellHidden(true);
   const pane = createFirstRunPane(root, { onDone: () => { root.hidden = true; boot(); } });
   pane.init(config); root.hidden = false;
 }
 
 function enterDesk() {
+  setDeskShellHidden(false);
   if (!panes) {
     statusbar = createStatusBar($("#statusbar"));
     const onStarted = (job) => { jobActive = job.status === "running"; lastJobId = job.job_id ?? null; jobLogFrom = job.next_log_from ?? 0; };
@@ -41,6 +43,10 @@ function enterDesk() {
     globalThis.setInterval(tick, 2000);
   }
   panes.chat.init(); tick();
+}
+
+function setDeskShellHidden(hidden) {
+  for (const selector of ["#statusbar", "#tabs", "main"]) $(selector).hidden = hidden;
 }
 
 function showTab(name) {

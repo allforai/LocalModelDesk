@@ -156,7 +156,10 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
         ("GET", "/api/paths", lambda _req: {"data_root": str(roots.data_root),
                                                 "models_root": str(roots.models_root),
                                                 "outputs_root": str(roots.outputs_root)}),
-        ("POST", "/api/first-run", lambda _req: firstrun.complete_first_run(roots).to_json()),
+        ("POST", "/api/first-run", lambda req: firstrun.complete_first_run(
+            roots, normalize_user_path(req.body["models_root"])
+            if req.body.get("models_root") else None,
+        ).to_json()),
         ("POST", "/api/adopt", adopt),
         ("GET", "/api/resources/catalog", lambda _req: {
             "models": [entry.to_json() for entry in resources.list_catalog()]}),
