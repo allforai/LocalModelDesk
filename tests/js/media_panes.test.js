@@ -92,3 +92,19 @@ test("job views do not create independent polling timers and still apply shell-d
   assert.equal(music.parts["job-log"].textContent, "threefour");
   assert.equal(music.parts["job-player"].firstChild.tagName, "audio");
 });
+
+test("媒体面板在其他重作业运行时禁用开始按钮，并在结束后恢复", () => {
+  const video = pane({ "video-prompt": "海浪", "video-size": "512x288", "video-frames": "25", "video-steps": "8", "video-start": "" });
+  const music = pane({ "music-caption": "轻快", "music-lyrics": "la", "music-duration": "30", "music-start": "" });
+  const videoPane = createVideoPane(video);
+  const musicPane = createMusicPane(music);
+  videoPane.setHeavyAllowed(false, "媒体作业进行中");
+  musicPane.setHeavyAllowed(false, "媒体作业进行中");
+  assert.equal(video.parts["video-start"].disabled, true);
+  assert.equal(music.parts["music-start"].disabled, true);
+  assert.equal(video.parts["video-error"].textContent, "媒体作业进行中");
+  videoPane.setHeavyAllowed(true);
+  musicPane.setHeavyAllowed(true);
+  assert.equal(video.parts["video-start"].disabled, false);
+  assert.equal(music.parts["music-start"].disabled, false);
+});

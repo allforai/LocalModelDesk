@@ -9,6 +9,7 @@ import { createResourcesPane } from "./panes/resources.js";
 import { createLibraryPane } from "./panes/library.js";
 import { createFirstRunPane } from "./panes/firstrun.js";
 import { createSettingsPane } from "./panes/settings.js";
+import { heavyAvailability } from "./pure/desk_state.js";
 
 const $ = (selector) => document.querySelector(selector);
 const store = createStore({ activeTab: "chat" });
@@ -59,6 +60,14 @@ function showTab(name) {
 
 function applyFill(plan) { if (plan) { panes[plan.pane].fill(plan.fields); showTab(plan.pane); } }
 
+function applyHeavyAvailability(deskState) {
+  const llm = heavyAvailability(deskState, "llm");
+  const media = heavyAvailability(deskState, "media");
+  panes.chat.setHeavyAllowed(llm.allowed, llm.reason);
+  panes.video.setHeavyAllowed(media.allowed, media.reason);
+  panes.music.setHeavyAllowed(media.allowed, media.reason);
+}
+
 async function tickJob() {
   const payload = await api.jobStatus(jobLogFrom, lastJobId);
   const pane = payload.kind === "music" ? panes.music : panes.video;
@@ -70,7 +79,7 @@ async function tickJob() {
 async function tick() {
   try {
     const [deskState, memory] = await Promise.all([api.deskState(), api.memorySnapshot()]);
-    failures = 0; statusbar.offline(false); statusbar.update(deskState, memory); store.set({ deskState, memory });
+    failures = 0; statusbar.offline(false); statusbar.update(deskState, memory); applyHeavyAvailability(deskState); store.set({ deskState, memory });
     await panes.resources.refresh();
     if (deskState.media_busy) jobActive = true;
     if (jobActive) await tickJob();

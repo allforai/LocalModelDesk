@@ -7,6 +7,22 @@ const REASON_TEXT = {
   memory_low: "可用内存不足",
 };
 
+function decisionFor(deskState, kind) {
+  const canStart = deskState?.can_start;
+  if (!canStart) return { ok: false, reason: null };
+  return canStart[kind] ?? canStart;
+}
+
+export function heavyAvailability(deskState, kind) {
+  const decision = decisionFor(deskState, kind);
+  const reason = decision?.reason;
+  const code = typeof reason === "object" ? reason?.code : reason;
+  return {
+    allowed: decision?.ok !== false,
+    reason: REASON_TEXT[code] ?? code ?? "",
+  };
+}
+
 export function renderState(deskState, snapshot) {
   const gb = (n) => (n / GB).toFixed(1);
   const memText = snapshot && Number.isFinite(snapshot.total_bytes)
@@ -23,11 +39,12 @@ export function renderState(deskState, snapshot) {
   }
 
   const mediaText = deskState?.media_busy ? "媒体：生成中" : "媒体：空闲";
-  const can = deskState?.can_start ?? null;
+  const can = decisionFor(deskState, deskState?.media_busy ? "media" : "llm");
+  const reason = typeof can?.reason === "object" ? can?.reason?.code : can?.reason;
   const ok = can ? can.ok !== false : false;
   const nextText = ok
     ? "可开下一件重活"
-    : `不可：${REASON_TEXT[can?.reason] ?? can?.reason ?? "状态未知"}`;
+    : `不可：${REASON_TEXT[reason] ?? reason ?? "状态未知"}`;
   const tone = holder || deskState?.media_busy ? "busy" : ok ? "ok" : "error";
   return { memText, holderText, mediaText, nextText, tone };
 }

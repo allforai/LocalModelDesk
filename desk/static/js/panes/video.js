@@ -28,5 +28,10 @@ export function createVideoPane(root, ctx = {}) {
     if (fields.frames != null) els.frames.value = String(fields.frames);
     if (fields.steps != null) els.steps.value = String(fields.steps);
   }
-  return { fill, jobView };
+  function setHeavyAllowed(allowed, reason = "") {
+    els.startBtn.disabled = !allowed;
+    if (!allowed) els.error.textContent = reason;
+    else if (els.error.textContent === reason || reason === "") els.error.textContent = "";
+  }
+  return { fill, jobView, setHeavyAllowed };
 }
