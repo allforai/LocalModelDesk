@@ -9,13 +9,18 @@ from typing import Any
 from .state import (
     DEFAULT_LLM_PORT,
     ERR_BACKEND_EXITED,
+    ERR_LOAD_IN_PROGRESS,
     ERR_LOAD_TIMEOUT,
+    ERR_MEDIA_BUSY,
+    ERR_MODEL_DIR_MISSING,
+    ERR_MODEL_NOT_FOUND,
     ERR_PORT_NOT_RELEASED,
     STATUS_ERROR,
     STATUS_IDLE,
     STATUS_LOADED,
     STATUS_LOADING,
     LlmError,
+    LlmRejected,
     LlmState,
     LoadedModel,
 )
@@ -52,10 +57,20 @@ class LlmService:
     def load(self, key: str) -> dict[str, Any]:
         """Start loading *key* and immediately return its loading state."""
         with self._lock:
+            if self._state.status == STATUS_LOADING:
+                raise LlmRejected(ERR_LOAD_IN_PROGRESS, "已有模型正在加载")
             entry = self._find_entry(key)
+            if entry is None:
+                raise LlmRejected(ERR_MODEL_NOT_FOUND, f"未找到模型: {key}")
             roots = self._paths.resolve_paths()
             model_dir = Path(roots.models_root) / entry.relpath
+            if not model_dir.is_dir():
+                raise LlmRejected(ERR_MODEL_DIR_MISSING, f"模型目录不存在: {model_dir}")
             acquired = self._arbiter.acquire_heavy("llm", entry.key)
+            if not acquired.get("ok"):
+                reason = acquired.get("reason") or {}
+                message = reason.get("message") if isinstance(reason, dict) else None
+                raise LlmRejected(ERR_MEDIA_BUSY, message or "媒体任务正在运行")
             self._token = acquired.get("token")
             self._entry = None
             self._state = LlmState(status=STATUS_LOADING, model_key=entry.key)
