@@ -4,7 +4,9 @@ import json
 import pytest
 
 from desk.gateway import anthropic_dialect
-from desk.gateway.errors import REASON_INVALID_REQUEST, GatewayReject
+from desk.gateway.errors import REASON_HEADER, REASON_INVALID_REQUEST, GatewayReject
+from gateway_client import json_request, serve, sse_request
+from gateway_fakes import EVENTS as BACKEND_EVENTS, IDLE_STATUS, FakeBackend
 
 RESULT = {"content": "你好！", "reasoning": "用户在打招呼。",
           "finish_reason": "stop", "usage": {"prompt_tokens": 12, "completion_tokens": 7}}
@@ -165,3 +167,53 @@ def test_stream_events_edge_cases_and_errors():
     assert midway[-1] == ("error", {"type": "error", "error": {"type": "api_error", "message": "mlx-lm died"}})
     assert missing_finish[-1][0] == "error"
     assert "message_stop" not in [name for name, _ in missing_finish]
+
+
+def test_http_messages_full_paths_503_envelope_and_stream_errors():
+    body = {**BASE, "model": "qwen3-30b"}
+    backend = FakeBackend()
+    with serve(backend) as port:
+        status, _, payload = json_request(port, "POST", "/v1/messages", body=body)
+    assert status == 200
+    assert payload == anthropic_dialect.message_response(
+        RESULT, "qwen3-30b", "msg_fixedfixedfixedfixedfixedfixed00"
+    )
+    assert backend.calls[-1] == ("chat_completion", {
+        "messages": [{"role": "user", "content": "hi"}],
+        "max_tokens": 100, "temperature": None, "top_p": None,
+    })
+
+    streaming = FakeBackend(events=BACKEND_EVENTS)
+    with serve(streaming) as port:
+        status, headers, frames = sse_request(port, "/v1/messages", {**body, "stream": True})
+    assert status == 200
+    assert headers["content-type"] == "text/event-stream; charset=utf-8"
+    decoded = _decode_frames(iter(frame.encode("utf-8") for frame in frames))
+    assert [name for name, _ in decoded][-2:] == ["message_delta", "message_stop"]
+    assert decoded[0][1]["message"]["id"] == "msg_fixedfixedfixedfixedfixedfixed00"
+    assert streaming.called_methods() == ["desk_state", "llm_status", "chat_stream"]
+
+    rejected = FakeBackend(llm=IDLE_STATUS)
+    with serve(rejected) as port:
+        status, headers, payload = json_request(port, "POST", "/v1/messages", body=body)
+    assert status == 503
+    assert headers[REASON_HEADER.lower()] == "no_model_loaded"
+    assert headers["retry-after"] == "30"
+    assert payload == {
+        "type": "error",
+        "error": {
+            "type": "overloaded_error",
+            "message": "no chat model is loaded; the gateway never auto-loads",
+        },
+    }
+    rejected.assert_no_inference_calls()
+
+    broken = FakeBackend(events=[("content", "partial")], stream_error=RuntimeError("mlx-lm died"))
+    with serve(broken) as port:
+        status, _, frames = sse_request(port, "/v1/messages", {**body, "stream": True})
+    assert status == 200
+    decoded = _decode_frames(iter(frame.encode("utf-8") for frame in frames))
+    assert decoded[-1] == ("error", {
+        "type": "error", "error": {"type": "api_error", "message": "mlx-lm died"},
+    })
+    assert "message_stop" not in [name for name, _ in decoded]
