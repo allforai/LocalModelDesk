@@ -8,6 +8,7 @@
 ## 约定（每个任务都遵守）
 
 - T-shell-10/11 的精确 acceptance 由 runner 在 trusted host 的候选接纳阶段执行，以使用 Orca desktop runtime；失败候选不发布。
+- T-shell-10 的 pytest 必须通过 `"$MEGASTORM_TEST_PYTHON"` 选择锁定 CPython 3.13，不能依赖宿主 `/bin/sh` 的 `python3` 解析。
 - 严格 TDD：先写失败测试 → 跑一次确认失败 → 实现 → 跑通过 → 提交。
 - 所有测试使用**随机空闲端口**与 `tmp_path`；绝不触碰真实 8766/8767、绝不触碰
   `llms/`、`minimax-h3/`、`minimax-music3/`、`outputs/` 与任何权重目录。
