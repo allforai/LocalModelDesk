@@ -156,6 +156,42 @@ class LlmService:
                 loaded = LoadedModel.from_entry(self._entry).to_dict()
             return {"state": self._state.to_dict(), "loaded_model": loaded}
 
+    def _teardown_proc_locked(self) -> bool:
+        """Stop the owned child and confirm the LLM port has been released."""
+        proc = self._proc
+        if proc is not None:
+            proc.terminate()
+            try:
+                proc.wait(self._term_grace_s)
+            except Exception:
+                proc.kill()
+        self._proc = None
+        return bool(self._arbiter.reap_llm_port(self._port).get("ok"))
+
+    def unload(self) -> dict[str, Any]:
+        """Unload a settled model only after the LLM port is confirmed free."""
+        with self._lock:
+            if self._state.status == STATUS_LOADING:
+                raise LlmRejected(ERR_LOAD_IN_PROGRESS, "加载进行中，等状态落定后再卸载")
+            if self._state.status == STATUS_IDLE:
+                return self._state.to_dict()
+            if self._teardown_proc_locked():
+                if self._token is not None:
+                    self._arbiter.release_heavy(self._token)
+                self._token = None
+                self._entry = None
+                self._state = LlmState(status=STATUS_IDLE)
+            else:
+                self._state = LlmState(
+                    status=STATUS_ERROR,
+                    model_key=self._state.model_key,
+                    error=LlmError(
+                        ERR_PORT_NOT_RELEASED,
+                        f"卸载后端口 {self._port} 仍被占用",
+                    ),
+                )
+            return self._state.to_dict()
+
     def wait_settled(self, timeout_s: float = 5.0) -> dict[str, Any]:
         """Wait for an in-flight load; intended for polling callers and tests."""
         deadline = time.monotonic() + timeout_s
