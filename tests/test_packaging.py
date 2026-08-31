@@ -202,3 +202,50 @@ def test_build_failure_leaves_no_half_product(tmp_path):
     assert result.returncode != 0
     assert marker.read_text() == "intact prior product"
     assert [path.name for path in output.iterdir() if path.name.startswith(".staging")] == []
+
+
+def test_install_to_tmp_dest(tmp_path):
+    app = make_fake_bundle(tmp_path, sign=False)
+    resources = app / "Contents" / "Resources"
+    (resources / "AppIcon.icns").write_bytes(b"icns-stub")
+    (resources / "desk").mkdir()
+    for libdir, package in {
+        "desk": "mlx_lm",
+        "music": "mlx_minimax_music3",
+        "h3": "mlx_h3",
+    }.items():
+        init = resources / "pylibs" / libdir / package / "__init__.py"
+        init.parent.mkdir(parents=True)
+        init.write_text("")
+    (resources / "pylibs" / "h3" / "mlx_h3" / "cli.py").write_text("")
+    hf = resources / "pylibs" / "desk" / "huggingface_hub" / "cli" / "hf.py"
+    hf.parent.mkdir(parents=True)
+    (hf.parent / "__init__.py").write_text("")
+    hf.write_text("def main():\n    pass\n")
+    assert run([REPO / "scripts" / "sign-app.sh", app, "--adhoc"]).returncode == 0
+
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    dest = tmp_path / "FakeApplications"
+    dest.mkdir()
+    result = run([REPO / "scripts" / "install-app.sh", "--app", app,
+                  "--dest", dest, "--source-root", source_root])
+    assert result.returncode == 0, result.stderr
+    installed = dest / "LocalModelDesk.app"
+    assert (installed / "Contents" / "MacOS" / "LocalModelDesk").exists()
+    assert (installed / "Contents" / "Resources" / "bundle.json").exists()
+
+    other_dest = tmp_path / "OtherApplications"
+    other = other_dest / "LocalModelDesk.app" / "Contents"
+    other.mkdir(parents=True)
+    other_plist = other / "Info.plist"
+    other_plist.write_bytes((app / "Contents" / "Info.plist").read_bytes().replace(
+        BUNDLE_ID.encode(), b"com.other.thing"))
+    refused = run([REPO / "scripts" / "install-app.sh", "--app", app,
+                   "--dest", other_dest, "--source-root", source_root])
+    assert refused.returncode != 0
+    assert other_plist.exists()
+
+    repeated = run([REPO / "scripts" / "install-app.sh", "--app", app,
+                    "--dest", dest, "--source-root", source_root])
+    assert repeated.returncode == 0, repeated.stderr
