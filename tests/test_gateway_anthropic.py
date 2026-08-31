@@ -1,4 +1,6 @@
-"""Anthropic dialect parsing and non-streaming responses."""
+"""Anthropic dialect parsing, responses, and streaming events."""
+import json
+
 import pytest
 
 from desk.gateway import anthropic_dialect
@@ -84,3 +86,82 @@ def test_message_response_length_maps_to_max_tokens():
 
 def test_message_response_no_thinking_block_when_reasoning_empty():
     assert anthropic_dialect.message_response({**RESULT, "reasoning": ""}, "m", "msg_1")["content"] == [{"type": "text", "text": "你好！"}]
+
+
+EVENTS = [("reasoning", "用户在"), ("reasoning", "打招呼。"), ("content", "你"), ("content", "好！"),
+          ("finish", {"finish_reason": "stop", "usage": {"prompt_tokens": 12, "completion_tokens": 7}})]
+
+
+def _decode_frames(frames):
+    """Assert each SSE frame has exactly an event and data line."""
+    out = []
+    for frame in frames:
+        text = frame.decode("utf-8")
+        assert text.endswith("\n\n")
+        lines = text[:-2].split("\n")
+        assert len(lines) == 2, f"each event must have exactly two lines: {lines!r}"
+        assert lines[0].startswith("event: ") and lines[1].startswith("data: ")
+        out.append((lines[0][len("event: "):], json.loads(lines[1][len("data: "):])))
+    return out
+
+
+def test_stream_events_full_sequence():
+    decoded = _decode_frames(anthropic_dialect.stream_events(iter(EVENTS), "msg_fixed", "qwen3-30b"))
+    assert [name for name, _ in decoded] == [
+        "message_start",
+        "content_block_start", "content_block_delta", "content_block_delta", "content_block_stop",
+        "content_block_start", "content_block_delta", "content_block_delta", "content_block_stop",
+        "message_delta", "message_stop",
+    ]
+    start = decoded[0][1]
+    assert start["type"] == "message_start"
+    assert start["message"]["id"] == "msg_fixed"
+    assert start["message"]["model"] == "qwen3-30b"
+    assert start["message"]["content"] == []
+    assert start["message"]["usage"] == {"input_tokens": 0, "output_tokens": 0}
+    assert decoded[1][1] == {"type": "content_block_start", "index": 0,
+                             "content_block": {"type": "thinking", "thinking": ""}}
+    assert decoded[2][1] == {"type": "content_block_delta", "index": 0,
+                             "delta": {"type": "thinking_delta", "thinking": "用户在"}}
+    assert decoded[4][1] == {"type": "content_block_stop", "index": 0}
+    assert decoded[5][1] == {"type": "content_block_start", "index": 1,
+                             "content_block": {"type": "text", "text": ""}}
+    assert decoded[6][1] == {"type": "content_block_delta", "index": 1,
+                             "delta": {"type": "text_delta", "text": "你"}}
+    assert decoded[8][1] == {"type": "content_block_stop", "index": 1}
+    assert decoded[9][1] == {"type": "message_delta",
+                             "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+                             "usage": {"input_tokens": 12, "output_tokens": 7}}
+    assert decoded[10][1] == {"type": "message_stop"}
+
+
+def test_stream_events_edge_cases_and_errors():
+    content_only = _decode_frames(anthropic_dialect.stream_events(iter([
+        ("content", "hi"), ("finish", {"finish_reason": "length", "usage": {"prompt_tokens": 1, "completion_tokens": 2}}),
+    ]), "msg_1", "m"))
+    assert [name for name, _ in content_only] == ["message_start", "content_block_start", "content_block_delta", "content_block_stop", "message_delta", "message_stop"]
+    assert content_only[1][1]["index"] == 0
+    assert content_only[4][1]["delta"]["stop_reason"] == "max_tokens"
+
+    interleaved = _decode_frames(anthropic_dialect.stream_events(iter([
+        ("content", "a"), ("reasoning", "r"), ("content", "b"),
+        ("finish", {"finish_reason": "stop", "usage": {"prompt_tokens": 1, "completion_tokens": 1}}),
+    ]), "msg_1", "m"))
+    assert [(data["index"], data["content_block"]["type"]) for name, data in interleaved if name == "content_block_start"] == [(0, "text"), (1, "thinking"), (2, "text")]
+
+    empty = _decode_frames(anthropic_dialect.stream_events(iter([
+        ("finish", {"finish_reason": "stop", "usage": {"prompt_tokens": 1, "completion_tokens": 0}}),
+    ]), "msg_1", "m"))
+    assert [name for name, _ in empty] == ["message_start", "content_block_start", "content_block_stop", "message_delta", "message_stop"]
+    assert empty[1][1]["content_block"] == {"type": "text", "text": ""}
+
+    def failing_events():
+        yield ("content", "部分")
+        raise RuntimeError("mlx-lm died")
+
+    midway = _decode_frames(anthropic_dialect.stream_events(failing_events(), "msg_1", "m"))
+    missing_finish = _decode_frames(anthropic_dialect.stream_events(iter([("content", "x")]), "msg_1", "m"))
+    assert "message_stop" not in [name for name, _ in midway]
+    assert midway[-1] == ("error", {"type": "error", "error": {"type": "api_error", "message": "mlx-lm died"}})
+    assert missing_finish[-1][0] == "error"
+    assert "message_stop" not in [name for name, _ in missing_finish]
