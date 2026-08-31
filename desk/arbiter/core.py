@@ -103,6 +103,14 @@ class Arbiter:
     def current_holder(self) -> dict | None:
         return self._public_holder(self._read_holder())
 
+    def memory_snapshot(self) -> dict:
+        """Return the current memory probe as a public dictionary."""
+        return self._memory.snapshot().to_dict()
+
+    def reap_llm_port(self, port: int) -> dict:
+        """Reap listeners on the supplied port, independent of eviction state."""
+        return self._reaper(port).to_dict()
+
     def desk_state(self) -> dict:
         return self._state_for(self._read_holder())
 
