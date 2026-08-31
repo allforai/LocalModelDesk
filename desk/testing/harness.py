@@ -10,6 +10,7 @@ from types import SimpleNamespace
 from desk.app import DeskApp
 from desk.arbiter.core import Arbiter
 from desk.foundation import capabilities, config, firstrun, paths
+from desk.foundation.paths import normalize_user_path
 from desk.gateway.service import GatewayService
 from desk.library import LibraryService
 from desk.llm.service import LlmService
@@ -17,6 +18,7 @@ from desk.media.service import MediaService
 from desk.resources.catalog import list_catalog
 from desk.resources.manifest import ManifestFile
 from desk.resources.service import ResourcesService
+from desk.ui import StaticAssets
 
 from .fakes import (
     DEFAULT_SNAPSHOT_A,
@@ -129,6 +131,22 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
     These adapters preserve the public paths while delegating every operation to
     the real services assembled by the harness.
     """
+    def adopt(req):
+        legacy_root, mode = req.body.get("legacy_root"), req.body.get("mode")
+        if not legacy_root or mode not in ("point", "move"):
+            from desk.foundation.errors import LegacyRootError
+            raise LegacyRootError("body must include legacy_root and mode 'point'|'move'")
+        raw_target = req.body.get("target_root")
+        result = firstrun.adopt_legacy_models(
+            roots, normalize_user_path(legacy_root), mode,
+            target_root=normalize_user_path(raw_target) if raw_target else None,
+        )
+        return {
+            "mode": result.mode, "models_root": str(result.models_root),
+            "adopted": list(result.adopted), "moved_bytes": result.moved_bytes,
+            "source_retained": result.source_retained,
+        }
+
     table = [
         ("GET", "/api/config", lambda _req: {
             **config.read_config(roots).to_json(),
@@ -139,6 +157,7 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
                                                 "models_root": str(roots.models_root),
                                                 "outputs_root": str(roots.outputs_root)}),
         ("POST", "/api/first-run", lambda _req: firstrun.complete_first_run(roots).to_json()),
+        ("POST", "/api/adopt", adopt),
         ("GET", "/api/resources/catalog", lambda _req: {
             "models": [entry.to_json() for entry in resources.list_catalog()]}),
         ("GET", "/api/resources/status", lambda _req: {
@@ -146,6 +165,7 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
             "disk": resources.disk_usage().to_json()}),
         ("GET", "/api/resources/status/", lambda _req: {
             "models": [status.to_json() for status in resources.verify_all_models()]}),
+        ("GET", "/api/resources/disk", lambda _req: resources.disk_usage().to_json()),
         ("GET", "/api/resources/download", lambda _req: resources.download_progress().__dict__),
         ("POST", "/api/resources/download", lambda req: resources.start_download(str(req.body.get("key", ""))).__dict__),
         ("POST", "/api/resources/download/cancel", lambda _req: resources.cancel_download().__dict__),
@@ -237,6 +257,24 @@ def launch_test_harness(
     )
     unsubscribe = arbiter.subscribe(llm.on_heavy_state_changed)
     app = DeskApp("127.0.0.1", 0)
+    static_assets = StaticAssets(roots.static_dir)
+    handler_type = app._server.RequestHandlerClass
+    dispatch_json = handler_type._dispatch
+
+    def dispatch_with_static(handler, method: str) -> None:
+        resolved = static_assets.resolve(handler.path)
+        if resolved is None:
+            dispatch_json(handler, method)
+            return
+        asset, content_type = resolved
+        data = asset.read_bytes()
+        handler.send_response(200)
+        handler.send_header("Content-Type", content_type)
+        handler.send_header("Content-Length", str(len(data)))
+        handler.end_headers()
+        handler.wfile.write(data)
+
+    handler_type._dispatch = dispatch_with_static
     gateway = GatewayService(
         _GatewayBackend(llm, arbiter),
         lambda: config.read_config(roots).to_json(),

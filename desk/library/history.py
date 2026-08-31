@@ -1,4 +1,6 @@
 """Append-only JSONL job history with strict writes and tolerant reads."""
+from __future__ import annotations
+
 import json
 import threading
 import uuid
