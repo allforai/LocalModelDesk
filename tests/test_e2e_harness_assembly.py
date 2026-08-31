@@ -33,7 +33,7 @@ def test_launch_test_harness_serves_real_routes_on_ephemeral_ports(tmp_path):
 
         status, catalog = _get(harness.base_url + "/api/resources/catalog")
         assert status == 200
-        assert len(catalog["models"]) == 8
+        assert len(catalog) == 8
 
         status, state = _get(harness.base_url + "/api/state")
         assert status == 200

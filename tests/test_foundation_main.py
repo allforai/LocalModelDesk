@@ -1,4 +1,4 @@
-from conftest import http_call
+from http_helpers import http_call
 
 from desk import __main__ as main_mod
 

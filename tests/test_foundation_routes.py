@@ -3,9 +3,9 @@ import os
 
 import pytest
 
-from conftest import http_call
 from desk.app import DeskApp
 from desk.foundation import routes as routes_mod
+from http_helpers import http_call
 
 
 @pytest.fixture()
