@@ -234,7 +234,9 @@ def launch_test_harness(
     )
     resources = ResourcesService(
         resolve_paths=lambda: roots,
-        can_start_heavy=arbiter.can_start_heavy,
+        # Downloader invokes this callback with no arguments.  Downloads use
+        # the video reservation class; "download" is not an Arbiter kind.
+        can_start_heavy=lambda: arbiter.can_start_heavy("video"),
         fetcher=_manifest_fetcher,
         executor=FakeDownloadExecutor(download_control),
         clock=clock,

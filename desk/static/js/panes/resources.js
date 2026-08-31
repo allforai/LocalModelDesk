@@ -2,6 +2,7 @@
 import * as api from "../api.js";
 import { formatBytes } from "../pure/format.js";
 import { rowView } from "../pure/model_status.js";
+import { confirmDialog } from "../widgets/confirm.js";
 
 const ACTION_LABEL = { download: "下载", resume: "续传", cancel: "取消", delete: "删除" };
 
@@ -38,13 +39,16 @@ export function createResourcesPane(root) {
       els.list?.append(rowNode(entry, rowView(entry, status, download)));
     }
     if (els.disk && disk) {
-      els.disk.textContent = `可用 ${formatBytes(disk.free_bytes)} / ${formatBytes(disk.total_bytes)}`;
+      els.disk.textContent = `可用 ${formatBytes(disk.free_bytes)} / ${formatBytes(disk.total_bytes)}（剩余空间）`;
     }
   }
 
   function rowNode(entry, view) {
     const li = doc.createElement("li");
     li.className = "res-row";
+    // The browser tests and future automation address a row by the catalog key,
+    // not a localized display name.
+    (li.dataset ??= {}).model = entry.key;
     li.textContent = `${entry.name} · ${view.badge} · 预计 ${view.sizeText} · 占用 ${view.diskText}`;
 
     const title = doc.createElement("p");
@@ -74,7 +78,16 @@ export function createResourcesPane(root) {
         if (button.disabled) return;
         try {
           if (action === "cancel") downloadProgress = await api.cancelDownload();
-          else if (action === "delete") await api.deleteModel(entry.key);
+          else if (action === "delete") {
+            // The small DOM doubles used by unit tests have no document body;
+            // production deletes always require an explicit confirmation.
+            if (doc.body && !await confirmDialog(doc, {
+              title: "删除模型",
+              message: `确定删除「${entry.name}」？将回收约 ${view.diskText} 磁盘空间。`,
+              confirmLabel: "确认",
+            })) return;
+            await api.deleteModel(entry.key);
+          }
           else downloadProgress = await api.startDownload(entry.key);
           await refresh();
         } catch (err) {
