@@ -310,3 +310,76 @@ class TestCancel:
 
         assert err.value.code == "no_running_job"
         assert err.value.http_status == 409
+
+
+class TestLogCursor:
+    VALID = dict(prompt="p", width=512, height=288, frames=73, steps=10)
+
+    @staticmethod
+    def _blocking_service(tmp_path, *, log_limit=1024 * 1024):
+        class RecordingExecutor(FakeExecutor):
+            def __init__(self):
+                super().__init__("block", lines=())
+                self.handles = []
+
+            def spawn(self, *args, **kwargs):
+                handle = super().spawn(*args, **kwargs)
+                self.handles.append(handle)
+                return handle
+
+        executor = RecordingExecutor()
+        service, deps = make_service(tmp_path, executor=executor)
+        service._log_limit = log_limit
+        done = threading.Event()
+        service.on_job_finished(lambda _: done.set())
+        service.start_video_job(**TestLogCursor.VALID)
+        return service, deps, done
+
+    @staticmethod
+    def _wait_for(predicate):
+        for _ in range(100):
+            if predicate():
+                return
+            threading.Event().wait(0.01)
+        pytest.fail("condition did not become true")
+
+    def test_incremental_cursor(self, tmp_path):
+        service, deps, done = self._blocking_service(tmp_path)
+        handle = deps.executor.handles[0]
+        handle._queue.put("alpha")
+        self._wait_for(lambda: "alpha" in service.job_status()["log"])
+
+        first = service.job_status()
+        assert first["log"] == "alpha\n"
+        handle._queue.put("beta")
+        self._wait_for(lambda: service.job_status()["next_log_from"] > first["next_log_from"])
+
+        second = service.job_status(log_from=first["next_log_from"], job_id=first["job_id"])
+        assert second["log"] == "beta\n"
+        assert second["next_log_from"] == first["next_log_from"] + len("beta\n")
+        service.cancel_job()
+        assert done.wait(5.0)
+
+    def test_stale_job_id_resends_full_log(self, tmp_path):
+        service, _ = make_service(tmp_path)
+        finished_snapshot(service, lambda: service.start_video_job(**self.VALID))
+        full_log = service.job_status()["log"]
+
+        replay = service.job_status(log_from=len(full_log), job_id=999)
+        assert replay["log"] == full_log
+
+    def test_truncation_keeps_absolute_cursor_and_marks_response(self, tmp_path):
+        service, deps, done = self._blocking_service(tmp_path, log_limit=32)
+        handle = deps.executor.handles[0]
+        for index in range(10):
+            handle._queue.put(f"line-{index:04d}")
+        self._wait_for(lambda: service.job_status()["log_truncated"])
+
+        state = service.job_status()
+        assert state["log_truncated"] is True
+        assert len(state["log"]) <= 32
+        assert state["log_len"] > 32
+        assert state["next_log_from"] == state["log_len"]
+        assert service.job_status(log_from=state["next_log_from"])["log"] == ""
+        service.cancel_job()
+        assert done.wait(5.0)
