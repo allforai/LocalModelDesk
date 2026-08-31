@@ -82,3 +82,29 @@ def test_eviction_while_loading_immediately_converges_to_evicted_error(tmp_path)
     assert testbed.proc.terminated is True
     testbed.backend.health_release.set()
     assert testbed.service.wait_settled()["error"]["code"] == "evicted"
+
+
+def test_unload_does_not_deadlock_when_releasing_llm_notifies_subscribers(tmp_path):
+    entry = make_entry()
+    paths = FakePaths(tmp_path)
+    (paths.models_root / entry.relpath).mkdir(parents=True)
+    service = LlmService(
+        backend=FakeBackend(),
+        arbiter=Arbiter(
+            llm_port=8767,
+            reaper=lambda port: ReapResult(ok=True, port=port, killed_pids=[]),
+        ),
+        catalog=FakeCatalog([entry]),
+        paths=paths,
+        poll_interval_s=0.001,
+    )
+    assert service.load("glm")["status"] == "loading"
+    assert service.wait_settled()["status"] == "loaded"
+
+    result = []
+    unloader = threading.Thread(target=lambda: result.append(service.unload()), daemon=True)
+    unloader.start()
+    unloader.join(timeout=0.1)
+
+    assert not unloader.is_alive()
+    assert result == [{"status": "idle", "model_key": None, "loaded_at": None, "error": None}]

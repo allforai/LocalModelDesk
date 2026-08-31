@@ -297,14 +297,14 @@ class LlmService:
 
     def unload(self) -> dict[str, Any]:
         """Unload a settled model only after the LLM port is confirmed free."""
+        token = None
         with self._lock:
             if self._state.status == STATUS_LOADING:
                 raise LlmRejected(ERR_LOAD_IN_PROGRESS, "加载进行中，等状态落定后再卸载")
             if self._state.status == STATUS_IDLE:
                 return self._state.to_dict()
             if self._teardown_proc_locked():
-                if self._token is not None:
-                    self._arbiter.release_heavy(self._token)
+                token = self._token
                 self._token = None
                 self._entry = None
                 self._state = LlmState(status=STATUS_IDLE)
@@ -317,7 +317,10 @@ class LlmService:
                         f"卸载后端口 {self._port} 仍被占用",
                     ),
                 )
-            return self._state.to_dict()
+            result = self._state.to_dict()
+        if token is not None:
+            self._arbiter.release_heavy(token)
+        return result
 
     def _chat_precheck(self, request: dict[str, Any]) -> Any:
         """Reject chat requests that cannot use the currently resident model."""
