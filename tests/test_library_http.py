@@ -66,3 +66,69 @@ def test_bad_limit_is_400(tmp_path):
 
     assert response.status == 400
     assert "error" in body_json(response)
+
+
+def test_route_table_covers_module_contract(tmp_path):
+    svc, _ = make_service(tmp_path)
+
+    assert set(route_map(svc)) == {
+        ("GET", "/api/outputs"),
+        ("GET", "/api/outputs/{name}"),
+        ("GET", "/api/history"),
+        ("GET", "/api/sessions"),
+        ("POST", "/api/sessions"),
+        ("PATCH", "/api/sessions/{id}"),
+        ("DELETE", "/api/sessions/{id}"),
+    }
+
+
+def test_session_crud_over_http(tmp_path):
+    svc, _ = make_service(tmp_path)
+    route_handlers = route_map(svc)
+    created = route_handlers[("POST", "/api/sessions")](
+        LibRequest(body=json.dumps({"title": "t"}).encode())
+    )
+    assert created.status == 200
+    session_id = body_json(created)["id"]
+    patched = route_handlers[("PATCH", "/api/sessions/{id}")](
+        LibRequest(
+            path_params={"id": session_id},
+            body=json.dumps({"messages": [{"role": "user", "content": "hi"}]}).encode(),
+        )
+    )
+    assert patched.status == 200
+    assert len(body_json(patched)["messages"]) == 1
+    listed = route_handlers[("GET", "/api/sessions")](LibRequest())
+    assert body_json(listed)[0]["id"] == session_id
+    deleted = route_handlers[("DELETE", "/api/sessions/{id}")](
+        LibRequest(path_params={"id": session_id})
+    )
+    assert deleted.status == 200
+    assert body_json(deleted) == {"deleted": session_id}
+
+
+def test_create_with_empty_body_uses_defaults(tmp_path):
+    svc, _ = make_service(tmp_path)
+
+    response = route_map(svc)[("POST", "/api/sessions")](LibRequest())
+
+    assert response.status == 200
+    assert body_json(response)["title"] == "新会话"
+
+
+def test_session_http_error_mapping(tmp_path):
+    svc, _ = make_service(tmp_path)
+    route_handlers = route_map(svc)
+    assert route_handlers[("DELETE", "/api/sessions/{id}")](
+        LibRequest(path_params={"id": "0" * 32})
+    ).status == 404
+    assert route_handlers[("PATCH", "/api/sessions/{id}")](
+        LibRequest(path_params={"id": "0" * 32}, body=b"{oops")
+    ).status == 400
+    session_id = body_json(route_handlers[("POST", "/api/sessions")](LibRequest()))["id"]
+    assert route_handlers[("PATCH", "/api/sessions/{id}")](
+        LibRequest(path_params={"id": session_id}, body=json.dumps({"nope": 1}).encode())
+    ).status == 400
+    assert route_handlers[("POST", "/api/sessions")](
+        LibRequest(body=json.dumps({"weird": 1}).encode())
+    ).status == 400

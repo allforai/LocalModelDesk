@@ -43,6 +43,16 @@ def _json_response(status: int, payload) -> Response:
     )
 
 
+def _json_body(request: LibRequest) -> dict:
+    try:
+        payload = json.loads(request.body)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError("request body must be valid JSON") from exc
+    if not isinstance(payload, dict):
+        raise ValidationError("request body must be an object")
+    return payload
+
+
 def _header(request: LibRequest, name: str) -> str | None:
     for key, value in request.headers.items():
         if key.lower() == name.lower():
@@ -68,6 +78,33 @@ def handle_list_history(service, request: LibRequest) -> Response:
     return _json_response(200, service.list_history(limit))
 
 
+def handle_list_sessions(service, request: LibRequest) -> Response:
+    return _json_response(200, service.list_chat_sessions())
+
+
+def handle_create_session(service, request: LibRequest) -> Response:
+    payload = _json_body(request) if request.body else {}
+    unknown = set(payload) - {"title", "model"}
+    if unknown:
+        raise ValidationError(f"unknown keys: {sorted(unknown)}")
+    return _json_response(
+        200, service.create_chat_session(payload.get("title"), payload.get("model"))
+    )
+
+
+def handle_update_session(service, request: LibRequest) -> Response:
+    return _json_response(
+        200,
+        service.update_chat_session(request.path_params["id"], _json_body(request)),
+    )
+
+
+def handle_delete_session(service, request: LibRequest) -> Response:
+    session_id = request.path_params["id"]
+    service.delete_chat_session(session_id)
+    return _json_response(200, {"deleted": session_id})
+
+
 def dispatch(service, handler, request: LibRequest) -> Response:
     """Map expected library errors; let unexpected failures reach the host."""
     try:
@@ -87,4 +124,8 @@ def routes(service) -> list[tuple[str, str, object]]:
         ("GET", "/api/outputs/{name}", bind(handle_serve_output)),
         ("GET", "/api/outputs", bind(handle_list_outputs)),
         ("GET", "/api/history", bind(handle_list_history)),
+        ("GET", "/api/sessions", bind(handle_list_sessions)),
+        ("POST", "/api/sessions", bind(handle_create_session)),
+        ("PATCH", "/api/sessions/{id}", bind(handle_update_session)),
+        ("DELETE", "/api/sessions/{id}", bind(handle_delete_session)),
     ]
