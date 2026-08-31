@@ -1,9 +1,61 @@
 """Facade tests for the heavy-work arbiter."""
 
 import threading
+from types import SimpleNamespace
 
 from desk.arbiter.core import Arbiter
 from desk.arbiter.reaper import ReapResult
+
+
+def test_can_start_heavy_is_read_only_and_uses_acquire_decision():
+    arbiter = Arbiter(llm_port=43123)
+    assert arbiter.can_start_heavy("video") == {
+        "ok": True,
+        "reason": None,
+        "memory_warning": None,
+    }
+
+    llm = arbiter.acquire_heavy("llm", "model-a")
+
+    assert arbiter.can_start_heavy("llm") == {
+        "ok": False,
+        "reason": {
+            "code": "llm_already_held",
+            "message": "llm 'model-a' already holds memory; release it first",
+        },
+        "memory_warning": None,
+    }
+    assert arbiter.current_holder()["kind"] == "llm"
+    assert arbiter.release_heavy(llm["token"]) == {"ok": True}
+
+
+def test_can_start_heavy_warns_for_oversized_model_without_refusing():
+    memory = SimpleNamespace(
+        snapshot=lambda: SimpleNamespace(available_bytes=52_000_000_000))
+    arbiter = Arbiter(llm_port=43123, memory=memory)
+
+    result = arbiter.can_start_heavy("llm", estimated_bytes=74_000_000_000)
+
+    assert result == {
+        "ok": True,
+        "reason": None,
+        "memory_warning": {
+            "code": "insufficient_memory",
+            "required_bytes": 74_000_000_000,
+            "available_bytes": 52_000_000_000,
+            "message": "model requires about 74.0 GB; 52.0 GB is currently available",
+        },
+    }
+
+
+def test_can_start_heavy_does_not_warn_when_model_exactly_fits_available_memory():
+    memory = SimpleNamespace(
+        snapshot=lambda: SimpleNamespace(available_bytes=52_000_000_000))
+    arbiter = Arbiter(llm_port=43123, memory=memory)
+
+    result = arbiter.can_start_heavy("llm", estimated_bytes=52_000_000_000)
+
+    assert result == {"ok": True, "reason": None, "memory_warning": None}
 
 
 def test_evict_llm_grants_media_invalidates_old_token_and_emits_states():

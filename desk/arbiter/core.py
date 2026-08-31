@@ -7,6 +7,7 @@ import time
 import uuid
 from collections.abc import Callable
 
+from .memory import MemoryReader
 from .reaper import ReapResult, reap_port
 from .state import Holder, PHASE_ACQUIRING, PHASE_HELD, plan_acquire
 
@@ -18,11 +19,13 @@ class Arbiter:
         self,
         llm_port: int,
         *,
+        memory: MemoryReader | None = None,
         reaper: Callable[[int], ReapResult] = reap_port,
         clock: Callable[[], float] = time.time,
         logger: logging.Logger | None = None,
     ):
         self.llm_port = llm_port
+        self._memory = memory or MemoryReader()
         self._reaper = reaper
         self._clock = clock
         self._logger = logger or logging.getLogger(__name__)
@@ -102,6 +105,31 @@ class Arbiter:
 
     def desk_state(self) -> dict:
         return self._state_for(self._read_holder())
+
+    def can_start_heavy(self, kind: str, estimated_bytes: int | None = None) -> dict:
+        """Read-only acquisition pre-check, with an optional memory warning."""
+        decision = plan_acquire(self._read_holder(), kind)
+        if decision.action == "refuse":
+            return {
+                "ok": False,
+                "reason": self._reason(decision.reason_code, decision.reason_message),
+                "memory_warning": None,
+            }
+
+        warning = None
+        if estimated_bytes is not None:
+            available_bytes = self._memory.snapshot().available_bytes
+            if estimated_bytes > available_bytes:
+                warning = {
+                    "code": "insufficient_memory",
+                    "required_bytes": estimated_bytes,
+                    "available_bytes": available_bytes,
+                    "message": (
+                        f"model requires about {estimated_bytes / 1_000_000_000:.1f} GB; "
+                        f"{available_bytes / 1_000_000_000:.1f} GB is currently available"
+                    ),
+                }
+        return {"ok": True, "reason": None, "memory_warning": warning}
 
     def acquire_heavy(self, kind: str, label: str) -> dict:
         """Acquire a token, evicting the active LLM first for media requests."""
