@@ -135,3 +135,83 @@ def test_lan_reachability_via_en0_ip(service_factory):
     status, _, payload = json_request(st["port"], "GET", "/v1/models", host=ip)
     assert status == 200
     assert payload["object"] == "list"
+
+
+def _free_port():
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def test_config_request_get_returns_config_and_status(service_factory):
+    holder, read = _config()
+    svc = service_factory(read)
+    svc.start_from_config()
+    code, payload = svc.handle_config_request("GET")
+    assert code == 200
+    assert payload["config"] == holder["gateway"]
+    assert payload["status"]["listening"] is True
+
+
+def test_config_request_post_rebinds_to_new_port(service_factory):
+    p1, p2 = _free_port(), _free_port()
+    holder, read = _config(port=p1)
+    svc = service_factory(read)
+    svc.start_from_config()
+    assert svc.status()["port"] == p1
+    holder["gateway"] = {"enabled": True, "host": "127.0.0.1", "port": p2}
+    code, payload = svc.handle_config_request("POST")
+    assert code == 200
+    assert payload["status"] == svc.status()
+    assert svc.status()["port"] == p2
+    status, _, _ = json_request(p2, "GET", "/v1/models")
+    assert status == 200
+    assert _connect_refused("127.0.0.1", p1)
+
+
+def test_config_request_post_disable_stops_listening(service_factory):
+    holder, read = _config()
+    svc = service_factory(read)
+    svc.start_from_config()
+    port = svc.status()["port"]
+    holder["gateway"] = {"enabled": False, "host": "127.0.0.1", "port": port}
+    code, payload = svc.handle_config_request("POST")
+    assert code == 200
+    assert payload["status"]["listening"] is False
+    assert _connect_refused("127.0.0.1", port)
+
+
+def test_config_request_post_same_config_is_noop(service_factory):
+    _, read = _config()
+    svc = service_factory(read)
+    svc.start_from_config()
+    port = svc.status()["port"]
+    code, payload = svc.handle_config_request("POST")
+    assert code == 200
+    assert payload["status"]["listening"] is True
+    status, _, _ = json_request(port, "GET", "/v1/models")
+    assert status == 200
+
+
+def test_config_request_post_retries_failed_bind(service_factory):
+    blocker = socket.socket()
+    blocker.bind(("127.0.0.1", 0))
+    blocker.listen(1)
+    occupied = blocker.getsockname()[1]
+    holder, read = _config(port=occupied)
+    svc = service_factory(read)
+    svc.start_from_config()
+    assert svc.status()["listening"] is False
+    blocker.close()
+    code, payload = svc.handle_config_request("POST")
+    assert code == 200
+    assert payload["status"]["listening"] is True
+    assert payload["status"]["last_error"] is None
+
+
+def test_config_request_rejects_other_methods(service_factory):
+    _, read = _config()
+    svc = service_factory(read)
+    code, payload = svc.handle_config_request("DELETE")
+    assert code == 405
+    assert payload["error"]["code"] == "method_not_allowed"

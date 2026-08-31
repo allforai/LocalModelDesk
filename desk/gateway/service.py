@@ -88,3 +88,17 @@ class GatewayService:
             "auth": "none",
             "last_error": self._last_error,
         }
+
+    def handle_config_request(self, method: str, body=None):
+        """Return the gateway configuration/status or apply persisted changes."""
+        if method == "GET":
+            return 200, {"config": self._gateway_config(), "status": self.status()}
+        if method == "POST":
+            return 200, {"config": self._gateway_config(), "status": self.apply_config()}
+        return 405, {
+            "error": {
+                "message": "GET or POST only",
+                "type": "invalid_request_error",
+                "code": "method_not_allowed",
+            }
+        }
