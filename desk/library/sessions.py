@@ -1,0 +1,79 @@
+"""Multi-session chat persistence: one JSON file per session."""
+
+import json
+import os
+import re
+import tempfile
+import threading
+import uuid
+from datetime import datetime
+from pathlib import Path
+
+from .errors import NotFoundError
+
+_ID_RE = re.compile(r"^[0-9a-f]{32}$")
+_TS_FMT = "%Y-%m-%dT%H:%M:%S"
+
+
+class SessionStore:
+    def __init__(self, sessions_dir: Path):
+        self._dir = sessions_dir
+        self._lock = threading.Lock()
+
+    def list(self) -> list[dict]:
+        if not self._dir.is_dir():
+            return []
+
+        sessions = []
+        for path in sorted(self._dir.glob("*.json")):
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+                if not isinstance(data, dict):
+                    raise ValueError("session file is not an object")
+            except ValueError:
+                sessions.append({"id": path.stem, "corrupt": True})
+                continue
+            sessions.append(data)
+        sessions.sort(key=lambda session: session.get("updated", ""), reverse=True)
+        return sessions
+
+    def create(self, title: str | None = None, model: str | None = None) -> dict:
+        now = datetime.now().strftime(_TS_FMT)
+        session = {
+            "id": uuid.uuid4().hex,
+            "title": title or "新会话",
+            "model": model,
+            "created": now,
+            "updated": now,
+            "messages": [],
+        }
+        with self._lock:
+            self._write(session)
+        return session
+
+    def delete(self, session_id: str) -> None:
+        path = self._path(session_id)
+        with self._lock:
+            if path is None or not path.is_file():
+                raise NotFoundError(f"session not found: {session_id}")
+            path.unlink()
+
+    def _path(self, session_id: str) -> Path | None:
+        if not isinstance(session_id, str) or not _ID_RE.fullmatch(session_id):
+            return None
+        return self._dir / f"{session_id}.json"
+
+    def _write(self, session: dict) -> None:
+        payload = json.dumps(session, ensure_ascii=False, indent=2)
+        self._dir.mkdir(parents=True, exist_ok=True)
+        fd, temporary_path = tempfile.mkstemp(dir=self._dir, prefix=".tmp-", suffix=".json")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                handle.write(payload)
+            os.replace(temporary_path, self._dir / f"{session['id']}.json")
+        except BaseException:
+            try:
+                os.unlink(temporary_path)
+            except OSError:
+                pass
+            raise
