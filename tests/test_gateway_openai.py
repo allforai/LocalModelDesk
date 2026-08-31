@@ -4,7 +4,9 @@ import json
 import pytest
 
 from desk.gateway import openai_dialect
-from desk.gateway.errors import REASON_INVALID_REQUEST, GatewayReject
+from desk.gateway.errors import REASON_HEADER, REASON_INVALID_REQUEST, GatewayReject
+from gateway_client import json_request, serve
+from gateway_fakes import IDLE_STATUS, FakeBackend
 
 LOADED = {
     "state": "loaded",
@@ -133,3 +135,52 @@ def test_stream_chunks_errors_are_not_done():
     assert midway[-1] == {"error": {"message": "mlx-lm died", "type": "api_error"}}
     assert "[DONE]" not in missing_finish
     assert missing_finish[-1]["error"]["type"] == "api_error"
+
+
+def test_http_models_empty_when_idle():
+    with serve(FakeBackend(llm=IDLE_STATUS)) as port:
+        status, _, payload = json_request(port, "GET", "/v1/models")
+    assert status == 200
+    assert payload == {"object": "list", "data": []}
+
+
+def test_http_models_lists_loaded_identifiers():
+    with serve(FakeBackend()) as port:
+        status, _, payload = json_request(port, "GET", "/v1/models")
+    assert status == 200
+    assert [model["id"] for model in payload["data"]] == ["qwen3-30b", "mlx-community/Qwen3-30B-A3B-8bit"]
+    for model in payload["data"]:
+        assert model["object"] == "model"
+        assert model["created"] == 1756600000
+        assert model["owned_by"] == "localmodeldesk"
+
+
+def test_http_unknown_path_404_openai_envelope():
+    with serve(FakeBackend()) as port:
+        status, headers, payload = json_request(port, "GET", "/no/such/path")
+    assert status == 404
+    assert payload["error"]["type"] == "invalid_request_error"
+    assert headers[REASON_HEADER.lower()] == "not_found"
+
+
+def test_http_unknown_path_under_messages_gets_anthropic_envelope():
+    with serve(FakeBackend()) as port:
+        status, _, payload = json_request(port, "GET", "/v1/messages/count_tokens")
+    assert status == 404
+    assert payload == {"type": "error", "error": {"type": "not_found_error", "message": "unknown path: /v1/messages/count_tokens"}}
+
+
+def test_http_method_not_allowed():
+    with serve(FakeBackend()) as port:
+        first, _, first_payload = json_request(port, "POST", "/v1/models", body={})
+        second, _, _ = json_request(port, "GET", "/v1/chat/completions")
+    assert (first, second) == (405, 405)
+    assert first_payload["error"]["code"] == "method_not_allowed"
+
+
+def test_http_oversized_body_400():
+    with serve(FakeBackend()) as port:
+        big = b'{"messages": "' + b"x" * (10 * 1024 * 1024) + b'"}'
+        status, _, payload = json_request(port, "POST", "/v1/chat/completions", body=big)
+    assert status == 400
+    assert payload["error"]["code"] == "invalid_request"
