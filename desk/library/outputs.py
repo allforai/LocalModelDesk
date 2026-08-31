@@ -2,7 +2,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
+from pathlib import Path
 import re
+from urllib.parse import unquote
+
+from .history import HistoryStore
 
 
 @dataclass(frozen=True)
@@ -15,6 +20,26 @@ class RangePlan:
 
 
 _RANGE = re.compile(r"bytes=(?:(\d+)-(\d*)|-(\d+))")
+
+
+class OutputsStore:
+    def __init__(self, outputs_root: Path, history: HistoryStore):
+        self._root = outputs_root
+        self._history = history
+
+    def resolve(self, name: str) -> Path | None:
+        """Return a real regular file within the outputs root, if safe."""
+        name = unquote(name or "")
+        if not name or "/" in name or "\\" in name or name.startswith("."):
+            return None
+
+        root = os.path.realpath(self._root)
+        candidate = os.path.realpath(os.path.join(root, name))
+        if not candidate.startswith(root + os.sep):
+            return None
+
+        path = Path(candidate)
+        return path if path.is_file() else None
 
 
 def parse_range(size: int, header: str | None) -> RangePlan:
