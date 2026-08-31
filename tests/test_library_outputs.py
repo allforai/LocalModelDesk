@@ -2,6 +2,8 @@
 
 import pytest
 
+from desk.library.history import HistoryStore
+from desk.library.outputs import OutputsStore
 from desk.library.outputs import parse_range
 
 
@@ -32,3 +34,37 @@ def test_parse_range_invalid_syntax_falls_back_to_full_file(header):
     plan = parse_range(10, header)
 
     assert (plan.status, plan.start, plan.length) == (200, 0, 10)
+
+
+def make_stores(tmp_path):
+    history = HistoryStore(tmp_path / "history.jsonl")
+    root = tmp_path / "outputs"
+    root.mkdir()
+    return OutputsStore(root, history), root
+
+
+def test_resolve_returns_existing_regular_file(tmp_path):
+    outputs, root = make_stores(tmp_path)
+    (root / "h3-a.mp4").write_bytes(b"x" * 8)
+
+    assert outputs.resolve("h3-a.mp4") == (root / "h3-a.mp4").resolve()
+    assert outputs.resolve("missing.mp4") is None
+
+
+def test_resolve_rejects_escapes(tmp_path):
+    outputs, root = make_stores(tmp_path)
+    secret = tmp_path / "secret.txt"
+    secret.write_text("s")
+    (root / "link.mp4").symlink_to(secret)
+
+    for name in (
+        "../secret.txt",
+        "/etc/passwd",
+        "..",
+        "a/b.mp4",
+        "a\\b.mp4",
+        "%2e%2e%2fsecret.txt",
+        "link.mp4",
+        "",
+    ):
+        assert outputs.resolve(name) is None, name
