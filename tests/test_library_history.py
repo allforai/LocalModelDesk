@@ -1,5 +1,7 @@
 """library.history — HistoryStore tests (R-library-03 / R-library-04)."""
 import json
+import subprocess
+import sys
 import threading
 from pathlib import Path
 
@@ -12,6 +14,16 @@ from desk.library import LibraryService
 
 def store(tmp_path: Path) -> HistoryStore:
     return HistoryStore(tmp_path / "history.jsonl")
+
+
+def test_history_module_imports_under_the_active_python():
+    """The class ``list`` method must not shadow the builtin in annotations."""
+    result = subprocess.run(
+        [sys.executable, "-c", "import desk.library.history"],
+        text=True,
+        capture_output=True,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 class FakeRoots:

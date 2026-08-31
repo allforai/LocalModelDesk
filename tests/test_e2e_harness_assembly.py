@@ -1,13 +1,22 @@
 """Assembly contract for the deterministic end-to-end harness."""
 
 import json
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 from desk.testing import TestHarness, launch_test_harness
 
 
 def _get(url: str):
     with urlopen(url, timeout=5) as response:
+        return response.status, json.loads(response.read())
+
+
+def _post(url: str, body: dict):
+    request = Request(
+        url, data=json.dumps(body).encode(), method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+    with urlopen(request, timeout=5) as response:
         return response.status, json.loads(response.read())
 
 
@@ -38,10 +47,23 @@ def test_launch_test_harness_serves_real_routes_on_ephemeral_ports(tmp_path):
         assert status == 200
         assert gateway["status"]["port"] == harness.gateway_port
 
+        status, disk = _get(harness.base_url + "/api/resources/disk")
+        assert status == 200
+        assert disk["free_bytes"] > 0
+
+        legacy = tmp_path / "legacy"
+        (legacy / "llms").mkdir(parents=True)
+        status, adopted = _post(harness.base_url + "/api/adopt", {
+            "legacy_root": str(legacy), "mode": "point",
+        })
+        assert status == 200
+        assert adopted["models_root"] == str(legacy)
+
         prefixes = [path for _method, path in harness.routes]
         for required in ("/api/config", "/api/llm/", "/api/media/", "/api/resources/",
                          "/api/state", "/api/memory", "/api/outputs", "/api/history",
-                         "/api/sessions", "/api/gateway/config"):
+                         "/api/sessions", "/api/gateway/config", "/api/adopt",
+                         "/api/resources/disk"):
             assert any(path.startswith(required) or required.startswith(path) for path in prefixes)
 
 
