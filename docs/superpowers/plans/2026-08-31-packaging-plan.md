@@ -10,7 +10,7 @@
 
 - T-packaging-12/13 的精确 acceptance 由 runner 在 trusted host 的候选接纳阶段执行，以访问锁定 cache 与 Developer ID keychain；失败候选不发布。
 - T-packaging-12 的 pytest 必须通过 `"$MEGASTORM_TEST_PYTHON"` 选择锁定 CPython 3.13，不能依赖宿主 `/bin/sh` 的 `python3` 解析。
-- 复制锁定 CPython 后必须删除其 `__pycache__`/`.pyc`，将 `libpython3.13.dylib` install-id 改为 bundle 相对值，并净化 `_sysconfigdata` 与依赖源码注释中的构建机绝对串；之后再签名。这些位置均由 V3 精确证据定位。
+- 复制锁定 CPython 后必须删除其 `__pycache__`/`.pyc`，将 `libpython3.13.dylib` install-id 改为 bundle 相对值，并净化 `_sysconfigdata` 与依赖源码注释中的构建机绝对串；之后再签名。源前缀必须由 `SRC_PY` 推导，不能依赖 runner scratch `HOME`；文本枚举必须兼容 macOS 工具，不能把不支持的 `grep -Z` 错误吞掉。这些位置均由 V3 精确证据定位。
 - 绝不触碰真实权重（`/Users/aa/LocalModelDesk/llms`、`minimax-h3`、`minimax-music3`）与真实 `outputs/`；
   一切破坏性验收只对 `tmp_path` 假目录执行。
 - 任何 acceptance_cmd 不写 `/Applications`、`~/Applications`、`~/Library/LaunchAgents`。
@@ -1194,8 +1194,8 @@ macOS 菜单栏 App：本地聊天、文生视频、文生歌曲收在一张台�
 
 ### T-packaging-12 真实全量构建（design §5.2；implements `api:buildAppBundle`）
 
-- 无新代码；acceptance 即完整机器证明：
-  `python3 -m pytest tests/test_packaging.py && scripts/build-app.sh --output dist && scripts/verify-app.sh dist/LocalModelDesk.app`。构建器优先复用 `MEGASTORM_EMBEDDED_PYTHON` 指向的锁定 standalone CPython 根目录；未提供时才由 `uv` 安装。`MEGASTORM_OFFLINE_CODESIGN=1` 时仍使用 Developer ID 身份，但明确关闭在线 timestamp；worker 不因此获得公网权限，真实 Gatekeeper/安装由 T-packaging-13 reality gate 收口。
+- 修复构建时 relocation/sanitization 后，以完整机器证明收口：
+  `"$MEGASTORM_TEST_PYTHON" -m pytest tests/test_packaging.py && scripts/build-app.sh --output dist && scripts/verify-app.sh dist/LocalModelDesk.app`。构建器优先复用 `MEGASTORM_EMBEDDED_PYTHON` 指向的锁定 standalone CPython 根目录；未提供时才由 `uv` 安装。复制后从 `SRC_PY` 推导并删除真实 source prefix，使用 macOS 可用的 portable 文本遍历净化 `/opt/homebrew`，不得用 runner scratch `HOME` 猜源路径，也不得以 `grep -Z ... || true` 吞掉未执行的净化。`MEGASTORM_OFFLINE_CODESIGN=1` 时仍使用 Developer ID 身份，但明确关闭在线 timestamp；worker 不因此获得公网权限，真实 Gatekeeper/安装由 T-packaging-13 reality gate 收口。
   Developer ID 正式签名（本机证书实测在）、`--timestamp` 走网络、uv 拉 PBS CPython 与三套 PyPI 依赖
   （环境实测网络可用；uv 有缓存，二次构建不重复下载）。
   V1–V7 全绿 = R-packaging-01/02/03/04/05 完成；V6 用内嵌解释器真实导入
