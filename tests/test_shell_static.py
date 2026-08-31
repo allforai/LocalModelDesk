@@ -106,3 +106,22 @@ def test_status_poller_interval():
     text = _read("StatusPoller.swift")
     assert "3.0" in text
     assert "consecutiveFailures" in text
+
+
+# ---- T-08 api:chooseModelsDirectory + FirstRunFlow ----
+def test_chooser_panel_configuration():
+    text = _read("ModelsDirectoryChooser.swift")
+    assert "NSOpenPanel" in text
+    assert "canChooseDirectories = true" in text
+    assert "canChooseFiles = false" in text
+    assert "canCreateDirectories = true" in text
+
+
+def test_first_run_three_branches():
+    text = _read("FirstRunFlow.swift")
+    assert "使用默认目录" in text
+    assert "选择其他目录…" in text
+    assert "收编既有目录树…" in text
+    assert "point" in text and "move" in text
+    assert "completeFirstRun" in text and "adoptLegacyModels" in text
+    assert "重选" in text
