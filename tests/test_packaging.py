@@ -79,6 +79,37 @@ def test_requirements_locks_are_pinned():
             assert banned not in text, f"{lock} contains {banned!r}"
 
 
+def test_build_verify_does_not_write_bytecode_after_signing():
+    build = (REPO / "scripts" / "build-app.sh").read_text()
+    verify = 'PYTHONDONTWRITEBYTECODE=1 "$REPO/scripts/verify-app.sh"'
+    assert verify in build
+
+
+def test_build_relocates_and_sanitizes_embedded_cpython_before_signing():
+    build = (REPO / "scripts" / "build-app.sh").read_text()
+    sign = (REPO / "scripts" / "sign-app.sh").read_text()
+    dependencies_at = build.index('echo "==> [4/9] Install dependency libraries"')
+    sanitize_at = build.index("sanitize_host_paths")
+    sign_at = build.index('echo "==> [8/9] Sign"')
+
+    assert "MEGASTORM_EMBEDDED_PYTHON" in build
+    assert "-name '*.pyc' -delete" in build
+    assert "-name __pycache__" in build
+    assert 'install_name_tool -id "@rpath/libpython3.13.dylib"' in build
+    assert '"$SRC_PY" "$REPO" /opt/homebrew' in build
+    assert "grep -r -I -l --null -F --" in build
+    assert "grep -Z" not in build
+    assert dependencies_at < sanitize_at < sign_at
+    assert "MEGASTORM_OFFLINE_CODESIGN" in sign
+    assert "--timestamp=none" in sign
+
+
+def test_build_sanitizer_uses_single_perl_quote_meta_escapes():
+    build = (REPO / "scripts" / "build-app.sh").read_text()
+    assert r"perl -pi -e 's/\Q$ENV{FORBIDDEN}\E//g'" in build
+    assert r"perl -pi -e 's/\\Q$ENV{FORBIDDEN}\\E//g'" not in build
+
+
 def test_sign_adhoc_fixture_verifies(tmp_path):
     app = make_fake_bundle(tmp_path)
     result = run(["codesign", "--verify", "--deep", "--strict", app])

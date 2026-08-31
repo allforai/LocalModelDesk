@@ -45,9 +45,17 @@ echo "==> [2/9] Copy desk package"
 rsync -a --exclude '__pycache__' --exclude '.pytest_cache' "$REPO/desk/" "$RES/desk/"
 
 echo "==> [3/9] Embed CPython $PYVER"
-PY_DIR="$STAGING/uv-python"
-UV_PYTHON_INSTALL_DIR="$PY_DIR" uv python install "$PYVER"
-SRC_PY="$(find "$PY_DIR" -maxdepth 1 -type d -name 'cpython-*' | head -n1)"
+SRC_PY="${MEGASTORM_EMBEDDED_PYTHON:-}"
+if [[ -n "$SRC_PY" ]]; then
+  if [[ ! -x "$SRC_PY/bin/python3.13" ]]; then
+    echo "error: MEGASTORM_EMBEDDED_PYTHON is not a CPython root: $SRC_PY" >&2
+    exit 1
+  fi
+else
+  PY_DIR="$STAGING/uv-python"
+  UV_PYTHON_INSTALL_DIR="$PY_DIR" uv python install "$PYVER"
+  SRC_PY="$(find "$PY_DIR" -maxdepth 1 -type d -name 'cpython-*' | head -n1)"
+fi
 if [[ -z "$SRC_PY" ]]; then
   echo "error: uv did not produce a CPython directory ($PYVER)" >&2
   exit 1
@@ -58,6 +66,17 @@ if [[ ! -x "$RES/python/bin/python3.13" ]]; then
   exit 1
 fi
 
+# The cached standalone runtime is built elsewhere. Remove bytecode that can
+# retain source paths and make libpython's install name bundle-relative.
+find "$RES/python" -type d -name __pycache__ -prune -exec rm -rf {} +
+find "$RES/python" -type f -name '*.pyc' -delete
+LIBPYTHON="$RES/python/lib/libpython3.13.dylib"
+if [[ ! -f "$LIBPYTHON" ]]; then
+  echo "error: missing embedded libpython: $LIBPYTHON" >&2
+  exit 1
+fi
+install_name_tool -id "@rpath/libpython3.13.dylib" "$LIBPYTHON"
+
 echo "==> [4/9] Install dependency libraries"
 mkdir -p "$RES/requirements"
 for name in desk music h3; do
@@ -67,6 +86,18 @@ for name in desk music h3; do
   find "$RES/pylibs/$name" -type d -name __pycache__ -prune -exec rm -rf {} +
   cp "$REPO/packaging/requirements-$name.txt" "$RES/requirements/"
 done
+
+# Generated runtime and dependency metadata can retain source or build-host
+# paths. Rewrite text files only, before any nested Mach-O files are signed.
+sanitize_host_paths() {
+  local forbidden file
+  for forbidden in "$SRC_PY" "$REPO" /opt/homebrew "$HOME/.local/share/uv" "$HOME/.local/bin"; do
+    while IFS= read -r -d '' file; do
+      FORBIDDEN="$forbidden" perl -pi -e 's/\Q$ENV{FORBIDDEN}\E//g' "$file"
+    done < <(grep -r -I -l --null -F -- "$forbidden" "$RES/python" "$RES/pylibs" 2>/dev/null || true)
+  done
+}
+sanitize_host_paths
 
 echo "==> [5/9] Render Info.plist"
 sed "s/@VERSION@/$VERSION/g" "$REPO/packaging/Info.plist.template" > "$APP/Contents/Info.plist"
@@ -94,7 +125,7 @@ if [[ -n "$IDENTITY" ]]; then SIGN+=(--identity "$IDENTITY"); fi
 "${SIGN[@]}"
 
 echo "==> [9/9] Verify"
-"$REPO/scripts/verify-app.sh" "$APP" --source-root "$REPO"
+PYTHONDONTWRITEBYTECODE=1 "$REPO/scripts/verify-app.sh" "$APP" --source-root "$REPO"
 
 # Publish only after all nine steps succeed.  The replacement is a short rename sequence.
 rm -rf "$OUTPUT/LocalModelDesk.app.old"
