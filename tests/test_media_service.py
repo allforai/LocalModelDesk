@@ -200,3 +200,74 @@ def test_history_failure_does_not_change_terminal_status_or_leak_permit(tmp_path
     assert snap["error"]["code"] == "exit_nonzero"
     assert service.job_status()["status"] == "error"
     assert deps.arbiter.released == ["permit-1"]
+
+
+class TestCancel:
+    VALID = dict(prompt="p", width=512, height=288, frames=73, steps=10)
+
+    def _start_blocking(self, tmp_path, **executor_kwargs):
+        class RecordingExecutor(FakeExecutor):
+            def __init__(self):
+                super().__init__("block", **executor_kwargs)
+                self.handles = []
+                self.signals = []
+
+            def spawn(self, *args, **kwargs):
+                handle = super().spawn(*args, **kwargs)
+                terminate, kill = handle.terminate, handle.kill
+
+                def record_terminate():
+                    self.signals.append("terminate")
+                    terminate()
+
+                def record_kill():
+                    self.signals.append("kill")
+                    kill()
+
+                handle.terminate, handle.kill = record_terminate, record_kill
+                self.handles.append(handle)
+                return handle
+
+        executor = RecordingExecutor()
+        service, deps = make_service(tmp_path, executor=executor)
+        service._term_grace_s = 0.01
+        done = threading.Event()
+        service.on_job_finished(lambda _: done.set())
+        service.start_video_job(**self.VALID)
+        return service, deps, done
+
+    def test_cancel_running_job_exit_zero_stays_cancelled(self, tmp_path):
+        service, deps, done = self._start_blocking(tmp_path)
+
+        service.cancel_job()
+
+        assert done.wait(5.0)
+        assert deps.executor.handles[0].terminated
+        snap = service.job_status()
+        assert snap["status"] == "cancelled"
+        assert snap["error"] is None
+        assert deps.arbiter.released == ["permit-1"]
+        assert deps.history.entries[0]["status"] == "cancelled"
+
+    def test_cancel_escalates_to_kill_after_ignored_terminate(self, tmp_path):
+        service, deps, done = self._start_blocking(tmp_path, ignore_term=True)
+
+        service.cancel_job()
+
+        assert done.wait(5.0)
+        handle = deps.executor.handles[0]
+        assert handle.terminated and handle.killed
+        assert deps.executor.signals == ["terminate", "kill"]
+        assert service.job_status()["status"] == "cancelled"
+
+    @pytest.mark.parametrize("finish_first", [False, True])
+    def test_cancel_without_running_job_is_409(self, tmp_path, finish_first):
+        service, _ = make_service(tmp_path)
+        if finish_first:
+            finished_snapshot(service, lambda: service.start_video_job(**self.VALID))
+
+        with pytest.raises(MediaError) as err:
+            service.cancel_job()
+
+        assert err.value.code == "no_running_job"
+        assert err.value.http_status == 409
