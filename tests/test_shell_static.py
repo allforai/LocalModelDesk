@@ -61,3 +61,32 @@ def test_swiftc_parse():
         text=True,
     )
     assert result.returncode == 0, result.stderr
+
+
+# ---- T-06 ui:mainWindow ----
+def _read(name):
+    return (MACOS / name).read_text(encoding="utf-8")
+
+
+def test_main_window_close_hides_not_quits():
+    text = _read("MainWindowController.swift")
+    assert "windowShouldClose" in text
+    assert "orderOut" in text
+    assert "return false" in text
+
+
+def test_main_window_error_page_mechanism():
+    text = _read("MainWindowController.swift")
+    assert "loadHTMLString" in text
+    assert "shellRetry" in text
+    assert "didFailProvisionalNavigation" in text
+    assert "服务未运行" in text
+
+
+def test_main_window_registers_retry_bridge_before_webview_creation():
+    text = _read("MainWindowController.swift")
+    bridge = 'config.userContentController.add(self, name: "shellRetry")'
+    assert bridge in text
+    assert text.index(bridge) < text.index("WKWebView(frame:"), (
+        "shellRetry must be registered before WKWebView initializes its configuration"
+    )
