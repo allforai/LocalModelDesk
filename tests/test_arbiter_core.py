@@ -7,6 +7,48 @@ from desk.arbiter.core import Arbiter
 from desk.arbiter.reaper import ReapResult
 
 
+def test_memory_snapshot_is_reader_dict():
+    snapshot = SimpleNamespace(
+        to_dict=lambda: {
+            "total_bytes": 128_000_000_000,
+            "used_bytes": 76_000_000_000,
+            "available_bytes": 52_000_000_000,
+            "pressure": "normal",
+            "page_size": 16384,
+            "captured_at": 1.0,
+        }
+    )
+    arbiter = Arbiter(llm_port=43123, memory=SimpleNamespace(snapshot=lambda: snapshot))
+
+    assert arbiter.memory_snapshot() == snapshot.to_dict()
+
+
+def test_reap_llm_port_uses_argument_port_not_llm_port():
+    calls = []
+
+    def reaper(port):
+        calls.append(port)
+        return ReapResult(ok=True, port=port, killed_pids=[])
+
+    arbiter = Arbiter(llm_port=43123, reaper=reaper)
+
+    assert arbiter.reap_llm_port(61234) == {
+        "ok": True, "port": 61234, "killed_pids": [], "error": None
+    }
+    assert calls == [61234]
+
+
+def test_package_exports():
+    import desk.arbiter as package
+
+    for name in (
+        "Arbiter", "MemoryReader", "MemorySnapshot", "MemoryProbeError",
+        "parse_vm_stat", "ReapResult", "reap_port", "Decision", "Holder",
+        "plan_acquire", "KINDS", "MEDIA_KINDS", "PHASE_ACQUIRING", "PHASE_HELD",
+    ):
+        assert hasattr(package, name), name
+
+
 def test_can_start_heavy_is_read_only_and_uses_acquire_decision():
     arbiter = Arbiter(llm_port=43123)
     assert arbiter.can_start_heavy("video") == {
