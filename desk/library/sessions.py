@@ -9,10 +9,11 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-from .errors import NotFoundError
+from .errors import NotFoundError, ValidationError
 
 _ID_RE = re.compile(r"^[0-9a-f]{32}$")
 _TS_FMT = "%Y-%m-%dT%H:%M:%S"
+_PATCH_KEYS = frozenset({"title", "model", "messages"})
 
 
 class SessionStore:
@@ -58,10 +59,32 @@ class SessionStore:
                 raise NotFoundError(f"session not found: {session_id}")
             path.unlink()
 
+    def update(self, session_id: str, patch: dict) -> dict:
+        if not isinstance(patch, dict):
+            raise ValidationError("patch must be an object")
+        unknown = set(patch) - _PATCH_KEYS
+        if unknown:
+            raise ValidationError(f"unknown patch keys: {sorted(unknown)}")
+        if "messages" in patch and not isinstance(patch["messages"], list):
+            raise ValidationError("messages must be a list")
+
+        with self._lock:
+            session = self._load(session_id)
+            session.update(patch)
+            session["updated"] = datetime.now().strftime(_TS_FMT)
+            self._write(session)
+        return session
+
     def _path(self, session_id: str) -> Path | None:
         if not isinstance(session_id, str) or not _ID_RE.fullmatch(session_id):
             return None
         return self._dir / f"{session_id}.json"
+
+    def _load(self, session_id: str) -> dict:
+        path = self._path(session_id)
+        if path is None or not path.is_file():
+            raise NotFoundError(f"session not found: {session_id}")
+        return json.loads(path.read_text(encoding="utf-8"))
 
     def _write(self, session: dict) -> None:
         payload = json.dumps(session, ensure_ascii=False, indent=2)
