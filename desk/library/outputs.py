@@ -3,12 +3,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+import json
 import os
 from pathlib import Path
 import re
 from urllib.parse import unquote
 
 from .history import HistoryStore
+from .http import FileSlice, Response
 
 
 @dataclass(frozen=True)
@@ -22,7 +24,13 @@ class RangePlan:
 
 _RANGE = re.compile(r"bytes=(?:(\d+)-(\d*)|-(\d+))")
 _TS_FMT = "%Y-%m-%dT%H:%M:%S"
-_MEDIA_SUFFIXES = frozenset({".mp4", ".wav", ".m4a", ".webm"})
+_CONTENT_TYPES = {
+    ".mp4": "video/mp4",
+    ".wav": "audio/wav",
+    ".m4a": "audio/mp4",
+    ".webm": "video/webm",
+}
+_MEDIA_SUFFIXES = frozenset(_CONTENT_TYPES)
 
 
 def _infer_kind(name: str) -> str:
@@ -88,6 +96,32 @@ class OutputsStore:
                 })
         items.sort(key=lambda item: item["ts"], reverse=True)
         return items
+
+    def serve(self, name: str, range_header: str | None = None) -> Response:
+        """Describe a safe complete or ranged output-file response."""
+        path = self.resolve(name)
+        if path is None:
+            return Response(
+                404,
+                {"Content-Type": "application/json"},
+                json.dumps({"error": "output not found"}).encode("utf-8"),
+            )
+
+        size = path.stat().st_size
+        plan = parse_range(size, range_header)
+        headers = {
+            "Accept-Ranges": "bytes",
+            "Content-Type": _CONTENT_TYPES[path.suffix.lower()],
+        }
+        if plan.status == 416:
+            headers["Content-Range"] = f"bytes */{size}"
+            return Response(416, headers, b"")
+
+        headers["Content-Length"] = str(plan.length)
+        if plan.status == 206:
+            end = plan.start + plan.length - 1
+            headers["Content-Range"] = f"bytes {plan.start}-{end}/{size}"
+        return Response(plan.status, headers, FileSlice(path, plan.start, plan.length))
 
 
 def parse_range(size: int, header: str | None) -> RangePlan:

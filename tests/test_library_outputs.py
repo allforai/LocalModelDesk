@@ -105,3 +105,46 @@ def test_list_missing_root_returns_empty(tmp_path):
     history = HistoryStore(tmp_path / "history.jsonl")
 
     assert OutputsStore(tmp_path / "nonexistent", history).list() == []
+
+
+def test_serve_full_and_range_bytes(tmp_path):
+    outputs, root, _ = make_stores(tmp_path)
+    payload = bytes(range(256)) * 8
+    (root / "h3-a.mp4").write_bytes(payload)
+
+    full = outputs.serve("h3-a.mp4", None)
+    assert full.status == 200
+    assert full.headers["Accept-Ranges"] == "bytes"
+    assert full.headers["Content-Type"] == "video/mp4"
+    assert full.headers["Content-Length"] == "2048"
+    assert full.body.read() == payload
+
+    part = outputs.serve("h3-a.mp4", "bytes=0-1023")
+    assert part.status == 206
+    assert part.headers["Content-Range"] == "bytes 0-1023/2048"
+    assert part.headers["Content-Length"] == "1024"
+    got = part.body.read()
+    assert len(got) == 1024 and got == payload[:1024]
+
+    tail = outputs.serve("h3-a.mp4", "bytes=-100")
+    assert tail.status == 206
+    assert tail.headers["Content-Range"] == "bytes 1948-2047/2048"
+    assert tail.body.read() == payload[-100:]
+
+
+def test_serve_content_types(tmp_path):
+    outputs, root, _ = make_stores(tmp_path)
+    for name, ctype in [("a.wav", "audio/wav"), ("a.m4a", "audio/mp4"),
+                        ("a.webm", "video/webm")]:
+        (root / name).write_bytes(b"x")
+        assert outputs.serve(name, None).headers["Content-Type"] == ctype
+
+
+def test_serve_unsatisfiable_and_missing(tmp_path):
+    outputs, root, _ = make_stores(tmp_path)
+    (root / "h3-a.mp4").write_bytes(b"x" * 10)
+    response = outputs.serve("h3-a.mp4", "bytes=10-")
+    assert response.status == 416
+    assert response.headers["Content-Range"] == "bytes */10"
+    assert outputs.serve("../h3-a.mp4", None).status == 404
+    assert outputs.serve("missing.mp4", None).status == 404
