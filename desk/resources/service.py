@@ -1,6 +1,7 @@
 """Facade assembling catalog, manifests, verification, disk usage, and downloads."""
 from __future__ import annotations
 
+import shutil
 import subprocess
 import threading
 import time
@@ -11,7 +12,8 @@ from . import catalog
 from .catalog import CATALOG, ModelEntry
 from .disk import DiskUsage, dir_bytes, disk_usage
 from .downloader import DownloadProgress, Downloader
-from .errors import DownloadBusyError, HfCliMissingError, ManifestUnavailableError, MediaBusyError
+from .errors import (ConfirmRequiredError, DownloadBusyError, HfCliMissingError,
+                     ManifestUnavailableError, MediaBusyError, PathEscapeError)
 from .events import ResourceEvents
 from .manifest import ManifestStore, default_fetcher
 from .verify import ModelStatus, unknown_status, verify_tree
@@ -84,6 +86,18 @@ class _InjectableDownloader(Downloader):
             self._sleep(self._sample_interval)
 
 
+def _resolve_delete_target(models_root: Path, entry: ModelEntry) -> Path:
+    """Return a catalog target only when it resolves inside the models root."""
+    root = Path(models_root).resolve()
+    target = (Path(models_root) / entry.relpath).resolve()
+    if target == root or not target.is_relative_to(root):
+        raise PathEscapeError(
+            f"refusing to delete: {entry.relpath!r} resolves outside the models root",
+            detail={"target": str(target), "models_root": str(root)},
+        )
+    return target
+
+
 class ResourcesService:
     """Resources API facade whose path roots are resolved for every operation."""
 
@@ -136,3 +150,22 @@ class ResourcesService:
 
     def download_progress(self) -> DownloadProgress:
         return self._downloader.progress()
+
+    def delete_model(self, key: str, confirm: str | None = None) -> dict:
+        model = catalog.entry(key)
+        if confirm != model.key:
+            raise ConfirmRequiredError(
+                f"deleteModel refused: pass confirm={model.key!r} to delete this model")
+        target = _resolve_delete_target(Path(self._resolve_paths().models_root), model)
+        with self._downloader._lock:
+            active = self._downloader._handle is not None
+            downloading = self._downloader._model
+            if active and downloading is not None and downloading.key == model.key:
+                raise DownloadBusyError(
+                    f"{model.key!r} is currently downloading; wait for it to exit first")
+            freed = dir_bytes(target)
+            if target.is_dir():
+                shutil.rmtree(target)
+            elif target.exists():
+                target.unlink()
+        return {"key": model.key, "freed_bytes": freed}
