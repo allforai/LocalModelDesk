@@ -11,6 +11,7 @@ struct ShellHarness {
     }
     switch command {
     case "map-status": runMapStatus()
+    case "spawn-probe": runSpawn(Array(args.dropFirst()))
     case "listeners":
       guard args.count >= 2, let port = Int(args[1]) else { exit(64) }
       for pid in PortGuard.listeners(onPort: port) { print(pid) }
@@ -61,5 +62,61 @@ struct ShellHarness {
       lastPollError: fixture["poll_error"] as? String
     )
     print(menuTitle(for: status))
+  }
+
+  static func parseSpec(_ args: [String]) -> ServerLaunchSpec {
+    var port: Int?
+    var launcher: String?
+    var launcherArgs: [String] = []
+    var logPath = NSTemporaryDirectory() + "shellharness-server.log"
+    var spawnTimeout: TimeInterval = 15
+    var index = 0
+
+    while index < args.count {
+      guard index + 1 < args.count else { exit(64) }
+      let value = args[index + 1]
+      switch args[index] {
+      case "--port": port = Int(value)
+      case "--launcher": launcher = value
+      case "--launcher-arg": launcherArgs.append(value)
+      case "--log": logPath = value
+      case "--spawn-timeout": spawnTimeout = TimeInterval(value) ?? 15
+      default:
+        FileHandle.standardError.write(Data("unknown flag \(args[index])\n".utf8))
+        exit(64)
+      }
+      index += 2
+    }
+
+    guard let port else {
+      FileHandle.standardError.write(Data("--port is required\n".utf8))
+      exit(64)
+    }
+    let launch = launcher.map {
+      ServerLaunchCommand(executableURL: URL(fileURLWithPath: $0), arguments: launcherArgs,
+                          environment: [:], familyPathPrefix: nil)
+    }
+    return ServerLaunchSpec(launch: launch, port: port, llmPort: nil,
+                            healthPath: "/api/state",
+                            logFileURL: URL(fileURLWithPath: logPath),
+                            spawnTimeout: spawnTimeout)
+  }
+
+  static func runSpawn(_ args: [String]) {
+    let controller = ServerController(spec: parseSpec(args))
+    switch controller.spawnEmbeddedServer() {
+    case .success(.runningAttached): print("ATTACHED")
+    case .success(.runningOwned(let pid)): print("RUNNING \(pid)")
+    case .success(let state):
+      print("UNEXPECTED \(String(describing: state))")
+      exit(70)
+    case .failure(.noEmbeddedRuntime): print("NO_RUNTIME")
+    case .failure(.portConflict(let pids)):
+      print("PORT_CONFLICT \(pids.map(String.init).joined(separator: ","))")
+    case .failure(.healthTimeout): print("HEALTH_TIMEOUT")
+    case .failure(.spawnFailed(let reason)): print("SPAWN_FAILED \(reason)")
+    }
+    fflush(stdout)
+    if case .failed = controller.state { exit(1) }
   }
 }
