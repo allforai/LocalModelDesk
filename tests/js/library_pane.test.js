@@ -1,0 +1,91 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createLibraryPane } from "../../desk/static/js/panes/library.js";
+
+class FakeElement {
+  constructor(tagName = "div") {
+    this.tagName = tagName;
+    this.children = [];
+    this.listeners = {};
+    this.textContent = "";
+  }
+
+  append(...children) { this.children.push(...children); }
+  replaceChildren(...children) { this.children = children; }
+  addEventListener(type, listener) { this.listeners[type] = listener; }
+  click() { this.listeners.click?.({ stopPropagation() {} }); }
+}
+
+function find(node, predicate) {
+  if (predicate(node)) return node;
+  for (const child of node.children) {
+    const found = find(child, predicate);
+    if (found) return found;
+  }
+  return null;
+}
+
+test("library 面板合并倒序渲染，点击成品就地播放并回填历史参数", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async (path) => ({
+    ok: true,
+    json: async () => path === "/api/outputs"
+      ? [
+          { name: "video old.mp4", kind: "video", ts: "2026-08-30T10:00:00Z" },
+          { name: "orphan.wav", kind: "music", orphan: true, bytes: 1024, ts: "2026-08-31T12:00:00Z" },
+        ]
+      : [{
+          kind: "video", status: "done", ts: "2026-08-31T11:00:00Z", output: "video old.mp4",
+          params: { prompt: "海边", width: 768, height: 448, frames: 49, steps: 16 },
+        }],
+  });
+
+  const doc = { createElement: (tag) => new FakeElement(tag) };
+  const elements = Object.fromEntries(["refresh", "player", "list", "error"]
+    .map((name) => [name, new FakeElement()]));
+  const root = new FakeElement();
+  root.ownerDocument = doc;
+  root.querySelector = (selector) => elements[selector.match(/data-lib-(.+)\]/)[1]];
+  const fills = [];
+  const pane = createLibraryPane(root, { applyFill: (plan) => fills.push(plan) });
+
+  await pane.refresh();
+
+  assert.equal(elements.list.children.length, 2);
+  assert.equal(elements.list.children[0].children[0].children[0].textContent, "orphan.wav");
+  assert.equal(elements.list.children[1].children[0].children[0].textContent, "海边");
+
+  elements.list.children[1].click();
+  assert.equal(elements.player.children[0].tagName, "video");
+  assert.equal(elements.player.children[0].src, "/api/outputs/video%20old.mp4");
+
+  find(elements.list.children[1], (el) => el.tagName === "button" && el.textContent === "回填参数").click();
+  assert.deepEqual(fills, [{ pane: "video", fields: { prompt: "海边", width: 768, height: 448, frames: 49, steps: 16 } }]);
+});
+
+test("library 面板保留未返回匹配历史的成品", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async (path) => ({
+    ok: true,
+    json: async () => path === "/api/outputs"
+      ? [{ name: "unmatched.mp3", kind: "music", ts: "2026-08-31T13:00:00Z" }]
+      : [],
+  });
+
+  const doc = { createElement: (tag) => new FakeElement(tag) };
+  const elements = Object.fromEntries(["refresh", "player", "list", "error"]
+    .map((name) => [name, new FakeElement()]));
+  const root = new FakeElement();
+  root.ownerDocument = doc;
+  root.querySelector = (selector) => elements[selector.match(/data-lib-(.+)\]/)[1]];
+  const pane = createLibraryPane(root, { applyFill() {} });
+
+  await pane.refresh();
+
+  assert.equal(elements.list.children.length, 1);
+  assert.equal(elements.list.children[0].children[0].children[0].textContent, "unmatched.mp3");
+  elements.list.children[0].click();
+  assert.equal(elements.player.children[0].tagName, "audio");
+});
