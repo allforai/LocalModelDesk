@@ -8,6 +8,7 @@
 
 ## 约束回放（红线）
 
+- T-packaging-12/13 的精确 acceptance 由 runner 在 trusted host 的候选接纳阶段执行，以访问锁定 cache 与 Developer ID keychain；失败候选不发布。
 - 绝不触碰真实权重（`/Users/aa/LocalModelDesk/llms`、`minimax-h3`、`minimax-music3`）与真实 `outputs/`；
   一切破坏性验收只对 `tmp_path` 假目录执行。
 - 任何 acceptance_cmd 不写 `/Applications`、`~/Applications`、`~/Library/LaunchAgents`。
