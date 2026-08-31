@@ -3,7 +3,7 @@ const ROUTES = {
   config: "/api/config", firstRun: "/api/first-run", adopt: "/api/adopt",
   catalog: "/api/resources/catalog", status: "/api/resources/status",
   download: "/api/resources/download", cancelDownload: "/api/resources/download/cancel",
-  deleteModel: "/api/resources/delete", disk: "/api/resources/disk", memory: "/api/memory",
+  deleteModel: "/api/resources/delete", disk: "/api/resources/disk", memory: "/api/memory", deskState: "/api/state",
   llmLoad: "/api/llm/load", llmUnload: "/api/llm/unload", llmStatus: "/api/llm/status",
   chatStream: "/api/llm/chat/stream", video: "/api/media/video", music: "/api/media/music",
   cancelJob: "/api/media/cancel", job: "/api/media/job", outputs: "/api/outputs",
@@ -58,12 +58,19 @@ export const adoptLegacyModels = (legacyRoot, mode) =>
   json(ROUTES.adopt, "POST", { legacy_root: legacyRoot, mode });
 
 export const listCatalog = () => request(ROUTES.catalog);
-export const verifyAllModels = (refresh = false) => request(`${ROUTES.status}?refresh=${refresh ? 1 : 0}`);
+export const verifyAllModels = async (refresh = false) => {
+  const [status, progress] = await Promise.all([
+    request(`${ROUTES.status}?refresh=${refresh ? 1 : 0}`),
+    request(ROUTES.download).catch(() => null),
+  ]);
+  return { ...status, download: progress?.state ? progress : status.download };
+};
 export const startDownload = (key) => json(ROUTES.download, "POST", { key });
 export const cancelDownload = () => json(ROUTES.cancelDownload, "POST");
 export const deleteModel = (key) => json(ROUTES.deleteModel, "POST", { key, confirm: key });
 export const diskUsage = () => request(ROUTES.disk);
 export const memorySnapshot = () => request(ROUTES.memory);
+export const deskState = () => request(ROUTES.deskState);
 
 export const loadLlm = (key) => json(ROUTES.llmLoad, "POST", { key });
 export const unloadLlm = () => json(ROUTES.llmUnload, "POST");

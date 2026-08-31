@@ -12,15 +12,7 @@ export function createJobView(root, { mediaTag }) {
   };
   let jobId = null;
   let logFrom = 0;
-  let pollTimer = null;
-  let polling = false;
-
-  function stopPolling() {
-    if (pollTimer !== null) globalThis.clearInterval(pollTimer);
-    pollTimer = null;
-  }
   function reset() {
-    stopPolling();
     jobId = null; logFrom = 0;
     els.log.textContent = ""; els.player.replaceChildren(); els.error.textContent = "";
   }
@@ -37,28 +29,13 @@ export function createJobView(root, { mediaTag }) {
       const media = root.ownerDocument.createElement(mediaTag);
       media.controls = true; media.src = api.serveOutput(payload.output); els.player.append(media);
     }
-    if (payload.status !== "running") stopPolling();
     return payload;
-  }
-  async function poll() {
-    if (polling || jobId === null) return;
-    polling = true;
-    try {
-      const payload = await api.jobStatus(logFrom, jobId);
-      apply(payload);
-      logFrom = payload.next_log_from ?? logFrom;
-    } catch (error) {
-      els.error.textContent = error.message;
-    } finally {
-      polling = false;
-    }
   }
   function start(payload) {
     reset();
     jobId = payload.job_id ?? null;
     logFrom = payload.next_log_from ?? 0;
     apply(payload);
-    if (payload.status === "running" && jobId !== null) pollTimer = globalThis.setInterval(poll, 2000);
     return payload;
   }
   els.cancelBtn.addEventListener("click", async () => {

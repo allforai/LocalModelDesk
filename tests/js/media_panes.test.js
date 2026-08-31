@@ -29,18 +29,6 @@ function withFetch(responses, run) {
   return Promise.resolve(run(calls)).finally(() => { globalThis.fetch = previous; });
 }
 
-function withPollingTimer(run) {
-  const previousSetInterval = globalThis.setInterval;
-  const previousClearInterval = globalThis.clearInterval;
-  const callbacks = [];
-  globalThis.setInterval = (callback) => { callbacks.push(callback); return callbacks.length; };
-  globalThis.clearInterval = () => {};
-  return Promise.resolve(run(callbacks)).finally(() => {
-    globalThis.setInterval = previousSetInterval;
-    globalThis.clearInterval = previousClearInterval;
-  });
-}
-
 test("video/music panes use documented DOM selectors, submit media APIs, and fill saved fields", async () => {
   const video = pane({ "video-prompt": "海边", "video-size": "768x448", "video-frames": "49", "video-steps": "16", "video-start": "" });
   const music = pane({ "music-caption": "民谣", "music-lyrics": "一二三", "music-duration": "90", "music-start": "" });
@@ -52,14 +40,12 @@ test("video/music panes use documented DOM selectors, submit media APIs, and fil
   musicPane.fill({ caption: "爵士", lyrics: "la", duration: 75 });
   assert.equal(video.parts["video-size"].value, "1024x576");
   assert.equal(music.parts["music-duration"].value, "75");
-  await withPollingTimer(async () => {
-    await withFetch([{ job_id: 7, status: "running", kind: "video", log: "started" }, { job_id: 8, status: "done", kind: "music", output: "song.wav" }], async (calls) => {
-      await video.parts["video-start"].click(); await music.parts["music-start"].click();
-      assert.deepEqual(calls.map(({ url, options }) => [url, JSON.parse(options.body)]), [
-        ["/api/media/video", { prompt: "夜景", width: 1024, height: 576, frames: 57, steps: 20 }],
-        ["/api/media/music", { caption: "爵士", lyrics: "la", duration: 75 }],
-      ]);
-    });
+  await withFetch([{ job_id: 7, status: "running", kind: "video", log: "started" }, { job_id: 8, status: "done", kind: "music", output: "song.wav" }], async (calls) => {
+    await video.parts["video-start"].click(); await music.parts["music-start"].click();
+    assert.deepEqual(calls.map(({ url, options }) => [url, JSON.parse(options.body)]), [
+      ["/api/media/video", { prompt: "夜景", width: 1024, height: 576, frames: 57, steps: 20 }],
+      ["/api/media/music", { caption: "爵士", lyrics: "la", duration: 75 }],
+    ]);
   });
   assert.equal(video.parts["job-status"].textContent, "生成中…");
   assert.equal(video.parts["job-cancel"].hidden, false);
@@ -82,30 +68,25 @@ test("jobview appends polling logs, shows failures, and cancels through document
   assert.equal(video.parts["job-status"].textContent, "已取消");
 });
 
-test("video and music jobs poll status with their log cursors until completion", async () => {
+test("job views do not create independent polling timers and still apply shell-delivered job updates", async () => {
   const video = pane({ "video-prompt": "海浪", "video-size": "512x288", "video-frames": "25", "video-steps": "8", "video-start": "" });
   const music = pane({ "music-caption": "轻快", "music-lyrics": "la", "music-duration": "30", "music-start": "" });
-  createVideoPane(video);
-  createMusicPane(music);
-  await withPollingTimer(async (timers) => {
-    await withFetch([
-      { job_id: 12, status: "running", kind: "video", log: "one", next_log_from: 3 },
-      { job_id: 12, status: "done", kind: "video", log: "two", next_log_from: 6, output: "clip.mp4" },
-      { job_id: 13, status: "running", kind: "music", log: "three", next_log_from: 5 },
-      { job_id: 13, status: "done", kind: "music", log: "four", next_log_from: 9, output: "song.wav" },
-    ], async (calls) => {
+  const videoPane = createVideoPane(video);
+  const musicPane = createMusicPane(music);
+  const previousSetInterval = globalThis.setInterval;
+  let intervals = 0;
+  globalThis.setInterval = () => { intervals += 1; return intervals; };
+  try {
+    await withFetch([{ job_id: 12, status: "running", kind: "video", log: "one" }, { job_id: 13, status: "running", kind: "music", log: "three" }], async () => {
       await video.parts["video-start"].click();
-      assert.equal(timers.length, 1);
-      await timers[0]();
       await music.parts["music-start"].click();
-      assert.equal(timers.length, 2);
-      await timers[1]();
-      assert.deepEqual(calls.map(({ url }) => url), [
-        "/api/media/video", "/api/media/job?log_from=3&job_id=12",
-        "/api/media/music", "/api/media/job?log_from=5&job_id=13",
-      ]);
     });
-  });
+  } finally {
+    globalThis.setInterval = previousSetInterval;
+  }
+  assert.equal(intervals, 0);
+  videoPane.jobView.apply({ status: "done", log: "two", output: "clip.mp4" });
+  musicPane.jobView.apply({ status: "done", log: "four", output: "song.wav" });
   assert.equal(video.parts["job-log"].textContent, "onetwo");
   assert.equal(video.parts["job-player"].firstChild.tagName, "video");
   assert.equal(music.parts["job-log"].textContent, "threefour");
