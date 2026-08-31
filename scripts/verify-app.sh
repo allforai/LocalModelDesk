@@ -1,5 +1,5 @@
 #!/bin/bash
-# api:verifyAppBundle — collect verification failures before returning non-zero.
+# api:verifyAppBundle — read-only V1–V7 bundle verification.
 set -euo pipefail
 
 usage() {
@@ -30,9 +30,25 @@ if [[ -z "$SOURCE_ROOT" ]]; then
 fi
 
 RES="$APP/Contents/Resources"
+PLIST="$APP/Contents/Info.plist"
 FAILLOG="$(mktemp)"
 trap 'rm -f "$FAILLOG"' EXIT
 fail() { printf '  - %s\n' "$1" >> "$FAILLOG"; }
+
+# V1: the complete application bundle must verify its signature.
+if ! OUT="$(codesign --verify --deep --strict --verbose=2 "$APP" 2>&1)"; then
+  fail "V1 签名验证失败: $OUT"
+fi
+
+# V2: every key required by the packaging plist template must be non-empty.
+for key in CFBundleIdentifier CFBundleName CFBundleExecutable CFBundleShortVersionString \
+           CFBundleVersion CFBundleIconFile LSMinimumSystemVersion CFBundlePackageType \
+           NSHighResolutionCapable; do
+  value="$(/usr/libexec/PlistBuddy -c "Print :$key" "$PLIST" 2>/dev/null || true)"
+  if [[ -z "$value" ]]; then
+    fail "V2 Info.plist 缺键或为空: $key"
+  fi
+done
 
 # V3: installed applications must not contain checkout or build-machine paths.
 for forbidden in /opt/homebrew "$SOURCE_ROOT" "$HOME/.local/share/uv" "$HOME/.local/bin"; do
@@ -58,6 +74,39 @@ done
 while IFS= read -r directory; do
   fail "V4 pylibs 内 __pycache__ 残留: $directory"
 done < <(find "$RES/pylibs" -name __pycache__ -type d 2>/dev/null)
+
+# V5: the runtime layout must contain the embedded interpreter and all resources.
+PYBIN="$RES/python/bin/python3.13"
+if [[ ! -x "$PYBIN" ]]; then
+  fail "V5 缺内嵌解释器或不可执行: $PYBIN"
+fi
+for path in "$RES/desk" "$RES/pylibs/desk" "$RES/pylibs/music" "$RES/pylibs/h3" \
+            "$RES/bundle.json" "$RES/AppIcon.icns"; do
+  if [[ ! -e "$path" ]]; then
+    fail "V5 缺结构项: $path"
+  fi
+done
+
+# V6: imports use the embedded interpreter with user site-packages disabled.
+if [[ -x "$PYBIN" ]]; then
+  v6() {
+    if ! OUT="$(cd "$RES" && PYTHONPATH="$1" "python/bin/python3.13" -s -c "$2" 2>&1)"; then
+      fail "V6 导入失败 [PYTHONPATH=$1] [$2]: $OUT"
+    fi
+  }
+  v6 ".:pylibs/desk" "import desk"
+  v6 "pylibs/desk" "import mlx_lm"
+  v6 "pylibs/music" "import mlx_minimax_music3"
+  v6 "pylibs/h3" "import mlx_h3.cli"
+  v6 "pylibs/desk" "from huggingface_hub.cli.hf import main"
+fi
+
+# V7: application functionality supersedes these legacy checkout scripts.
+for script in initModels.sh run-h3.sh run-music3.py unload-llm.sh media-gui/start.sh; do
+  if [[ -e "$SOURCE_ROOT/$script" ]]; then
+    fail "V7 旧脚本仍存在: $SOURCE_ROOT/$script"
+  fi
+done
 
 if [[ -s "$FAILLOG" ]]; then
   echo "verify-app: 发现以下失败（${APP}）:" >&2

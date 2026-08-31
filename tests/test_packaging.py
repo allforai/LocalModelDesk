@@ -96,6 +96,42 @@ def verify(app, source_root):
                 "--source-root", source_root])
 
 
+def test_verify_passes_clean_fixture(tmp_path):
+    app = make_fake_bundle(tmp_path, sign=False)
+    resources = app / "Contents" / "Resources"
+    (resources / "AppIcon.icns").write_bytes(b"icns-stub")
+    desk_init = resources / "desk" / "__init__.py"
+    desk_init.parent.mkdir()
+    desk_init.write_text("")
+    for libdir, package in {
+        "desk": "mlx_lm",
+        "music": "mlx_minimax_music3",
+        "h3": "mlx_h3",
+    }.items():
+        init = resources / "pylibs" / libdir / package / "__init__.py"
+        init.parent.mkdir(parents=True)
+        init.write_text("")
+    cli = resources / "pylibs" / "h3" / "mlx_h3" / "cli.py"
+    cli.write_text("def main():\n    pass\n")
+    hf = resources / "pylibs" / "desk" / "huggingface_hub" / "cli" / "hf.py"
+    hf.parent.mkdir(parents=True)
+    (hf.parent / "__init__.py").write_text("")
+    hf.write_text("def main():\n    pass\n")
+    result = run([REPO / "scripts" / "sign-app.sh", app, "--adhoc"])
+    assert result.returncode == 0, result.stderr
+
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    result = verify(app, source_root)
+    assert result.returncode == 0, result.stderr
+    assert "verify-app: OK" in result.stdout
+
+    (source_root / "run-h3.sh").write_text("#!/bin/sh\n")
+    result = verify(app, source_root)
+    assert result.returncode != 0
+    assert "V7" in result.stderr
+
+
 def test_verify_flags_homebrew_reference(tmp_path):
     app = make_fake_bundle(tmp_path)
     leak = app / "Contents" / "Resources" / "pylibs" / "desk" / "leak.txt"
