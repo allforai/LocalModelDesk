@@ -1,5 +1,7 @@
 """Facade tests for the heavy-work arbiter."""
 
+import threading
+
 from desk.arbiter.core import Arbiter
 from desk.arbiter.reaper import ReapResult
 
@@ -45,3 +47,45 @@ def test_evict_failure_restores_llm_holder_and_keeps_its_token_valid():
     }
     assert arbiter.current_holder()["kind"] == "llm"
     assert arbiter.release_heavy(llm["token"]) == {"ok": True}
+
+
+def test_fast_rejects_during_eviction_without_waiting_for_transition_lock():
+    eviction_started = threading.Event()
+    finish_eviction = threading.Event()
+
+    def reaper(port):
+        eviction_started.set()
+        assert finish_eviction.wait(timeout=1)
+        return ReapResult(ok=True, port=port, killed_pids=[])
+
+    arbiter = Arbiter(llm_port=43123, reaper=reaper)
+    arbiter.acquire_heavy("llm", "model-a")
+    eviction = threading.Thread(
+        target=arbiter.acquire_heavy, args=("video", "job-a"), daemon=True
+    )
+    eviction.start()
+    assert eviction_started.wait(timeout=1)
+
+    rejected = []
+    completed = threading.Event()
+
+    def retry():
+        rejected.append(arbiter.acquire_heavy("music", "job-b"))
+        completed.set()
+
+    retry_thread = threading.Thread(target=retry, daemon=True)
+    retry_thread.start()
+    assert completed.wait(timeout=0.1)
+    assert rejected == [{
+        "ok": False,
+        "reason": {
+            "code": "transition_in_progress",
+            "message": "a heavy-work transition is in progress; retry shortly",
+        },
+    }]
+
+    finish_eviction.set()
+    eviction.join(timeout=1)
+    retry_thread.join(timeout=1)
+    assert not eviction.is_alive()
+    assert not retry_thread.is_alive()
