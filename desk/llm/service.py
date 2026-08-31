@@ -9,6 +9,7 @@ from typing import Any
 from .state import (
     DEFAULT_LLM_PORT,
     ERR_BACKEND_EXITED,
+    ERR_EVICTED,
     ERR_LOAD_IN_PROGRESS,
     ERR_LOAD_TIMEOUT,
     ERR_MEDIA_BUSY,
@@ -46,6 +47,8 @@ class LlmService:
         self._token: str | None = None
         self._entry = None
         self._load_thread: threading.Thread | None = None
+        self._load_generation = 0
+        self._unsubscribe = self._arbiter.subscribe(self._on_desk_state)
 
     def _find_entry(self, key: str) -> Any | None:
         return next((entry for entry in self._catalog.list_catalog() if entry.key == key), None)
@@ -66,27 +69,61 @@ class LlmService:
             model_dir = Path(roots.models_root) / entry.relpath
             if not model_dir.is_dir():
                 raise LlmRejected(ERR_MODEL_DIR_MISSING, f"模型目录不存在: {model_dir}")
-            acquired = self._arbiter.acquire_heavy("llm", entry.key)
-            if not acquired.get("ok"):
-                reason = acquired.get("reason") or {}
-                message = reason.get("message") if isinstance(reason, dict) else None
-                raise LlmRejected(ERR_MEDIA_BUSY, message or "媒体任务正在运行")
-            self._token = acquired.get("token")
+            reusing_existing_token = self._state.status == STATUS_LOADED
+            if reusing_existing_token:
+                if not self._teardown_proc_locked():
+                    self._state = LlmState(
+                        status=STATUS_ERROR,
+                        model_key=self._state.model_key,
+                        error=LlmError(ERR_PORT_NOT_RELEASED, f"切换后端口 {self._port} 仍被占用"),
+                    )
+                    return self._state.to_dict()
+            else:
+                previous_state = self._state
             self._entry = None
             self._state = LlmState(status=STATUS_LOADING, model_key=entry.key)
+            self._load_generation += 1
+            generation = self._load_generation
+            if reusing_existing_token:
+                self._load_thread = threading.Thread(
+                    target=self._load_worker,
+                    args=(entry, model_dir, Path(roots.venv_python), self._log_path(roots), generation),
+                    daemon=True,
+                    name="llm-load",
+                )
+                self._load_thread.start()
+                return self._state.to_dict()
+
+        acquired = self._arbiter.acquire_heavy("llm", entry.key)
+        if not acquired.get("ok"):
+            reason = acquired.get("reason") or {}
+            message = reason.get("message") if isinstance(reason, dict) else None
+            with self._lock:
+                if generation == self._load_generation:
+                    self._state = previous_state
+            raise LlmRejected(ERR_MEDIA_BUSY, message or "媒体任务正在运行")
+
+        with self._lock:
+            self._token = acquired.get("token")
             self._load_thread = threading.Thread(
                 target=self._load_worker,
-                args=(entry, model_dir, Path(roots.venv_python), self._log_path(roots)),
+                args=(entry, model_dir, Path(roots.venv_python), self._log_path(roots), generation),
                 daemon=True,
                 name="llm-load",
             )
             self._load_thread.start()
             return self._state.to_dict()
 
-    def _load_worker(self, entry: Any, model_dir: Path, python: Path, log_path: Path) -> None:
+    def _load_worker(self, entry: Any, model_dir: Path, python: Path, log_path: Path,
+                     generation: int) -> None:
+        with self._lock:
+            if generation != self._load_generation:
+                return
         reap = self._arbiter.reap_llm_port(self._port)
         if not reap.get("ok"):
             with self._lock:
+                if generation != self._load_generation:
+                    return
                 token = self._token
                 self._token = None
                 self._state = LlmState(
@@ -99,6 +136,9 @@ class LlmService:
             return
         proc = self._backend.spawn(python, model_dir, self._port, log_path)
         with self._lock:
+            if generation != self._load_generation:
+                proc.terminate()
+                return
             self._proc = proc
         deadline = time.monotonic() + self._load_timeout_s
         while True:
@@ -106,6 +146,8 @@ class LlmService:
             if return_code is not None:
                 log_tail = self._backend.log_tail(log_path)
                 with self._lock:
+                    if generation != self._load_generation:
+                        return
                     token = self._token
                     self._token = None
                     self._proc = None
@@ -123,6 +165,8 @@ class LlmService:
                 return
             if self._backend.health(self._port):
                 with self._lock:
+                    if generation != self._load_generation:
+                        return
                     self._state = LlmState(
                         status=STATUS_LOADED, model_key=entry.key, loaded_at=time.time()
                     )
@@ -131,6 +175,8 @@ class LlmService:
             if time.monotonic() >= deadline:
                 log_tail = self._backend.log_tail(log_path)
                 with self._lock:
+                    if generation != self._load_generation:
+                        return
                     token = self._token
                     self._token = None
                     self._proc = None
@@ -147,6 +193,32 @@ class LlmService:
                     self._arbiter.release_heavy(token)
                 return
             time.sleep(self._poll_interval_s)
+
+    def _on_desk_state(self, desk_state: dict[str, Any]) -> None:
+        """Make an arbiter eviction visible without waiting for the load poll loop."""
+        with self._lock:
+            if self._state.status not in {STATUS_LOADING, STATUS_LOADED}:
+                return
+            holder = desk_state.get("holder")
+            still_held = (
+                isinstance(holder, dict)
+                and holder.get("kind") == "llm"
+                and holder.get("label") == self._state.model_key
+            )
+            if still_held:
+                return
+            proc = self._proc
+            self._proc = None
+            self._token = None
+            self._entry = None
+            self._load_generation += 1
+            self._state = LlmState(
+                status=STATUS_ERROR,
+                model_key=self._state.model_key,
+                error=LlmError(ERR_EVICTED, "LLM 已被媒体任务驱逐"),
+            )
+        if proc is not None:
+            proc.terminate()
 
     def status(self) -> dict[str, Any]:
         """Return the current public state and loaded model, when one is resident."""
