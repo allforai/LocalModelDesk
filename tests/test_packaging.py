@@ -89,3 +89,60 @@ def test_sign_no_identity_found_errors(tmp_path):
     assert result.returncode != 0
     assert "找不到 Developer ID Application" in result.stderr
     assert "0 valid identities found" in result.stderr
+
+
+def verify(app, source_root):
+    return run([REPO / "scripts" / "verify-app.sh", app,
+                "--source-root", source_root])
+
+
+def test_verify_flags_homebrew_reference(tmp_path):
+    app = make_fake_bundle(tmp_path)
+    leak = app / "Contents" / "Resources" / "pylibs" / "desk" / "leak.txt"
+    leak.parent.mkdir(parents=True)
+    leak.write_text("interpreter = /opt/homebrew/bin/python3\n")
+    result = verify(app, tmp_path / "source")
+    assert result.returncode != 0
+    assert "/opt/homebrew" in result.stderr
+    assert "leak.txt" in result.stderr
+
+
+def test_verify_flags_checkout_reference(tmp_path):
+    app = make_fake_bundle(tmp_path)
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    leak = app / "Contents" / "Resources" / "desk" / "leak2.txt"
+    leak.parent.mkdir(parents=True)
+    leak.write_text(f"path = {source_root}/desk\n")
+    result = verify(app, source_root)
+    assert result.returncode != 0
+    assert "leak2.txt" in result.stderr
+
+
+def test_verify_flags_pyvenv_and_bin(tmp_path):
+    app = make_fake_bundle(tmp_path)
+    pylibs = app / "Contents" / "Resources" / "pylibs" / "desk"
+    pylibs.mkdir(parents=True)
+    (pylibs / "pyvenv.cfg").write_text("home = /nowhere\n")
+    bindir = pylibs / "bin"
+    bindir.mkdir()
+    (bindir / "hf").write_text("#!/nowhere/python\n")
+    result = verify(app, tmp_path / "source")
+    assert result.returncode != 0
+    assert "pyvenv.cfg" in result.stderr
+    assert "pylibs" in result.stderr
+    assert "/bin" in result.stderr
+
+
+def test_verify_reports_all_failures_at_once(tmp_path):
+    app = make_fake_bundle(tmp_path)
+    resources = app / "Contents" / "Resources"
+    (resources / "desk").mkdir()
+    (resources / "desk" / "leak.txt").write_text("/opt/homebrew\n")
+    pylibs = resources / "pylibs" / "music"
+    pylibs.mkdir(parents=True)
+    (pylibs / "pyvenv.cfg").write_text("home = x\n")
+    result = verify(app, tmp_path / "source")
+    assert result.returncode != 0
+    assert "leak.txt" in result.stderr
+    assert "pyvenv.cfg" in result.stderr
