@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import plistlib
+import os
 import re
 import subprocess
 
-from packaging_fixture import BUNDLE_ID, REPO, render_info_plist
+from packaging_fixture import BUNDLE_ID, REPO, make_fake_bundle, render_info_plist
 
 
 PLIST_KEYS = [
@@ -65,3 +66,26 @@ def test_requirements_locks_are_pinned():
         assert top in text, f"{lock} is missing top-level pin {top}"
         for banned in ("file://", "/Users/", "/opt/"):
             assert banned not in text, f"{lock} contains {banned!r}"
+
+
+def test_sign_adhoc_fixture_verifies(tmp_path):
+    app = make_fake_bundle(tmp_path)
+    result = run(["codesign", "--verify", "--deep", "--strict", app])
+    assert result.returncode == 0, result.stderr
+
+
+def test_sign_no_identity_found_errors(tmp_path):
+    app = make_fake_bundle(tmp_path, sign=False)
+    stub_bin = tmp_path / "stubbin"
+    stub_bin.mkdir()
+    security = stub_bin / "security"
+    security.write_text('#!/bin/sh\necho "     0 valid identities found"\n')
+    security.chmod(0o755)
+    env = os.environ.copy()
+    env["PATH"] = f"{stub_bin}:{env['PATH']}"
+    env.pop("CODESIGN_IDENTITY", None)
+    result = subprocess.run([str(REPO / "scripts" / "sign-app.sh"), str(app)],
+                            capture_output=True, text=True, env=env)
+    assert result.returncode != 0
+    assert "找不到 Developer ID Application" in result.stderr
+    assert "0 valid identities found" in result.stderr
