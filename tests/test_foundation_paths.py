@@ -1,3 +1,4 @@
+import logging
 import sys
 from pathlib import Path
 
@@ -105,3 +106,33 @@ def test_corrupt_config_propagates_by_default(fake_repo, data_root):
 def test_normalize_user_path_expands_tilde(monkeypatch, tmp_path):
     monkeypatch.setenv("HOME", str(tmp_path))
     assert paths_mod.normalize_user_path("~/x") == (tmp_path / "x").resolve()
+
+
+def test_setup_logging_writes_under_data_root_only(fake_repo, data_root, monkeypatch):
+    roots = paths_mod.resolve_paths(resources_root=fake_repo)
+    monkeypatch.setattr(paths_mod, "_LOGGING_CONFIGURED", False)
+    root_logger = logging.getLogger()
+    saved = root_logger.handlers[:]
+    for handler in saved:
+        root_logger.removeHandler(handler)
+    try:
+        paths_mod.setup_logging(roots)
+        logging.getLogger("desk.test").info("hello-a16")
+        for handler in root_logger.handlers:
+            handler.flush()
+        log_file = roots.logs_dir / "desk.log"
+        assert log_file.exists()
+        assert "hello-a16" in log_file.read_text(encoding="utf-8")
+        paths_mod.setup_logging(roots)
+        file_handlers = [handler for handler in root_logger.handlers
+                         if isinstance(handler, logging.FileHandler)]
+        assert len(file_handlers) == 1
+    finally:
+        for handler in root_logger.handlers[:]:
+            root_logger.removeHandler(handler)
+            handler.close()
+        for handler in saved:
+            root_logger.addHandler(handler)
+    repo_root = Path(__file__).resolve().parent.parent
+    assert list(repo_root.glob("*.log")) == []
+    assert list((repo_root / "desk").rglob("*.log")) == []

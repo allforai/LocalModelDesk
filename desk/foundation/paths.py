@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import logging
 import shutil
 import sys
 from dataclasses import dataclass
@@ -13,6 +14,7 @@ from .errors import ConfigCorruptError
 
 _MLX_H3_ENTRY = "from mlx_h3.cli import main; main()"
 _HF_ENTRY = "from huggingface_hub.cli.hf import main; main()"
+_LOGGING_CONFIGURED = False
 
 
 def normalize_user_path(value) -> Path:
@@ -128,3 +130,19 @@ def resolve_paths(*, data_root=None, resources_root=None, default_config_on_corr
     roots.data_root.mkdir(parents=True, exist_ok=True)
     roots.logs_dir.mkdir(parents=True, exist_ok=True)
     return roots
+
+
+def setup_logging(roots: PathRoots) -> None:
+    """Configure the codebase's sole file logger under the data root."""
+    global _LOGGING_CONFIGURED
+    if _LOGGING_CONFIGURED:
+        return
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    file_handler = logging.FileHandler(roots.logs_dir / "desk.log", encoding="utf-8")
+    file_handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+    )
+    root.addHandler(file_handler)
+    root.addHandler(logging.StreamHandler(sys.stderr))
+    _LOGGING_CONFIGURED = True
