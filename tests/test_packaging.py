@@ -319,3 +319,34 @@ def test_uninstall_wrong_bundle_id_refuses(tmp_path):
     result = uninstall(app, launch_agents, data, env)
     assert result.returncode != 0
     assert app.exists()
+
+
+def test_uninstall_purge_never_touches_models(tmp_path):
+    app, launch_agents, data, env, _ = uninstall_layout(tmp_path)
+    nested_models = data / "sessions" / "configured-models"
+    nested_models.mkdir()
+    (nested_models / "weights.bin").write_bytes(b"configured weights")
+    (data / "config.json").write_text(
+        '{"models_root": ' + repr(str(nested_models)).replace("'", '"') + "}"
+    )
+    result = uninstall(app, launch_agents, data, env, "--purge-data")
+    assert result.returncode == 0, result.stderr
+    assert (data / "models" / "weights.bin").read_bytes() == b"weights"
+    assert (nested_models / "weights.bin").read_bytes() == b"configured weights"
+
+
+def test_uninstall_purge_refuses_on_corrupt_config(tmp_path):
+    app, launch_agents, data, env, _ = uninstall_layout(tmp_path)
+    (data / "config.json").write_text("{not valid json")
+    result = uninstall(app, launch_agents, data, env, "--purge-data")
+    assert result.returncode != 0
+    assert (data / "models" / "weights.bin").exists()
+    assert (data / "sessions" / "session.json").exists()
+
+    # A dangling config symlink is unreadable config, rather than absent config.
+    (data / "config.json").unlink()
+    (data / "config.json").symlink_to(data / "missing-config.json")
+    result = uninstall(app, launch_agents, data, env, "--purge-data")
+    assert result.returncode != 0
+    assert (data / "models" / "weights.bin").exists()
+    assert (data / "sessions" / "session.json").exists()
