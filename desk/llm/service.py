@@ -10,6 +10,7 @@ from .state import (
     DEFAULT_LLM_PORT,
     ERR_BACKEND_EXITED,
     ERR_LOAD_TIMEOUT,
+    ERR_PORT_NOT_RELEASED,
     STATUS_ERROR,
     STATUS_IDLE,
     STATUS_LOADED,
@@ -68,7 +69,19 @@ class LlmService:
             return self._state.to_dict()
 
     def _load_worker(self, entry: Any, model_dir: Path, python: Path, log_path: Path) -> None:
-        self._arbiter.reap_llm_port(self._port)
+        reap = self._arbiter.reap_llm_port(self._port)
+        if not reap.get("ok"):
+            with self._lock:
+                token = self._token
+                self._token = None
+                self._state = LlmState(
+                    status=STATUS_ERROR,
+                    model_key=entry.key,
+                    error=LlmError(ERR_PORT_NOT_RELEASED, reap.get("error") or "无法释放 LLM 端口"),
+                )
+            if token is not None:
+                self._arbiter.release_heavy(token)
+            return
         proc = self._backend.spawn(python, model_dir, self._port, log_path)
         with self._lock:
             self._proc = proc
@@ -76,13 +89,22 @@ class LlmService:
         while True:
             return_code = proc.poll()
             if return_code is not None:
+                log_tail = self._backend.log_tail(log_path)
                 with self._lock:
+                    token = self._token
+                    self._token = None
                     self._proc = None
                     self._state = LlmState(
                         status=STATUS_ERROR,
                         model_key=entry.key,
-                        error=LlmError(ERR_BACKEND_EXITED, f"mlx-lm 进程退出，退出码 {return_code}"),
+                        error=LlmError(
+                            ERR_BACKEND_EXITED,
+                            f"mlx-lm 进程退出，退出码 {return_code}",
+                            log_tail,
+                        ),
                     )
+                if token is not None:
+                    self._arbiter.release_heavy(token)
                 return
             if self._backend.health(self._port):
                 with self._lock:
@@ -92,7 +114,10 @@ class LlmService:
                     self._entry = entry
                 return
             if time.monotonic() >= deadline:
+                log_tail = self._backend.log_tail(log_path)
                 with self._lock:
+                    token = self._token
+                    self._token = None
                     self._proc = None
                     self._state = LlmState(
                         status=STATUS_ERROR,
@@ -100,8 +125,11 @@ class LlmService:
                         error=LlmError(
                             ERR_LOAD_TIMEOUT,
                             f"mlx-lm 超过 {self._load_timeout_s:.0f}s 未就绪",
+                            log_tail,
                         ),
                     )
+                if token is not None:
+                    self._arbiter.release_heavy(token)
                 return
             time.sleep(self._poll_interval_s)
 
