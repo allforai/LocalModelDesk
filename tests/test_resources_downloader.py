@@ -8,7 +8,7 @@ import pytest
 from desk.resources.errors import DownloadBusyError, MediaBusyError
 from desk.resources.events import ResourceEvents
 from desk.resources.manifest import Manifest, ManifestFile
-from desk.testing.fakes import FakeDownloadExecutor
+from desk.testing.fakes import FakeDownloadExecutor, FixedClock
 from desk.testing.scripts import DownloadControl
 
 
@@ -21,7 +21,7 @@ def _wait_for(predicate):
     assert predicate()
 
 
-def _downloader(tmp_path, *, can_start=lambda: {"ok": True, "reason": None}):
+def _downloader(tmp_path, *, can_start=lambda: {"ok": True, "reason": None}, clock=time.monotonic):
     from desk.resources.downloader import Downloader
 
     control = DownloadControl()
@@ -29,7 +29,7 @@ def _downloader(tmp_path, *, can_start=lambda: {"ok": True, "reason": None}):
     roots = SimpleNamespace(models_root=tmp_path / "models", hf_cmd=(sys.executable,))
     events = ResourceEvents()
     downloader = Downloader(FakeDownloadExecutor(control), SimpleNamespace(get=lambda *_a, **_k: manifest),
-                            lambda: roots, can_start, events, sample_interval=.01)
+                            lambda: roots, can_start, events, clock=clock, sample_interval=.01)
     return downloader, control, events
 
 
@@ -62,3 +62,30 @@ def test_start_download_forwards_media_busy_reason(tmp_path):
 
     with pytest.raises(MediaBusyError, match="video running"):
         downloader.start("h3")
+
+
+def test_cancel_download_terminates_then_kills_after_eight_seconds_and_keeps_lock(tmp_path):
+    clock = FixedClock()
+    downloader, control, events = _downloader(tmp_path, clock=clock)
+    finished = []
+    events.subscribe_finished(lambda progress, status: finished.append((progress, status)))
+
+    downloader.start("h3")
+    incomplete = tmp_path / "models" / "minimax-h3" / ".cache" / "huggingface" / "download" / "a.incomplete"
+    incomplete.parent.mkdir(parents=True)
+    incomplete.write_bytes(b"partial")
+
+    assert downloader.cancel().state == "cancelled"
+    assert control.handle.terminated is True
+    assert control.handle.killed is False
+    assert incomplete.exists()
+    with pytest.raises(DownloadBusyError):
+        downloader.start("music3")
+
+    clock.advance(8)
+    _wait_for(lambda: control.handle.killed)
+    _wait_for(lambda: len(finished) == 1)
+
+    assert finished[0][0].state == "cancelled"
+    assert incomplete.exists()
+    assert downloader.start("music3").state == "running"
