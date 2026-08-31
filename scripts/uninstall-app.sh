@@ -52,6 +52,67 @@ guarded_remove() {
   fi
 }
 
+paths_overlap() {
+  /usr/bin/python3 - "$1" "$2" <<'PY'
+from pathlib import Path
+import sys
+
+first, second = (Path(value).expanduser().resolve() for value in sys.argv[1:])
+try:
+    first.relative_to(second)
+except ValueError:
+    try:
+        second.relative_to(first)
+    except ValueError:
+        raise SystemExit(1)
+raise SystemExit(0)
+PY
+}
+
+purge_data() {
+  local models_root child name
+  if ! models_root="$(/usr/bin/python3 - "$DATA_ROOT" <<'PY'
+import json
+from pathlib import Path
+import sys
+
+data_root = Path(sys.argv[1]).expanduser().resolve()
+config_path = data_root / "config.json"
+if config_path.exists() or config_path.is_symlink():
+    try:
+        raw = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"cannot read config: {exc}")
+    if not isinstance(raw, dict):
+        raise SystemExit("config top level is not an object")
+    configured = raw.get("models_root", data_root / "models")
+    if not isinstance(configured, str) or not configured:
+        raise SystemExit("config models_root is not a non-empty string")
+    model_path = Path(configured).expanduser()
+    if not model_path.is_absolute():
+        model_path = data_root / model_path
+else:
+    model_path = data_root / "models"
+print(model_path.resolve())
+PY
+)"; then
+    fail "refusing to purge data: config.json is corrupt or unreadable"
+    return 1
+  fi
+
+  for child in "$DATA_ROOT"/* "$DATA_ROOT"/.[!.]* "$DATA_ROOT"/..?*; do
+    [[ -e "$child" || -L "$child" ]] || continue
+    name="${child##*/}"
+    if [[ "$name" == "models" ]]; then
+      echo "uninstall-app: preserving models directory $child"
+    elif paths_overlap "$child" "$models_root"; then
+      echo "uninstall-app: preserving configured models path $child"
+    else
+      guarded_remove "$child"
+    fi
+  done
+}
+
 LA_PLIST="$LA_DIR/$BUNDLE_ID.plist"
 if [[ "$DRY_RUN" == 1 ]]; then
   echo "[dry-run] launchctl bootout gui/$(id -u)/$BUNDLE_ID"
@@ -71,8 +132,8 @@ if [[ -e "$APP_PATH" || -L "$APP_PATH" ]]; then
 fi
 
 # User data is deliberately retained unless the protected purge workflow is requested.
-if [[ "$PURGE" == 1 && "$DRY_RUN" == 1 && -d "$DATA_ROOT" ]]; then
-  echo "[dry-run] preserve data-root '$DATA_ROOT' pending purge safeguards"
+if [[ "$PURGE" == 1 && -d "$DATA_ROOT" ]]; then
+  purge_data
 fi
 
 [[ "$FAILED" == 0 ]] || exit 1
