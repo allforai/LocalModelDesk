@@ -4,7 +4,9 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import tempfile
+import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,6 +17,17 @@ from .errors import ManifestUnavailableError
 
 
 log = logging.getLogger(__name__)
+
+
+HF_TREE_URL = "https://huggingface.co/api/models/{repo}/tree/main?recursive=true"
+_NEXT_LINK = re.compile(r'<([^>]+)>\s*;\s*rel="next"')
+
+
+def _urllib_get(url: str) -> tuple[bytes, str | None]:
+    req = urllib.request.Request(url, headers={"User-Agent": "LocalModelDesk"})
+    with urllib.request.urlopen(req, timeout=30) as response:
+        match = _NEXT_LINK.search(response.headers.get("Link") or "")
+        return response.read(), (match.group(1) if match else None)
 
 
 @dataclass(frozen=True)
@@ -35,11 +48,31 @@ class Manifest:
         return sum(file.size for file in self.files)
 
 
+def default_fetcher(
+    repo: str,
+    http_get: Callable[[str], tuple[bytes, str | None]] = _urllib_get,
+) -> list[ManifestFile]:
+    """Fetch paths and byte sizes from every page of an HF repository tree."""
+    url: str | None = HF_TREE_URL.format(repo=repo)
+    files: list[ManifestFile] = []
+    while url:
+        body, url = http_get(url)
+        for item in json.loads(body):
+            if item.get("type") != "file":
+                continue
+            lfs = item.get("lfs") or {}
+            files.append(ManifestFile(
+                path=item["path"],
+                size=int(lfs.get("size") or item.get("size") or 0),
+            ))
+    return files
+
+
 class ManifestStore:
     """Cache manifests in ``<data root>/manifests/<key>.json`` atomically."""
 
     def __init__(self, cache_dir_provider: Callable[[], Path],
-                 fetcher: Callable[[str], list[ManifestFile]]):
+                 fetcher: Callable[[str], list[ManifestFile]] = default_fetcher):
         self._cache_dir_provider = cache_dir_provider
         self._fetcher = fetcher
 
