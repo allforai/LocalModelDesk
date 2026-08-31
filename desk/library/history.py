@@ -37,6 +37,14 @@ class HistoryStore:
         entries.reverse()
         return entries if limit is None else entries[:limit]
 
+    def by_output(self) -> dict[str, dict]:
+        mapping: dict[str, dict] = {}
+        for entry in self._read_all():
+            output = entry.get("output")
+            if output:
+                mapping[output] = entry
+        return mapping
+
     def _read_all(self) -> list[dict]:
         if not self._file.exists():
             return []
