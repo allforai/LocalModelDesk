@@ -40,6 +40,17 @@ def test_entitlements_is_empty_dict():
     assert data == {}
 
 
+def test_no_legacy_scripts_in_repo():
+    legacy_scripts = (
+        "initModels.sh",
+        "run-h3.sh",
+        "run-music3.py",
+        "unload-llm.sh",
+        "media-gui/start.sh",
+    )
+    assert all(not (REPO / script).exists() for script in legacy_scripts)
+
+
 def test_icon_source_is_1024_png():
     result = run(["sips", "-g", "pixelWidth", "-g", "pixelHeight", REPO / "packaging" / "icon" / "icon-1024.png"])
     assert result.returncode == 0, result.stderr
