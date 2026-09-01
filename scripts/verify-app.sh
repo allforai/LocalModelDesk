@@ -90,7 +90,8 @@ done
 # V6: imports use the embedded interpreter with user site-packages disabled.
 if [[ -x "$PYBIN" ]]; then
   v6() {
-    if ! OUT="$(cd "$RES" && PYTHONPATH="$1" "python/bin/python3.13" -s -c "$2" 2>&1)"; then
+    if ! OUT="$(cd "$RES" && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$1" \
+      "python/bin/python3.13" -s -c "$2" 2>&1)"; then
       fail "V6 导入失败 [PYTHONPATH=$1] [$2]: $OUT"
     fi
   }

@@ -6,6 +6,7 @@ struct ServerLaunchCommand {
   var arguments: [String]
   var environment: [String: String]
   var familyPathPrefix: String?
+  var workingDirectoryURL: URL? = nil
 }
 
 /// All server lifecycle inputs are injectable so the headless harness uses production code.
@@ -49,6 +50,7 @@ final class ServerController {
     let process = Process()
     process.executableURL = launch.executableURL
     process.arguments = launch.arguments
+    process.currentDirectoryURL = launch.workingDirectoryURL
     var environment = ProcessInfo.processInfo.environment
     for (key, value) in launch.environment { environment[key] = value }
     process.environment = environment

@@ -2,8 +2,12 @@ import Foundation
 
 /// Swift's only location for path and port constants and path construction.
 enum DeskPaths {
-  static let port: Int =
-    ProcessInfo.processInfo.environment["LMD_SHELL_PORT"].flatMap(Int.init) ?? 8766
+  static func validatedPort(_ raw: String?) -> Int {
+    guard let raw, let value = Int(raw), (1...65535).contains(value) else { return 8766 }
+    return value
+  }
+  static let port: Int = validatedPort(
+    ProcessInfo.processInfo.environment["LMD_SHELL_PORT"])
   static let llmPort: Int = 8767
 
   static var baseURL: URL { URL(string: "http://127.0.0.1:\(port)")! }
@@ -16,11 +20,20 @@ enum DeskPaths {
 
   static let embeddedServerArguments = ["-s", "-m", "desk"]
   static func embeddedEnvironment(resources: URL) -> [String: String] {
-    ["PYTHONPATH": "\(resources.path):\(resources.path)/pylibs/desk"]
+    [
+      "PYTHONPATH": "\(resources.path):\(resources.path)/pylibs/desk",
+      "LMD_SHELL_PORT": String(port),
+      "LOCALMODELDESK_DATA_ROOT": userDataRoot.path,
+    ]
   }
 
   static var userDataRoot: URL {
-    FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    if let override = ProcessInfo.processInfo.environment["LOCALMODELDESK_DATA_ROOT"],
+       !override.isEmpty {
+      let expanded = (override as NSString).expandingTildeInPath
+      return URL(fileURLWithPath: expanded, isDirectory: true).standardizedFileURL
+    }
+    return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
       .appendingPathComponent("LocalModelDesk")
   }
   static var serverStdoutLogURL: URL {
@@ -38,7 +51,8 @@ enum DeskPaths {
         executableURL: python,
         arguments: embeddedServerArguments,
         environment: embeddedEnvironment(resources: resources),
-        familyPathPrefix: python.path)
+        familyPathPrefix: python.path,
+        workingDirectoryURL: resources)
     }
     return ServerLaunchSpec(
       launch: launch,

@@ -1,26 +1,33 @@
 """Run the Desk HTTP service."""
 from __future__ import annotations
+import os
 
 from .app import DeskApp
-from .foundation import capabilities, paths, routes
+from .runtime import build_runtime
+
+
+def runtime_port() -> int:
+    """Use the same overridable shell port contract as the native host."""
+    try:
+        port = int(os.environ.get("LMD_SHELL_PORT", "8766"))
+    except ValueError:
+        return 8766
+    return port if 1 <= port <= 65535 else 8766
 
 
 def build_app(host: str = "127.0.0.1", port: int = 8766) -> DeskApp:
-    """Construct the HTTP app without requiring a valid persisted config."""
-    roots = paths.resolve_paths(default_config_on_corrupt=True)
-    paths.setup_logging(roots)
-    app = DeskApp(host, port)
-    app.add_routes(routes.build_routes())
-    app.capabilities = capabilities.probe_capabilities(roots)
-    return app
+    """Compatibility helper returning the fully assembled production app."""
+    runtime = build_runtime(host, port)
+    runtime.app.runtime = runtime
+    return runtime.app
 
 
 def main() -> None:
-    app = build_app()
+    runtime = build_runtime(port=runtime_port())
     try:
-        app.serve_forever()
+        runtime.serve_forever()
     finally:
-        app.shutdown()
+        runtime.shutdown()
 
 
 if __name__ == "__main__":

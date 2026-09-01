@@ -42,7 +42,9 @@ def orca_json(*args, timeout=60):
 
 
 def tree_text(pid: int) -> str:
-    code, obj = orca_json("get-app-state", "--app", f"pid:{pid}", "--no-screenshot")
+    code, obj = orca_json(
+        "get-app-state", "--app", f"pid:{pid}", "--restore-window", "--no-screenshot"
+    )
     if code != 0:
         return ""
     result = obj.get("result", obj)

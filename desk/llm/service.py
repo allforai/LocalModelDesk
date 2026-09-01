@@ -57,6 +57,29 @@ class LlmService:
         self._load_thread: threading.Thread | None = None
         self._load_generation = 0
         self._unsubscribe = self._arbiter.subscribe(self._on_desk_state)
+        self._closed = False
+
+    def close(self) -> None:
+        """Release subscriptions and any child process owned by this service."""
+        with self._lock:
+            if self._closed:
+                return
+            self._closed = True
+            self._load_generation += 1
+            proc, token = self._proc, self._token
+            self._proc = None
+            self._token = None
+            self._entry = None
+            self._state = LlmState(status=STATUS_IDLE)
+        self._unsubscribe()
+        if proc is not None:
+            proc.terminate()
+            try:
+                proc.wait(self._term_grace_s)
+            except Exception:
+                proc.kill()
+        if token is not None:
+            self._arbiter.release_heavy(token)
 
     def _find_entry(self, key: str) -> Any | None:
         return next((entry for entry in self._catalog.list_catalog() if entry.key == key), None)

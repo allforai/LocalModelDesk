@@ -81,8 +81,10 @@ def test_requirements_locks_are_pinned():
 
 def test_build_verify_does_not_write_bytecode_after_signing():
     build = (REPO / "scripts" / "build-app.sh").read_text()
+    verifier = (REPO / "scripts" / "verify-app.sh").read_text()
     verify = 'PYTHONDONTWRITEBYTECODE=1 "$REPO/scripts/verify-app.sh"'
     assert verify in build
+    assert 'PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$1"' in verifier
 
 
 def test_build_relocates_and_sanitizes_embedded_cpython_before_signing():
