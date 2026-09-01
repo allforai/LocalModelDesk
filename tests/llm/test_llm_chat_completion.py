@@ -33,14 +33,14 @@ def test_completion_empty_content_stays_empty_no_backfill(tmp_path):
     assert got["reasoning"] == "只想不说"
 
 
-def test_completion_passes_sampling_params_and_serves_model_by_hf_repo(tmp_path):
+def test_completion_passes_sampling_params_to_resident_local_model(tmp_path):
     testbed = make_loaded(tmp_path, backend_kw={"chat_result": OK})
 
     testbed.service.chat_completion({"messages": [], "temperature": 0.2, "top_p": 0.9,
                                      "max_tokens": 64, "model": testbed.entries[0].hf_repo})
 
     _, _, payload = next(call for call in testbed.calls if call[0] == "chat")
-    assert payload["model"] == testbed.entries[0].hf_repo
+    assert payload["model"] == "default_model"
     assert (payload["temperature"], payload["top_p"], payload["max_tokens"]) == (0.2, 0.9, 64)
     assert payload["stream"] is False
 

@@ -364,7 +364,11 @@ class LlmService:
 
     @staticmethod
     def _upstream_payload(request: dict[str, Any], entry: Any) -> dict[str, Any]:
-        payload: dict[str, Any] = {"model": entry.hf_repo, "messages": request["messages"]}
+        # mlx_lm.server maps this stable alias to the model supplied on its
+        # command line. Sending the public HF repository id makes it resolve
+        # and download a second model from the Hub instead of using the
+        # already resident local path.
+        payload: dict[str, Any] = {"model": "default_model", "messages": request["messages"]}
         for key in ("temperature", "top_p", "max_tokens"):
             if request.get(key) is not None:
                 payload[key] = request[key]
@@ -404,6 +408,7 @@ class LlmService:
         entry = self._chat_precheck(request)
         payload = self._upstream_payload(request, entry)
         payload["stream"] = True
+        payload["stream_options"] = {"include_usage": True}
         return self._stream_events(payload)
 
     def _stream_events(self, payload: dict[str, Any]):

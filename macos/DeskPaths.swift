@@ -22,6 +22,7 @@ enum DeskPaths {
   static func embeddedEnvironment(resources: URL) -> [String: String] {
     [
       "PYTHONPATH": "\(resources.path):\(resources.path)/pylibs/desk",
+      "PYTHONDONTWRITEBYTECODE": "1",
       "LMD_SHELL_PORT": String(port),
       "LOCALMODELDESK_DATA_ROOT": userDataRoot.path,
     ]

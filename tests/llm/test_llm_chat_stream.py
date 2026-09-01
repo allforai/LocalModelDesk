@@ -29,6 +29,9 @@ def test_stream_content_deltas_then_done_with_usage(tmp_path):
         {"type": "delta", "text": "好", "reasoning": None},
         {"type": "done", "usage": {"total_tokens": 3}, "finish_reason": "stop"},
     ]
+    _, _, payload = next(call for call in testbed.calls if call[0] == "chat_stream")
+    assert payload["model"] == "default_model"
+    assert payload["stream_options"] == {"include_usage": True}
 
 
 def test_stream_reasoning_stays_separate_from_content(tmp_path):

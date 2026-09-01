@@ -50,6 +50,7 @@ def test_deskpaths_declares_frozen_contract():
     text = (MACOS / "DeskPaths.swift").read_text(encoding="utf-8")
     assert 'environment["LOCALMODELDESK_DATA_ROOT"]' in text
     assert '"LOCALMODELDESK_DATA_ROOT": userDataRoot.path' in text
+    assert '"PYTHONDONTWRITEBYTECODE": "1"' in text
     assert '"LMD_SHELL_PORT": String(port)' in text
     assert "(1...65535).contains(value)" in text
     assert "workingDirectoryURL: resources" in text
