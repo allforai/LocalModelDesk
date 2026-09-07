@@ -21,11 +21,13 @@ export function createChatPane(root) {
     input: root.querySelector("[data-chat-input]"),
     sendBtn: root.querySelector("[data-send]"),
     error: root.querySelector("[data-chat-error]"),
+    loadHint: root.querySelector("[data-load-hint]"),
   };
   let catalog = [];
   let sessions = [];
   let currentId = null;
   let streaming = false;
+  let sessionsTick = 0;
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
   const current = () => sessions.find((s) => s.id === currentId) ?? null;
@@ -253,9 +255,18 @@ export function createChatPane(root) {
 
   function setHeavyAllowed(allowed, reason = "") {
     els.loadBtn.disabled = !allowed;
-    if (!allowed) setError(reason);
-    else if (els.error.textContent === reason || reason === "") setError("");
+    els.loadBtn.title = allowed ? "" : reason;
+    if (els.loadHint) els.loadHint.textContent = allowed ? "" : reason;
   }
 
-  return { init, refreshModels, setHeavyAllowed };
+  async function refreshSessionsIfStale() {
+    sessionsTick += 1;
+    if (sessionsTick % 5 !== 0 || streaming) return;
+    const latest = sortSessions(await api.listChatSessions());
+    if (latest.length !== sessions.length || latest.some((s, i) => s.id !== sessions[i].id || s.updated !== sessions[i].updated)) {
+      sessions = latest; renderSessionList();
+    }
+  }
+
+  return { init, refreshModels, setHeavyAllowed, applyLlmStatus: renderLlm, refreshSessionsIfStale };
 }
