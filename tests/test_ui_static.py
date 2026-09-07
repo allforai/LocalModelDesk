@@ -136,3 +136,10 @@ def test_shell_tick_refreshes_resource_download_progress():
 
     api_source = (STATIC_ROOT / "js" / "api.js").read_text(encoding="utf-8")
     assert "request(ROUTES.download)" in api_source
+
+
+def test_drawer_and_firstrun_markup_use_shared_form_language():
+    HTML = (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
+    assert 'class="check-row"' in HTML and "data-settings-enabled" in HTML.split('class="check-row"', 1)[1].split("</label>", 1)[0]
+    assert '<fieldset' not in HTML          # first-run uses cards, not browser fieldsets
+    assert 'class="drawer-head"' in HTML and 'data-close-settings' in HTML.split('class="drawer-head"', 1)[1].split("</div>", 1)[0]

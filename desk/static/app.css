@@ -4,4 +4,23 @@
 * { box-sizing:border-box; } body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"PingFang SC",sans-serif; } button,input,textarea,select { background:#12141a; color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 8px; } button { cursor:pointer; } textarea { width:100%; min-height:72px; } .inline-error { color:var(--danger); white-space:pre-wrap; } .inline-error:empty { display:none; }
 #statusbar { display:flex; gap:16px; align-items:center; padding:8px 16px; background:var(--panel); border-bottom:2px solid var(--border); } #statusbar [data-open-settings] { margin-left:auto; } #statusbar[data-tone="ok"] { border-color:var(--ok); } #statusbar[data-tone="busy"] { border-color:var(--busy); } #statusbar[data-offline="1"], #statusbar[data-tone="error"] { border-color:var(--danger); }
 #tabs { display:flex; gap:4px; padding:8px 16px 0; } #tabs button.active { color:var(--accent); background:var(--panel); } main > section { min-height:calc(100vh - 94px); padding:16px; background:var(--panel); } #pane-chat { display:flex; gap:16px; } .sessions { width:220px; flex:none; } .sessions ul,[data-res-list],[data-lib-list] { list-style:none; padding:0; } .chat-main { flex:1; display:flex; flex-direction:column; } .model-row,.composer,.res-head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .messages { min-height:300px; overflow:auto; } .form { max-width:640px; display:flex; flex-direction:column; gap:8px; } [data-job-log] { max-height:240px; overflow:auto; white-space:pre-wrap; } [data-job-player] video,[data-job-player] audio,[data-lib-player] video { max-width:100%; }
-.overlay { position:fixed; inset:0; display:flex; place-items:center; justify-content:center; background:#0009; z-index:30; } .dialog,#pane-settings { background:var(--panel); border:1px solid var(--border); padding:20px; } #pane-firstrun { position:fixed; inset:0; z-index:20; padding:48px; overflow:auto; background:var(--bg); } #pane-settings { position:fixed; top:0; right:0; bottom:0; z-index:25; width:min(420px,100%); overflow:auto; } #fatal { position:fixed; inset:0; z-index:40; display:grid; place-items:center; padding:48px; color:var(--danger); background:var(--bg); }
+.overlay { position:fixed; inset:0; display:flex; place-items:center; justify-content:center; background:#0009; z-index:30; } .dialog { background:var(--panel); border:1px solid var(--border); padding:20px; } #fatal { position:fixed; inset:0; z-index:40; display:grid; place-items:center; padding:48px; color:var(--danger); background:var(--bg); }
+
+/* 10. drawer + first run */
+#pane-settings{position:fixed;top:0;right:0;bottom:0;z-index:25;width:min(420px,100%);overflow:auto;background:var(--panel);border-left:1px solid var(--border);padding:0 20px 20px}
+.drawer-head{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;padding:16px 0;background:var(--panel);z-index:1}.drawer-head h2{margin:0}
+.settings-section{display:grid;gap:10px;padding:4px 0 20px;border-bottom:1px solid var(--border);margin-bottom:18px}
+.settings-section label{display:grid;gap:5px;font-size:13px;color:var(--muted)}.settings-section input:not([type="checkbox"]):not([type="radio"]){width:100%;color:var(--text)}
+.check-row{display:flex !important;align-items:center;gap:8px;color:var(--text) !important}.check-row input{width:auto;margin:0;accent-color:var(--accent)}
+.settings-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.url-row{display:flex;gap:8px;align-items:center}.url-row code{flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font:13px ui-monospace,Menlo,monospace;overflow:auto}
+.warn{color:var(--busy)}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:var(--border);color:var(--muted)}
+.badge-ok{background:color-mix(in srgb, var(--ok) 25%, transparent);color:var(--ok)}
+.badge-none{background:var(--border);color:var(--muted)}
+.btn-quiet{background:transparent;border:1px solid transparent}
+.btn-sm{padding:4px 8px;font-size:12px}
+.hint{color:var(--muted);font-size:13px}
+#pane-firstrun{position:fixed;inset:0;z-index:20;overflow:auto;background:var(--bg);padding:48px}
+.firstrun-wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;display:grid;gap:10px}

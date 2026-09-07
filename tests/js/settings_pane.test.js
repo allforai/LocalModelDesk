@@ -6,6 +6,7 @@ class Element {
     this.value = "";
     this.checked = false;
     this.textContent = "";
+    this.className = "";
     this.hidden = false;
     this.dataset = {};
     this.listeners = {};
@@ -85,4 +86,19 @@ test("settings 面板的两条 URL 可分别复制，保存失败原样显示", 
     globalThis.fetch = oldFetch;
     Object.defineProperty(globalThis, "navigator", { configurable: true, value: { clipboard: oldClipboard } });
   }
+});
+
+test("监听状态用徽标类表达", async () => {
+  const oldFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    config: { enabled: true, host: "127.0.0.1", port: 8770 },
+    status: { enabled: true, listening: true, host: "127.0.0.1", port: 8770, auth: "none", last_error: null },
+  }), { status: 200 });
+  try {
+    const { createSettingsPane } = await import("../../desk/static/js/panes/settings.js");
+    const { root, controls } = makePane();
+    const pane = createSettingsPane(root);
+    await pane.init();
+    assert.equal(controls.get("[data-settings-listening]").className, "badge badge-ok");
+  } finally { globalThis.fetch = oldFetch; }
 });
