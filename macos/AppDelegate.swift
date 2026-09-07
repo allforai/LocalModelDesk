@@ -25,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     windowController.onRetry = { [weak self] in self?.startServer() }
     poller.onUpdate = { [weak self] result in self?.handlePoll(result) }
+    poller.onMemory = { [weak self] result in self?.statusController.renderMemory(result) }
     status.server = .starting
     statusController.render(status)
     windowController.showWindow()

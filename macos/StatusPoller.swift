@@ -6,6 +6,7 @@ final class StatusPoller {
   private var timer: Timer?
   private(set) var consecutiveFailures = 0
   var onUpdate: ((Result<DeskStateSnapshot, DeskAPIError>) -> Void)?
+  var onMemory: ((Result<MemoryLine, DeskAPIError>) -> Void)?
 
   init(api: DeskAPI) { self.api = api }
 
@@ -35,6 +36,9 @@ final class StatusPoller {
         }
         self.onUpdate?(result)
       }
+    }
+    api.memorySnapshot { [weak self] result in
+      RunLoop.main.perform(inModes: [.common]) { self?.onMemory?(result) }
     }
   }
 }

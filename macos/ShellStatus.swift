@@ -45,6 +45,13 @@ struct ShellStatus {
   var lastPollError: String?
 }
 
+/// The sole formatter for the menubar memory row; wording mirrors the web statusbar (N1).
+func memoryMenuTitle(used: Int64, total: Int64, available: Int64) -> String {
+  let gib = 1_073_741_824.0
+  return String(format: "内存 已用 %.1f / 总 %.1f GiB（可用 %.1f GiB）",
+                Double(used) / gib, Double(total) / gib, Double(available) / gib)
+}
+
 /// The sole mapping from shell status to the menu-bar title.
 func menuTitle(for status: ShellStatus) -> String {
   switch status.server {

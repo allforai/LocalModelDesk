@@ -11,6 +11,10 @@ struct ShellHarness {
     }
     switch command {
     case "map-status": runMapStatus()
+    case "memory-line":
+      guard args.count >= 4, let used = Int64(args[1]), let total = Int64(args[2]),
+            let available = Int64(args[3]) else { exit(64) }
+      print(memoryMenuTitle(used: used, total: total, available: available))
     case "spawn-probe": runSpawn(Array(args.dropFirst()))
     case "run": runServer(Array(args.dropFirst()))
     case "listeners":
