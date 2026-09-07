@@ -157,3 +157,7 @@ def test_primary_actions_carry_the_primary_class():
 def test_layout_is_full_width_with_24px_margins_and_cards():
     assert "main>section{" in CSS.replace(" ", "") and "padding:var(--margin)" in CSS.replace(" ", "")
     assert ".badge-ok{" in CSS.replace(" ", "") and ".badge-busy{" in CSS.replace(" ", "") and ".badge-none{" in CSS.replace(" ", "")
+
+def test_reason_hints_are_not_error_red_and_motion_is_limited():
+    assert ".hint-busy{" in CSS.replace(" ", "") and "color:var(--busy)" in CSS
+    assert "prefers-reduced-motion" in CSS

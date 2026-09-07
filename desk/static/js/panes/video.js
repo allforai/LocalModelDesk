@@ -10,6 +10,7 @@ export function createVideoPane(root, ctx = {}) {
     prompt: root.querySelector("[data-video-prompt]"), size: root.querySelector("[data-video-size]"),
     frames: root.querySelector("[data-video-frames]"), steps: root.querySelector("[data-video-steps]"),
     startBtn: root.querySelector("[data-video-start]"), error: root.querySelector("[data-video-error]"),
+    hint: root.querySelector("[data-video-hint]"),
   };
   for (const [value, label] of SIZES) {
     const option = root.ownerDocument.createElement("option");
@@ -28,6 +29,7 @@ export function createVideoPane(root, ctx = {}) {
   for (const [key, name, tag] of [["first_frame", "first", "img"], ["last_frame", "last", "img"], ["ref_video", "source", "video"]]) {
     const input = root.querySelector(`[data-video-${name}]`);
     const preview = root.querySelector(`[data-video-${name}-preview]`);
+    const nameLabel = root.querySelector(`[data-video-${name}-name]`);
     inputs[key] = input;
     let url;
     input?.addEventListener("change", () => {
@@ -35,9 +37,11 @@ export function createVideoPane(root, ctx = {}) {
       if (url) URL.revokeObjectURL(url);
       preview.replaceChildren();
       const file = input.files?.[0];
+      if (nameLabel) nameLabel.textContent = file ? file.name : "未选择文件";
       if (!file) return;
       if (!file.size || file.size > 32 * 1024 * 1024) {
         input.value = "";
+        if (nameLabel) nameLabel.textContent = "未选择文件";
         els.error.textContent = "请选择非空且不超过 32 MB 的素材";
         return;
       }
@@ -135,9 +139,8 @@ export function createVideoPane(root, ctx = {}) {
   function setHeavyAllowed(allowed, reason = "") {
     heavyAllowed = allowed;
     els.startBtn.disabled = submitting || !allowed;
-    if (!allowed) { blockedReason = reason; els.error.textContent = reason; }
-    else if (blockedReason && els.error.textContent === blockedReason) els.error.textContent = "";
-    if (allowed) blockedReason = "";
+    if (!allowed) { blockedReason = reason; if (els.hint) els.hint.textContent = reason; els.startBtn.title = reason; }
+    else { blockedReason = ""; if (els.hint) els.hint.textContent = ""; els.startBtn.title = ""; }
   }
   return { fill, jobView, setHeavyAllowed };
 }

@@ -82,3 +82,16 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .badge-unknown{background:rgba(229,83,75,.15);color:var(--danger)}
 /* 10 (task 10). empty state */
 .empty{color:var(--muted);padding:24px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius-card)}
+/* 8. media panes: form left, job right */
+#pane-video,#pane-music{display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:var(--margin);align-items:start}
+@media (max-width:899px){#pane-video,#pane-music{grid-template-columns:1fr}}
+.form{display:flex;flex-direction:column;gap:12px}.form label{display:grid;gap:4px;font-size:13px;color:var(--muted)}.form label>select,.form label>input{color:var(--text)}
+.job{display:flex;flex-direction:column;gap:12px}
+[data-job-progress]{width:100%;height:6px;accent-color:var(--busy)}
+.job-log pre{max-height:240px;overflow:auto;white-space:pre-wrap;font:13px ui-monospace,Menlo,monospace;color:var(--muted);margin:8px 0 0}
+[data-job-player] video,[data-job-player] audio,[data-lib-player] video{max-width:100%;border-radius:var(--radius)}
+.file-row{display:flex;align-items:center;gap:8px}.file-pick .btn{display:inline-block;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer}
+/* 11. state colours + motion */
+.hint-busy{color:var(--busy)}.hint-busy:empty{display:none}
+#pane-settings,.overlay{transition:opacity 150ms ease}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
