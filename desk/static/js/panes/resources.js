@@ -62,19 +62,28 @@ export function createResourcesPane(root) {
 
   function rowNode(entry, view) {
     const li = doc.createElement("li");
-    li.className = "res-row";
+    li.className = "card res-row";
     // The browser tests and future automation address a row by the catalog key,
     // not a localized display name.
     (li.dataset ??= {}).model = entry.key;
 
-    const title = doc.createElement("p");
-    title.textContent = entry.name;
+    const head = doc.createElement("div");
+    head.className = "res-head";
+    const name = doc.createElement("h4");
+    name.className = "res-name";
+    name.textContent = entry.name;
+    const badge = doc.createElement("span");
+    badge.className = `badge badge-${view.badgeKind}`;
+    badge.textContent = view.badge;
+    head.append(name, badge);
+
     const meta = doc.createElement("p");
     meta.className = "res-meta";
-    meta.textContent = `${view.badge} · 预计 ${view.sizeText} · 占用 ${view.diskText}`;
-    li.append(title, meta);
+    meta.textContent = `预计 ${view.sizeText} · 占用 ${view.diskText}`;
+    li.append(head, meta);
     if (view.pct > 0 && view.pct < 100) {
       const progress = doc.createElement("progress");
+      progress.className = "res-progress";
       progress.value = view.pct;
       progress.max = 100;
       progress.textContent = `${view.pct}%`;
@@ -120,6 +129,7 @@ export function createResourcesPane(root) {
 
   function missingNode(gaps) {
     const details = doc.createElement("details");
+    details.className = "res-missing";
     const summary = doc.createElement("summary");
     summary.textContent = `缺失文件（${gaps.length}）`;
     const list = doc.createElement("ul");

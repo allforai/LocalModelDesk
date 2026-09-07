@@ -22,9 +22,11 @@ export function rowView(entry, status, download = null) {
 
   const wantsDownload = actions.includes("download") || actions.includes("resume");
   const downloadDisabled = otherDownloading && wantsDownload;
+  const badgeKind = status.state === "present" ? "ok" : status.state === "partial" ? "busy" : status.state === "missing" ? "none" : "unknown";
   return {
     key: entry.key,
     badge,
+    badgeKind,
     pct,
     sizeText: Number.isFinite(status.bytes_expected) ? formatBytes(status.bytes_expected) : `${entry.gb} GiB（目录）`,
     diskText: formatBytes(status.disk_bytes),

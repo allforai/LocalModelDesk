@@ -53,6 +53,8 @@ test("library 面板合并倒序渲染，点击成品就地播放并回填历史
   await pane.refresh();
 
   assert.equal(elements.list.children.length, 2);
+  assert.equal(elements.list.children[0].className, "card lib-row");
+  assert.equal(elements.list.children[0].children[0].children[0].className, "lib-title");
   assert.equal(elements.list.children[0].children[0].children[0].textContent, "orphan.wav");
   assert.equal(elements.list.children[1].children[0].children[0].textContent, "海边");
 

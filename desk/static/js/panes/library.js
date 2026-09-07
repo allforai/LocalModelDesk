@@ -3,6 +3,7 @@ import * as api from "../api.js";
 import { fillPlan } from "../pure/history_fill.js";
 import { formatBytes, formatDuration, formatTimestamp } from "../pure/format.js";
 import { addIcon } from "../icons.js";
+import { describeJobError } from "../pure/job_error.js";
 
 const KIND_LABEL = { video: "视频", music: "音乐", file: "文件" };
 const STATUS_LABEL = { done: "完成", failed: "失败", cancelled: "已取消" };
@@ -62,11 +63,12 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
 
   function rowNode({ entry, output }) {
     const li = doc.createElement("li");
-    li.className = "lib-row";
+    li.className = "card lib-row";
     const head = doc.createElement("div");
     if (entry) {
       const summary = summarize(entry);
       const title = doc.createElement("p");
+      title.className = "lib-title";
       title.textContent = summary.text || "（无提示词）";
       const meta = doc.createElement("p");
       meta.className = "lib-meta";
@@ -79,13 +81,16 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
       ].filter(Boolean).join(" · ");
       head.append(title, meta);
       if (entry.error) {
+        const [code, ...rest] = entry.error.split(": ");
+        const { title: errorTitle } = describeJobError({ code, message: rest.join(": ") });
         const error = doc.createElement("p");
         error.className = "inline-error";
-        error.textContent = entry.error;
+        error.textContent = errorTitle;
         head.append(error);
       }
     } else {
       const title = doc.createElement("p");
+      title.className = "lib-title";
       title.textContent = output.name;
       const meta = doc.createElement("p");
       meta.className = "lib-meta";
@@ -94,6 +99,7 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
     }
 
     const actions = doc.createElement("div");
+    actions.className = "lib-actions";
     const playable = output ?? (entry?.output ? { name: entry.output, kind: entry.kind } : null);
     if (playable) {
       li.addEventListener("click", () => playOutput(playable));
