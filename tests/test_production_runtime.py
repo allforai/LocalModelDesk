@@ -110,6 +110,25 @@ def test_runtime_startup_does_not_rewrite_persisted_config(tmp_path, monkeypatch
         runtime.shutdown()
 
 
+def test_runtime_serves_state_when_config_is_broken_json(tmp_path, monkeypatch, caplog):
+    import logging
+
+    data_root = _configured_data_root(tmp_path, monkeypatch)
+    (data_root / "config.json").write_text("{broken", encoding="utf-8")
+    runtime = build_runtime(port=0)
+    with caplog.at_level(logging.ERROR):
+        runtime.start_background()
+    try:
+        status, state = http_call(runtime, "GET", "/api/state")
+        assert status == 200 and state["holder"] is None
+        status, payload = http_call(runtime, "GET", "/api/config")
+        assert status == 500 and payload["error"]["code"] == "config_corrupt"
+        status, gateway = http_call(runtime, "GET", "/api/gateway/config")
+        assert status == 200 and gateway["status"]["listening"] is False
+    finally:
+        runtime.shutdown()
+
+
 def test_production_modules_never_import_test_fakes():
     from pathlib import Path
 
