@@ -2,6 +2,7 @@
 import * as api from "../api.js";
 import { formatDuration } from "../pure/format.js";
 import { describeJobError } from "../pure/job_error.js";
+import { parseStepProgress } from "../pure/job_progress.js";
 
 const STATUS_LABEL = { idle: "空闲", running: "生成中…", done: "完成", error: "失败", cancelled: "已取消" };
 
@@ -9,13 +10,17 @@ export function createJobView(root, { mediaTag }) {
   const els = {
     status: root.querySelector("[data-job-status]"), log: root.querySelector("[data-job-log]"),
     cancelBtn: root.querySelector("[data-job-cancel]"), player: root.querySelector("[data-job-player]"),
-    error: root.querySelector("[data-job-error]"),
+    error: root.querySelector("[data-job-error]"), progress: root.querySelector("[data-job-progress]"),
+    logDetails: root.querySelector(".job-log"),
   };
   let jobId = null;
   let logFrom = 0;
+  let logText = "";
   function reset() {
-    jobId = null; logFrom = 0;
+    jobId = null; logFrom = 0; logText = "";
     els.log.textContent = ""; els.player.replaceChildren(); els.error.textContent = "";
+    if (els.progress) els.progress.hidden = true;
+    if (els.logDetails) els.logDetails.open = false;
   }
   function statusText(job) {
     if (job.status === "running" && typeof job.elapsed_s === "number") return `生成中…（已用 ${formatDuration(job.elapsed_s)}）`;
@@ -25,7 +30,14 @@ export function createJobView(root, { mediaTag }) {
   function apply(payload) {
     els.status.textContent = statusText(payload);
     els.cancelBtn.hidden = payload.status !== "running";
-    if (typeof payload.log === "string" && payload.log) { els.log.textContent += payload.log; els.log.scrollTop = els.log.scrollHeight; }
+    if (typeof payload.log === "string" && payload.log) {
+      els.log.textContent += payload.log; els.log.scrollTop = els.log.scrollHeight; logText += payload.log;
+    }
+    if (els.progress) {
+      const prog = parseStepProgress(logText);
+      els.progress.hidden = !(payload.status === "running" && prog);
+      if (prog) els.progress.value = prog.pct;
+    }
     if (payload.status === "error" && payload.error) {
       const { title, detail } = describeJobError(payload.error);
       els.error.replaceChildren();
@@ -34,6 +46,7 @@ export function createJobView(root, { mediaTag }) {
       const summary = root.ownerDocument.createElement("summary"); summary.textContent = "详情";
       const pre = root.ownerDocument.createElement("pre"); pre.textContent = detail;
       details.append(summary, pre); els.error.append(strong, details);
+      if (els.logDetails) els.logDetails.open = true;
     }
     if (payload.status === "done" && payload.output && !els.player.firstChild) {
       const media = root.ownerDocument.createElement(mediaTag);
