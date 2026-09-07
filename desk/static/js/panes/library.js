@@ -136,7 +136,11 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
     media.controls = true;
     media.autoplay = true;
     media.src = api.serveOutput(output.name);
-    els.player.append(media);
+    const caption = doc.createElement("p");
+    caption.className = "hint";
+    caption.textContent = `正在播放：${output.name}`;
+    els.player.append(media, caption);
+    els.player.scrollIntoView?.({ block: "start", behavior: "smooth" });
   }
 
   els.refreshBtn.addEventListener("click", refresh);

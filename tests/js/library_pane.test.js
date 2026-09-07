@@ -119,3 +119,30 @@ test("每条成品有『在访达中显示』并调用 reveal 接口", async (t)
   buttons.find((b) => b.textContent === "在访达中显示").click();
   assert.ok(calls.some(([url, method]) => url === "/api/outputs/h3-1.mp4/reveal" && method === "POST"));
 });
+
+test("播放时播放器滚入视野且标注正在播放的记录", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async (path) => ({
+    ok: true,
+    json: async () => path === "/api/outputs"
+      ? [{ name: "m.wav", kind: "music", bytes: 1, ts: "2026-09-07T01:00:00" }]
+      : [],
+  });
+
+  const doc = { createElement: (tag) => new FakeElement(tag) };
+  const elements = Object.fromEntries(["refresh", "player", "list", "error"]
+    .map((name) => [name, new FakeElement()]));
+  const root = new FakeElement();
+  root.ownerDocument = doc;
+  root.querySelector = (selector) => elements[selector.match(/data-lib-(.+)\]/)[1]];
+  let scrolled = 0;
+  elements.player.scrollIntoView = () => { scrolled += 1; };
+  const pane = createLibraryPane(root, { applyFill() {} });
+
+  await pane.refresh();
+  elements.list.children[0].click();
+
+  assert.equal(scrolled, 1);
+  assert.equal(elements.player.children[1].textContent, "正在播放：m.wav");
+});
