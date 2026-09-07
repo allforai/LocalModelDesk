@@ -4,6 +4,7 @@ import * as api from "../api.js";
 import { sseDataLines } from "../stream.js";
 import { initialStream, reduceChunk } from "../pure/chat_stream.js";
 import { needsWarning } from "../pure/mem_warn.js";
+import { formatBytes } from "../pure/format.js";
 import { sortSessions, displayTitle } from "../pure/sessions.js";
 import { confirmDialog } from "../widgets/confirm.js";
 
@@ -38,11 +39,15 @@ export function createChatPane(root) {
     const selected = els.modelSelect.value;
     els.modelSelect.replaceChildren();
     for (const entry of catalog) {
-      const ready = byKey.get(entry.key)?.state === "present";
+      const modelStatus = byKey.get(entry.key);
+      const ready = modelStatus?.state === "present";
+      const sizeText = Number.isFinite(modelStatus?.bytes_expected)
+        ? formatBytes(modelStatus.bytes_expected)
+        : `${entry.gb} GiB（目录）`;
       const option = doc.createElement("option");
       option.value = entry.key;
       const marks = [entry.params, entry.quant, entry.vision ? "视觉" : null].filter(Boolean).join(" · ");
-      option.textContent = `${entry.name} · ${entry.gb} GB${marks ? ` · ${marks}` : ""}${ready ? "" : "（未下载/不完整）"}`;
+      option.textContent = `${entry.name} · ${sizeText}${marks ? ` · ${marks}` : ""}${ready ? "" : "（未下载/不完整）"}`;
       option.disabled = !ready;
       els.modelSelect.append(option);
     }

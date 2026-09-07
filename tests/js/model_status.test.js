@@ -5,7 +5,7 @@ import { rowView } from "../../desk/static/js/pure/model_status.js";
 const entry = { key: "glm", name: "GLM", gb: 68.4, vision: false };
 const base = {
   key: "glm", state: "present", percent: 100,
-  bytes_expected: 10, bytes_local: 10, disk_bytes: 73446916096, gaps: [],
+  bytes_expected: 73446916096, bytes_local: 73446916096, disk_bytes: 73446916096, gaps: [],
 };
 
 test("present：徽标「齐」、pct 100、只有删除（R-ui-05）", () => {
@@ -13,8 +13,13 @@ test("present：徽标「齐」、pct 100、只有删除（R-ui-05）", () => {
   assert.equal(v.badge, "齐");
   assert.equal(v.pct, 100);
   assert.deepEqual(v.actions, ["delete"]);
-  assert.equal(v.sizeText, "68.4 GB");
-  assert.equal(v.diskText, "68.4 GB");
+  assert.equal(v.sizeText, "68.4 GiB");
+  assert.equal(v.diskText, "68.4 GiB");
+});
+
+test("size text 在 bytes_expected 缺失时回退到目录估计", () => {
+  const v = rowView(entry, { ...base, bytes_expected: undefined });
+  assert.equal(v.sizeText, "68.4 GiB（目录）");
 });
 
 test("partial：「一半 N%」按字节 + 续传/删除 + 缺失清单透传", () => {

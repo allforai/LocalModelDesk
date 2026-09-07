@@ -26,7 +26,7 @@ export function rowView(entry, status, download = null) {
     key: entry.key,
     badge,
     pct,
-    sizeText: `${entry.gb} GB`,
+    sizeText: Number.isFinite(status.bytes_expected) ? formatBytes(status.bytes_expected) : `${entry.gb} GiB（目录）`,
     diskText: formatBytes(status.disk_bytes),
     actions,
     downloadDisabled,

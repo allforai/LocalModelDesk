@@ -42,7 +42,7 @@ test("resources 面板渲染三态、磁盘占用和可展开的缺失清单", a
   assert.match(elements.list.children[0].textContent, /齐/);
   assert.match(elements.list.children[1].textContent, /一半 40%/);
   assert.equal(find(elements.list.children[1], (el) => el.tagName === "details").children[1].children[0].textContent, "weights.bin");
-  assert.match(elements.disk.textContent, /可用 2 KB/);
+  assert.match(elements.disk.textContent, /可用 2 KiB/);
   assert.ok(find(elements.list.children[2], (el) => el.tagName === "button" && el.textContent === "下载"));
 });
 

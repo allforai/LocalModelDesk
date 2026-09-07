@@ -12,8 +12,8 @@ test("装得下：不警", () => {
 test("装不下：警且 message 含双方数字", () => {
   const { warn, message } = needsWarning(103 * GB, snap);
   assert.equal(warn, true);
-  assert.ok(message.includes("103.0 GB"));
-  assert.ok(message.includes("68.0 GB"));
+  assert.ok(message.includes("103.0 GiB"));
+  assert.ok(message.includes("68.0 GiB"));
 });
 
 test("边界恰好相等也警（A2：宁可略敏感）", () => {
