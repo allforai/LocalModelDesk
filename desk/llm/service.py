@@ -128,11 +128,12 @@ class LlmService:
         acquired = self._arbiter.acquire_heavy("llm", entry.key)
         if not acquired.get("ok"):
             reason = acquired.get("reason") or {}
+            code = reason.get("code") if isinstance(reason, dict) else None
             message = reason.get("message") if isinstance(reason, dict) else None
             with self._lock:
                 if generation == self._load_generation:
                     self._state = previous_state
-            raise LlmRejected(ERR_MEDIA_BUSY, message or "媒体任务正在运行")
+            raise LlmRejected(code or ERR_MEDIA_BUSY, message or "媒体任务正在运行")
 
         with self._lock:
             self._token = acquired.get("token")
