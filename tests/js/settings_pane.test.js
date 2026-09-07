@@ -46,7 +46,7 @@ test("settings 面板两步保存，并以 apply 后的实测状态、URL 与无
     assert.equal(controls.get("[data-settings-error]").textContent, "Address already in use");
     assert.equal(controls.get("[data-settings-openai-url]").textContent, "http://<本机局域网地址>:8770/v1");
     assert.equal(controls.get("[data-settings-anthropic-url]").textContent, "http://<本机局域网地址>:8770");
-    assert.match(controls.get("[data-settings-lan-note]").textContent, /局域网 IP/);
+    assert.equal(controls.get("[data-settings-lan-note]").textContent, "开启对外接口并「保存并应用」后，这里会显示可复制的地址。");
     // 未监听（含绑定失败）时不展示无鉴权警示与 base URL 区（G30 G27）。
     assert.equal(controls.get("[data-settings-auth-warning]").hidden, true);
     assert.equal(controls.get("[data-settings-openai-url]").hidden, true);
@@ -174,5 +174,25 @@ test("监听状态用徽标类表达", async () => {
     const pane = createSettingsPane(root);
     await pane.init();
     assert.equal(controls.get("[data-settings-listening]").className, "badge badge-ok");
+  } finally { globalThis.fetch = oldFetch; }
+});
+
+test("未监听时地址区显示引导文案而不是空白（F15）", async () => {
+  const oldFetch = globalThis.fetch;
+  globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/config" && (options.method ?? "GET") === "GET") return new Response(JSON.stringify({ models_root: "/models" }), { status: 200 });
+    return new Response(JSON.stringify({
+      config: { enabled: false, host: "0.0.0.0", port: 8770 },
+      status: { enabled: false, listening: false, host: "0.0.0.0", port: 8770, auth: "none", last_error: null },
+    }), { status: 200 });
+  };
+  try {
+    const { createSettingsPane } = await import("../../desk/static/js/panes/settings.js");
+    const { root, controls } = makePane();
+    await createSettingsPane(root).init();
+    const note = controls.get("[data-settings-lan-note]");
+    assert.equal(note.hidden, false);
+    assert.equal(note.textContent, "开启对外接口并「保存并应用」后，这里会显示可复制的地址。");
+    assert.equal(controls.get("[data-settings-openai-url]").hidden, true);
   } finally { globalThis.fetch = oldFetch; }
 });

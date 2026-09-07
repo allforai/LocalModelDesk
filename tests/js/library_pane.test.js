@@ -59,6 +59,9 @@ test("library 面板合并倒序渲染，点击成品就地播放并回填历史
   assert.equal(elements.list.children[1].children[0].children[0].textContent, "海边");
 
   elements.list.children[1].click();
+  assert.match(elements.list.children[1].className, /\bplaying\b/);
+  assert.doesNotMatch(elements.list.children[0].className, /\bplaying\b/);
+  assert.equal(elements.player.children[1].textContent, "正在播放：海边");
   assert.equal(elements.player.children[0].tagName, "video");
   assert.equal(elements.player.children[0].src, "/api/outputs/video%20old.mp4");
 
