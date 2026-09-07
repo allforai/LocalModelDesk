@@ -89,3 +89,33 @@ test("library 面板保留未返回匹配历史的成品", async (t) => {
   elements.list.children[0].click();
   assert.equal(elements.player.children[0].tagName, "audio");
 });
+
+test("每条成品有『在访达中显示』并调用 reveal 接口", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  const calls = [];
+  globalThis.fetch = async (path, options = {}) => {
+    calls.push([path, options.method ?? "GET"]);
+    return {
+      ok: true,
+      json: async () => path === "/api/outputs"
+        ? [{ name: "h3-1.mp4", kind: "video", bytes: 1, ts: "2026-09-07T01:00:00" }]
+        : [],
+    };
+  };
+
+  const doc = { createElement: (tag) => new FakeElement(tag) };
+  const elements = Object.fromEntries(["refresh", "player", "list", "error"]
+    .map((name) => [name, new FakeElement()]));
+  const root = new FakeElement();
+  root.ownerDocument = doc;
+  root.querySelector = (selector) => elements[selector.match(/data-lib-(.+)\]/)[1]];
+  const pane = createLibraryPane(root, { applyFill() {} });
+
+  await pane.refresh();
+
+  const buttons = elements.list.children[0].children[1].children;
+  assert.ok(buttons.map((b) => b.textContent).includes("在访达中显示"));
+  buttons.find((b) => b.textContent === "在访达中显示").click();
+  assert.ok(calls.some(([url, method]) => url === "/api/outputs/h3-1.mp4/reveal" && method === "POST"));
+});

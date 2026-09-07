@@ -105,6 +105,14 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
         playOutput(playable);
       });
       actions.append(play);
+      const reveal = doc.createElement("button");
+      reveal.textContent = "在访达中显示";
+      addIcon(reveal, "folder", doc);
+      reveal.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        try { await api.revealOutput(playable.name); } catch (error) { els.error.textContent = error.message; }
+      });
+      actions.append(reveal);
     }
     const plan = entry ? fillPlan(entry) : null;
     if (plan) {
