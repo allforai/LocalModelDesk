@@ -94,10 +94,10 @@ async function tickJob() {
 async function tick() {
   try {
     const [deskState, memory, llm] = await Promise.all([api.deskState(), api.memorySnapshot(), api.llmStatus()]);
-    failures = 0; statusbar.offline(false); statusbar.update(deskState, memory); applyHeavyAvailability(deskState); store.set({ deskState, memory });
+    const download = await panes.resources.refresh();
+    failures = 0; statusbar.offline(false); statusbar.update(deskState, memory, download); applyHeavyAvailability(deskState); store.set({ deskState, memory });
     panes.chat.applyLlmStatus(llm);
     await panes.chat.refreshSessionsIfStale();
-    await panes.resources.refresh();
     if (deskState.media_busy) jobActive = true;
     if (jobActive) await tickJob();
   } catch (error) { failures += 1; if (failures >= 3) statusbar.offline(true); }

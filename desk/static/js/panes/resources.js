@@ -46,6 +46,7 @@ export function createResourcesPane(root) {
         if (label) label.textContent = "重新校验";
       }
     }
+    return downloadProgress;
   }
 
   function render(catalog, statuses, download, disk) {
