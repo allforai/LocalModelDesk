@@ -18,7 +18,7 @@ class Element {
 
 function pane(values) {
   const parts = Object.fromEntries(Object.entries(values).map(([name, value]) => [name, new Element(value)]));
-  for (const name of ["job-status", "job-cancel", "job-log", "job-progress", "job-player", "job-error", "video-error", "music-error", "video-first-name", "video-last-name", "video-source-name", "video-size", "video-frames"]) parts[name] ??= new Element();
+  for (const name of ["job-status", "job-cancel", "job-log", "job-progress", "job-player", "job-error", "video-error", "music-error", "video-hint", "music-hint", "video-first-name", "video-last-name", "video-source-name", "video-size", "video-frames"]) parts[name] ??= new Element();
   const doc = { createElement: (tag) => new Element("", tag) };
   return { parts, ownerDocument: doc, querySelector(selector) { return parts[selector.match(/^\[data-([\w-]+)\]$/)?.[1]] || null; } };
 }
@@ -142,7 +142,8 @@ test("媒体面板在其他重作业运行时禁用开始按钮，并在结束�
   musicPane.setHeavyAllowed(false, "媒体作业进行中");
   assert.equal(video.parts["video-start"].disabled, true);
   assert.equal(music.parts["music-start"].disabled, true);
-  assert.equal(video.parts["video-error"].textContent, "媒体作业进行中");
+  assert.equal(video.parts["video-hint"].textContent, "媒体作业进行中");
+  assert.equal(video.parts["video-error"].textContent, "");
   videoPane.setHeavyAllowed(true);
   musicPane.setHeavyAllowed(true);
   assert.equal(video.parts["video-start"].disabled, false);
@@ -155,4 +156,12 @@ test("running 时按日志渲染进度条；选择文件后显示文件名", asy
   p.jobView.apply({ job_id: 1, status: "running", log: "step 8/16 3s\n" });
   assert.equal(video.parts["job-progress"].value, 50);
   assert.equal(video.parts["job-progress"].hidden, false);
+});
+
+test("互斥原因用 busy 提示而不是 inline-error", () => {
+  const video = pane({ "video-start": "", "video-hint": "" });
+  const p = createVideoPane(video, {});
+  p.setHeavyAllowed(false, "媒体作业进行中");
+  assert.equal(video.parts["video-hint"].textContent, "媒体作业进行中");
+  assert.equal(video.parts["video-error"].textContent, "");
 });

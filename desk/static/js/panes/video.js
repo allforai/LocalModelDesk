@@ -10,6 +10,7 @@ export function createVideoPane(root, ctx = {}) {
     prompt: root.querySelector("[data-video-prompt]"), size: root.querySelector("[data-video-size]"),
     frames: root.querySelector("[data-video-frames]"), steps: root.querySelector("[data-video-steps]"),
     startBtn: root.querySelector("[data-video-start]"), error: root.querySelector("[data-video-error]"),
+    hint: root.querySelector("[data-video-hint]"),
   };
   for (const [value, label] of SIZES) {
     const option = root.ownerDocument.createElement("option");
@@ -138,9 +139,8 @@ export function createVideoPane(root, ctx = {}) {
   function setHeavyAllowed(allowed, reason = "") {
     heavyAllowed = allowed;
     els.startBtn.disabled = submitting || !allowed;
-    if (!allowed) { blockedReason = reason; els.error.textContent = reason; }
-    else if (blockedReason && els.error.textContent === blockedReason) els.error.textContent = "";
-    if (allowed) blockedReason = "";
+    if (!allowed) { blockedReason = reason; if (els.hint) els.hint.textContent = reason; els.startBtn.title = reason; }
+    else { blockedReason = ""; if (els.hint) els.hint.textContent = ""; els.startBtn.title = ""; }
   }
   return { fill, jobView, setHeavyAllowed };
 }

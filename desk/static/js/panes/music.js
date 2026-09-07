@@ -6,7 +6,7 @@ export function createMusicPane(root, ctx = {}) {
   const els = {
     caption: root.querySelector("[data-music-caption]"), lyrics: root.querySelector("[data-music-lyrics]"),
     duration: root.querySelector("[data-music-duration]"), startBtn: root.querySelector("[data-music-start]"),
-    error: root.querySelector("[data-music-error]"),
+    error: root.querySelector("[data-music-error]"), hint: root.querySelector("[data-music-hint]"),
   };
   const jobView = createJobView(root, { mediaTag: "audio" });
   async function submit(params) {
@@ -34,8 +34,8 @@ export function createMusicPane(root, ctx = {}) {
   }
   function setHeavyAllowed(allowed, reason = "") {
     els.startBtn.disabled = !allowed;
-    if (!allowed) els.error.textContent = reason;
-    else if (els.error.textContent === reason || reason === "") els.error.textContent = "";
+    if (!allowed) { if (els.hint) els.hint.textContent = reason; els.startBtn.title = reason; }
+    else { if (els.hint) els.hint.textContent = ""; els.startBtn.title = ""; }
   }
   return { fill, jobView, setHeavyAllowed };
 }

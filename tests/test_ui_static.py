@@ -152,3 +152,8 @@ def test_css_defines_three_button_levels_and_disabled_state():
 def test_primary_actions_carry_the_primary_class():
     for hook in ("data-session-new", "data-send", "data-video-start", "data-music-start", "data-settings-save", "data-fr-complete"):
         assert f"{hook} " in HTML and "btn-primary" in HTML.split(hook, 1)[1].split(">", 1)[0], hook
+
+
+def test_reason_hints_are_not_error_red_and_motion_is_limited():
+    assert ".hint-busy{" in CSS.replace(" ", "") and "color:var(--busy)" in CSS
+    assert "prefers-reduced-motion" in CSS
