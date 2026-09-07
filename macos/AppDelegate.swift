@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                    lastPollError: nil)
 
   func applicationDidFinishLaunching(_ notification: Notification) {
+    NSApp.appearance = NSAppearance(named: .darkAqua)   // D1 single dark theme: native chrome follows the web content
     NSApp.setActivationPolicy(.regular)
     buildMainMenu()
     api = DeskAPI(baseURL: DeskPaths.baseURL)
@@ -31,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       self.startServer()
     }
     poller.onUpdate = { [weak self] result in self?.handlePoll(result) }
+    poller.onMemory = { [weak self] result in self?.statusController.renderMemory(result) }
     status.server = .starting
     statusController.render(status)
     windowController.showWindow()

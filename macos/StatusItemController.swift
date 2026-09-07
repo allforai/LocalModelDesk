@@ -84,22 +84,23 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     button.setAccessibilityLabel("LocalModelDesk：\(label)")
   }
 
-  /// Refreshes the data:memorySnapshot row only when the menu opens.
+  /// The sole writer of the memory menu row; called on every poll and again when the menu opens.
+  func renderMemory(_ result: Result<MemoryLine, DeskAPIError>) {
+    switch result {
+    case .success(let line):
+      memoryItem.title = memoryMenuTitle(used: line.usedBytes, total: line.totalBytes,
+                                         available: line.availableBytes)
+    case .failure:
+      memoryItem.title = "内存 不可读"
+    }
+  }
+
+  /// Refreshes the data:memorySnapshot row when the menu opens. Menu tracking runs the run loop
+  /// in event-tracking mode, where `DispatchQueue.main.async` blocks do not fire until the menu
+  /// closes; use common + eventTracking modes so the row updates while the menu is still open.
   func menuWillOpen(_ menu: NSMenu) {
     api.memorySnapshot { [weak self] result in
-      DispatchQueue.main.async {
-        switch result {
-        case .success(let line):
-          let gib = 1_073_741_824.0
-          self?.memoryItem.title = String(
-            format: "内存 已用 %.1f / 共 %.0f GiB",
-            Double(line.usedBytes) / gib,
-            Double(line.totalBytes) / gib
-          )
-        case .failure:
-          self?.memoryItem.title = "内存 不可读"
-        }
-      }
+      RunLoop.main.perform(inModes: [.common, .eventTracking]) { self?.renderMemory(result) }
     }
     onMenuOpened?()
   }

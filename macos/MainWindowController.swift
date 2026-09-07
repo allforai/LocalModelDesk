@@ -58,6 +58,7 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
   }
 
   /// Displays an error page that stays available even when the service is down.
+  /// D1/N7/N8: single dark theme, danger-accented title, log path folded behind 「详情」.
   func showErrorPage(reason: String, logPath: String) {
     lastFragment = webView.url?.fragment
     webView.loadHTMLString(errorPageHTML(reason: reason, logPath: logPath), baseURL: nil)

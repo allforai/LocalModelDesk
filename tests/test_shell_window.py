@@ -121,7 +121,7 @@ def test_server_death_shows_error_text(shell_app):
     deadline = time.time() + 40
     while time.time() < deadline:
         tree = tree_text(shell_app.proc.pid)
-        if "服务未运行" in tree or "意外退出" in tree:
+        if "服务未响应" in tree or "意外退出" in tree:
             break
         time.sleep(2)
     else:
@@ -135,5 +135,6 @@ def test_error_page_is_dark_themed_and_names_the_reason():
     assert proc.returncode == 0, proc.stderr
     html = proc.stdout
     assert "background:#14161a" in html and "color:#e7e9ee" in html
-    assert "<h1>服务未运行</h1>" in html and "服务无响应" in html
+    assert "<h1 class=\"danger\">服务未响应</h1>" in html and "服务无响应" in html
+    assert 'class="danger"' in html and "<details>" in html and "/tmp/x.log" in html
     assert 'onclick="window.webkit.messageHandlers.shellRetry.postMessage' in html

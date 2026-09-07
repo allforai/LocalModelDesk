@@ -14,7 +14,7 @@ final class FirstRunFlow {
     while true {
       let alert = NSAlert()
       alert.messageText = "首次设置：模型放在哪？"
-      alert.informativeText = "默认位置是「资源库/Application Support/LocalModelDesk/models」。"
+      alert.informativeText = "默认位置是「\(DeskPaths.userDataRoot.appendingPathComponent("models").path)」。"
       alert.addButton(withTitle: "使用默认目录")
       alert.addButton(withTitle: "选择其他目录…")
       alert.addButton(withTitle: "收编既有目录树…")
