@@ -155,7 +155,7 @@ class MediaService:
                 elif failure is not None: status, error = "error", {"code": "worker_failed", "message": failure}
                 elif code == 0 and output.is_file(): status, error = "done", None
                 elif code == 0: status, error = "error", {"code": "no_output", "message": "exit 0 but output file missing"}
-                else: status, error = "error", {"code": "exit_nonzero", "message": f"exit {code}"}
+                else: status, error = "error", {"code": "exit_nonzero", "message": f"exit {code}", "log_tail": self._log_tail(5)}
                 self._state.update(status=status, output=output.name if status == "done" else None, error=error, finished_at=self._clock())
                 self._handle = None
         finally:
@@ -201,6 +201,10 @@ class MediaService:
             with self._lock:
                 if callback in self._callbacks: self._callbacks.remove(callback)
         return unsubscribe
+
+    def _log_tail(self, n: int) -> str:
+        lines = [line for line in self._log.splitlines() if line.strip()]
+        return "\n".join(lines[-n:])
 
     def _reset_log(self) -> None: self._log = ""; self._log_dropped = 0; self._log_truncated = False
     def _append_log(self, line: str) -> None:

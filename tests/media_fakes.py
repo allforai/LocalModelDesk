@@ -55,6 +55,12 @@ class FakeHandle:
         self.killed = True
         self._exit(-9)
 
+    def emit(self, line: str) -> None:
+        self._queue.put(line)
+
+    def exit(self, code: int) -> None:
+        self._exit(code)
+
 
 class FakeExecutor:
     def __init__(self, script="success", lines=("line-1", "line-2"), *, ignore_term=False):

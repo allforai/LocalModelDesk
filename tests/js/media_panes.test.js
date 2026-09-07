@@ -63,7 +63,7 @@ test("jobview appends polling logs, shows failures, and cancels through document
   controller.jobView.apply({ status: "error", log: "two", error: { code: "media_busy", message: "忙" } });
   assert.equal(video.parts["job-log"].textContent, "onetwo");
   assert.equal(video.parts["job-log"].scrollTop, 40);
-  assert.equal(video.parts["job-error"].textContent, "media_busy：忙");
+  assert.equal(video.parts["job-error"].children[0].textContent, "生成失败（media_busy）");
   assert.equal(video.parts["job-cancel"].hidden, true);
   await withFetch([{ status: "cancelled" }], async (calls) => { await video.parts["job-cancel"].click(); assert.equal(calls[0].url, "/api/media/cancel"); });
   assert.equal(video.parts["job-status"].textContent, "已取消");

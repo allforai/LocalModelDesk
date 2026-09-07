@@ -1,6 +1,7 @@
 // Shared media-job presentation: status, incremental log, cancellation, and playback.
 import * as api from "../api.js";
 import { formatDuration } from "../pure/format.js";
+import { describeJobError } from "../pure/job_error.js";
 
 const STATUS_LABEL = { idle: "空闲", running: "生成中…", done: "完成", error: "失败", cancelled: "已取消" };
 
@@ -24,7 +25,15 @@ export function createJobView(root, { mediaTag }) {
     els.status.textContent = statusText(payload);
     els.cancelBtn.hidden = payload.status !== "running";
     if (typeof payload.log === "string" && payload.log) { els.log.textContent += payload.log; els.log.scrollTop = els.log.scrollHeight; }
-    if (payload.status === "error" && payload.error) els.error.textContent = `${payload.error.code}：${payload.error.message}`;
+    if (payload.status === "error" && payload.error) {
+      const { title, detail } = describeJobError(payload.error);
+      els.error.replaceChildren();
+      const strong = root.ownerDocument.createElement("strong"); strong.textContent = title;
+      const details = root.ownerDocument.createElement("details");
+      const summary = root.ownerDocument.createElement("summary"); summary.textContent = "详情";
+      const pre = root.ownerDocument.createElement("pre"); pre.textContent = detail;
+      details.append(summary, pre); els.error.append(strong, details);
+    }
     if (payload.status === "done" && payload.output && !els.player.firstChild) {
       const media = root.ownerDocument.createElement(mediaTag);
       media.controls = true; media.src = api.serveOutput(payload.output); els.player.append(media);

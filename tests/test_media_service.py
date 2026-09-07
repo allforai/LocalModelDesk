@@ -229,6 +229,17 @@ class TestStartDiscipline:
         assert service.job_status()["status"] == "idle"
 
 
+def test_nonzero_exit_records_log_tail(service_factory):
+    svc, _arbiter = service_factory(executor=FakeExecutor("block", lines=()))
+    svc.start_video_job(prompt="x", width=512, height=288, frames=49, steps=16)
+    handle = svc._handle
+    handle.emit("step 1/16\n"); handle.emit("Traceback\n"); handle.emit("mlx_h3.memory.BudgetExceeded: SWAPPING\n")
+    handle.exit(1)
+    final = wait_until(lambda: svc.job_status(), lambda s: s["status"] == "error")
+    assert final["error"]["code"] == "exit_nonzero"
+    assert final["error"]["log_tail"].splitlines()[-1] == "mlx_h3.memory.BudgetExceeded: SWAPPING"
+
+
 @pytest.mark.parametrize(("script", "code"), [("no_output", "no_output"), ("fail", "exit_nonzero")])
 def test_failed_process_releases_permit_and_records_terminal_failure(tmp_path, script, code):
     service, deps = make_service(tmp_path, executor=FakeExecutor(script))
