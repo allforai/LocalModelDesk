@@ -31,7 +31,11 @@ export function createSettingsPane(root) {
     els.listening.dataset.listening = String(Boolean(status.listening));
     setError(status.last_error);
 
-    urls = baseUrls({ host: status.host ?? config.host, port: status.port ?? config.port });
+    urls = baseUrls({
+      host: status.host ?? config.host,
+      port: status.port ?? config.port,
+      lanHost: status.lan_host,
+    });
     els.openaiUrl.textContent = urls.openai;
     els.anthropicUrl.textContent = urls.anthropic;
     els.lanNote.textContent = urls.note ?? "";
@@ -41,10 +45,20 @@ export function createSettingsPane(root) {
 
   async function save() {
     setError("");
+    const port = Number(els.port.value);
+    if (!Number.isInteger(port) || port < 1 || port > 65535) {
+      setError("端口须在 1 到 65535 之间");
+      return;
+    }
+    const host = els.host.value.trim();
+    if (!host) {
+      setError("主机不能为空");
+      return;
+    }
     const gateway = {
       enabled: els.enabled.checked,
-      host: els.host.value.trim(),
-      port: Number(els.port.value),
+      host,
+      port,
     };
     try {
       await api.writeConfig({ gateway });

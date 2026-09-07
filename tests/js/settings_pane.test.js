@@ -86,3 +86,18 @@ test("settings 面板的两条 URL 可分别复制，保存失败原样显示", 
     Object.defineProperty(globalThis, "navigator", { configurable: true, value: { clipboard: oldClipboard } });
   }
 });
+
+test("端口越界时不发请求并给出中文错误", async () => {
+  const { createSettingsPane } = await import("../../desk/static/js/panes/settings.js");
+  const { root, controls } = makePane();
+  const previous = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => { calls += 1; return new Response("{}", { status: 200 }); };
+  try {
+    const pane = createSettingsPane(root);
+    controls.get("[data-settings-port]").value = "99999";
+    await controls.get("[data-settings-save]").click();
+    assert.equal(calls, 0);
+    assert.equal(controls.get("[data-settings-error]").textContent, "端口须在 1 到 65535 之间");
+  } finally { globalThis.fetch = previous; }
+});
