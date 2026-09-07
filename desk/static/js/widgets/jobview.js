@@ -3,7 +3,7 @@ import * as api from "../api.js";
 import { formatDuration } from "../pure/format.js";
 import { describeJobError } from "../pure/job_error.js";
 
-const STATUS_LABEL = { idle: "空闲", running: "生成中…", done: "完成", error: "失败", cancelled: "已取消" };
+const STATUS_LABEL = { idle: "空闲 · 填好左侧参数后点「生成」", running: "生成中…", done: "完成", error: "失败", cancelled: "已取消" };
 
 export function createJobView(root, { mediaTag }) {
   const els = {

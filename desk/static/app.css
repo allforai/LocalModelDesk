@@ -46,3 +46,5 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .badge-busy{background:rgba(210,153,34,.15);color:var(--busy)}
 .badge-none{background:rgba(154,163,178,.15);color:var(--muted)}
 .badge-unknown{background:rgba(229,83,75,.15);color:var(--danger)}
+/* 10 (task 10). empty state */
+.empty{color:var(--muted);padding:24px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius-card)}

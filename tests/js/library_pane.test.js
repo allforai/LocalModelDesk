@@ -148,3 +148,29 @@ test("播放时播放器滚入视野且标注正在播放的记录", async (t) =
   assert.equal(scrolled, 1);
   assert.equal(elements.player.children[1].textContent, "正在播放：m.wav");
 });
+
+function makeLibrary(outputs, history) {
+  globalThis.fetch = async (path) => ({
+    ok: true,
+    json: async () => (path === "/api/outputs" ? outputs : history),
+  });
+  const doc = { createElement: (tag) => new FakeElement(tag) };
+  const parts = Object.fromEntries(["refresh", "player", "list", "error"]
+    .map((name) => [`lib-${name}`, new FakeElement()]));
+  const root = new FakeElement();
+  root.ownerDocument = doc;
+  root.querySelector = (selector) => parts[`lib-${selector.match(/data-lib-(.+)\]/)[1]}`];
+  return { root, parts };
+}
+
+test("没有成品时显示引导语", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  const { root, parts } = makeLibrary([], []);
+  const pane = createLibraryPane(root, { applyFill() {} });
+
+  await pane.refresh();
+
+  assert.equal(parts["lib-list"].children[0].className, "empty");
+  assert.equal(parts["lib-list"].children[0].textContent, "还没有成品。去「视频」或「音乐」面板生成第一件，它会出现在这里。");
+});

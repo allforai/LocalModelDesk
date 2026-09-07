@@ -29,6 +29,13 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
 
   function render(outputs, history) {
     els.list.replaceChildren();
+    if (!outputs.length && !history.length) {
+      const empty = doc.createElement("li");
+      empty.className = "empty";
+      empty.textContent = "还没有成品。去「视频」或「音乐」面板生成第一件，它会出现在这里。";
+      els.list.append(empty);
+      return;
+    }
     const outByName = new Map(outputs.map((output) => [output.name, output]));
     const matchedOutputNames = new Set();
     const rows = history.map((entry) => {
