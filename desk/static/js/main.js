@@ -10,6 +10,7 @@ import { createLibraryPane } from "./panes/library.js";
 import { createFirstRunPane } from "./panes/firstrun.js";
 import { createSettingsPane } from "./panes/settings.js";
 import { heavyAvailability } from "./pure/desk_state.js";
+import { isDrawerCloseKey } from "./pure/drawer.js";
 
 const $ = (selector) => document.querySelector(selector);
 const store = createStore({ activeTab: "chat" });
@@ -38,8 +39,9 @@ function enterDesk() {
     const onStarted = (job) => { jobActive = job.status === "running"; lastJobId = job.job_id ?? null; jobLogFrom = job.next_log_from ?? 0; };
     panes = { chat:createChatPane($("#pane-chat")), video:createVideoPane($("#pane-video"), { onStarted }), music:createMusicPane($("#pane-music"), { onStarted }), resources:createResourcesPane($("#pane-resources")), library:createLibraryPane($("#pane-library"), { applyFill }) };
     settings = createSettingsPane($("#pane-settings"));
-    $("[data-open-settings]").addEventListener("click", () => { $("#pane-settings").hidden = false; settings.init(); });
-    $("[data-close-settings]").addEventListener("click", () => { $("#pane-settings").hidden = true; });
+    $("[data-open-settings]").addEventListener("click", () => setDrawerOpen(true));
+    $("[data-close-settings]").addEventListener("click", () => setDrawerOpen(false));
+    document.addEventListener("keydown", (event) => { if (isDrawerCloseKey(event.key)) setDrawerOpen(false); });
     for (const button of document.querySelectorAll("#tabs [data-tab]")) button.addEventListener("click", () => showTab(button.dataset.tab));
     globalThis.setInterval(tick, 2000);
   }
@@ -50,7 +52,14 @@ function setDeskShellHidden(hidden) {
   for (const selector of ["#statusbar", "#tabs", "main"]) $(selector).hidden = hidden;
 }
 
+function setDrawerOpen(open) {
+  $("#pane-settings").hidden = !open;
+  document.body.classList.toggle("drawer-open", open);
+  if (open) settings.init();
+}
+
 function showTab(name) {
+  setDrawerOpen(false);
   for (const button of document.querySelectorAll("#tabs [data-tab]")) button.classList.toggle("active", button.dataset.tab === name);
   for (const section of document.querySelectorAll("main > [data-pane]")) section.hidden = section.dataset.pane !== name;
   store.set({ activeTab:name });

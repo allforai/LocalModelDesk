@@ -39,8 +39,12 @@ export function createSettingsPane(root) {
     els.openaiUrl.textContent = urls.openai;
     els.anthropicUrl.textContent = urls.anthropic;
     els.lanNote.textContent = urls.note ?? "";
-    els.lanNote.hidden = !urls.note;
-    els.authWarning.textContent = "当前为无鉴权监听：同一网络任何设备都能调用本机模型";
+
+    const listening = Boolean(status.listening);
+    for (const el of [els.authWarning, els.openaiUrl, els.anthropicUrl, els.copyOpenai, els.copyAnthropic, els.lanNote]) {
+      if (el) el.hidden = !listening || (el === els.lanNote && !urls.note);
+    }
+    els.authWarning.textContent = listening ? "当前为无鉴权监听：同一网络任何设备都能调用本机模型" : "";
   }
 
   async function save() {
