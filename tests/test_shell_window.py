@@ -114,7 +114,7 @@ def test_server_death_shows_error_text(shell_app):
     deadline = time.time() + 40
     while time.time() < deadline:
         tree = tree_text(shell_app.proc.pid)
-        if "服务未运行" in tree or "意外退出" in tree:
+        if "服务未响应" in tree or "意外退出" in tree:
             break
         time.sleep(2)
     else:

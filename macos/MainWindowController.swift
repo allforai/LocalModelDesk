@@ -46,15 +46,19 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
   }
 
   /// Displays an error page that stays available even when the service is down.
+  /// D1/N7/N8: single dark theme, danger-accented title, log path folded behind 「详情」.
   func showErrorPage(reason: String, logPath: String) {
     let html = """
-    <!doctype html><html><head><meta charset="utf-8"><title>LocalModelDesk</title></head>
-    <body style="font-family: -apple-system, sans-serif; padding: 2em; max-width: 40em; margin: auto;">
-      <h1>服务未运行</h1>
-      <p id="reason">\(Self.escapeHTML(reason))</p>
-      <p>日志：<code>\(Self.escapeHTML(logPath))</code></p>
-      <button onclick="window.webkit.messageHandlers.shellRetry.postMessage('retry')">重试</button>
-    </body></html>
+    <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>LocalModelDesk</title>
+    <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#14161a;color:#e7e9ee;font:14px/1.6 -apple-system,"PingFang SC",sans-serif}
+    main{max-width:36em;padding:32px;background:#1d2026;border:1px solid #2c313a;border-left:4px solid #e5534b;border-radius:8px}
+    h1{font-size:20px;margin:0 0 12px;color:#e5534b}h1::before{content:"✕ "}
+    .danger{color:#e5534b}details{margin-top:12px;color:#9aa3b2;font-size:13px}summary{cursor:pointer}
+    code{font:13px ui-monospace,Menlo,monospace;color:#9aa3b2;word-break:break-all}
+    button{margin-top:16px;padding:8px 12px;border-radius:6px;border:1px solid #4f8cff;background:#4f8cff;color:#fff;font:inherit;cursor:pointer}</style></head>
+    <body><main><h1 class="danger">服务未响应</h1><p id="reason">\(Self.escapeHTML(reason))</p>
+    <details><summary>详情</summary><p>日志：<code>\(Self.escapeHTML(logPath))</code></p></details>
+    <button onclick="window.webkit.messageHandlers.shellRetry.postMessage('retry')">重试</button></main></body></html>
     """
     webView.loadHTMLString(html, baseURL: nil)
     showWindow()
