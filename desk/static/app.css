@@ -38,11 +38,6 @@ button:disabled,button[aria-disabled="true"]{opacity:.5;cursor:not-allowed;filte
 #tabs button:hover{color:var(--text)}
 #tabs button.active{color:var(--accent);background:transparent;border-bottom-color:var(--accent)}
 main > section { min-height:calc(100vh - 94px); padding:var(--margin); background:var(--bg); } #pane-chat { display:flex; gap:16px; } .sessions { width:220px; flex:none; } .sessions ul,[data-res-list],[data-lib-list] { list-style:none; padding:0; } .chat-main { flex:1; display:flex; flex-direction:column; } .model-row,.composer,.res-head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .messages { min-height:300px; overflow:auto; } .form { max-width:640px; display:flex; flex-direction:column; gap:8px; } [data-job-log] { max-height:240px; overflow:auto; white-space:pre-wrap; } [data-job-player] video,[data-job-player] audio,[data-lib-player] video { max-width:100%; }
-/* 9. dialogs + drawer */
-.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0009;z-index:30}
-.dialog{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:20px;min-width:320px;max-width:480px}
-.dialog h3{font-size:20px;margin:0 0 8px}.dialog p{margin:0 0 16px}
-.dialog-actions{display:flex;justify-content:flex-end;gap:8px}
 #fatal { position:fixed; inset:0; z-index:40; display:grid; place-items:center; padding:48px; color:var(--danger); background:var(--bg); }
 body.drawer-open { overflow:hidden; }
 body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009; z-index:24; }
@@ -84,7 +79,7 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .badge-busy{background:rgba(210,153,34,.15);color:var(--busy)}
 .badge-none{background:rgba(154,163,178,.15);color:var(--muted)}
 .badge-unknown{background:rgba(229,83,75,.15);color:var(--danger)}
-/* 10 (task 10). empty state */
+/* empty states (plan task 10) */
 .empty{color:var(--muted);padding:24px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius-card)}
 /* 8. media panes: form left, job right */
 #pane-video,#pane-music{display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:var(--margin);align-items:start}
@@ -95,10 +90,11 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .job-log pre{max-height:240px;overflow:auto;white-space:pre-wrap;font:13px ui-monospace,Menlo,monospace;color:var(--muted);margin:8px 0 0}
 [data-job-player] video,[data-job-player] audio,[data-lib-player] video{max-width:100%;border-radius:var(--radius)}
 .file-row{display:flex;align-items:center;gap:8px}.file-pick .btn{display:inline-block;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer}
-/* 11. state colours + motion */
-.hint-busy{color:var(--busy)}.hint-busy:empty{display:none}
-#pane-settings,.overlay{transition:opacity 150ms ease}
-@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+/* 9. dialogs + drawer */
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0009;z-index:30}
+.dialog{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:20px;min-width:320px;max-width:480px}
+.dialog h3{font-size:20px;margin:0 0 8px}.dialog p{margin:0 0 16px}
+.dialog-actions{display:flex;justify-content:flex-end;gap:8px}
 /* 10. drawer + first run */
 #pane-settings{position:fixed;top:0;right:0;bottom:0;z-index:25;width:min(420px,100%);overflow:auto;background:var(--panel);border-left:1px solid var(--border);padding:0 20px 20px}
 .drawer-head{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;padding:16px 0;background:var(--panel);z-index:1}.drawer-head h2{margin:0}
@@ -111,3 +107,8 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 #pane-firstrun{position:fixed;inset:0;z-index:20;overflow:auto;background:var(--bg);padding:var(--margin)}
 .firstrun-wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
 .firstrun-wrap .card{display:grid;gap:10px}
+
+/* 11. state colours + motion */
+.hint-busy{color:var(--busy)}.hint-busy:empty{display:none}
+#pane-settings,.overlay{transition:opacity 150ms ease}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
