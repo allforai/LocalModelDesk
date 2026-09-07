@@ -178,6 +178,7 @@ export function createChatPane(root) {
       addIcon(rename, "pencil", doc);
       rename.addEventListener("click", () => beginRename(li, session));
       const remove = doc.createElement("button");
+      remove.className = "btn-danger btn-sm";
       remove.textContent = "删";
       remove.setAttribute?.("aria-label", `删除会话：${displayTitle(session)}`);
       addIcon(remove, "trash", doc);

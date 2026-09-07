@@ -136,3 +136,19 @@ def test_shell_tick_refreshes_resource_download_progress():
 
     api_source = (STATIC_ROOT / "js" / "api.js").read_text(encoding="utf-8")
     assert "request(ROUTES.download)" in api_source
+
+
+CSS = (STATIC_ROOT / "app.css").read_text(encoding="utf-8")       # STATIC_ROOT already defined in this file
+HTML = (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
+
+
+def test_css_defines_three_button_levels_and_disabled_state():
+    assert ".btn-primary{" in CSS.replace(" ", "") and "background:var(--accent)" in CSS
+    assert ".btn-danger{" in CSS.replace(" ", "") and "background:var(--danger)" in CSS
+    assert "button:disabled" in CSS and "cursor:not-allowed" in CSS and "opacity:.5" in CSS
+    assert "button,input,select,textarea{font:inherit" in CSS.replace(" ", "")
+
+
+def test_primary_actions_carry_the_primary_class():
+    for hook in ("data-session-new", "data-send", "data-video-start", "data-music-start", "data-settings-save", "data-fr-complete"):
+        assert f"{hook} " in HTML and "btn-primary" in HTML.split(hook, 1)[1].split(">", 1)[0], hook

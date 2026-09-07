@@ -85,7 +85,7 @@ test("confirmDialog 渲染文案，确认或取消后移除弹层并返回选择
   const confirmed = confirmDialog(doc, { title: "继续？", message: "不可撤销" });
   const confirmOverlay = doc.body.children[0];
   const confirmButton = find(confirmOverlay, (el) => el.tagName === "button" && el.textContent === "确定");
-  assert.equal(confirmButton.className, "danger");
+  assert.equal(confirmButton.className, "btn-danger");
   confirmButton.click();
   assert.equal(await confirmed, true);
   assert.equal(doc.body.children.length, 0);
