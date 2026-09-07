@@ -66,7 +66,6 @@ export function createResourcesPane(root) {
     // The browser tests and future automation address a row by the catalog key,
     // not a localized display name.
     (li.dataset ??= {}).model = entry.key;
-    li.textContent = `${entry.name} · ${view.badge} · 预计 ${view.sizeText} · 占用 ${view.diskText}`;
 
     const title = doc.createElement("p");
     title.textContent = entry.name;

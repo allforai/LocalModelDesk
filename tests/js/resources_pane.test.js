@@ -39,8 +39,8 @@ test("resources 面板渲染三态、磁盘占用和可展开的缺失清单", a
   await pane.refresh();
 
   assert.equal(elements.list.children.length, 3);
-  assert.match(elements.list.children[0].textContent, /齐/);
-  assert.match(elements.list.children[1].textContent, /一半 40%/);
+  assert.match(elements.list.children[0].children[1].textContent, /齐/);
+  assert.match(elements.list.children[1].children[1].textContent, /一半 40%/);
   assert.equal(find(elements.list.children[1], (el) => el.tagName === "details").children[1].children[0].textContent, "weights.bin");
   assert.match(elements.disk.textContent, /可用 2 KB/);
   assert.ok(find(elements.list.children[2], (el) => el.tagName === "button" && el.textContent === "下载"));
@@ -118,5 +118,17 @@ test("点『重新校验』发 refresh=1，按钮期间禁用并显示校验中"
     assert.ok(urls.some((u) => u.includes("/api/resources/status?refresh=1")));
     assert.equal(parts["res-refresh"].disabled, false);
     assert.equal(parts["res-refresh"].textContent, "重新校验");
+  } finally { globalThis.fetch = previous; }
+});
+
+test("每行只渲染一次名称与状态", async () => {
+  const { root, parts } = makePane();
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (url) => ({ ok: true, status: 200, json: async () => String(url).includes("catalog") ? [{ key: "glm", name: "GLM", gb: 16.9 }] : String(url).includes("download") ? { state: "idle" } : { models: [{ key: "glm", state: "present", disk_bytes: 10, bytes_expected: 10 }], disk: { free_bytes: 1, total_bytes: 2 } } });
+  try {
+    const pane = createResourcesPane(root); await pane.refresh();
+    const li = parts["res-list"].children[0];
+    assert.equal(li.textContent, "");
+    assert.equal(li.children.filter((c) => c.textContent.includes("GLM")).length, 1);
   } finally { globalThis.fetch = previous; }
 });
