@@ -29,6 +29,7 @@ export function createResourcesPane(root) {
     } catch (err) {
       if (els.error) els.error.textContent = err.message;
     }
+    return downloadProgress;
   }
 
   function render(catalog, statuses, download, disk) {

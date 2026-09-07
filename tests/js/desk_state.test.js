@@ -20,8 +20,8 @@ test("内存数字来自快照输入而非写死常量（census A09）：两组�
 
 test("三种持有者文案", () => {
   const busyState = (holder) => ({ holder, media_busy: holder?.kind !== "llm", can_start: { ok: false, reason: "media_busy" } });
-  assert.equal(renderState(idle, snapA).holderText, "空闲");
-  assert.equal(renderState(busyState({ kind: "llm", label: "glm" }), snapA).holderText, "LLM：glm");
+  assert.equal(renderState(idle, snapA).holderText, "内存里：无");
+  assert.equal(renderState(busyState({ kind: "llm", label: "glm" }), snapA).holderText, "内存里：glm");
   assert.equal(renderState(busyState({ kind: "video", label: "3" }), snapA).holderText, "视频生成中");
   assert.equal(renderState(busyState({ kind: "music", label: "4" }), snapA).holderText, "音乐生成中");
 });
@@ -54,4 +54,14 @@ test("未知拒绝码原样透出，不吞", () => {
 
 test("快照缺失如实说不可用，不编数字", () => {
   assert.equal(renderState(idle, null).memText, "内存读数不可用");
+});
+
+test("状态条四格带字段名，下载中并入媒体格并转为 busy", () => {
+  const idle = renderState({ holder: null, media_busy: false, can_start: { llm: { ok: true } } }, null, { state: "running", key: "gemma" });
+  assert.equal(idle.holderText, "内存里：无");
+  assert.equal(idle.mediaText, "媒体：空闲 · 下载中 gemma");
+  assert.equal(idle.tone, "busy");
+  const held = renderState({ holder: { kind: "llm", label: "glm" }, media_busy: false, can_start: { llm: { ok: false, reason: { code: "llm_already_held" } }, media: { ok: true } } }, null);
+  assert.equal(held.holderText, "内存里：glm");
+  assert.equal(held.nextText, "可开下一件重活");
 });

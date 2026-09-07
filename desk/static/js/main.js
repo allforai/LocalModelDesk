@@ -79,8 +79,8 @@ async function tickJob() {
 async function tick() {
   try {
     const [deskState, memory] = await Promise.all([api.deskState(), api.memorySnapshot()]);
-    failures = 0; statusbar.offline(false); statusbar.update(deskState, memory); applyHeavyAvailability(deskState); store.set({ deskState, memory });
-    await panes.resources.refresh();
+    const download = await panes.resources.refresh();
+    failures = 0; statusbar.offline(false); statusbar.update(deskState, memory, download); applyHeavyAvailability(deskState); store.set({ deskState, memory });
     if (deskState.media_busy) jobActive = true;
     if (jobActive) await tickJob();
   } catch (error) { failures += 1; if (failures >= 3) statusbar.offline(true); }

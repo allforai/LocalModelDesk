@@ -8,8 +8,8 @@ export function createStatusBar(root) {
   const next = root.querySelector("[data-next]");
   let isOffline = false;
   return {
-    update(deskState, snapshot) {
-      const view = renderState(deskState, snapshot);
+    update(deskState, snapshot, download = null) {
+      const view = renderState(deskState, snapshot, download);
       mem.textContent = view.memText;
       holder.textContent = view.holderText;
       media.textContent = view.mediaText;

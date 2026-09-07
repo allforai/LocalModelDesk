@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
-  <header id="statusbar" data-tone="ok"><span data-mem>—</span><span data-holder>—</span><span data-media>—</span><span data-next>—</span><button data-open-settings>设置</button></header>
+  <header id="statusbar" data-tone="ok"><span class="status-part status-mem" data-mem>—</span><span class="status-part status-holder" data-holder>—</span><span class="status-part status-media" data-media>—</span><span class="status-part status-next" data-next>—</span><button data-open-settings>设置</button></header>
   <nav id="tabs"><button data-tab="chat" class="active">聊天</button><button data-tab="video">视频</button><button data-tab="music">音乐</button><button data-tab="resources">资源</button><button data-tab="library">素材库</button></nav>
   <main>
     <section id="pane-chat" data-pane="chat"><aside class="sessions"><button data-session-new>新会话</button><ul data-session-list></ul></aside><div class="chat-main"><div class="model-row"><select data-model-select></select><button data-load>加载</button><button data-unload>卸载</button><span data-model-state data-status="idle">未加载</span></div><div class="messages" data-messages></div><p class="inline-error" data-chat-error></p><div class="composer"><textarea data-chat-input placeholder="输入消息，⌘Enter 发送"></textarea><button data-send>发送</button></div></div></section>

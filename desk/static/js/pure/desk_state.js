@@ -23,28 +23,31 @@ export function heavyAvailability(deskState, kind) {
   };
 }
 
-export function renderState(deskState, snapshot) {
+export function renderState(deskState, snapshot, download = null) {
   const gb = (n) => (n / GB).toFixed(1);
   const memText = snapshot && Number.isFinite(snapshot.total_bytes)
     ? `已用 ${gb(snapshot.used_bytes)} / 总 ${gb(snapshot.total_bytes)} GB（可用 ${gb(snapshot.available_bytes)} GB）`
     : "内存读数不可用";
 
   const holder = deskState?.holder ?? null;
-  let holderText = "空闲";
+  let holderText = "内存里：无";
   if (holder) {
-    if (holder.kind === "llm") holderText = `LLM：${holder.label}`;
+    if (holder.kind === "llm") holderText = `内存里：${holder.label}`;
     else if (holder.kind === "video") holderText = "视频生成中";
     else if (holder.kind === "music") holderText = "音乐生成中";
     else holderText = `${holder.kind}：${holder.label}`;
   }
 
-  const mediaText = deskState?.media_busy ? "媒体：生成中" : "媒体：空闲";
-  const can = decisionFor(deskState, deskState?.media_busy ? "media" : "llm");
+  const downloading = download?.state === "running" ? download.key : null;
+  const mediaText = `${deskState?.media_busy ? "媒体：生成中" : "媒体：空闲"}${downloading ? ` · 下载中 ${downloading}` : ""}`;
+
+  const nextKind = deskState?.media_busy || holder?.kind === "llm" ? "media" : "llm";
+  const can = decisionFor(deskState, nextKind);
   const reason = typeof can?.reason === "object" ? can?.reason?.code : can?.reason;
   const ok = can ? can.ok !== false : false;
   const nextText = ok
     ? "可开下一件重活"
     : `不可：${REASON_TEXT[reason] ?? reason ?? "状态未知"}`;
-  const tone = holder || deskState?.media_busy ? "busy" : ok ? "ok" : "error";
+  const tone = deskState?.media_busy || downloading ? "busy" : holder ? "ok" : ok ? "ok" : "error";
   return { memText, holderText, mediaText, nextText, tone };
 }

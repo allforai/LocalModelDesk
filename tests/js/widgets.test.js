@@ -56,10 +56,10 @@ test("statusbar 将 desk state 和内存快照更新到 DOM，离线时保留失
 
   bar.update(state, snapshot);
   assert.equal(parts.mem.textContent, "已用 6.0 / 总 16.0 GB（可用 10.0 GB）");
-  assert.equal(parts.holder.textContent, "LLM：Qwen");
+  assert.equal(parts.holder.textContent, "内存里：Qwen");
   assert.equal(parts.media.textContent, "媒体：空闲");
   assert.equal(parts.next.textContent, "可开下一件重活");
-  assert.equal(root.dataset.tone, "busy");
+  assert.equal(root.dataset.tone, "ok");
 
   bar.offline(true);
   bar.update(state, snapshot);
