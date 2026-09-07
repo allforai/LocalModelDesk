@@ -8,6 +8,8 @@ import { formatBytes } from "../pure/format.js";
 import { sortSessions, displayTitle } from "../pure/sessions.js";
 import { confirmDialog } from "../widgets/confirm.js";
 import { addIcon } from "../icons.js";
+import { renderMarkdown } from "../pure/markdown.js";
+import { formatTimestamp } from "../pure/format.js";
 
 export function createChatPane(root) {
   const doc = root.ownerDocument;
@@ -29,6 +31,7 @@ export function createChatPane(root) {
   let currentId = null;
   let streaming = false;
   let sessionsTick = 0;
+  let modelName = "";
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
   const current = () => sessions.find((s) => s.id === currentId) ?? null;
@@ -70,6 +73,7 @@ export function createChatPane(root) {
       const tail = state.error?.log_tail ? `\n${state.error.log_tail}` : "";
       els.modelState.textContent = `加载失败（${state.error?.code ?? "?"}）：${state.error?.message ?? ""}${tail}`;
     }
+    modelName = payload.loaded_model?.name ?? state.model_key ?? modelName;
   }
 
   async function pollUntilSettled() {
@@ -105,30 +109,49 @@ export function createChatPane(root) {
   function messageNode(message, live = false) {
     const wrap = doc.createElement("div");
     wrap.className = `msg msg-${message.role}`;
+    if (message.role === "user") {
+      const bubble = doc.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = message.content ?? "";
+      wrap.append(bubble);
+      els.messages.append(wrap);
+      els.messages.scrollTop = els.messages.scrollHeight;
+      return { wrap };
+    }
+    const who = doc.createElement("div");
+    who.className = "who";
+    const dot = doc.createElement("span");
+    dot.className = "dot";
+    const name = doc.createElement("span");
+    name.textContent = message.model ?? (modelName || "模型");
+    who.append(dot, name);
     const details = doc.createElement("details");
-    details.className = "reasoning";
+    details.className = "thinking";
     const summary = doc.createElement("summary");
-    summary.textContent = "思考过程";
-    const reasoningEl = doc.createElement("pre");
+    summary.textContent = live ? "思考中…" : message.thinking_s ? `已思考 ${Math.round(message.thinking_s)} 秒` : "思考过程";
+    const reasoningEl = doc.createElement("p");
+    reasoningEl.textContent = message.reasoning ?? "";
     details.append(summary, reasoningEl);
     const contentEl = doc.createElement("div");
-    contentEl.className = "msg-content";
+    contentEl.className = "md";
+    contentEl.append(renderMarkdown(doc, message.content ?? ""));
     const errorEl = doc.createElement("p");
     errorEl.className = "inline-error";
-    if (message.role === "assistant") wrap.append(details);
-    wrap.append(contentEl, errorEl);
-    reasoningEl.textContent = message.reasoning ?? "";
-    contentEl.textContent = message.content ?? "";
+    wrap.append(who, details, contentEl, errorEl);
     details.hidden = !message.reasoning && !live;
     details.open = live;
     els.messages.append(wrap);
     els.messages.scrollTop = els.messages.scrollHeight;
-    return { details, reasoningEl, contentEl, errorEl };
+    return { wrap, details, summary, reasoningEl, contentEl, errorEl };
+  }
+
+  function showMessages(list) {
+    els.messages.replaceChildren();
+    for (const message of list) messageNode(message);
   }
 
   function renderMessages() {
-    els.messages.replaceChildren();
-    for (const message of current()?.messages ?? []) messageNode(message);
+    showMessages(current()?.messages ?? []);
   }
 
   async function refreshSessions(selectId) {
@@ -164,25 +187,28 @@ export function createChatPane(root) {
     els.sessionList.replaceChildren();
     for (const session of sessions) {
       const li = doc.createElement("li");
+      li.className = "card session";
       li.classList.toggle("active", session.id === currentId);
-      const title = doc.createElement("span");
+      const title = doc.createElement("div");
       title.className = "session-title";
       title.textContent = displayTitle(session);
-      title.addEventListener("click", () => {
-        currentId = session.id;
-        renderSessionList();
-        renderMessages();
-      });
+      const meta = doc.createElement("div");
+      meta.className = "session-meta";
+      meta.textContent = [session.model, formatTimestamp(session.updated).slice(11)].filter(Boolean).join(" · ");
+      const actions = doc.createElement("div");
+      actions.className = "session-actions";
       const rename = doc.createElement("button");
+      rename.className = "btn-sm";
       rename.textContent = "改名";
       addIcon(rename, "pencil", doc);
-      rename.addEventListener("click", () => beginRename(li, session));
+      rename.addEventListener("click", (event) => { event.stopPropagation?.(); beginRename(li, session); });
       const remove = doc.createElement("button");
       remove.className = "btn-danger btn-sm";
       remove.textContent = "删";
       remove.setAttribute?.("aria-label", `删除会话：${displayTitle(session)}`);
       addIcon(remove, "trash", doc);
-      remove.addEventListener("click", async () => {
+      remove.addEventListener("click", async (event) => {
+        event.stopPropagation?.();
         const go = await confirmDialog(doc, { title: "删除会话", message: `确定删除「${displayTitle(session)}」？该会话的全部消息将被删除。`, confirmLabel: "删除" });
         if (!go) return;
         try {
@@ -190,7 +216,13 @@ export function createChatPane(root) {
           await refreshSessions();
         } catch (error) { setError(error.message); }
       });
-      li.append(title, rename, remove);
+      actions.append(rename, remove);
+      li.addEventListener("click", () => {
+        currentId = session.id;
+        renderSessionList();
+        renderMessages();
+      });
+      li.append(title, meta, actions);
       els.sessionList.append(li);
     }
   }
@@ -208,6 +240,11 @@ export function createChatPane(root) {
     const live = messageNode({ role: "assistant", content: "", reasoning: "" }, true);
     streaming = true;
     els.sendBtn.disabled = true;
+    els.sendBtn.textContent = "生成中…";
+    els.messages.dataset.streaming = "1";
+    const thinkStart = Date.now();
+    let firstContentSeen = false;
+    let thinkingSeconds = 0;
     let state = initialStream();
     try {
       const body = await api.chatStream(session.messages);
@@ -215,8 +252,13 @@ export function createChatPane(root) {
         state = reduceChunk(state, line);
         live.reasoningEl.textContent = state.reasoning;
         live.details.hidden = !state.reasoning;
-        if (state.content && live.details.open) live.details.open = false;
-        live.contentEl.textContent = state.content;
+        if (state.content && !firstContentSeen) {
+          firstContentSeen = true;
+          thinkingSeconds = Math.round((Date.now() - thinkStart) / 1000);
+          live.summary.textContent = `已思考 ${thinkingSeconds} 秒`;
+          live.details.open = false;
+        }
+        live.contentEl.replaceChildren(renderMarkdown(doc, state.content));
         if (state.done || state.error) break;
       }
       if (!state.done && !state.error) state = { ...state, error: { code: "stream_interrupted", message: "流在完成前中断" } };
@@ -225,6 +267,8 @@ export function createChatPane(root) {
     } finally {
       streaming = false;
       els.sendBtn.disabled = false;
+      els.sendBtn.textContent = "发送";
+      delete els.messages.dataset.streaming;
     }
     if (state.error) {
       live.errorEl.textContent = `出错（${state.error.code}）：${state.error.message}`;
@@ -232,7 +276,7 @@ export function createChatPane(root) {
       return;
     }
     const assistant = { role: "assistant", content: state.content };
-    if (state.reasoning) assistant.reasoning = state.reasoning;
+    if (state.reasoning) { assistant.reasoning = state.reasoning; assistant.thinking_s = thinkingSeconds; }
     session.messages.push(assistant);
     try {
       const updated = await api.updateChatSession(session.id, { messages: session.messages, model: els.modelSelect.value || null });
@@ -274,5 +318,5 @@ export function createChatPane(root) {
     }
   }
 
-  return { init, refreshModels, setHeavyAllowed, applyLlmStatus: renderLlm, refreshSessionsIfStale };
+  return { init, refreshModels, setHeavyAllowed, showMessages, applyLlmStatus: renderLlm, refreshSessionsIfStale };
 }

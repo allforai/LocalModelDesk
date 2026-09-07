@@ -12,7 +12,7 @@ def test_music_parameters_progress_and_player_src_follow_finished_output(
 ):
     with launch_test_harness(tmp_path) as harness:
         page.goto(harness.base_url)
-        expect(page.get_by_text("空闲", exact=True).first).to_be_visible()
+        expect(page.get_by_text("内存里：无", exact=True).first).to_be_visible()
         page.locator("#tabs [data-tab='music']").dispatch_event("click")
         pane = page.locator("#pane-music")
         expect(pane).to_be_visible()

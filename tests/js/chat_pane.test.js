@@ -8,7 +8,17 @@ class Element {
     this.hidden = false; this.open = false; this.scrollTop = 0; this.scrollHeight = 1;
     this.classList = { toggle: (name, on) => { if (on) this.className += ` ${name}`; } };
   }
-  append(...nodes) { for (const node of nodes) { node.parentNode = this; this.children.push(node); if (this.tagName === "select" && !this.value) this.value = node.value; } }
+  append(...nodes) {
+    for (const node of nodes) {
+      if (node && node.tagName === "#fragment") {
+        for (const child of node.children) { child.parentNode = this; this.children.push(child); }
+        node.children = [];
+        continue;
+      }
+      node.parentNode = this; this.children.push(node);
+      if (this.tagName === "select" && !this.value) this.value = node.value;
+    }
+  }
   replaceChildren(...nodes) { this.children = []; this.append(...nodes); }
   addEventListener(type, listener) { this.listeners[type] = listener; }
   click() { return this.listeners.click?.({ preventDefault() {} }); }
@@ -19,7 +29,12 @@ class Element {
 function makePane() {
   const controls = new Map();
   for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error", "load-hint"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
-  const doc = { body: new Element("body"), createElement: (tag) => new Element(tag) };
+  const doc = {
+    body: new Element("body"),
+    createElement: (tag) => new Element(tag),
+    createDocumentFragment: () => new Element("#fragment"),
+    createTextNode: (text) => ({ tagName: "#text", textContent: text }),
+  };
   return { controls, doc, root: { ownerDocument: doc, querySelector: (selector) => controls.get(selector) } };
 }
 const json = (payload) => new Response(JSON.stringify(payload), { status: 200 });
@@ -114,12 +129,49 @@ test("chat 面板发送流式回复、折叠思考并把完整消息写回当前
     await pane.init();
     controls.get("[data-chat-input]").value = "  你好  ";
     await controls.get("[data-send]").click();
-    assert.deepEqual(patches, [{ messages: [{ role: "user", content: "你好" }, { role: "assistant", content: "你好", reasoning: "先想" }], model: null }]);
+    assert.deepEqual(patches, [{ messages: [{ role: "user", content: "你好" }, { role: "assistant", content: "你好", reasoning: "先想", thinking_s: 0 }], model: null }]);
     const assistant = controls.get("[data-messages]").children[1];
-    assert.equal(assistant.children[0].hidden, false);
-    assert.equal(assistant.children[0].open, false);
-    assert.equal(assistant.children[1].textContent, "你好");
+    assert.equal(assistant.children[1].hidden, false);
+    assert.equal(assistant.children[1].open, false);
+    assert.equal(assistant.children[2].children[0].children[0].textContent, "你好");
   } finally { globalThis.fetch = oldFetch; }
+});
+
+test("消息按角色分结构：用户气泡、助手带模型名与已思考折叠", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const pane = createChatPane(root);
+  pane.applyLlmStatus({ state: { status: "loaded", model_key: "glm" }, loaded_model: { name: "GLM 4.7" } });
+  pane.showMessages([{ role: "user", content: "你好" }, { role: "assistant", content: "**hi**", reasoning: "想一想", thinking_s: 3 }]);
+  const [user, ai] = controls.get("[data-messages]").children;
+  assert.equal(user.className, "msg msg-user");
+  assert.equal(user.children[0].className, "bubble");
+  assert.equal(ai.className, "msg msg-assistant");
+  assert.equal(ai.children[0].children[1].textContent, "GLM 4.7");
+  assert.equal(ai.children[1].children[0].textContent, "已思考 3 秒");
+  assert.equal(ai.children[2].children[0].children[0].tagName, "strong");
+});
+
+test("会话卡片：标题行、元信息行、动作区，当前项 active", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (path) => {
+    if (path === "/api/sessions") return json([{ id: "s1", title: "第一会话", model: "glm", messages: [], updated: "2026-09-07T10:05:00" }]);
+    if (String(path).includes("catalog")) return json([]);
+    if (String(path).includes("status")) return json({ models: [] });
+    return json({ state: { status: "idle" } });
+  };
+  try {
+    const pane = createChatPane(root);
+    await pane.init();
+    const li = controls.get("[data-session-list]").children[0];
+    assert.equal(li.className.trim(), "card session active");
+    assert.equal(li.children[0].className, "session-title");
+    assert.equal(li.children[1].className, "session-meta");
+    assert.equal(li.children[1].textContent, "glm · 10:05");
+    assert.equal(li.children[2].className, "session-actions");
+  } finally { globalThis.fetch = previous; }
 });
 
 test("chat 面板的新建、改名和确认删除会写入会话 API 并重绘列表", async () => {
@@ -150,7 +202,7 @@ test("chat 面板的新建、改名和确认删除会写入会话 API 并重绘�
     let list = controls.get("[data-session-list]");
     assert.equal(list.children[0].children[0].textContent, "新会话");
 
-    list.children[0].children[1].click();
+    list.children[0].children[2].children[0].click();
     const input = list.children[0].children[0];
     input.value = "已改名";
     input.listeners.keydown({ key: "Enter" });
@@ -158,7 +210,7 @@ test("chat 面板的新建、改名和确认删除会写入会话 API 并重绘�
     assert.deepEqual(JSON.parse(calls.find(([path, method]) => path === "/api/sessions/s2" && method === "PATCH")[2]), { title: "已改名" });
 
     list = controls.get("[data-session-list]");
-    const removing = list.children[0].children[2].click();
+    const removing = list.children[0].children[2].children[1].click();
     await new Promise((resolve) => setTimeout(resolve, 0));
     const confirm = doc.body.children[0].children[0].children[2].children[1];
     confirm.click();
