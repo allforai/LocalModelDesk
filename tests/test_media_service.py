@@ -38,7 +38,7 @@ def test_initial_job_state_shape(tmp_path):
     state = make_service(tmp_path)[0].job_status()
     assert state == {"job_id": 0, "status": "idle", "kind": None, "params": None,
         "output": None, "error": None, "started_at": None, "finished_at": None,
-        "log": "", "next_log_from": 0, "log_len": 0, "log_truncated": False}
+        "log": "", "next_log_from": 0, "log_len": 0, "log_truncated": False, "elapsed_s": None}
 
 
 def test_video_job_refuses_when_memory_warning_unless_forced(service_factory):

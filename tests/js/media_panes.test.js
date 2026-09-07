@@ -124,6 +124,15 @@ test("音乐面板空歌词时本地拦截并提示", async () => {
   } finally { globalThis.fetch = previous; }
 });
 
+test("回到面板时 sync 会补画已完成作业的播放器，并显示已用时长", async () => {
+  const video = pane({ "video-prompt": "", "video-size": "512x288", "video-frames": "49", "video-steps": "16", "video-start": "" });
+  const p = createVideoPane(video, {});
+  await withFetch([{ job_id: 3, status: "done", output: "h3-1.mp4", started_at: 10, finished_at: 87 }], async () => { await p.jobView.sync(); });
+  assert.equal(video.parts["job-player"].firstChild.tagName, "video");
+  p.jobView.apply({ job_id: 4, status: "running", elapsed_s: 12 });
+  assert.equal(video.parts["job-status"].textContent, "生成中…（已用 12秒）");
+});
+
 test("媒体面板在其他重作业运行时禁用开始按钮，并在结束后恢复", () => {
   const video = pane({ "video-prompt": "海浪", "video-size": "512x288", "video-frames": "25", "video-steps": "8", "video-start": "" });
   const music = pane({ "music-caption": "轻快", "music-lyrics": "la", "music-duration": "30", "music-start": "" });

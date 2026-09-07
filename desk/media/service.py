@@ -193,6 +193,7 @@ class MediaService:
             state["error"] = dict(self._state["error"]) if self._state["error"] else None
             if job_id is not None and job_id != state["job_id"]: log_from = 0
             state.update(log=self._log[max(log_from - self._log_dropped, 0):], next_log_from=self._log_dropped + len(self._log), log_len=self._log_dropped + len(self._log), log_truncated=self._log_truncated)
+            state["elapsed_s"] = self._clock() - state["started_at"] if state["status"] == "running" else None
             return state
 
     def on_job_finished(self, callback: Callable[[dict], None]) -> Callable[[], None]:
