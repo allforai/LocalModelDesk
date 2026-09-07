@@ -1,6 +1,7 @@
 """Facade assembling catalog, manifests, verification, disk usage, and downloads."""
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import threading
@@ -20,8 +21,10 @@ from .verify import ModelStatus, unknown_status, verify_tree
 
 
 class _SubprocessExecutor:
-    def spawn(self, cmd, cwd=None):
-        return subprocess.Popen(cmd, cwd=cwd)
+    def spawn(self, cmd, cwd=None, extra_env=None):
+        env = dict(os.environ)
+        env.update(extra_env or {})
+        return subprocess.Popen(cmd, cwd=cwd, env=env)
 
 
 class _InjectableDownloader(Downloader):
@@ -54,7 +57,8 @@ class _InjectableDownloader(Downloader):
             try:
                 handle = self._executor.spawn(
                     [*hf_cmd, "download", model.hf_repo, "--local-dir",
-                     str(Path(roots.models_root) / model.relpath)], cwd=None)
+                     str(Path(roots.models_root) / model.relpath)], cwd=None,
+                    extra_env=dict(getattr(roots, "hf_env", {}) or {}))
             except FileNotFoundError as exc:
                 raise HfCliMissingError("hf command is unavailable") from exc
             result = self._begin(model, manifest, handle)

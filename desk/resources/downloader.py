@@ -72,7 +72,8 @@ class Downloader:
             destination = Path(roots.models_root) / model.relpath
             command = [*hf_cmd, "download", model.hf_repo, "--local-dir", str(destination)]
             try:
-                handle = self._executor.spawn(command, cwd=None)
+                handle = self._executor.spawn(
+                    command, cwd=None, extra_env=dict(getattr(roots, "hf_env", {}) or {}))
             except FileNotFoundError as exc:
                 raise HfCliMissingError("hf command is unavailable") from exc
             result = self._begin(model, manifest, handle)

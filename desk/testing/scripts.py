@@ -157,6 +157,7 @@ class MemoryScript:
 class DownloadControl:
     def __init__(self):
         self.spawns: list[list[str]] = []
+        self.envs: list[dict] = []
         self.handles: list = []
 
     @property
