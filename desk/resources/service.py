@@ -57,15 +57,9 @@ class _InjectableDownloader(Downloader):
                      str(Path(roots.models_root) / model.relpath)], cwd=None)
             except FileNotFoundError as exc:
                 raise HfCliMissingError("hf command is unavailable") from exc
-            now = self._clock()
-            self._progress = DownloadProgress(key=model.key, state="running",
-                                              bytes_total=manifest.total_bytes if manifest else 0,
-                                              started_at=str(now))
-            self._handle, self._model, self._manifest = handle, model, manifest
-            self._cancel_at = None
-            self._previous_done, self._previous_sample = 0, now
+            result = self._begin(model, manifest, handle)
             self._thread_factory(target=self._sample_loop, daemon=True).start()
-            return self._progress.copy()
+            return result
 
     def _sample_loop(self) -> None:
         while True:

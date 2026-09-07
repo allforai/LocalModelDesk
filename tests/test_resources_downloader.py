@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 from pathlib import Path
@@ -89,3 +90,29 @@ def test_cancel_download_terminates_then_kills_after_eight_seconds_and_keeps_loc
     assert finished[0][0].state == "cancelled"
     assert incomplete.exists()
     assert downloader.start("music3").state == "running"
+
+
+def test_progress_ignores_incomplete_files_from_earlier_attempts(tmp_path):
+    downloader, control, _events = _downloader(tmp_path)
+    cache = tmp_path / "models" / "minimax-h3" / ".cache" / "huggingface" / "download"
+    cache.mkdir(parents=True)
+    stale = cache / "old.incomplete"
+    stale.write_bytes(b"x" * 5)
+    past = time.time() - 3600
+    os.utime(stale, (past, past))
+    downloader.start("h3")
+    fresh = cache / "new.incomplete"
+    fresh.write_bytes(b"x" * 3)
+    _wait_for(lambda: downloader.progress().bytes_done == 3)
+    assert downloader.progress().stale_bytes == 5
+    control.finish([("weights/a.bin", 10)])
+    _wait_for(lambda: downloader.progress().state == "finished")
+    assert not stale.exists() and not fresh.exists()
+
+
+def test_start_download_passes_hf_env_to_executor(tmp_path):
+    downloader, control, _events = _downloader(tmp_path)
+    downloader._resolve_paths = lambda: SimpleNamespace(
+        models_root=tmp_path / "models", hf_cmd=(sys.executable,), hf_env={"PYTHONPATH": "/pylibs/desk"})
+    downloader.start("h3")
+    assert control.envs[-1] == {"PYTHONPATH": "/pylibs/desk"}

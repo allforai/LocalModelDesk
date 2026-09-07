@@ -25,6 +25,7 @@ class DownloadProgress:
     eta_seconds: float | None = None
     started_at: str | None = None
     error: dict | None = None
+    stale_bytes: int = 0
 
     def copy(self) -> "DownloadProgress":
         return DownloadProgress(**asdict(self))
@@ -47,6 +48,7 @@ class Downloader:
         self._cancel_at: float | None = None
         self._previous_done = 0
         self._previous_sample = 0.0
+        self._attempt_wall = 0.0
 
     def start(self, key: str) -> DownloadProgress:
         with self._lock:
@@ -73,15 +75,21 @@ class Downloader:
                 handle = self._executor.spawn(command, cwd=None)
             except FileNotFoundError as exc:
                 raise HfCliMissingError("hf command is unavailable") from exc
-            now = self._clock()
-            total = manifest.total_bytes if manifest is not None else 0
-            self._progress = DownloadProgress(key=model.key, state="running", bytes_total=total,
-                                              started_at=str(now))
-            self._handle, self._model, self._manifest = handle, model, manifest
-            self._cancel_at = None
-            self._previous_done, self._previous_sample = 0, now
+            result = self._begin(model, manifest, handle)
             threading.Thread(target=self._sample_loop, daemon=True).start()
-            return self._progress.copy()
+            return result
+
+    def _begin(self, model, manifest, handle) -> DownloadProgress:
+        """Record a fresh attempt's state; shared by every start() implementation."""
+        now = self._clock()
+        total = manifest.total_bytes if manifest is not None else 0
+        self._progress = DownloadProgress(key=model.key, state="running", bytes_total=total,
+                                          started_at=str(now))
+        self._handle, self._model, self._manifest = handle, model, manifest
+        self._cancel_at = None
+        self._previous_done, self._previous_sample = 0, now
+        self._attempt_wall = time.time()
+        return self._progress.copy()
 
     def progress(self) -> DownloadProgress:
         with self._lock:
@@ -135,13 +143,18 @@ class Downloader:
                     current, newest = file.path, mtime
             total = manifest.total_bytes
             incomplete_root = root / ".cache" / "huggingface" / "download"
+            incomplete_bytes, stale_bytes = 0, 0
             try:
-                incomplete_bytes = sum(
-                    path.stat().st_size for path in incomplete_root.rglob("*.incomplete")
-                    if path.is_file()
-                )
+                for path in incomplete_root.rglob("*.incomplete"):
+                    if not path.is_file():
+                        continue
+                    stat = path.stat()
+                    if stat.st_mtime + 1 >= self._attempt_wall:
+                        incomplete_bytes += stat.st_size
+                    else:
+                        stale_bytes += stat.st_size
             except OSError:
-                incomplete_bytes = 0
+                pass
             done = min(done + incomplete_bytes, total)
             now = self._clock()
             elapsed = now - self._previous_sample
@@ -152,6 +165,7 @@ class Downloader:
             self._progress.current_file = current
             self._progress.rate_bps = rate
             self._progress.eta_seconds = (total - done) / rate if rate > 0 else None
+            self._progress.stale_bytes = stale_bytes
             self._previous_done, self._previous_sample = done, now
             snapshot = self._progress.copy()
         self._events.emit_progress(snapshot)
@@ -162,6 +176,7 @@ class Downloader:
             if not cancelled:
                 if code == 0:
                     self._progress.state = "finished"
+                    self._purge_incomplete()
                 else:
                     self._progress.state = "failed"
                     self._progress.error = {"code": "download_failed", "message": f"hf exited {code}", "returncode": code}
@@ -171,3 +186,14 @@ class Downloader:
             self._handle = None
             snapshot = self._progress.copy()
         self._events.emit_finished(snapshot, final_status)
+
+    def _purge_incomplete(self) -> None:
+        model = self._model
+        if model is None:
+            return
+        cache = Path(self._resolve_paths().models_root) / model.relpath / ".cache" / "huggingface" / "download"
+        try:
+            for path in cache.rglob("*.incomplete"):
+                path.unlink(missing_ok=True)
+        except OSError:
+            pass
