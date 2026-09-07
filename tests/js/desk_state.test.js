@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { renderState } from "../../desk/static/js/pure/desk_state.js";
+import { renderState, heavyAvailability } from "../../desk/static/js/pure/desk_state.js";
 
 const GB = 1024 ** 3;
 const idle = { holder: null, media_busy: false, can_start: { ok: true } };
@@ -50,6 +50,13 @@ test("仲裁器的按种类拒绝会在状态条显示拒绝原因", () => {
 test("未知拒绝码原样透出，不吞", () => {
   const v = renderState({ holder: null, media_busy: false, can_start: { ok: false, reason: "weird_code" } }, snapA);
   assert.ok(v.nextText.includes("weird_code"));
+});
+
+test("拒绝码翻译成中文原因，llm_already_held 指向卸载动作", () => {
+  const state = { can_start: { llm: { ok: false, reason: { code: "llm_already_held" } }, media: { ok: true } } };
+  assert.deepEqual(heavyAvailability(state, "llm"), { allowed: false, reason: "已有聊天模型驻留：先卸载，再加载另一个" });
+  const evicted = { can_start: { llm: { ok: false, reason: { code: "evict_failed" } } } };
+  assert.equal(heavyAvailability(evicted, "llm").reason, "让出内存失败，请重试或先手动卸载");
 });
 
 test("快照缺失如实说不可用，不编数字", () => {

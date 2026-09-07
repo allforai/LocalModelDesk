@@ -18,7 +18,7 @@ class Element {
 
 function makePane() {
   const controls = new Map();
-  for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
+  for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error", "load-hint"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
   const doc = { body: new Element("body"), createElement: (tag) => new Element(tag) };
   return { controls, doc, root: { ownerDocument: doc, querySelector: (selector) => controls.get(selector) } };
 }
@@ -61,10 +61,35 @@ test("聊天面板在媒体作业期间禁用加载，并在作业结束后恢�
   const pane = createChatPane(root);
   pane.setHeavyAllowed(false, "媒体作业进行中");
   assert.equal(controls.get("[data-load]").disabled, true);
-  assert.equal(controls.get("[data-chat-error]").textContent, "媒体作业进行中");
+  assert.equal(controls.get("[data-load-hint]").textContent, "媒体作业进行中");
+  assert.equal(controls.get("[data-chat-error]").textContent, "");
   pane.setHeavyAllowed(true);
   assert.equal(controls.get("[data-load]").disabled, false);
+  assert.equal(controls.get("[data-load-hint]").textContent, "");
+});
+
+test("驱逐后 tick 推送的 llm 状态会把『已加载』改成失败说明", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  controls.set("[data-load-hint]", new Element()); root.querySelector = (s) => controls.get(s);
+  const pane = createChatPane(root);
+  pane.applyLlmStatus({ state: { status: "loaded", model_key: "glm" }, loaded_model: { name: "GLM" } });
+  assert.equal(controls.get("[data-model-state]").textContent, "已加载：GLM");
+  pane.applyLlmStatus({ state: { status: "error", model_key: "glm", error: { code: "evicted", message: "LLM 已被媒体任务驱逐" } }, loaded_model: null });
+  assert.equal(controls.get("[data-model-state]").textContent, "加载失败（evicted）：LLM 已被媒体任务驱逐");
+});
+
+test("互斥原因显示在加载按钮旁的提示里，不再是红色错误", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  controls.set("[data-load-hint]", new Element()); root.querySelector = (s) => controls.get(s);
+  const pane = createChatPane(root);
+  pane.setHeavyAllowed(false, "已有聊天模型驻留：先卸载，再加载另一个");
+  assert.equal(controls.get("[data-load-hint]").textContent, "已有聊天模型驻留：先卸载，再加载另一个");
   assert.equal(controls.get("[data-chat-error]").textContent, "");
+  assert.equal(controls.get("[data-load]").disabled, true);
+  pane.setHeavyAllowed(true, "");
+  assert.equal(controls.get("[data-load-hint]").textContent, "");
 });
 
 test("chat 面板发送流式回复、折叠思考并把完整消息写回当前会话", async () => {

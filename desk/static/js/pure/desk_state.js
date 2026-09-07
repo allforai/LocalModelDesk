@@ -3,8 +3,11 @@ const GB = 1024 ** 3;
 const REASON_TEXT = {
   media_busy: "媒体作业进行中",
   llm_loaded: "聊天模型驻留中",
+  llm_already_held: "已有聊天模型驻留：先卸载，再加载另一个",
   transition_in_progress: "重活交接进行中",
+  evict_failed: "让出内存失败，请重试或先手动卸载",
   memory_low: "可用内存不足",
+  insufficient_memory: "可用内存不足",
 };
 
 function decisionFor(deskState, kind) {
@@ -19,7 +22,7 @@ export function heavyAvailability(deskState, kind) {
   const code = typeof reason === "object" ? reason?.code : reason;
   return {
     allowed: decision?.ok !== false,
-    reason: REASON_TEXT[code] ?? code ?? "",
+    reason: REASON_TEXT[code] ?? (code ? `暂不可用（${code}）` : ""),
   };
 }
 
