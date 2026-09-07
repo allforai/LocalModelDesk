@@ -161,3 +161,9 @@ def test_layout_is_full_width_with_24px_margins_and_cards():
 def test_reason_hints_are_not_error_red_and_motion_is_limited():
     assert ".hint-busy{" in CSS.replace(" ", "") and "color:var(--busy)" in CSS
     assert "prefers-reduced-motion" in CSS
+
+
+def test_drawer_and_firstrun_markup_use_shared_form_language():
+    assert 'class="check-row"' in HTML and "data-settings-enabled" in HTML.split('class="check-row"', 1)[1].split("</label>", 1)[0]
+    assert '<fieldset' not in HTML          # first-run uses cards, not browser fieldsets
+    assert 'class="drawer-head"' in HTML and 'data-close-settings' in HTML.split('class="drawer-head"', 1)[1].split("</div>", 1)[0]

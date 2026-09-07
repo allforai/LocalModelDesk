@@ -6,6 +6,7 @@ class Element {
     this.value = "";
     this.checked = false;
     this.textContent = "";
+    this.className = "";
     this.hidden = false;
     this.dataset = {};
     this.listeners = {};
@@ -160,3 +161,18 @@ test("未监听时隐藏无鉴权警告与 base URL 区", async () => {
     assert.equal(controls.get("[data-settings-openai-url]").hidden, true);
     assert.equal(controls.get("[data-settings-copy-openai]").hidden, true);
   } finally { globalThis.fetch = previous; }});
+
+test("监听状态用徽标类表达", async () => {
+  const oldFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    config: { enabled: true, host: "127.0.0.1", port: 8770 },
+    status: { enabled: true, listening: true, host: "127.0.0.1", port: 8770, auth: "none", last_error: null },
+  }), { status: 200 });
+  try {
+    const { createSettingsPane } = await import("../../desk/static/js/panes/settings.js");
+    const { root, controls } = makePane();
+    const pane = createSettingsPane(root);
+    await pane.init();
+    assert.equal(controls.get("[data-settings-listening]").className, "badge badge-ok");
+  } finally { globalThis.fetch = oldFetch; }
+});
