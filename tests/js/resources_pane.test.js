@@ -39,8 +39,13 @@ test("resources 面板渲染三态、磁盘占用和可展开的缺失清单", a
   await pane.refresh();
 
   assert.equal(elements.list.children.length, 3);
-  assert.match(elements.list.children[0].children[1].textContent, /齐/);
-  assert.match(elements.list.children[1].children[1].textContent, /一半 40%/);
+  assert.equal(elements.list.children[0].className, "card res-row");
+  assert.equal(elements.list.children[0].children[0].className, "res-head");
+  assert.equal(elements.list.children[0].children[0].children[1].className, "badge badge-ok");
+  assert.match(elements.list.children[0].children[0].children[1].textContent, /齐/);
+  assert.equal(elements.list.children[1].children[0].children[1].className, "badge badge-busy");
+  assert.match(elements.list.children[1].children[0].children[1].textContent, /一半 40%/);
+  assert.equal(find(elements.list.children[1], (el) => el.tagName === "progress").className, "res-progress");
   assert.equal(find(elements.list.children[1], (el) => el.tagName === "details").children[1].children[0].textContent, "weights.bin");
   assert.match(elements.disk.textContent, /可用 2 KiB/);
   assert.ok(find(elements.list.children[2], (el) => el.tagName === "button" && el.textContent === "下载"));
@@ -128,6 +133,7 @@ test("删除按钮带 btn-danger，下载带 btn-primary", async () => {
   try {
     const pane = createResourcesPane(root); await pane.refresh();
     const li = parts["res-list"].children[0];
+    assert.equal(li.className, "card res-row");
     const buttons = li.children.at(-1).children;
     assert.equal(buttons.find((b) => b.textContent === "删除").className.includes("btn-danger"), true);
     assert.equal(buttons.find((b) => b.textContent === "续传").className.includes("btn-primary"), true);
@@ -142,6 +148,7 @@ test("每行只渲染一次名称与状态", async () => {
     const pane = createResourcesPane(root); await pane.refresh();
     const li = parts["res-list"].children[0];
     assert.equal(li.textContent, "");
-    assert.equal(li.children.filter((c) => c.textContent.includes("GLM")).length, 1);
+    const flatten = (node) => [node, ...node.children.flatMap(flatten)];
+    assert.equal(flatten(li).filter((c) => c.textContent.includes("GLM")).length, 1);
   } finally { globalThis.fetch = previous; }
 });

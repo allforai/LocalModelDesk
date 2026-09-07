@@ -37,7 +37,7 @@ button:disabled,button[aria-disabled="true"]{opacity:.5;cursor:not-allowed;filte
 #tabs button{min-width:78px;background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0;color:var(--muted);padding:10px 12px}
 #tabs button:hover{color:var(--text)}
 #tabs button.active{color:var(--accent);background:transparent;border-bottom-color:var(--accent)}
-main > section { min-height:calc(100vh - 94px); padding:16px; background:var(--panel); } #pane-chat { display:flex; gap:16px; } .sessions { width:220px; flex:none; } .sessions ul,[data-res-list],[data-lib-list] { list-style:none; padding:0; } .chat-main { flex:1; display:flex; flex-direction:column; } .model-row,.composer,.res-head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .messages { min-height:300px; overflow:auto; } .form { max-width:640px; display:flex; flex-direction:column; gap:8px; } [data-job-log] { max-height:240px; overflow:auto; white-space:pre-wrap; } [data-job-player] video,[data-job-player] audio,[data-lib-player] video { max-width:100%; }
+main > section { min-height:calc(100vh - 94px); padding:var(--margin); background:var(--bg); } #pane-chat { display:flex; gap:16px; } .sessions { width:220px; flex:none; } .sessions ul,[data-res-list],[data-lib-list] { list-style:none; padding:0; } .chat-main { flex:1; display:flex; flex-direction:column; } .model-row,.composer,.res-head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .messages { min-height:300px; overflow:auto; } .form { max-width:640px; display:flex; flex-direction:column; gap:8px; } [data-job-log] { max-height:240px; overflow:auto; white-space:pre-wrap; } [data-job-player] video,[data-job-player] audio,[data-lib-player] video { max-width:100%; }
 .overlay { position:fixed; inset:0; display:flex; place-items:center; justify-content:center; background:#0009; z-index:30; } .dialog,#pane-settings { background:var(--panel); border:1px solid var(--border); padding:20px; } #pane-firstrun { position:fixed; inset:0; z-index:20; padding:48px; overflow:auto; background:var(--bg); } #pane-settings { position:fixed; top:0; right:0; bottom:0; z-index:25; width:min(420px,100%); overflow:auto; } #fatal { position:fixed; inset:0; z-index:40; display:grid; place-items:center; padding:48px; color:var(--danger); background:var(--bg); }
 .settings-section { display:grid; gap:10px; padding:4px 0 20px; border-bottom:1px solid var(--border); margin-bottom:18px; } .settings-section label { display:grid; gap:5px; } .settings-section input:not([type="checkbox"]) { width:100%; } .settings-actions { display:flex; gap:8px; flex-wrap:wrap; }
 body.drawer-open { overflow:hidden; }
@@ -60,10 +60,25 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .messages[data-streaming="1"]~.composer textarea{opacity:.7}
 
 /* 6a. cards + session list */
-.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:12px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:16px}
 .sessions ul,[data-res-list],[data-lib-list]{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px}
-.session{cursor:pointer;position:relative}.session.active{border-color:var(--accent)}
+.session{cursor:pointer;position:relative;padding:12px}.session.active{border-color:var(--accent)}
 .session-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .session-meta{font-size:13px;color:var(--muted);margin-top:4px}
 .session-actions{display:none;position:absolute;right:8px;bottom:8px;gap:6px}
 .session:hover .session-actions,.session:focus-within .session-actions{display:flex}
+/* 6b. cards: resources + library rows */
+.res-name{margin:0;font-size:16px;font-weight:600}
+.res-meta,.lib-meta{color:var(--muted);font-size:13px;margin:4px 0 0}
+.res-actions,.lib-actions{display:flex;gap:8px;margin-top:12px}
+.res-progress{width:100%;height:6px;margin-top:8px;accent-color:var(--busy)}
+.res-missing{margin-top:8px;color:var(--muted);font-size:13px}
+.lib-title{margin:0}
+/* 7. badges */
+.badge{font-size:13px;padding:2px 8px;border-radius:999px}
+.badge-ok{background:rgba(63,185,80,.15);color:var(--ok)}
+.badge-busy{background:rgba(210,153,34,.15);color:var(--busy)}
+.badge-none{background:rgba(154,163,178,.15);color:var(--muted)}
+.badge-unknown{background:rgba(229,83,75,.15);color:var(--danger)}
+/* 10 (task 10). empty state */
+.empty{color:var(--muted);padding:24px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius-card)}

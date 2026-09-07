@@ -147,6 +147,13 @@ export function createChatPane(root) {
 
   function showMessages(list) {
     els.messages.replaceChildren();
+    if (!list.length) {
+      const empty = doc.createElement("p");
+      empty.className = "empty";
+      empty.textContent = "这是一个新会话。选好模型、点「加载」，然后在下面输入第一句。";
+      els.messages.append(empty);
+      return;
+    }
     for (const message of list) messageNode(message);
   }
 
@@ -234,6 +241,7 @@ export function createChatPane(root) {
     if (!text || !session) return;
     setError("");
     session.messages = session.messages ?? [];
+    if (session.messages.length === 0) els.messages.replaceChildren();
     session.messages.push({ role: "user", content: text });
     els.input.value = "";
     messageNode({ role: "user", content: text });

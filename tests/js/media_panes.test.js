@@ -148,3 +148,10 @@ test("媒体面板在其他重作业运行时禁用开始按钮，并在结束�
   assert.equal(video.parts["video-start"].disabled, false);
   assert.equal(music.parts["music-start"].disabled, false);
 });
+
+test("idle 状态文案给出下一步", () => {
+  const video = pane({ "video-prompt": "", "video-size": "512x288", "video-frames": "49", "video-steps": "16", "video-start": "" });
+  const p = createVideoPane(video, {});
+  p.jobView.apply({ job_id: 0, status: "idle" });
+  assert.equal(video.parts["job-status"].textContent, "空闲 · 填好左侧参数后点「生成」");
+});
