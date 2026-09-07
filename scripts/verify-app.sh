@@ -40,11 +40,16 @@ if ! OUT="$(codesign --verify --deep --strict --verbose=2 "$APP" 2>&1)"; then
   fail "V1 签名验证失败: $OUT"
 fi
 
-# V1b: Gatekeeper must accept the bundle unless the build was explicitly allowed to be adhoc.
-if ! spctl --assess --type execute "$APP" 2>&1 | grep -qv rejected; then
+# V1b: the bundle must carry a Developer ID Application signature (R-packaging-04), unless the
+# build was explicitly allowed to be adhoc.  Notarization is a separate, later step, so an
+# "Unnotarized Developer ID" verdict from Gatekeeper is acceptable here; "no usable signature" is not.
+SPCTL_OUT="$(spctl --assess --type execute -vv "$APP" 2>&1 || true)"
+if ! codesign -dvv "$APP" 2>&1 | grep -q "Authority=Developer ID Application"; then
   if [[ "${LMD_ALLOW_ADHOC:-0}" != "1" ]]; then
-    fail "V1b Gatekeeper 拒绝了该包（未用 Developer ID 签名，设置 LMD_ALLOW_ADHOC=1 以允许本机调试用 adhoc 签名）"
+    fail "V1b 未用 Developer ID Application 签名（spctl: $(printf '%s' "$SPCTL_OUT" | tr '\n' ' ')）；设置 LMD_ALLOW_ADHOC=1 以允许本机调试用 adhoc 签名"
   fi
+elif printf '%s' "$SPCTL_OUT" | grep -q "Unnotarized Developer ID"; then
+  echo "提示：已用 Developer ID 签名但未公证（spctl: Unnotarized Developer ID）；分发到其他机器前需 notarytool 公证" >&2
 fi
 
 # V2: every key required by the packaging plist template must be non-empty.
