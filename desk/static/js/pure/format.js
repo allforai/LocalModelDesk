@@ -5,9 +5,9 @@ const KB = 1024;
 
 export function formatBytes(bytes) {
   if (!Number.isFinite(bytes) || bytes < 0) return "—";
-  if (bytes >= GB) return `${(bytes / GB).toFixed(1)} GB`;
-  if (bytes >= MB) return `${Math.round(bytes / MB)} MB`;
-  if (bytes >= KB) return `${Math.round(bytes / KB)} KB`;
+  if (bytes >= GB) return `${(bytes / GB).toFixed(1)} GiB`;
+  if (bytes >= MB) return `${Math.round(bytes / MB)} MiB`;
+  if (bytes >= KB) return `${Math.round(bytes / KB)} KiB`;
   return `${bytes} B`;
 }
 

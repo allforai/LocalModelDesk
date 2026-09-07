@@ -36,3 +36,42 @@ def test_menu_title(fixture, expected):
                           capture_output=True, text=True, timeout=30)
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.strip() == expected
+
+
+@pytest.mark.parametrize("fixture,expected", [
+    ({"server": "failed", "needs_setup": False, "desk_state": None}, "down"),
+    ({"server": "owned", "needs_setup": False, "desk_state": IDLE}, "idle"),
+    ({"server": "owned", "needs_setup": False, "desk_state": HELD_LLM}, "loaded"),
+    ({"server": "owned", "needs_setup": False, "desk_state": HELD_VIDEO}, "busy"),
+    ({"server": "owned", "needs_setup": False, "desk_state": None}, "down"),
+])
+def test_menu_glyph_state(fixture, expected):
+    proc = subprocess.run([harness_path(), "glyph-state"], input=json.dumps(fixture),
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == expected
+
+
+@pytest.mark.parametrize("failures,child,expected", [
+    (1, "true", "keepWaiting"),
+    (2, "false", "keepWaiting"),
+    (3, "false", "serviceExited"),
+    (3, "true", "serviceUnresponsive"),
+    (7, "true", "serviceUnresponsive"),
+])
+def test_poll_failure_action(failures, child, expected):
+    proc = subprocess.run([harness_path(), "poll-failure", str(failures), child],
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == expected
+
+
+@pytest.mark.parametrize("used,total,available,expected", [
+    (62_461_775_872, 137_438_953_472, 74_977_177_600, "内存 已用 58.2 / 总 128.0 GiB（可用 69.8 GiB）"),
+    (0, 137_438_953_472, 137_438_953_472, "内存 已用 0.0 / 总 128.0 GiB（可用 128.0 GiB）"),
+])
+def test_memory_menu_title_matches_web_wording(used, total, available, expected):
+    proc = subprocess.run([harness_path(), "memory-line", str(used), str(total), str(available)],
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == expected

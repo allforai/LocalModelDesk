@@ -18,9 +18,13 @@ def build_h3_command(
     frames: int,
     steps: int,
     output: Path,
+    first_frame: Path | None = None,
+    last_frame: Path | None = None,
+    ref_video: Path | None = None,
+    use_audio: bool = True,
 ) -> list[str]:
     """Build the complete argv for an H3 video-generation invocation."""
-    return [
+    command = [
         *mlx_h3_cmd,
         prompt,
         "--tokenizer", str(h3_root / "tokenizer" / "tokenizer.json"),
@@ -36,6 +40,11 @@ def build_h3_command(
         "--budget", str(H3_BUDGET_GB),
         "--output", str(output),
     ]
+    for flag, path in (("--first-frame", first_frame), ("--last-frame", last_frame),
+                       ("--ref-video" if use_audio else "--ref-video-silent", ref_video)):
+        if path is not None:
+            command.extend((flag, str(path)))
+    return command
 
 
 def build_music_command(

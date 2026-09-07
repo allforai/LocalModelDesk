@@ -17,7 +17,10 @@ PLIST_KEYS = [
 
 
 def run(command: list[object]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run([str(value) for value in command], capture_output=True, text=True)
+    # Test fixtures are always adhoc-signed (no Developer ID available in CI/dev);
+    # tell verify-app.sh that is expected so its Gatekeeper check doesn't fail these.
+    env = dict(os.environ, LMD_ALLOW_ADHOC="1")
+    return subprocess.run([str(value) for value in command], capture_output=True, text=True, env=env)
 
 
 def test_plist_template_renders_all_keys(tmp_path):
@@ -394,6 +397,13 @@ def test_uninstall_purge_refuses_on_corrupt_config(tmp_path):
     assert result.returncode != 0
     assert (data / "models" / "weights.bin").exists()
     assert (data / "sessions" / "session.json").exists()
+
+
+def test_build_refuses_silent_adhoc_and_verify_checks_gatekeeper():
+    build = (REPO / "scripts" / "build-app.sh").read_text(encoding="utf-8")
+    verify = (REPO / "scripts" / "verify-app.sh").read_text(encoding="utf-8")
+    assert "LMD_ALLOW_ADHOC" in build and "--adhoc" in build
+    assert "spctl --assess --type execute" in verify and "LMD_ALLOW_ADHOC" in verify
 
 
 def test_readme_states_real_behavior():

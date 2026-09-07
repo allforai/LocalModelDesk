@@ -120,7 +120,14 @@ printf '{"app": "LocalModelDesk", "bundle_version": "%s", "python": "python/bin/
 
 echo "==> [8/9] Sign"
 SIGN=("$REPO/scripts/sign-app.sh" "$APP")
-if [[ "$ADHOC" == 1 ]]; then SIGN+=(--adhoc); fi
+if [[ "$ADHOC" == 1 ]]; then
+  if [[ "${LMD_ALLOW_ADHOC:-0}" != "1" ]]; then
+    echo "error: --adhoc requires LMD_ALLOW_ADHOC=1 (adhoc-signed builds fail Gatekeeper on other machines)" >&2
+    exit 1
+  fi
+  SIGN+=(--adhoc)
+  echo "警告：adhoc 签名仅供本机调试，Gatekeeper 会拒绝在其他机器上打开" >&2
+fi
 if [[ -n "$IDENTITY" ]]; then SIGN+=(--identity "$IDENTITY"); fi
 "${SIGN[@]}"
 

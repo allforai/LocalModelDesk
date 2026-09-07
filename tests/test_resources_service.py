@@ -13,7 +13,7 @@ class FakeExecutor:
     def __init__(self):
         self.calls = []
 
-    def spawn(self, cmd, cwd=None):
+    def spawn(self, cmd, cwd=None, extra_env=None):
         self.calls.append(list(cmd))
         return SimpleNamespace(poll=lambda: None, terminate=lambda: None,
                                kill=lambda: None, stderr_tail=lambda: "")

@@ -224,9 +224,10 @@ class FakeDownloadExecutor:
     def __init__(self, control: DownloadControl):
         self.ctl = control
 
-    def spawn(self, cmd: list[str], cwd=None) -> FakeDownloadHandle:
+    def spawn(self, cmd: list[str], cwd=None, extra_env=None) -> FakeDownloadHandle:
         handle = FakeDownloadHandle()
         self.ctl.spawns.append(list(cmd))
+        self.ctl.envs.append(dict(extra_env or {}))
         self.ctl.handles.append(handle)
         return handle
 

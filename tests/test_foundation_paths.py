@@ -43,6 +43,12 @@ def test_bundle_mode_with_marker(fake_repo, data_root):
     assert roots.mlx_h3_env == {"PYTHONPATH": str(fake_repo / "pylibs" / "h3")}
     assert roots.music_env == {"PYTHONPATH": str(fake_repo / "pylibs" / "music")}
     assert roots.hf_cmd == (str(python), "-s", "-c", "from huggingface_hub.cli.hf import main; main()")
+    assert roots.hf_env == {"PYTHONPATH": str(fake_repo / "pylibs" / "desk")}
+
+
+def test_dev_mode_hf_env_is_empty(fake_repo, data_root):
+    roots = paths_mod.resolve_paths(resources_root=fake_repo)
+    assert roots.hf_env == {}
 
 
 def test_env_data_root_and_param_precedence(fake_repo, tmp_path, monkeypatch):

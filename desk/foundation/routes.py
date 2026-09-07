@@ -21,7 +21,11 @@ def _config_json(cfg: config_mod.DeskConfig) -> dict:
 
 def get_config(_req) -> dict:
     roots = _roots()
-    return _config_json(config_mod.read_config(roots))
+    cfg = config_mod.read_config(roots)
+    result = _config_json(cfg)
+    if cfg.needs_setup:
+        result["discovered"] = [item["path"] for item in firstrun.discover_model_roots(roots)]
+    return result
 
 
 def put_config(req) -> dict:
@@ -42,6 +46,7 @@ def get_paths(_req) -> dict:
         "music_env": dict(roots.music_env),
         "media_cli_dir": str(roots.media_cli_dir),
         "hf_cmd": list(roots.hf_cmd),
+        "hf_env": dict(roots.hf_env),
         "data_root": str(roots.data_root),
         "config_path": str(roots.config_path),
         "logs_dir": str(roots.logs_dir),
@@ -71,6 +76,15 @@ def post_adopt(req) -> dict:
     return {"mode": result.mode, "models_root": str(result.models_root), "adopted": list(result.adopted), "moved_bytes": result.moved_bytes, "source_retained": result.source_retained}
 
 
+def post_discover(_req) -> dict:
+    config, candidates = firstrun.apply_discovered(_roots())
+    return {
+        "models_root": str(config.models_root),
+        "candidates": candidates,
+        "found": bool(candidates),
+    }
+
+
 def build_routes() -> list:
     return [
         ("GET", "/api/config", get_config),
@@ -78,4 +92,5 @@ def build_routes() -> list:
         ("GET", "/api/paths", get_paths),
         ("POST", "/api/first-run", post_first_run),
         ("POST", "/api/adopt", post_adopt),
+        ("POST", "/api/models/discover", post_discover),
     ]

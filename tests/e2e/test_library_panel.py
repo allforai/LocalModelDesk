@@ -24,7 +24,7 @@ def _run_video(page):
     pane = page.locator("#pane-video")
     pane.locator("[data-video-prompt]").fill(VIDEO_PARAMS["prompt"])
     pane.locator("[data-video-size]").select_option(VIDEO_PARAMS["size"])
-    pane.locator("[data-video-frames]").fill(VIDEO_PARAMS["frames"])
+    pane.locator("[data-video-frames]").select_option(VIDEO_PARAMS["frames"])
     pane.locator("[data-video-steps]").fill(VIDEO_PARAMS["steps"])
     pane.locator("[data-video-start]").click()
     expect(pane.locator("video[controls]")).to_be_visible()

@@ -26,6 +26,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["writeConfig", [{ gateway: { port: 9000 } }], "/api/config", "PUT", { gateway: { port: 9000 } }],
     ["completeFirstRun", ["/models"], "/api/first-run", "POST", { models_root: "/models" }],
     ["adoptLegacyModels", ["/old", "point"], "/api/adopt", "POST", { legacy_root: "/old", mode: "point" }],
+    ["discoverModels", [], "/api/models/discover", "POST"],
     ["listCatalog", [], "/api/resources/catalog", "GET"],
     ["verifyAllModels", [], "/api/resources/status?refresh=0", "GET"],
     ["verifyAllModels", [true], "/api/resources/status?refresh=1", "GET"],
@@ -45,6 +46,8 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["jobStatus", [120, 3], "/api/media/job?log_from=120&job_id=3", "GET"],
     ["jobStatus", [], "/api/media/job?log_from=0", "GET"],
     ["listOutputs", [], "/api/outputs", "GET"],
+    ["revealOutput", ["clip.mp4"], "/api/outputs/clip.mp4/reveal", "POST"],
+    ["revealOutput", [], "/api/outputs/reveal", "POST"],
     ["listHistory", [], "/api/history?limit=200", "GET"],
     ["listChatSessions", [], "/api/sessions", "GET"],
     ["createChatSession", [{ title: "Draft" }], "/api/sessions", "POST", { title: "Draft" }],
@@ -54,12 +57,12 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["gatewayConfig", [true], "/api/gateway/config", "POST"],
   ];
   const names = [
-    "readConfig", "writeConfig", "completeFirstRun", "adoptLegacyModels", "listCatalog", "verifyAllModels",
+    "readConfig", "writeConfig", "completeFirstRun", "adoptLegacyModels", "discoverModels", "listCatalog", "verifyAllModels",
     "startDownload", "cancelDownload", "deleteModel", "diskUsage", "memorySnapshot", "deskState", "loadLlm", "unloadLlm",
     "llmStatus", "chatStream", "startVideoJob", "startMusicJob", "cancelJob", "jobStatus", "listOutputs",
-    "serveOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
+    "serveOutput", "revealOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
   ];
-  assert.deepEqual(Object.keys(api).sort(), [...names, "DeskApiError"].sort());
+  assert.deepEqual(Object.keys(api).sort(), [...names, "uploadMediaInput", "DeskApiError", "setRequestTimeout"].sort());
   await withFetch({}, async (calls) => {
     for (const [name, args, url, method, body] of expected) {
       const result = await api[name](...args);
@@ -123,4 +126,15 @@ test("DeskApiError 在非 JSON 错误时使用 HTTP 状态行", async () => {
       return true;
     });
   });
+});
+
+test("挂起的请求在超时后以 timeout 错误拒绝，而不是永远等待", async () => {
+  const previous = globalThis.fetch;
+  globalThis.fetch = (_url, options = {}) => new Promise((_resolve, reject) => {
+    options.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+  });
+  api.setRequestTimeout(20);
+  try {
+    await assert.rejects(api.deskState(), (error) => error.name === "DeskApiError" && error.code === "timeout");
+  } finally { api.setRequestTimeout(8000); globalThis.fetch = previous; }
 });

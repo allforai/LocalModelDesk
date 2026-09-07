@@ -1,11 +1,24 @@
 """Gateway lifecycle, configuration application, and gateway status."""
 from __future__ import annotations
 
+import socket
 import threading
 
 from .http_server import GatewayHTTPServer
 
 _DEFAULTS = {"enabled": True, "host": "0.0.0.0", "port": 8770}
+
+
+def _lan_host(host: str) -> str:
+    """Resolve a usable LAN address for a wildcard bind, else echo the explicit host."""
+    if host != "0.0.0.0":
+        return host
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+            probe.connect(("10.255.255.255", 1))  # no packet sent; picks the default route's interface
+            return probe.getsockname()[0]
+    except OSError:
+        return "127.0.0.1"
 
 
 class GatewayService:
@@ -78,13 +91,15 @@ class GatewayService:
             cfg = self._gateway_config()
             enabled, host, port = bool(cfg["enabled"]), cfg["host"], cfg["port"]
             listening = False
+        lan_host = _lan_host(host)
         return {
             "enabled": enabled,
             "listening": listening,
             "host": host,
             "port": port,
-            "openai_base_url": f"http://{host}:{port}/v1",
-            "anthropic_base_url": f"http://{host}:{port}",
+            "lan_host": lan_host,
+            "openai_base_url": f"http://{lan_host}:{port}/v1",
+            "anthropic_base_url": f"http://{lan_host}:{port}",
             "auth": "none",
             "last_error": self._last_error,
         }

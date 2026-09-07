@@ -22,6 +22,12 @@ def normalize_user_path(value) -> Path:
     return Path(value).expanduser().resolve()
 
 
+def home_model_root_candidates() -> tuple[Path, ...]:
+    """Return the small set of conventional model roots under the user home."""
+    home = Path.home()
+    return (home / "LocalModelDesk", home / "localModelDesk", home / "models")
+
+
 @dataclass(frozen=True)
 class PathRoots:
     mode: str
@@ -34,6 +40,7 @@ class PathRoots:
     music_env: dict
     media_cli_dir: Path
     hf_cmd: tuple
+    hf_env: dict
     data_root: Path
     config_path: Path
     logs_dir: Path
@@ -101,12 +108,14 @@ def resolve_paths(*, data_root=None, resources_root=None, default_config_on_corr
         mlx_h3_env = {"PYTHONPATH": str(static.resources_root / "pylibs" / "h3")}
         music_env = {"PYTHONPATH": str(static.resources_root / "pylibs" / "music")}
         hf_cmd = (str(python), "-s", "-c", _HF_ENTRY)
+        hf_env = {"PYTHONPATH": str(static.resources_root / "pylibs" / "desk")}
     else:
         python = Path(sys.executable)
         mlx_h3_cmd = _mlx_h3_dev_cmd()
         mlx_h3_env = {}
         music_env = {}
         hf_cmd = _hf_dev_cmd()
+        hf_env = {}
 
     roots = PathRoots(
         mode=static.mode,
@@ -119,6 +128,7 @@ def resolve_paths(*, data_root=None, resources_root=None, default_config_on_corr
         music_env=music_env,
         media_cli_dir=static.resources_root / "desk" / "media",
         hf_cmd=hf_cmd,
+        hf_env=hf_env,
         data_root=static.data_root,
         config_path=static.config_path,
         logs_dir=static.data_root / "logs",

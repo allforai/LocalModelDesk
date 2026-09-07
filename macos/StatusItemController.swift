@@ -7,13 +7,15 @@ final class StatusItemController: NSObject, NSMenuDelegate {
   private let detailItem = NSMenuItem(title: "状态：启动中…", action: nil, keyEquivalent: "")
   private let memoryItem = NSMenuItem(title: "内存 —", action: nil, keyEquivalent: "")
   var onOpenWindow: (() -> Void)?
+  var onOpenSettings: (() -> Void)?
+  var onRevealOutputs: (() -> Void)?
   var onMenuOpened: (() -> Void)?
 
   init(api: DeskAPI) {
     self.api = api
-    statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     super.init()
-    statusItem.button?.title = "启动中…"
+    configureStatusButton(label: "启动中…", glyph: .down)
 
     let menu = NSMenu()
     menu.autoenablesItems = false
@@ -26,41 +28,88 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     let openItem = NSMenuItem(title: "打开窗口", action: #selector(openWindow), keyEquivalent: "")
     openItem.target = self
+    openItem.image = NSImage(systemSymbolName: "macwindow", accessibilityDescription: "打开窗口")
+    openItem.indentationLevel = 0
     menu.addItem(openItem)
+    let revealItem = NSMenuItem(title: "打开成品目录", action: #selector(revealOutputs), keyEquivalent: "")
+    revealItem.target = self
+    revealItem.image = NSImage(systemSymbolName: "folder", accessibilityDescription: "打开成品目录")
+    revealItem.indentationLevel = 0
+    menu.addItem(revealItem)
+    let settingsItem = NSMenuItem(title: "设置…", action: #selector(openSettings), keyEquivalent: ",")
+    settingsItem.target = self
+    settingsItem.image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: "设置")
+    settingsItem.indentationLevel = 0
+    menu.addItem(settingsItem)
+    menu.addItem(.separator())
     let quitItem = NSMenuItem(title: "退出", action: #selector(quit), keyEquivalent: "")
     quitItem.target = self
+    quitItem.image = NSImage(systemSymbolName: "power", accessibilityDescription: "退出")
+    quitItem.indentationLevel = 0
     menu.addItem(quitItem)
     statusItem.menu = menu
   }
 
-  /// The status model's pure mapping is the sole source of status copy.
+  /// The status model's pure mapping is the sole source of status copy and glyph.
   func render(_ status: ShellStatus) {
     let title = menuTitle(for: status)
-    statusItem.button?.title = title
+    configureStatusButton(label: title, glyph: menuGlyphState(for: status))
     detailItem.title = "状态：\(title)"
   }
 
-  /// Refreshes the data:memorySnapshot row only when the menu opens.
+  /// Draws an 18x18 monochrome template "desk" glyph whose state variant marks
+  /// idle/loaded/busy/down at a glance, independent of light/dark menu bars.
+  private func configureStatusButton(label: String, glyph: MenuGlyphState) {
+    guard let button = statusItem.button else { return }
+    let image = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { rect in
+      NSColor.black.setStroke(); NSColor.black.setFill()
+      let body = NSBezierPath(roundedRect: rect.insetBy(dx: 2, dy: 3), xRadius: 3, yRadius: 3)
+      body.lineWidth = 1.5; body.stroke()
+      switch glyph {
+      case .idle: break
+      case .loaded: NSBezierPath(ovalIn: NSRect(x: 11, y: 3, width: 5, height: 5)).fill()
+      case .busy:
+        let tri = NSBezierPath(); tri.move(to: NSPoint(x: 11, y: 3)); tri.line(to: NSPoint(x: 16, y: 5.5)); tri.line(to: NSPoint(x: 11, y: 8)); tri.close(); tri.fill()
+      case .down:
+        let slash = NSBezierPath(); slash.move(to: NSPoint(x: 3, y: 3)); slash.line(to: NSPoint(x: 15, y: 15)); slash.lineWidth = 1.5; slash.stroke()
+      }
+      return true
+    }
+    image.isTemplate = true
+    image.accessibilityDescription = "LocalModelDesk：\(label)"
+    button.image = image
+    button.imagePosition = .imageOnly
+    button.title = ""
+    button.toolTip = "LocalModelDesk · \(label)"
+    button.setAccessibilityLabel("LocalModelDesk：\(label)")
+  }
+
+  /// The sole writer of the memory menu row; called on every poll and again when the menu opens.
+  func renderMemory(_ result: Result<MemoryLine, DeskAPIError>) {
+    switch result {
+    case .success(let line):
+      memoryItem.title = memoryMenuTitle(used: line.usedBytes, total: line.totalBytes,
+                                         available: line.availableBytes)
+    case .failure:
+      memoryItem.title = "内存 不可读"
+    }
+  }
+
+  /// Refreshes the data:memorySnapshot row when the menu opens. Menu tracking runs the run loop
+  /// in event-tracking mode, where `DispatchQueue.main.async` blocks do not fire until the menu
+  /// closes; use common + eventTracking modes so the row updates while the menu is still open.
   func menuWillOpen(_ menu: NSMenu) {
     api.memorySnapshot { [weak self] result in
-      DispatchQueue.main.async {
-        switch result {
-        case .success(let line):
-          let gib = 1_073_741_824.0
-          self?.memoryItem.title = String(
-            format: "内存 已用 %.1f / 共 %.0f GiB",
-            Double(line.usedBytes) / gib,
-            Double(line.totalBytes) / gib
-          )
-        case .failure:
-          self?.memoryItem.title = "内存 不可读"
-        }
-      }
+      RunLoop.main.perform(inModes: [.common, .eventTracking]) { self?.renderMemory(result) }
     }
     onMenuOpened?()
   }
 
   @objc private func openWindow() { onOpenWindow?() }
+
+  @objc private func openSettings() { onOpenSettings?() }
+
+  @objc private func revealOutputs() { onRevealOutputs?() }
 
   @objc private func quit() { NSApp.terminate(nil) }
 }

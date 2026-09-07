@@ -1,6 +1,6 @@
 // The browser's only HTTP boundary. UI modules consume named operations, never routes.
 const ROUTES = {
-  config: "/api/config", firstRun: "/api/first-run", adopt: "/api/adopt",
+  config: "/api/config", firstRun: "/api/first-run", adopt: "/api/adopt", discoverModels: "/api/models/discover",
   catalog: "/api/resources/catalog", status: "/api/resources/status",
   download: "/api/resources/download", cancelDownload: "/api/resources/download/cancel",
   deleteModel: "/api/resources/delete", disk: "/api/resources/disk", memory: "/api/memory", deskState: "/api/state",
@@ -36,13 +36,28 @@ async function toError(response) {
   return new DeskApiError(response.status, code, message, detail);
 }
 
+let REQUEST_TIMEOUT_MS = 8000;
+export function setRequestTimeout(ms) { REQUEST_TIMEOUT_MS = ms; }
+
 async function request(path, { method = "GET", body, stream = false } = {}) {
   const options = { method };
   if (body !== undefined) {
     options.headers = { "Content-Type": "application/json" };
     options.body = JSON.stringify(body);
   }
-  const response = await globalThis.fetch(path, options);
+  let timer = null;
+  if (!stream && typeof AbortController === "function") {
+    const controller = new AbortController();
+    options.signal = controller.signal;
+    timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  }
+  let response;
+  try {
+    response = await globalThis.fetch(path, options);
+  } catch (error) {
+    if (error?.name === "AbortError") throw new DeskApiError(0, "timeout", `请求超时（${REQUEST_TIMEOUT_MS / 1000} 秒无响应）`);
+    throw error;
+  } finally { if (timer) clearTimeout(timer); }
   if (!response.ok) throw await toError(response);
   return stream ? response.body : response.json();
 }
@@ -56,6 +71,7 @@ export const completeFirstRun = (modelsRoot) =>
   json(ROUTES.firstRun, "POST", modelsRoot ? { models_root: modelsRoot } : {});
 export const adoptLegacyModels = (legacyRoot, mode) =>
   json(ROUTES.adopt, "POST", { legacy_root: legacyRoot, mode });
+export const discoverModels = () => json(ROUTES.discoverModels, "POST");
 
 export const listCatalog = () => request(ROUTES.catalog);
 export const verifyAllModels = async (refresh = false) => {
@@ -80,6 +96,16 @@ export const chatStream = (messages) => request(ROUTES.chatStream, {
 });
 
 export const startVideoJob = (params) => json(ROUTES.video, "POST", params);
+export async function uploadMediaInput(file) {
+  if (!file.size || file.size > 32 * 1024 * 1024) throw new Error("请选择非空且不超过 32 MB 的素材");
+  const data = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1]);
+    reader.onerror = () => reject(new Error("无法读取文件，请重新选择"));
+    reader.readAsDataURL(file);
+  });
+  return json("/api/media/inputs", "POST", { name: file.name, data });
+}
 export const startMusicJob = (params) => json(ROUTES.music, "POST", params);
 export const cancelJob = () => json(ROUTES.cancelJob, "POST");
 export const jobStatus = (logFrom = 0, jobId = null) =>
@@ -87,6 +113,8 @@ export const jobStatus = (logFrom = 0, jobId = null) =>
 
 export const listOutputs = () => request(ROUTES.outputs);
 export const serveOutput = (name) => `${ROUTES.outputs}/${encoded(name)}`;
+export const revealOutput = (name) =>
+  json(name ? `${ROUTES.outputs}/${encoded(name)}/reveal` : `${ROUTES.outputs}/reveal`, "POST");
 export const listHistory = (limit = 200) => request(`${ROUTES.history}?limit=${limit}`);
 export const listChatSessions = () => request(ROUTES.sessions);
 export const createChatSession = (init = {}) => json(ROUTES.sessions, "POST", init);

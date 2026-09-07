@@ -14,11 +14,53 @@ def start_video(service):
         height=288, frames=73, steps=10)
 
 
+@pytest.fixture
+def service_factory(tmp_path):
+    def factory(*, memory_warning=None, executor=None):
+        service, deps = make_service(tmp_path, executor=executor, memory_warning=memory_warning)
+        return service, deps.arbiter
+    return factory
+
+
+def wait_until(get_state, predicate, timeout=5.0):
+    import time as _time
+    deadline = _time.time() + timeout
+    state = get_state()
+    while not predicate(state):
+        if _time.time() > deadline:
+            pytest.fail("condition did not become true in time")
+        _time.sleep(0.01)
+        state = get_state()
+    return state
+
+
 def test_initial_job_state_shape(tmp_path):
     state = make_service(tmp_path)[0].job_status()
     assert state == {"job_id": 0, "status": "idle", "kind": None, "params": None,
         "output": None, "error": None, "started_at": None, "finished_at": None,
-        "log": "", "next_log_from": 0, "log_len": 0, "log_truncated": False}
+        "log": "", "next_log_from": 0, "log_len": 0, "log_truncated": False, "elapsed_s": None}
+
+
+def test_missing_caption_and_prompt_have_chinese_codes(tmp_path):
+    service = make_service(tmp_path)[0]
+    with pytest.raises(MediaError) as exc:
+        service.start_music_job(caption="  ", lyrics="la", duration=10)
+    assert (exc.value.code, exc.value.message, exc.value.http_status) == ("caption_required", "请填写风格描述", 400)
+    with pytest.raises(MediaError) as exc:
+        service.start_video_job(prompt="", width=512, height=288, frames=49, steps=16)
+    assert (exc.value.code, exc.value.message) == ("prompt_required", "请填写视频提示词")
+
+
+def test_video_job_refuses_when_memory_warning_unless_forced(service_factory):
+    warning = {"code": "insufficient_memory", "required_bytes": 10, "available_bytes": 1,
+               "message": "model requires about 0.0 GB; 0.0 GB is currently available"}
+    svc, arbiter = service_factory(memory_warning=warning)
+    with pytest.raises(MediaError) as exc:
+        svc.start_video_job(prompt="x", width=512, height=288, frames=49, steps=16)
+    assert exc.value.code == "insufficient_memory" and exc.value.http_status == 409
+    assert arbiter.precheck_calls[-1][1] == int(103.0 * 1024 ** 3)   # h3 catalog gb
+    job = svc.start_video_job(prompt="x", width=512, height=288, frames=49, steps=16, force=True)
+    assert job["status"] == "running"
 
 
 def test_start_video_job_success_path(tmp_path):
@@ -107,7 +149,7 @@ def test_start_music_job_argv_output_and_runtime_capability(tmp_path):
         "music_runtime": SimpleNamespace(present=True, detail=""),
     }
     service._list_catalog = lambda: [
-        SimpleNamespace(key="music3", relpath="minimax-music3"),
+        SimpleNamespace(key="music3", relpath="minimax-music3", gb=27.0),
     ]
 
     snap = finished_snapshot(service, lambda: service.start_music_job(
@@ -125,7 +167,7 @@ def test_start_music_job_argv_output_and_runtime_capability(tmp_path):
     service, deps = make_service(tmp_path)
     service._probe_capabilities = lambda: {}
     with pytest.raises(MediaError) as err:
-        service.start_music_job(caption="ambient piano", lyrics="", duration=30.0)
+        service.start_music_job(caption="ambient piano", lyrics="instrumental", duration=30.0)
     assert err.value.code == "capability_missing"
     assert err.value.http_status == 503
     assert deps.executor.spawned == []
@@ -135,7 +177,6 @@ class TestStartDiscipline:
     VALID = dict(prompt="p", width=512, height=288, frames=73, steps=10)
 
     @pytest.mark.parametrize("bad", [
-        dict(prompt=""), dict(prompt="   "), dict(prompt=None),
         dict(width=0), dict(width=-1), dict(width="512"), dict(width=True),
         dict(height=0), dict(frames=0), dict(steps=0),
     ])
@@ -149,8 +190,20 @@ class TestStartDiscipline:
         assert deps.executor.spawned == []
         assert service.job_status()["status"] == "idle"
 
+    @pytest.mark.parametrize("bad", [dict(prompt=""), dict(prompt="   "), dict(prompt=None)])
+    def test_empty_prompt_is_prompt_required_in_chinese(self, tmp_path, bad):
+        service, deps = make_service(tmp_path)
+        with pytest.raises(MediaError) as err:
+            service.start_video_job(**{**self.VALID, **bad})
+        assert err.value.code == "prompt_required"
+        assert err.value.message == "请填写视频提示词"
+        assert err.value.http_status == 400
+        assert deps.arbiter.acquired == []
+        assert deps.executor.spawned == []
+        assert service.job_status()["status"] == "idle"
+
     @pytest.mark.parametrize("bad", [
-        dict(caption=""), dict(caption=None), dict(lyrics=None),
+        dict(lyrics=None),
         dict(duration=0), dict(duration=-3.0), dict(duration="30"),
     ])
     def test_invalid_music_params_never_spawns(self, tmp_path, bad):
@@ -159,6 +212,17 @@ class TestStartDiscipline:
         with pytest.raises(MediaError) as err:
             service.start_music_job(**{**valid, **bad})
         assert err.value.code == "invalid_params"
+        assert err.value.http_status == 400
+        assert deps.executor.spawned == []
+
+    @pytest.mark.parametrize("bad", [dict(caption=""), dict(caption=None)])
+    def test_empty_caption_is_caption_required_in_chinese(self, tmp_path, bad):
+        service, deps = make_service(tmp_path)
+        valid = dict(caption="c", lyrics="l", duration=30.0)
+        with pytest.raises(MediaError) as err:
+            service.start_music_job(**{**valid, **bad})
+        assert err.value.code == "caption_required"
+        assert err.value.message == "请填写风格描述"
         assert err.value.http_status == 400
         assert deps.executor.spawned == []
 
@@ -175,7 +239,7 @@ class TestStartDiscipline:
     def test_can_start_refusal_passes_code_and_holder_through(self, tmp_path):
         service, deps = make_service(tmp_path)
         reason = {"code": "transition_in_progress", "message": "evicting now", "holder": {"kind": "llm"}}
-        deps.arbiter.can_start_heavy = lambda _: {"ok": False, "reason": reason}
+        deps.arbiter.can_start_heavy = lambda _kind, estimated_bytes=None: {"ok": False, "reason": reason}
         with pytest.raises(MediaError) as err:
             service.start_video_job(**self.VALID)
         assert err.value.code == "transition_in_progress"
@@ -195,6 +259,17 @@ class TestStartDiscipline:
         assert deps.executor.spawned == []
         assert deps.arbiter.released == []
         assert service.job_status()["status"] == "idle"
+
+
+def test_nonzero_exit_records_log_tail(service_factory):
+    svc, _arbiter = service_factory(executor=FakeExecutor("block", lines=()))
+    svc.start_video_job(prompt="x", width=512, height=288, frames=49, steps=16)
+    handle = svc._handle
+    handle.emit("step 1/16\n"); handle.emit("Traceback\n"); handle.emit("mlx_h3.memory.BudgetExceeded: SWAPPING\n")
+    handle.exit(1)
+    final = wait_until(lambda: svc.job_status(), lambda s: s["status"] == "error")
+    assert final["error"]["code"] == "exit_nonzero"
+    assert final["error"]["log_tail"].splitlines()[-1] == "mlx_h3.memory.BudgetExceeded: SWAPPING"
 
 
 @pytest.mark.parametrize(("script", "code"), [("no_output", "no_output"), ("fail", "exit_nonzero")])

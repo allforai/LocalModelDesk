@@ -68,6 +68,7 @@ def test_status_shape(service_factory):
         "listening": True,
         "host": "127.0.0.1",
         "port": port,
+        "lan_host": "127.0.0.1",
         "openai_base_url": f"http://127.0.0.1:{port}/v1",
         "anthropic_base_url": f"http://127.0.0.1:{port}",
         "auth": "none",
@@ -215,3 +216,17 @@ def test_config_request_rejects_other_methods(service_factory):
     code, payload = svc.handle_config_request("DELETE")
     assert code == 405
     assert payload["error"]["code"] == "method_not_allowed"
+
+
+def test_status_exposes_lan_host_for_wildcard_bind(service_factory):
+    _holder, read = _config(enabled=True, host="0.0.0.0", port=0)
+    svc = service_factory(read)
+    status = svc.status()
+    assert status["lan_host"] and status["lan_host"] != "0.0.0.0"
+    assert status["openai_base_url"] == f"http://{status['lan_host']}:{status['port']}/v1"
+
+
+def test_status_keeps_explicit_host(service_factory):
+    _holder, read = _config(enabled=True, host="127.0.0.1", port=0)
+    svc = service_factory(read)
+    assert svc.status()["lan_host"] == "127.0.0.1"

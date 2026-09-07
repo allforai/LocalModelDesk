@@ -31,6 +31,14 @@ class FakeElement {
     this.listeners[type] = listener;
   }
 
+  setAttribute(name, value) {
+    (this.attrs ??= {})[name] = value;
+  }
+
+  focus() {
+    this.focused = true;
+  }
+
   click() {
     this.listeners.click?.();
   }
@@ -55,11 +63,11 @@ test("statusbar 将 desk state 和内存快照更新到 DOM，离线时保留失
   const snapshot = { total_bytes: 16 * 1024 ** 3, used_bytes: 6 * 1024 ** 3, available_bytes: 10 * 1024 ** 3 };
 
   bar.update(state, snapshot);
-  assert.equal(parts.mem.textContent, "已用 6.0 / 总 16.0 GB（可用 10.0 GB）");
-  assert.equal(parts.holder.textContent, "LLM：Qwen");
+  assert.equal(parts.mem.textContent, "已用 6.0 / 总 16.0 GiB（可用 10.0 GiB）");
+  assert.equal(parts.holder.textContent, "内存里：Qwen");
   assert.equal(parts.media.textContent, "媒体：空闲");
   assert.equal(parts.next.textContent, "可开下一件重活");
-  assert.equal(root.dataset.tone, "busy");
+  assert.equal(root.dataset.tone, "ok");
 
   bar.offline(true);
   bar.update(state, snapshot);
@@ -85,8 +93,24 @@ test("confirmDialog 渲染文案，确认或取消后移除弹层并返回选择
   const confirmed = confirmDialog(doc, { title: "继续？", message: "不可撤销" });
   const confirmOverlay = doc.body.children[0];
   const confirmButton = find(confirmOverlay, (el) => el.tagName === "button" && el.textContent === "确定");
-  assert.equal(confirmButton.className, "danger");
+  assert.equal(confirmButton.className, "btn-danger");
   confirmButton.click();
   assert.equal(await confirmed, true);
   assert.equal(doc.body.children.length, 0);
+});
+
+test("statusbar 写 data-ok 并换图标（F1）", () => {
+  const parts = { mem: new FakeElement(), holder: new FakeElement(), media: new FakeElement(), next: new FakeElement() };
+  const nextPart = new FakeElement(); nextPart.append(parts.next);
+  const icon = new FakeElement("svg"); icon.className = "icon"; nextPart.children.unshift(icon);
+  const root = new FakeElement();
+  root.ownerDocument = { createElement: (tag) => new FakeElement(tag) };
+  root.querySelector = (selector) => ({ "[data-mem]": parts.mem, "[data-holder]": parts.holder, "[data-media]": parts.media, "[data-next]": parts.next, ".status-next": nextPart })[selector];
+  const bar = createStatusBar(root);
+  bar.update({ holder: { kind: "video", label: "1" }, media_busy: true, can_start: { ok: false, reason: "media_busy" } }, { total_bytes: 2, used_bytes: 1, available_bytes: 1 });
+  assert.equal(nextPart.dataset.ok, "0");
+  assert.equal(nextPart.children[0].className, "icon icon-x");
+  bar.update({ holder: null, media_busy: false, can_start: { ok: true } }, { total_bytes: 2, used_bytes: 1, available_bytes: 1 });
+  assert.equal(nextPart.dataset.ok, "1");
+  assert.equal(nextPart.children[0].className, "icon icon-check");
 });

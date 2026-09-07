@@ -10,11 +10,13 @@ from . import config as config_mod
 from .errors import (
     AdoptConflictError,
     AdoptError,
+    ConfigCorruptError,
     InsufficientSpaceError,
     LegacyRootError,
     NotWritableError,
 )
-from .paths import normalize_user_path
+from .paths import home_model_root_candidates, normalize_user_path
+from ..resources.catalog import list_catalog
 
 
 LEGACY_SUBTREES = ("llms", "minimax-h3", "minimax-music3")
@@ -29,6 +31,76 @@ class AdoptResult:
     adopted: list[str]
     moved_bytes: int
     source_retained: bool
+
+
+def _nonempty_directory(path: Path) -> bool:
+    try:
+        return path.is_dir() and next(path.iterdir(), None) is not None
+    except OSError:
+        return False
+
+
+def _candidate_roots(roots) -> list[Path]:
+    """Return a bounded set of likely roots; never crawl the user's whole disk."""
+    raw = os.environ.get("LOCALMODELDESK_MODEL_SCAN_ROOTS", "")
+    candidates = [Path(item) for item in raw.split(os.pathsep) if item]
+    candidates.extend([
+        getattr(roots, "models_root", roots.data_root / "models"),
+        roots.data_root / "models",
+    ])
+    resources = Path(getattr(roots, "resources_root", ""))
+    is_real_app_bundle = any(parent.suffix == ".app" for parent in resources.parents)
+    if is_real_app_bundle:
+        candidates.extend(home_model_root_candidates())
+    resources_root = getattr(roots, "resources_root", None)
+    if resources_root:
+        candidates.extend(Path(resources_root).parents)
+    return candidates
+
+
+def discover_model_roots(roots) -> list[dict]:
+    """Find recognizable local model trees and rank the most complete first."""
+    seen: set[tuple[int, int] | str] = set()
+    found: list[dict] = []
+    for raw in _candidate_roots(roots):
+        path = normalize_user_path(raw)
+        try:
+            stat = path.stat()
+            identity: tuple[int, int] | str = (stat.st_dev, stat.st_ino)
+        except OSError:
+            continue
+        if identity in seen:
+            continue
+        seen.add(identity)
+        subtrees = [name for name in LEGACY_SUBTREES if _nonempty_directory(path / name)]
+        model_keys = [
+            model.key for model in list_catalog()
+            if _nonempty_directory(path / model.relpath)
+        ]
+        if not subtrees and not model_keys:
+            continue
+        found.append({
+            "path": str(path),
+            "subtrees": subtrees,
+            "model_keys": model_keys,
+            "score": len(model_keys) * 10 + len(subtrees),
+        })
+    found.sort(key=lambda item: (-item["score"], item["path"]))
+    return found
+
+
+def apply_discovered(roots) -> tuple[config_mod.DeskConfig, list[dict]]:
+    """User-initiated: adopt the best discovered tree and mark setup complete."""
+    try:
+        config = config_mod.read_config(roots)
+    except ConfigCorruptError:
+        return config_mod.default_config(roots.data_root), []
+    candidates = discover_model_roots(roots)
+    if not candidates:
+        return config, []
+    best = candidates[0]
+    config = config_mod.update_config(roots, models_root=Path(best["path"]), first_run_done=True)
+    return config, candidates
 
 
 def complete_first_run(roots, models_root: Path | None = None) -> config_mod.DeskConfig:

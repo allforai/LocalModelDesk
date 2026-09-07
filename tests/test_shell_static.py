@@ -87,7 +87,13 @@ def test_main_window_error_page_mechanism():
     assert "loadHTMLString" in text
     assert "shellRetry" in text
     assert "didFailProvisionalNavigation" in text
-    assert "服务未运行" in text
+    # The page template itself lives in ShellStatus.swift so the headless harness
+    # can render it (Plan A task 20); MainWindowController only loads it.
+    assert "errorPageHTML(reason:" in text
+    template = _read("ShellStatus.swift")
+    assert "func errorPageHTML(reason: String, logPath: String) -> String" in template
+    assert "服务未运行" in template
+    assert "shellRetry" in template
 
 
 def test_main_window_registers_retry_bridge_before_webview_creation():
@@ -148,6 +154,20 @@ def test_last_window_closed_does_not_terminate():
     import re
     match = re.search(r"applicationShouldTerminateAfterLastWindowClosed[^{]*\{[^}]*\}", text)
     assert match and "false" in match.group(0)
+
+
+def test_main_menu_exposes_standard_editing_shortcuts():
+    text = _read("AppDelegate.swift")
+    for title, action, key in (
+        ("撤销", "undo:", "z"), ("重做", "redo:", "z"),
+        ("剪切", "NSText.cut", "x"), ("复制", "NSText.copy", "c"),
+        ("粘贴", "NSText.paste", "v"), ("全选", "NSText.selectAll", "a"),
+    ):
+        assert f'withTitle: "{title}"' in text
+        assert action in text
+        assert f'keyEquivalent: "{key}"' in text
+    assert "NSTextView.pasteAsPlainText" in text
+    assert "[.command, .shift]" in text
 
 
 def test_signal_paths_reap():

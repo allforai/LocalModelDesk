@@ -12,6 +12,7 @@ struct ConfigSnapshot {
 struct MemoryLine {
   var usedBytes: Int64
   var totalBytes: Int64
+  var availableBytes: Int64
 }
 
 /// The sole HTTP client; all service route strings belong here.
@@ -21,6 +22,7 @@ final class DeskAPI {
   static let configPath = "/api/config"
   static let firstRunPath = "/api/first-run"
   static let adoptPath = "/api/adopt"
+  static let revealOutputsPath = "/api/outputs/reveal"
 
   let baseURL: URL
   private let session: URLSession
@@ -48,10 +50,11 @@ final class DeskAPI {
       completion(result.flatMap { object in
         guard let dictionary = object as? [String: Any],
               let total = (dictionary["total_bytes"] as? NSNumber)?.int64Value,
-              let used = (dictionary["used_bytes"] as? NSNumber)?.int64Value else {
+              let used = (dictionary["used_bytes"] as? NSNumber)?.int64Value,
+              let available = (dictionary["available_bytes"] as? NSNumber)?.int64Value else {
           return .failure(DeskAPIError(code: "bad_shape", message: "memory snapshot is incomplete"))
         }
-        return .success(MemoryLine(usedBytes: used, totalBytes: total))
+        return .success(MemoryLine(usedBytes: used, totalBytes: total, availableBytes: available))
       })
     }
   }
@@ -75,6 +78,10 @@ final class DeskAPI {
     request("POST", Self.adoptPath, body: ["legacy_root": legacyRoot, "mode": mode]) {
       completion($0.map { _ in () })
     }
+  }
+
+  func revealOutputs(completion: @escaping (Result<Void, DeskAPIError>) -> Void) {
+    request("POST", Self.revealOutputsPath, body: [:]) { completion($0.map { _ in () }) }
   }
 
   private func request(_ method: String, _ path: String, body: [String: Any]?,

@@ -11,6 +11,11 @@ struct ShellHarness {
     }
     switch command {
     case "map-status": runMapStatus()
+    case "glyph-state": print(menuGlyphState(for: parseStatusFixture()).rawValue)
+    case "memory-line":
+      guard args.count >= 4, let used = Int64(args[1]), let total = Int64(args[2]),
+            let available = Int64(args[3]) else { exit(64) }
+      print(memoryMenuTitle(used: used, total: total, available: available))
     case "spawn-probe": runSpawn(Array(args.dropFirst()))
     case "run": runServer(Array(args.dropFirst()))
     case "listeners":
@@ -28,18 +33,28 @@ struct ShellHarness {
       let pgrepTool = args.count >= 3 ? args[2] : "/usr/bin/pgrep"
       PortGuard.reap(pids: PortGuard.family(matching: args[1], pgrepTool: pgrepTool), grace: 2.0)
       exit(PortGuard.family(matching: args[1], pgrepTool: pgrepTool).isEmpty ? 0 : 3)
+    case "error-page":
+      guard args.count >= 3 else { exit(64) }
+      print(errorPageHTML(reason: args[1], logPath: args[2]))
+    case "poll-failure":
+      guard args.count >= 3, let failures = Int(args[1]) else { exit(64) }
+      switch pollFailureAction(consecutiveFailures: failures, childRunning: args[2] == "true") {
+      case .keepWaiting: print("keepWaiting")
+      case .serviceExited: print("serviceExited")
+      case .serviceUnresponsive: print("serviceUnresponsive")
+      }
     default:
       FileHandle.standardError.write(Data("unknown subcommand \(command)\n".utf8))
       exit(64)
     }
   }
 
-  /// Reads fixture JSON from stdin and writes its menu-title mapping to stdout.
-  static func runMapStatus() {
+  /// Reads fixture JSON from stdin and builds the `ShellStatus` it describes.
+  static func parseStatusFixture() -> ShellStatus {
     let data = FileHandle.standardInput.readDataToEndOfFile()
     guard let object = try? JSONSerialization.jsonObject(with: data),
           let fixture = object as? [String: Any] else {
-      FileHandle.standardError.write(Data("map-status: bad fixture JSON\n".utf8))
+      FileHandle.standardError.write(Data("bad fixture JSON\n".utf8))
       exit(65)
     }
 
@@ -56,13 +71,17 @@ struct ShellHarness {
     if let deskState = fixture["desk_state"], !(deskState is NSNull) {
       desk = DeskStateSnapshot.parse(deskState)
     }
-    let status = ShellStatus(
+    return ShellStatus(
       server: server,
       desk: desk,
       needsSetup: fixture["needs_setup"] as? Bool ?? false,
       lastPollError: fixture["poll_error"] as? String
     )
-    print(menuTitle(for: status))
+  }
+
+  /// Reads fixture JSON from stdin and writes its menu-title mapping to stdout.
+  static func runMapStatus() {
+    print(menuTitle(for: parseStatusFixture()))
   }
 
   static func parseSpec(_ args: [String]) -> ServerLaunchSpec {

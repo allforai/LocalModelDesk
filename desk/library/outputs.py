@@ -7,8 +7,10 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 from urllib.parse import unquote
 
+from .errors import NotFoundError
 from .history import HistoryStore
 from .http import FileSlice, Response
 
@@ -59,6 +61,24 @@ class OutputsStore:
 
         path = Path(candidate)
         return path if path.is_file() else None
+
+    def set_opener(self, opener) -> None:
+        """Override the subprocess launcher used by :meth:`reveal` (tests)."""
+        self._opener = opener
+
+    def reveal(self, name: str | None = None) -> Path:
+        """Reveal a single output in Finder, or open the outputs folder."""
+        opener = getattr(self, "_opener", None) or (
+            lambda argv, **kw: subprocess.run(argv, check=False, timeout=10)
+        )
+        if name is None:
+            opener(["open", str(self._root)])
+            return self._root
+        path = self.resolve(name)
+        if path is None:
+            raise NotFoundError("output not found")
+        opener(["open", "-R", str(path)])
+        return path
 
     def list(self) -> list[dict]:
         """List media files, enriched with their matching history entries."""

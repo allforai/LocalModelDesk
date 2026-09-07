@@ -4,10 +4,14 @@ import * as api from "../api.js";
 import { sseDataLines } from "../stream.js";
 import { initialStream, reduceChunk } from "../pure/chat_stream.js";
 import { needsWarning } from "../pure/mem_warn.js";
+import { formatBytes } from "../pure/format.js";
 import { sortSessions, displayTitle } from "../pure/sessions.js";
 import { confirmDialog } from "../widgets/confirm.js";
+import { addIcon } from "../icons.js";
+import { renderMarkdown } from "../pure/markdown.js";
+import { formatTimestamp } from "../pure/format.js";
 
-export function createChatPane(root) {
+export function createChatPane(root, ctx = {}) {
   const doc = root.ownerDocument;
   const els = {
     sessionList: root.querySelector("[data-session-list]"),
@@ -20,11 +24,16 @@ export function createChatPane(root) {
     input: root.querySelector("[data-chat-input]"),
     sendBtn: root.querySelector("[data-send]"),
     error: root.querySelector("[data-chat-error]"),
+    loadHint: root.querySelector("[data-load-hint]"),
   };
   let catalog = [];
   let sessions = [];
   let currentId = null;
   let streaming = false;
+  let sessionsTick = 0;
+  let modelName = "";
+  let lastLoadedKey = null;
+  let llmStatus = "idle";
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
   const current = () => sessions.find((s) => s.id === currentId) ?? null;
@@ -38,11 +47,15 @@ export function createChatPane(root) {
     const selected = els.modelSelect.value;
     els.modelSelect.replaceChildren();
     for (const entry of catalog) {
-      const ready = byKey.get(entry.key)?.state === "present";
+      const modelStatus = byKey.get(entry.key);
+      const ready = modelStatus?.state === "present";
+      const sizeText = Number.isFinite(modelStatus?.bytes_expected)
+        ? formatBytes(modelStatus.bytes_expected)
+        : `${entry.gb} GiB（目录）`;
       const option = doc.createElement("option");
       option.value = entry.key;
-      const marks = [entry.params, entry.quant, entry.vision ? "视觉" : null].filter(Boolean).join(" · ");
-      option.textContent = `${entry.name} · ${entry.gb} GB${marks ? ` · ${marks}` : ""}${ready ? "" : "（未下载/不完整）"}`;
+      const marks = [entry.params, entry.name?.includes(entry.quant ?? " ") ? null : entry.quant, entry.vision ? "视觉" : null].filter(Boolean).join(" · ");
+      option.textContent = `${entry.name} · ${sizeText}${marks ? ` · ${marks}` : ""}${ready ? "" : "（未下载/不完整）"}`;
       option.disabled = !ready;
       els.modelSelect.append(option);
     }
@@ -52,16 +65,22 @@ export function createChatPane(root) {
 
   function renderLlm(payload) {
     const state = payload.state;
+    llmStatus = state.status;
     els.modelState.dataset.status = state.status;
     if (state.status === "idle") els.modelState.textContent = "未加载";
     else if (state.status === "loading") els.modelState.textContent = `加载中：${state.model_key ?? ""}`;
     else if (state.status === "loaded") {
       els.modelState.textContent = `已加载：${payload.loaded_model?.name ?? state.model_key}`;
-      if (state.model_key) els.modelSelect.value = state.model_key;
+      if (state.model_key && state.model_key !== lastLoadedKey) { els.modelSelect.value = state.model_key; lastLoadedKey = state.model_key; }
+    } else if (state.error?.code === "evicted") {
+      els.modelState.textContent = "已被媒体任务让出内存，可重新加载";
     } else {
       const tail = state.error?.log_tail ? `\n${state.error.log_tail}` : "";
       els.modelState.textContent = `加载失败（${state.error?.code ?? "?"}）：${state.error?.message ?? ""}${tail}`;
     }
+    if (state.status !== "loaded") lastLoadedKey = state.status === "loading" ? lastLoadedKey : null;
+    els.unloadBtn.disabled = state.status === "idle" || state.status === "loading";
+    modelName = payload.loaded_model?.name ?? state.model_key ?? modelName;
   }
 
   async function pollUntilSettled() {
@@ -77,10 +96,20 @@ export function createChatPane(root) {
     setError("");
     const entry = catalog.find((item) => item.key === els.modelSelect.value);
     if (!entry) return;
+    const confirm = ctx.confirm ?? ((options) => confirmDialog(doc, options));
     try {
+      if (llmStatus === "loaded" && lastLoadedKey && lastLoadedKey !== entry.key) {
+        const from = catalog.find((item) => item.key === lastLoadedKey)?.name ?? lastLoadedKey;
+        const go = await confirm({ title: "换模型", message: `将先卸载「${from}」，再加载「${entry.name}」。`, confirmLabel: "换模型", danger: false });
+        if (!go) return;
+        await api.unloadLlm();
+        renderLlm(await api.llmStatus());
+      } else if (llmStatus === "loaded" && lastLoadedKey === entry.key) {
+        return;
+      }
       const snapshot = await api.memorySnapshot();
       const { warn, message } = needsWarning(Math.round(entry.gb * 1024 ** 3), snapshot);
-      if (warn && !await confirmDialog(doc, { title: "内存警告", message, confirmLabel: "仍要加载" })) return;
+      if (warn && !await confirm({ title: "内存警告", message, confirmLabel: "仍要加载", danger: false })) return;
       await api.loadLlm(entry.key);
       await pollUntilSettled();
     } catch (error) { setError(error.message); }
@@ -94,33 +123,68 @@ export function createChatPane(root) {
     } catch (error) { setError(error.message); }
   }
 
-  function messageNode(message, live = false) {
+  function messageNode(message, live = false, fallbackName = "") {
     const wrap = doc.createElement("div");
     wrap.className = `msg msg-${message.role}`;
+    if (message.role === "user") {
+      const bubble = doc.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = message.content ?? "";
+      wrap.append(bubble);
+      els.messages.append(wrap);
+      els.messages.scrollTop = els.messages.scrollHeight;
+      return { wrap };
+    }
+    const who = doc.createElement("div");
+    who.className = "who";
+    const dot = doc.createElement("span");
+    dot.className = "dot";
+    const name = doc.createElement("span");
+    name.textContent = message.model || fallbackName || modelName || "模型";
+    who.append(dot, name);
     const details = doc.createElement("details");
-    details.className = "reasoning";
+    details.className = "thinking";
     const summary = doc.createElement("summary");
-    summary.textContent = "思考过程";
-    const reasoningEl = doc.createElement("pre");
+    summary.textContent = live ? "思考中…" : message.thinking_s ? `已思考 ${Math.round(message.thinking_s)} 秒` : "思考过程";
+    const reasoningEl = doc.createElement("p");
+    reasoningEl.textContent = message.reasoning ?? "";
     details.append(summary, reasoningEl);
     const contentEl = doc.createElement("div");
-    contentEl.className = "msg-content";
+    contentEl.className = "md";
+    if (!live && !(message.content ?? "").trim()) {
+      const empty = doc.createElement("p");
+      empty.className = "empty-answer";
+      empty.textContent = "（这条回答没有内容）";
+      contentEl.append(empty);
+    } else {
+      contentEl.append(renderMarkdown(doc, message.content ?? ""));
+    }
     const errorEl = doc.createElement("p");
     errorEl.className = "inline-error";
-    if (message.role === "assistant") wrap.append(details);
-    wrap.append(contentEl, errorEl);
-    reasoningEl.textContent = message.reasoning ?? "";
-    contentEl.textContent = message.content ?? "";
+    wrap.append(who, details, contentEl, errorEl);
     details.hidden = !message.reasoning && !live;
     details.open = live;
     els.messages.append(wrap);
     els.messages.scrollTop = els.messages.scrollHeight;
-    return { details, reasoningEl, contentEl, errorEl };
+    return { wrap, details, summary, reasoningEl, contentEl, errorEl };
   }
 
-  function renderMessages() {
+  function showMessages(list, fallbackModelName = "") {
     els.messages.replaceChildren();
-    for (const message of current()?.messages ?? []) messageNode(message);
+    if (!list.length) {
+      const empty = doc.createElement("p");
+      empty.className = "empty";
+      empty.textContent = "这是一个新会话。选好模型、点「加载」，然后在下面输入第一句。";
+      els.messages.append(empty);
+      return;
+    }
+    for (const message of list) messageNode(message, false, fallbackModelName);
+  }
+
+  const sessionModelName = (session) => catalog.find((item) => item.key === session?.model)?.name ?? session?.model ?? "";
+
+  function renderMessages() {
+    showMessages(current()?.messages ?? [], sessionModelName(current()));
   }
 
   async function refreshSessions(selectId) {
@@ -156,21 +220,28 @@ export function createChatPane(root) {
     els.sessionList.replaceChildren();
     for (const session of sessions) {
       const li = doc.createElement("li");
+      li.className = "card session";
       li.classList.toggle("active", session.id === currentId);
-      const title = doc.createElement("span");
+      const title = doc.createElement("div");
       title.className = "session-title";
       title.textContent = displayTitle(session);
-      title.addEventListener("click", () => {
-        currentId = session.id;
-        renderSessionList();
-        renderMessages();
-      });
+      const meta = doc.createElement("div");
+      meta.className = "session-meta";
+      meta.textContent = [session.model, formatTimestamp(session.updated).slice(11)].filter(Boolean).join(" · ");
+      const actions = doc.createElement("div");
+      actions.className = "session-actions";
       const rename = doc.createElement("button");
+      rename.className = "btn-sm";
       rename.textContent = "改名";
-      rename.addEventListener("click", () => beginRename(li, session));
+      addIcon(rename, "pencil", doc);
+      rename.addEventListener("click", (event) => { event.stopPropagation?.(); beginRename(li, session); });
       const remove = doc.createElement("button");
+      remove.className = "btn-danger btn-sm";
       remove.textContent = "删";
-      remove.addEventListener("click", async () => {
+      remove.setAttribute?.("aria-label", `删除会话：${displayTitle(session)}`);
+      addIcon(remove, "trash", doc);
+      remove.addEventListener("click", async (event) => {
+        event.stopPropagation?.();
         const go = await confirmDialog(doc, { title: "删除会话", message: `确定删除「${displayTitle(session)}」？该会话的全部消息将被删除。`, confirmLabel: "删除" });
         if (!go) return;
         try {
@@ -178,7 +249,13 @@ export function createChatPane(root) {
           await refreshSessions();
         } catch (error) { setError(error.message); }
       });
-      li.append(title, rename, remove);
+      actions.append(rename, remove);
+      li.addEventListener("click", () => {
+        currentId = session.id;
+        renderSessionList();
+        renderMessages();
+      });
+      li.append(title, meta, actions);
       els.sessionList.append(li);
     }
   }
@@ -190,12 +267,18 @@ export function createChatPane(root) {
     if (!text || !session) return;
     setError("");
     session.messages = session.messages ?? [];
+    if (session.messages.length === 0) els.messages.replaceChildren();
     session.messages.push({ role: "user", content: text });
     els.input.value = "";
     messageNode({ role: "user", content: text });
     const live = messageNode({ role: "assistant", content: "", reasoning: "" }, true);
     streaming = true;
     els.sendBtn.disabled = true;
+    els.sendBtn.textContent = "生成中…";
+    els.messages.dataset.streaming = "1";
+    const thinkStart = Date.now();
+    let firstContentSeen = false;
+    let thinkingSeconds = 0;
     let state = initialStream();
     try {
       const body = await api.chatStream(session.messages);
@@ -203,8 +286,13 @@ export function createChatPane(root) {
         state = reduceChunk(state, line);
         live.reasoningEl.textContent = state.reasoning;
         live.details.hidden = !state.reasoning;
-        if (state.content && live.details.open) live.details.open = false;
-        live.contentEl.textContent = state.content;
+        if (state.content && !firstContentSeen) {
+          firstContentSeen = true;
+          thinkingSeconds = Math.round((Date.now() - thinkStart) / 1000);
+          live.summary.textContent = `已思考 ${thinkingSeconds} 秒`;
+          live.details.open = false;
+        }
+        live.contentEl.replaceChildren(renderMarkdown(doc, state.content));
         if (state.done || state.error) break;
       }
       if (!state.done && !state.error) state = { ...state, error: { code: "stream_interrupted", message: "流在完成前中断" } };
@@ -213,6 +301,8 @@ export function createChatPane(root) {
     } finally {
       streaming = false;
       els.sendBtn.disabled = false;
+      els.sendBtn.textContent = "发送";
+      delete els.messages.dataset.streaming;
     }
     if (state.error) {
       live.errorEl.textContent = `出错（${state.error.code}）：${state.error.message}`;
@@ -220,7 +310,7 @@ export function createChatPane(root) {
       return;
     }
     const assistant = { role: "assistant", content: state.content };
-    if (state.reasoning) assistant.reasoning = state.reasoning;
+    if (state.reasoning) { assistant.reasoning = state.reasoning; assistant.thinking_s = thinkingSeconds; }
     session.messages.push(assistant);
     try {
       const updated = await api.updateChatSession(session.id, { messages: session.messages, model: els.modelSelect.value || null });
@@ -249,9 +339,18 @@ export function createChatPane(root) {
 
   function setHeavyAllowed(allowed, reason = "") {
     els.loadBtn.disabled = !allowed;
-    if (!allowed) setError(reason);
-    else if (els.error.textContent === reason || reason === "") setError("");
+    els.loadBtn.title = allowed ? "" : reason;
+    if (els.loadHint) els.loadHint.textContent = allowed ? "" : reason;
   }
 
-  return { init, refreshModels, setHeavyAllowed };
+  async function refreshSessionsIfStale() {
+    sessionsTick += 1;
+    if (sessionsTick % 5 !== 0 || streaming) return;
+    const latest = sortSessions(await api.listChatSessions());
+    if (latest.length !== sessions.length || latest.some((s, i) => s.id !== sessions[i].id || s.updated !== sessions[i].updated)) {
+      sessions = latest; renderSessionList();
+    }
+  }
+
+  return { init, refreshModels, setHeavyAllowed, showMessages, applyLlmStatus: renderLlm, refreshSessionsIfStale };
 }

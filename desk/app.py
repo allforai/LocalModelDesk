@@ -64,7 +64,17 @@ class DeskApp:
                     self._send(404, {"error": {"code": "not_found", "message": f"no route for {method} {path}"}})
                     return
                 body: dict = {}
-                length = int(self.headers.get("Content-Length") or 0)
+                try:
+                    length = int(self.headers.get("Content-Length") or 0)
+                    if length < 0:
+                        raise ValueError()
+                except ValueError:
+                    self._send(400, {"error": {"code": "bad_request", "message": "invalid Content-Length"}})
+                    return
+                if path == "/api/media/inputs" and length > 45 * 1024 * 1024:
+                    self.close_connection = True
+                    self._send(413, {"error": {"code": "input_too_large", "message": "素材不能超过 32 MB"}})
+                    return
                 raw_body = self.rfile.read(length) if length else b""
                 if length:
                     try:

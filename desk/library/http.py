@@ -68,6 +68,15 @@ def handle_serve_output(service, request: LibRequest) -> Response:
     return service.serve_output(request.path_params["name"], _header(request, "Range"))
 
 
+def handle_reveal_output(service, request: LibRequest) -> Response:
+    path = service.outputs.reveal(request.path_params.get("name"))
+    return _json_response(200, {"revealed": str(path)})
+
+
+def handle_reveal_folder(service, request: LibRequest) -> Response:
+    return _json_response(200, {"revealed": str(service.outputs.reveal(None))})
+
+
 def handle_list_history(service, request: LibRequest) -> Response:
     raw = request.query.get("limit")
     limit = None
@@ -121,6 +130,8 @@ def routes(service) -> list[tuple[str, str, object]]:
         return lambda request: dispatch(service, handler, request)
 
     return [
+        ("POST", "/api/outputs/reveal", bind(handle_reveal_folder)),
+        ("POST", "/api/outputs/{name}/reveal", bind(handle_reveal_output)),
         ("GET", "/api/outputs/{name}", bind(handle_serve_output)),
         ("GET", "/api/outputs", bind(handle_list_outputs)),
         ("GET", "/api/history", bind(handle_list_history)),

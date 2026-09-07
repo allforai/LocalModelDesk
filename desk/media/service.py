@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .commands import build_h3_command, build_music_command
+from .inputs import save_input, resolve_input
 
 log = logging.getLogger(__name__)
 DEFAULT_LOG_LIMIT = 1024 * 1024
@@ -19,9 +20,9 @@ class MediaError(Exception):
         self.code, self.message, self.http_status, self.detail = code, message, http_status, detail or {}
 
 
-def _nonempty(name: str, value: Any) -> None:
+def _nonempty(name: str, value: Any, *, code: str = "invalid_params", message: str | None = None) -> None:
     if not isinstance(value, str) or not value.strip():
-        raise MediaError("invalid_params", f"{name} must be a non-empty string", 400)
+        raise MediaError(code, message or f"{name} must be a non-empty string", 400)
 
 
 def _positive_int(name: str, value: Any) -> None:
@@ -42,19 +43,49 @@ class MediaService:
         self._log = ""; self._log_dropped = 0; self._log_truncated = False
         self._cancel_requested = False; self._handle = None; self._callbacks: list[Callable[[dict], None]] = []
 
-    def start_video_job(self, *, prompt, width, height, frames, steps) -> dict:
-        _nonempty("prompt", prompt)
+    def upload_input(self, *, name=None, data=None) -> dict:
+        try:
+            return save_input(self._resolve_paths().outputs_root, name, data)
+        except ValueError as exc:
+            raise MediaError("invalid_input", str(exc), 400) from exc
+
+    def start_video_job(self, *, prompt, width, height, frames, steps,
+                        mode="text", first_frame=None, last_frame=None, ref_video=None,
+                        use_audio=True, force=False) -> dict:
+        _nonempty("prompt", prompt, code="prompt_required", message="请填写视频提示词")
         for name, value in (("width", width), ("height", height), ("frames", frames), ("steps", steps)):
             _positive_int(name, value)
-        return self._start("video", {"prompt": prompt, "width": width, "height": height, "frames": frames, "steps": steps})
+        if mode not in ("text", "image", "reference") or not isinstance(use_audio, bool):
+            raise MediaError("invalid_params", "生成模式或音轨选项无效", 400)
+        assets = {}
+        if mode == "image":
+            assets = {"first_frame": (first_frame, "image")}
+            if last_frame: assets["last_frame"] = (last_frame, "image")
+        elif mode == "reference":
+            assets = {"ref_video": (ref_video, "video")}
+        expected = set(assets)
+        if any(value and key not in expected for key, value in
+               (("first_frame", first_frame), ("last_frame", last_frame), ("ref_video", ref_video))):
+            raise MediaError("invalid_params", "素材与生成模式不匹配", 400)
+        try:
+            for asset_id, kind in assets.values():
+                resolve_input(self._resolve_paths().outputs_root, asset_id, kind)
+        except ValueError as exc:
+            raise MediaError("invalid_input", str(exc), 400) from exc
+        params = {"prompt": prompt, "width": width, "height": height, "frames": frames, "steps": steps}
+        if mode != "text":
+            params.update(mode=mode, use_audio=use_audio, **{key: value[0] for key, value in assets.items()})
+        return self._start("video", params, force=force)
 
-    def start_music_job(self, *, caption, lyrics, duration) -> dict:
-        _nonempty("caption", caption)
+    def start_music_job(self, *, caption, lyrics, duration, force=False) -> dict:
+        _nonempty("caption", caption, code="caption_required", message="请填写风格描述")
         if not isinstance(lyrics, str) or isinstance(duration, bool) or not isinstance(duration, (int, float)) or duration <= 0:
             raise MediaError("invalid_params", "lyrics must be a string and duration must be positive", 400)
-        return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration})
+        if not lyrics.strip():
+            raise MediaError("lyrics_required", "请填写歌词：Music 3 需要歌词才能生成", 400)
+        return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration}, force=force)
 
-    def _start(self, kind: str, params: dict) -> dict:
+    def _start(self, kind: str, params: dict, *, force: bool = False) -> dict:
         with self._lock:
             if self._state["status"] == "running":
                 raise MediaError("media_busy", "a media job is already running", 409)
@@ -64,11 +95,20 @@ class MediaService:
                 raise MediaError("capability_missing", f"{cap_key} is unavailable: {getattr(cap, 'detail', '')}", 503)
             roots = self._resolve_paths()
             catalog_key = "h3" if kind == "video" else "music3"
-            model_root = Path(roots.models_root) / {e.key: e.relpath for e in self._list_catalog()}[catalog_key]
-            pre = self._arbiter.can_start_heavy(kind)
+            catalog = list(self._list_catalog())
+            model_root = Path(roots.models_root) / {e.key: e.relpath for e in catalog}[catalog_key]
+            estimated = int({e.key: e.gb for e in catalog}[catalog_key] * 1024 ** 3)
+            pre = self._arbiter.can_start_heavy(kind, estimated_bytes=estimated)
             if not pre.get("ok"):
                 reason = pre.get("reason") or {}
                 raise MediaError(reason.get("code", "refused"), reason.get("message", "arbiter refused"), 409, reason)
+            warning = pre.get("memory_warning")
+            if warning and not force:
+                required = warning["required_bytes"] / 1024 ** 3
+                available = warning["available_bytes"] / 1024 ** 3
+                raise MediaError("insufficient_memory",
+                                  f"生成约需 {required:.1f} GiB 内存，当前可用 {available:.1f} GiB，可能失败或拖慢整机",
+                                  409, warning)
             job_id = self._state["job_id"] + 1
             grant = self._arbiter.acquire_heavy(kind, f"job-{job_id}")
             if not grant.get("ok"):
@@ -80,7 +120,12 @@ class MediaService:
                 root = Path(roots.outputs_root); root.mkdir(parents=True, exist_ok=True)
                 if kind == "video":
                     output = root / f"h3-{stamp}.mp4"
-                    command = build_h3_command(tuple(roots.mlx_h3_cmd), model_root, output=output, **params)
+                    command_params = dict(params)
+                    command_params.pop("mode", None)
+                    for key in ("first_frame", "last_frame", "ref_video"):
+                        if key in command_params:
+                            command_params[key] = resolve_input(root, command_params[key], "video" if key == "ref_video" else "image")
+                    command = build_h3_command(tuple(roots.mlx_h3_cmd), model_root, output=output, **command_params)
                     extra_env = dict(roots.mlx_h3_env)
                 else:
                     output = root / f"music3-{stamp}.wav"
@@ -110,7 +155,7 @@ class MediaService:
                 elif failure is not None: status, error = "error", {"code": "worker_failed", "message": failure}
                 elif code == 0 and output.is_file(): status, error = "done", None
                 elif code == 0: status, error = "error", {"code": "no_output", "message": "exit 0 but output file missing"}
-                else: status, error = "error", {"code": "exit_nonzero", "message": f"exit {code}"}
+                else: status, error = "error", {"code": "exit_nonzero", "message": f"exit {code}", "log_tail": self._log_tail(5)}
                 self._state.update(status=status, output=output.name if status == "done" else None, error=error, finished_at=self._clock())
                 self._handle = None
         finally:
@@ -148,6 +193,7 @@ class MediaService:
             state["error"] = dict(self._state["error"]) if self._state["error"] else None
             if job_id is not None and job_id != state["job_id"]: log_from = 0
             state.update(log=self._log[max(log_from - self._log_dropped, 0):], next_log_from=self._log_dropped + len(self._log), log_len=self._log_dropped + len(self._log), log_truncated=self._log_truncated)
+            state["elapsed_s"] = self._clock() - state["started_at"] if state["status"] == "running" else None
             return state
 
     def on_job_finished(self, callback: Callable[[dict], None]) -> Callable[[], None]:
@@ -156,6 +202,10 @@ class MediaService:
             with self._lock:
                 if callback in self._callbacks: self._callbacks.remove(callback)
         return unsubscribe
+
+    def _log_tail(self, n: int) -> str:
+        lines = [line for line in self._log.splitlines() if line.strip()]
+        return "\n".join(lines[-n:])
 
     def _reset_log(self) -> None: self._log = ""; self._log_dropped = 0; self._log_truncated = False
     def _append_log(self, line: str) -> None:

@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                    lastPollError: nil)
 
   func applicationDidFinishLaunching(_ notification: Notification) {
+    NSApp.appearance = NSAppearance(named: .darkAqua)   // D1 single dark theme: native chrome follows the web content
     NSApp.setActivationPolicy(.regular)
     buildMainMenu()
     api = DeskAPI(baseURL: DeskPaths.baseURL)
@@ -19,12 +20,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     statusController = StatusItemController(api: api)
     poller = StatusPoller(api: api)
     statusController.onOpenWindow = { [weak self] in self?.windowController.showWindow() }
+    statusController.onOpenSettings = { [weak self] in self?.windowController.showSettings() }
+    statusController.onRevealOutputs = { [weak self] in self?.api.revealOutputs { _ in } }
     statusController.onMenuOpened = { [weak self] in
       guard let self, self.status.needsSetup else { return }
       self.refreshConfig()
     }
-    windowController.onRetry = { [weak self] in self?.startServer() }
+    windowController.onRetry = { [weak self] in
+      guard let self else { return }
+      _ = self.server.terminateEmbeddedServer()   // a hung child would otherwise trip portConflict
+      self.startServer()
+    }
     poller.onUpdate = { [weak self] result in self?.handlePoll(result) }
+    poller.onMemory = { [weak self] result in self?.statusController.renderMemory(result) }
     status.server = .starting
     statusController.render(status)
     windowController.showWindow()
@@ -88,10 +96,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     case .failure(let error):
       status.desk = nil
       status.lastPollError = error.message
-      if poller.consecutiveFailures >= 3 && !server.isChildRunning {
+      switch pollFailureAction(consecutiveFailures: poller.consecutiveFailures,
+                               childRunning: server.isChildRunning) {
+      case .keepWaiting:
+        break
+      case .serviceExited:
         status.server = .failed(.spawnFailed("服务已退出"))
         windowController.showErrorPage(
           reason: "台面服务意外退出（连续 \(poller.consecutiveFailures) 次状态拉取失败）。",
+          logPath: DeskPaths.serverStdoutLogURL.path)
+        poller.stop()
+      case .serviceUnresponsive:
+        status.server = .failed(.spawnFailed("服务无响应"))
+        windowController.showErrorPage(
+          reason: "台面服务无响应（连续 \(poller.consecutiveFailures) 次状态拉取超时）。点「重试」将重启服务。",
           logPath: DeskPaths.serverStdoutLogURL.path)
         poller.stop()
       }
@@ -128,18 +146,72 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private func buildMainMenu() {
     let mainMenu = NSMenu()
     let appMenuItem = NSMenuItem()
-    let appMenu = NSMenu()
+    let appMenu = NSMenu(title: "LocalModelDesk")
+    appMenu.addItem(withTitle: "关于 LocalModelDesk",
+                    action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)),
+                    keyEquivalent: "")
+    appMenu.addItem(.separator())
+    let settingsItem = appMenu.addItem(withTitle: "设置…",
+                                       action: #selector(openSettings), keyEquivalent: ",")
+    settingsItem.target = self
+    appMenu.addItem(.separator())
+    appMenu.addItem(withTitle: "隐藏 LocalModelDesk",
+                    action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+    let hideOthers = appMenu.addItem(withTitle: "隐藏其他",
+                                     action: #selector(NSApplication.hideOtherApplications(_:)),
+                                     keyEquivalent: "h")
+    hideOthers.keyEquivalentModifierMask = [.command, .option]
+    appMenu.addItem(withTitle: "全部显示",
+                    action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "")
+    appMenu.addItem(.separator())
     appMenu.addItem(withTitle: "退出 LocalModelDesk",
                     action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
     appMenuItem.submenu = appMenu
     mainMenu.addItem(appMenuItem)
+
     let fileMenuItem = NSMenuItem()
     let fileMenu = NSMenu(title: "文件")
     fileMenu.addItem(withTitle: "关闭窗口",
                      action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
     fileMenuItem.submenu = fileMenu
     mainMenu.addItem(fileMenuItem)
+
+    let editMenuItem = NSMenuItem()
+    let editMenu = NSMenu(title: "编辑")
+    editMenu.addItem(withTitle: "撤销", action: Selector(("undo:")), keyEquivalent: "z")
+    let redo = editMenu.addItem(withTitle: "重做", action: Selector(("redo:")), keyEquivalent: "z")
+    redo.keyEquivalentModifierMask = [.command, .shift]
+    editMenu.addItem(.separator())
+    editMenu.addItem(withTitle: "剪切", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+    editMenu.addItem(withTitle: "复制", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+    editMenu.addItem(withTitle: "粘贴", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+    let pastePlain = editMenu.addItem(withTitle: "粘贴并匹配样式",
+                                      action: #selector(NSTextView.pasteAsPlainText(_:)),
+                                      keyEquivalent: "v")
+    pastePlain.keyEquivalentModifierMask = [.command, .option, .shift]
+    editMenu.addItem(withTitle: "删除", action: #selector(NSText.delete(_:)), keyEquivalent: "")
+    editMenu.addItem(.separator())
+    editMenu.addItem(withTitle: "全选", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+    editMenuItem.submenu = editMenu
+    mainMenu.addItem(editMenuItem)
+
+    let windowMenuItem = NSMenuItem()
+    let windowMenu = NSMenu(title: "窗口")
+    windowMenu.addItem(withTitle: "最小化",
+                       action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
+    let fullScreen = windowMenu.addItem(withTitle: "进入全屏幕",
+                                        action: #selector(NSWindow.toggleFullScreen(_:)),
+                                        keyEquivalent: "f")
+    fullScreen.keyEquivalentModifierMask = [.command, .control]
+    windowMenuItem.submenu = windowMenu
+    mainMenu.addItem(windowMenuItem)
+    NSApp.windowsMenu = windowMenu
+
     NSApp.mainMenu = mainMenu
+  }
+
+  @objc private func openSettings() {
+    windowController?.showSettings()
   }
 
   private static func describe(_ failure: ServerFailure) -> String {

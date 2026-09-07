@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from shell_helpers import ROOT, free_port, port_listening, start_fake_desk
+from shell_helpers import ROOT, free_port, harness_path, port_listening, start_fake_desk
 
 
 ORCA = "orca"
@@ -94,15 +94,22 @@ def test_cmd_w_keeps_app_and_server_alive(shell_app):
     assert shell_app.fake.poll() is None
 
 
-def test_cmd_q_terminates_app_and_service(shell_app):
-    """R-shell-04: Quit exits App and leaves no listener in attach mode."""
+def test_cmd_q_exits_app_and_spares_the_attached_service(shell_app):
+    """R-shell-04 + G20: Quit exits App; a service it did not start survives.
+
+    R-shell-04 only obliges the shell to terminate the *embedded* service — that
+    path is covered by test_shell_lifecycle.test_owned_sigterm_reaps_child_family_and_ports.
+    Here the listener belongs to a foreign process (the fake service the fixture
+    starts), so quitting must observe it, never signal it.
+    """
     wait_for_window(shell_app.proc.pid)
     hotkey(shell_app.proc.pid, "CmdOrCtrl+Q")
     deadline = time.time() + 30
     while time.time() < deadline and shell_app.proc.poll() is None:
         time.sleep(0.5)
     assert shell_app.proc.poll() is not None, "App must exit after Cmd+Q"
-    assert not port_listening(shell_app.port), "attached Desk listener must be gone after quit"
+    assert shell_app.fake.poll() is None, "attached foreign service must survive quit"
+    assert port_listening(shell_app.port), "foreign listener must still be serving"
 
 
 def test_server_death_shows_error_text(shell_app):
@@ -114,9 +121,20 @@ def test_server_death_shows_error_text(shell_app):
     deadline = time.time() + 40
     while time.time() < deadline:
         tree = tree_text(shell_app.proc.pid)
-        if "服务未运行" in tree or "意外退出" in tree:
+        if "服务未响应" in tree or "意外退出" in tree:
             break
         time.sleep(2)
     else:
         pytest.fail(f"no service-death explanation within 40s; last tree:\n{tree[-2000:]}")
     assert shell_app.proc.poll() is None
+
+
+def test_error_page_is_dark_themed_and_names_the_reason():
+    proc = subprocess.run([harness_path(), "error-page", "服务无响应", "/tmp/x.log"],
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    html = proc.stdout
+    assert "background:#14161a" in html and "color:#e7e9ee" in html
+    assert "<h1 class=\"danger\">服务未响应</h1>" in html and "服务无响应" in html
+    assert 'class="danger"' in html and "<details>" in html and "/tmp/x.log" in html
+    assert 'onclick="window.webkit.messageHandlers.shellRetry.postMessage' in html

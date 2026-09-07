@@ -3,8 +3,10 @@ import * as api from "../api.js";
 import { formatBytes } from "../pure/format.js";
 import { rowView } from "../pure/model_status.js";
 import { confirmDialog } from "../widgets/confirm.js";
+import { addIcon } from "../icons.js";
 
 const ACTION_LABEL = { download: "下载", resume: "续传", cancel: "取消", delete: "删除" };
+const ACTION_ICON = { download: "download", resume: "refresh", cancel: "x", delete: "trash" };
 
 export function createResourcesPane(root) {
   const doc = root.ownerDocument;
@@ -16,11 +18,20 @@ export function createResourcesPane(root) {
     disk: root.querySelector("[data-res-disk]"),
   };
 
-  async function refresh() {
+  function refreshLabel() {
+    return els.refreshBtn?.querySelector?.("[data-label]") ?? els.refreshBtn;
+  }
+
+  async function refresh({ revalidate = false } = {}) {
     if (els.error) els.error.textContent = "";
+    if (revalidate && els.refreshBtn) {
+      els.refreshBtn.disabled = true;
+      const label = refreshLabel();
+      if (label) label.textContent = "校验中…";
+    }
     try {
       const [catalogPayload, statusPayload, disk] = await Promise.all([
-        api.listCatalog(), api.verifyAllModels(), api.diskUsage(),
+        api.listCatalog(), api.verifyAllModels(revalidate), api.diskUsage(),
       ]);
       const catalog = catalogPayload.models ?? catalogPayload;
       const statuses = statusPayload.models ?? [];
@@ -28,7 +39,14 @@ export function createResourcesPane(root) {
       render(catalog, statuses, downloadProgress, disk ?? statusPayload.disk);
     } catch (err) {
       if (els.error) els.error.textContent = err.message;
+    } finally {
+      if (revalidate && els.refreshBtn) {
+        els.refreshBtn.disabled = false;
+        const label = refreshLabel();
+        if (label) label.textContent = "重新校验";
+      }
     }
+    return downloadProgress;
   }
 
   function render(catalog, statuses, download, disk) {
@@ -45,20 +63,28 @@ export function createResourcesPane(root) {
 
   function rowNode(entry, view) {
     const li = doc.createElement("li");
-    li.className = "res-row";
+    li.className = "card res-row";
     // The browser tests and future automation address a row by the catalog key,
     // not a localized display name.
     (li.dataset ??= {}).model = entry.key;
-    li.textContent = `${entry.name} · ${view.badge} · 预计 ${view.sizeText} · 占用 ${view.diskText}`;
 
-    const title = doc.createElement("p");
-    title.textContent = entry.name;
+    const head = doc.createElement("div");
+    head.className = "res-head";
+    const name = doc.createElement("h4");
+    name.className = "res-name";
+    name.textContent = entry.name;
+    const badge = doc.createElement("span");
+    badge.className = `badge badge-${view.badgeKind}`;
+    badge.textContent = view.badge;
+    head.append(name, badge);
+
     const meta = doc.createElement("p");
     meta.className = "res-meta";
-    meta.textContent = `${view.badge} · 预计 ${view.sizeText} · 占用 ${view.diskText}`;
-    li.append(title, meta);
+    meta.textContent = `预计 ${view.sizeText} · 占用 ${view.diskText}`;
+    li.append(head, meta);
     if (view.pct > 0 && view.pct < 100) {
       const progress = doc.createElement("progress");
+      progress.className = "res-progress";
       progress.value = view.pct;
       progress.max = 100;
       progress.textContent = `${view.pct}%`;
@@ -71,7 +97,9 @@ export function createResourcesPane(root) {
     for (const action of view.actions) {
       const button = doc.createElement("button");
       button.type = "button";
+      button.className = action === "delete" ? "btn-danger" : action === "download" || action === "resume" ? "btn-primary" : "";
       button.textContent = ACTION_LABEL[action];
+      addIcon(button, ACTION_ICON[action], doc);
       button.disabled = view.downloadDisabled && (action === "download" || action === "resume");
       if (button.disabled) button.title = view.downloadDisabledReason;
       button.addEventListener("click", async () => {
@@ -96,12 +124,19 @@ export function createResourcesPane(root) {
       });
       actions.append(button);
     }
+    if (view.downloadDisabled && view.downloadDisabledReason) {
+      const why = doc.createElement("p");
+      why.className = "hint res-disabled-reason";
+      why.textContent = view.downloadDisabledReason;
+      actions.append(why);
+    }
     li.append(actions);
     return li;
   }
 
   function missingNode(gaps) {
     const details = doc.createElement("details");
+    details.className = "res-missing";
     const summary = doc.createElement("summary");
     summary.textContent = `缺失文件（${gaps.length}）`;
     const list = doc.createElement("ul");
@@ -114,6 +149,6 @@ export function createResourcesPane(root) {
     return details;
   }
 
-  els.refreshBtn?.addEventListener("click", refresh);
-  return { refresh };
+  els.refreshBtn?.addEventListener("click", () => refresh({ revalidate: true }));
+  return { refresh: () => refresh() };
 }

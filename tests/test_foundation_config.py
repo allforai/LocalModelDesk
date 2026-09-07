@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from desk.foundation import config as config_mod
-from desk.foundation.errors import ConfigCorruptError
+from desk.foundation.errors import ConfigCorruptError, ConfigInvalidError
 
 
 def make_roots(tmp_path):
@@ -155,3 +155,38 @@ def test_concurrent_updates_lose_no_fields(tmp_path):
     on_disk = json.loads(roots.config_path.read_text())
     assert on_disk["knob_a"] == n - 1
     assert on_disk["knob_b"] == n - 1
+
+
+def test_update_config_rejects_bad_port_type_and_keeps_file_untouched(tmp_path):
+    roots = make_roots(tmp_path)
+    roots.config_path.write_text(json.dumps({"first_run_done": True, "gateway": {"port": 8770}}), encoding="utf-8")
+    before = roots.config_path.read_bytes()
+    with pytest.raises(ConfigInvalidError) as exc:
+        config_mod.update_config(roots, gateway={"port": "not-a-number"})
+    assert exc.value.code == "config_invalid"
+    assert exc.value.payload["field"] == "gateway.port"
+    assert roots.config_path.read_bytes() == before
+
+
+@pytest.mark.parametrize("fields,field", [
+    ({"gateway": {"port": 0}}, "gateway.port"),
+    ({"gateway": {"port": 70000}}, "gateway.port"),
+    ({"gateway": {"host": ""}}, "gateway.host"),
+    ({"gateway": {"enabled": "yes"}}, "gateway.enabled"),
+    ({"first_run_done": "false"}, "first_run_done"),
+    ({"models_root": 12}, "models_root"),
+])
+def test_update_config_rejects_each_bad_field(tmp_path, fields, field):
+    roots = make_roots(tmp_path)
+    with pytest.raises(ConfigInvalidError) as exc:
+        config_mod.update_config(roots, **fields)
+    assert exc.value.payload["field"] == field
+    assert not roots.config_path.exists()
+
+
+def test_read_config_reports_wrong_type_on_disk_as_corrupt(tmp_path):
+    roots = make_roots(tmp_path)
+    roots.config_path.write_text(json.dumps({"gateway": {"port": "abc"}}), encoding="utf-8")
+    with pytest.raises(ConfigCorruptError) as exc:
+        config_mod.read_config(roots)
+    assert "gateway.port" in exc.value.payload["parse_error"]

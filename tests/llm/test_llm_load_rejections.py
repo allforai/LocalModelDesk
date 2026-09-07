@@ -47,6 +47,20 @@ def test_load_rejects_media_busy_without_state_change(tmp_path):
     assert [call[0] for call in testbed.calls] == ["acquire"]
 
 
+def test_load_rejection_keeps_arbiter_reason_code(tmp_path):
+    testbed = make_service(
+        tmp_path,
+        arbiter_kw={
+            "acquire_result": {
+                "ok": False,
+                "reason": {"code": "evict_failed", "message": "LLM eviction failed"},
+            }
+        },
+    )
+
+    assert_rejected_without_state_change(testbed.service, "glm", "evict_failed")
+
+
 def test_load_rejects_when_another_load_is_in_progress_without_state_change(tmp_path):
     testbed = make_service(tmp_path, backend_kw={"health_script": [False]})
     testbed.backend.hold_health = True

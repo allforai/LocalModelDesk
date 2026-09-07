@@ -3,14 +3,19 @@ import assert from "node:assert/strict";
 import { formatBytes, formatPercent, formatDuration, formatRate, formatTimestamp }
   from "../../desk/static/js/pure/format.js";
 
-test("formatBytes：GB 一位小数、MB/KB 取整、非法值如实给占位", () => {
+test("formatBytes：GiB 一位小数、MiB/KiB 取整、非法值如实给占位", () => {
   assert.equal(formatBytes(0), "0 B");
   assert.equal(formatBytes(512), "512 B");
-  assert.equal(formatBytes(2048), "2 KB");
-  assert.equal(formatBytes(820 * 1024 ** 2), "820 MB");
-  assert.equal(formatBytes(103 * 1024 ** 3), "103.0 GB");
+  assert.equal(formatBytes(2048), "2 KiB");
+  assert.equal(formatBytes(820 * 1024 ** 2), "820 MiB");
+  assert.equal(formatBytes(103 * 1024 ** 3), "103.0 GiB");
   assert.equal(formatBytes(-1), "—");
   assert.equal(formatBytes(NaN), "—");
+});
+
+test("formatBytes 用 GiB/MiB 标签，与 1024 进制一致", () => {
+  assert.equal(formatBytes(16878224220), "15.7 GiB");
+  assert.equal(formatBytes(5 * 1024 ** 2), "5 MiB");
 });
 
 test("formatPercent 取整并夹在 0–100", () => {
@@ -28,7 +33,7 @@ test("formatDuration：秒/分秒/时分", () => {
 });
 
 test("formatRate：字节速率", () => {
-  assert.equal(formatRate(2 * 1024 ** 2), "2 MB/s");
+  assert.equal(formatRate(2 * 1024 ** 2), "2 MiB/s");
   assert.equal(formatRate(0), "—");
 });
 

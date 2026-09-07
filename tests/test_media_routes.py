@@ -11,10 +11,25 @@ def route_map(service):
     return {(method, path): handler for method, path, handler in build_routes(service)}
 
 
+def test_music_without_lyrics_is_a_400_with_chinese_message(tmp_path):
+    service, _ = make_service(tmp_path)
+    service._probe_capabilities = lambda: {"music_runtime": SimpleNamespace(present=True, detail="")}
+    service._resolve_paths = lambda: SimpleNamespace(
+        outputs_root=tmp_path / "outputs", models_root=tmp_path / "models",
+        music_python=Path("/fake/bin/music-python"), media_cli_dir=Path("/fake/media"), music_env={})
+    service._list_catalog = lambda: [SimpleNamespace(key="music3", relpath="minimax-music3", gb=27.0)]
+    handler = route_map(service)[("POST", "/api/media/music")]
+    status, payload = handler({"caption": "民谣", "lyrics": "   ", "duration": 10}, {})
+    assert status == 400
+    assert payload["error"]["code"] == "lyrics_required"
+    assert payload["error"]["message"] == "请填写歌词：Music 3 需要歌词才能生成"
+
+
 def test_media_routes_adapter_and_error_envelopes(tmp_path):
     service, _ = make_service(tmp_path)
     routes = route_map(service)
     assert list(routes) == [
+        ("POST", "/api/media/inputs"),
         ("POST", "/api/media/video"),
         ("POST", "/api/media/music"),
         ("POST", "/api/media/cancel"),
@@ -22,7 +37,7 @@ def test_media_routes_adapter_and_error_envelopes(tmp_path):
     ]
 
     status, payload = routes[("POST", "/api/media/video")]({"prompt": ""}, {})
-    assert (status, payload["error"]["code"]) == (400, "invalid_params")
+    assert (status, payload["error"]["code"]) == (400, "prompt_required")
     assert set(payload["error"]) == {"code", "message", "detail"}
 
     service._probe_capabilities = lambda: {}
@@ -62,7 +77,7 @@ def test_media_routes_start_jobs_and_parse_status_cursor(tmp_path):
         music_python=Path("/fake/bin/music-python"), media_cli_dir=Path("/fake/media"),
         music_env={},
     )
-    service._list_catalog = lambda: [SimpleNamespace(key="music3", relpath="minimax-music3")]
+    service._list_catalog = lambda: [SimpleNamespace(key="music3", relpath="minimax-music3", gb=27.0)]
     done = threading.Event()
     service.on_job_finished(lambda _: done.set())
     status, payload = route_map(service)[("POST", "/api/media/music")]({
