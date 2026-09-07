@@ -23,7 +23,8 @@ button:hover{border-color:var(--muted)}
 .btn-sm{padding:4px 8px;font-size:13px}
 button:disabled,button[aria-disabled="true"]{opacity:.5;cursor:not-allowed;filter:none}
 /* 4. statusbar + tabs */
-#statusbar{display:grid;grid-template-columns:max-content max-content max-content minmax(120px,1fr) max-content;gap:16px;align-items:center;height:48px;padding:0 var(--margin);background:var(--panel);border-bottom:2px solid var(--border)}
+#statusbar{display:grid;grid-template-columns:max-content max-content minmax(0,max-content) minmax(96px,1fr) max-content;gap:16px;align-items:center;height:48px;padding:0 var(--margin);background:var(--panel);border-bottom:2px solid var(--border);overflow:hidden}
+.status-media{min-width:0;overflow:hidden}
 #statusbar [data-open-settings]{justify-self:end}
 #statusbar[data-tone="ok"]{border-color:var(--ok)}#statusbar[data-tone="busy"]{border-color:var(--busy)}#statusbar[data-offline="1"],#statusbar[data-tone="error"]{border-color:var(--danger)}
 .status-part{display:inline-flex;align-items:center;gap:6px;min-width:0;color:var(--muted);white-space:nowrap}
@@ -69,7 +70,8 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 /* 6b. cards: resources + library rows */
 .res-name{margin:0;font-size:16px;font-weight:600}
 .res-meta,.lib-meta{color:var(--muted);font-size:13px;margin:4px 0 0}
-.res-actions,.lib-actions{display:flex;gap:8px;margin-top:12px}
+.res-actions,.lib-actions{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
+.res-disabled-reason{margin:0;color:var(--busy)}
 .res-progress{width:100%;height:6px;margin-top:8px;accent-color:var(--busy)}
 .res-missing{margin-top:8px;color:var(--muted);font-size:13px}
 .lib-title{margin:0}

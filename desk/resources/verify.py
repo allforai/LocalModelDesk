@@ -28,11 +28,28 @@ class ModelStatus:
     manifest_source: str
     manifest_fetched_at: str | None
     reason: str | None = None
+    bytes_in_flight: int = 0
 
     def to_json(self) -> dict:
         payload = asdict(self)
         payload["gaps"] = [asdict(gap) for gap in self.gaps]
         return payload
+
+
+def _in_flight_bytes(model_dir: Path) -> int:
+    """Bytes sitting in hf's .incomplete files: downloaded but not yet moved into place."""
+    cache = model_dir / ".cache" / "huggingface" / "download"
+    total = 0
+    try:
+        for path in cache.rglob("*.incomplete"):
+            try:
+                if path.is_file():
+                    total += path.stat().st_size
+            except OSError:
+                continue
+    except OSError:
+        return 0
+    return total
 
 
 def verify_tree(entry: ModelEntry, manifest: Manifest, models_root: Path) -> ModelStatus:
@@ -51,8 +68,10 @@ def verify_tree(entry: ModelEntry, manifest: Manifest, models_root: Path) -> Mod
         if local_size != file.size:
             gaps.append(FileGap(file.path, file.size, local_size))
 
-    state = "present" if not gaps else "missing" if local_total == 0 else "partial"
-    percent = round(local_total / expected_total * 100.0, 2) if expected_total else 0.0
+    in_flight = 0 if not gaps else min(_in_flight_bytes(model_dir), max(expected_total - local_total, 0))
+    counted = local_total + in_flight
+    state = "present" if not gaps else "missing" if counted == 0 else "partial"
+    percent = round(min(counted / expected_total, 1.0) * 100.0, 2) if expected_total else 0.0
     return ModelStatus(
         key=entry.key,
         state=state,
@@ -63,6 +82,7 @@ def verify_tree(entry: ModelEntry, manifest: Manifest, models_root: Path) -> Mod
         gaps=tuple(gaps),
         manifest_source=manifest.source,
         manifest_fetched_at=manifest.fetched_at,
+        bytes_in_flight=in_flight,
     )
 
 
