@@ -84,7 +84,7 @@ test("聊天面板在媒体作业期间禁用加载，并在作业结束后恢�
   assert.equal(controls.get("[data-load-hint]").textContent, "");
 });
 
-test("驱逐后 tick 推送的 llm 状态会把『已加载』改成失败说明", async () => {
+test("驱逐后 tick 推送的 llm 状态会把『已加载』改成让出内存说明（N4）", async () => {
   const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
   const { root, controls } = makePane();
   controls.set("[data-load-hint]", new Element()); root.querySelector = (s) => controls.get(s);
@@ -92,7 +92,7 @@ test("驱逐后 tick 推送的 llm 状态会把『已加载』改成失败说明
   pane.applyLlmStatus({ state: { status: "loaded", model_key: "glm" }, loaded_model: { name: "GLM" } });
   assert.equal(controls.get("[data-model-state]").textContent, "已加载：GLM");
   pane.applyLlmStatus({ state: { status: "error", model_key: "glm", error: { code: "evicted", message: "LLM 已被媒体任务驱逐" } }, loaded_model: null });
-  assert.equal(controls.get("[data-model-state]").textContent, "加载失败（evicted）：LLM 已被媒体任务驱逐");
+  assert.equal(controls.get("[data-model-state]").textContent, "已被媒体任务让出内存，可重新加载");
 });
 
 test("互斥原因显示在加载按钮旁的提示里，不再是红色错误", async () => {
@@ -219,4 +219,57 @@ test("chat 面板的新建、改名和确认删除会写入会话 API 并重绘�
     assert.equal(calls.some(([path, method]) => path === "/api/sessions/s2" && method === "DELETE"), true);
     assert.equal(controls.get("[data-session-list]").children[0].children[0].textContent, "旧标题");
   } finally { globalThis.fetch = oldFetch; }
+});
+
+test("换模型：A 驻留时选 B 点加载 → 确认 → 先卸载再加载（J16）", async () => {
+  const oldFetch = globalThis.fetch; const calls = [];
+  let loaded = "a";
+  globalThis.fetch = async (path, options = {}) => {
+    calls.push([path, options.method ?? "GET", options.body]);
+    if (path === "/api/resources/catalog") return json([{ key: "a", group: "chat", name: "模型 A", gb: 1 }, { key: "b", group: "chat", name: "模型 B", gb: 1 }]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [{ key: "a", state: "present" }, { key: "b", state: "present" }] });
+    if (path === "/api/llm/status") return json(loaded ? { state: { status: "loaded", model_key: loaded }, loaded_model: { name: loaded === "a" ? "模型 A" : "模型 B" } } : { state: { status: "idle", model_key: null } });
+    if (path === "/api/sessions") return json([{ id: "s1", title: "t", messages: [], updated: "2026-01-01" }]);
+    if (path === "/api/memory") return json({ available_bytes: 99 * 1024 ** 3 });
+    if (path === "/api/llm/unload") { loaded = null; return json({}); }
+    if (path === "/api/llm/load") { loaded = JSON.parse(options.body).key; return json({}); }
+    throw new Error(`unexpected request ${path}`);
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { controls, root } = makePane();
+    const pane = createChatPane(root, { confirm: async () => true });
+    await pane.init();
+    assert.equal(controls.get("[data-unload]").disabled, false);
+    controls.get("[data-model-select]").value = "b";
+    pane.applyLlmStatus({ state: { status: "loaded", model_key: "a" }, loaded_model: { name: "模型 A" } });
+    assert.equal(controls.get("[data-model-select]").value, "b", "轮询不得把用户的选择改回 A");
+    await controls.get("[data-load]").click();
+    const order = calls.filter(([p]) => p === "/api/llm/unload" || p === "/api/llm/load").map(([p]) => p);
+    assert.deepEqual(order, ["/api/llm/unload", "/api/llm/load"]);
+    assert.equal(loaded, "b");
+  } finally { globalThis.fetch = oldFetch; }
+});
+
+test("未加载时「卸载」禁用；被驱逐显示让出文案而非加载失败（N4）", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { controls, root } = makePane();
+  const pane = createChatPane(root);
+  pane.applyLlmStatus({ state: { status: "idle", model_key: null } });
+  assert.equal(controls.get("[data-unload]").disabled, true);
+  pane.applyLlmStatus({ state: { status: "error", model_key: "glm", error: { code: "evicted", message: "LLM 已被媒体任务驱逐" } } });
+  assert.equal(controls.get("[data-model-state]").textContent, "已被媒体任务让出内存，可重新加载");
+  assert.equal(controls.get("[data-unload]").disabled, false);
+});
+
+test("历史消息用会话模型名，空回答有占位（F8/F9）", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { controls, root } = makePane();
+  const pane = createChatPane(root);
+  pane.showMessages([{ role: "user", content: "hi" }, { role: "assistant", content: "" }], "GLM 4.7 Flash");
+  const rows = controls.get("[data-messages]").children;
+  const who = rows[1].children[0];
+  assert.equal(who.children[1].textContent, "GLM 4.7 Flash");
+  const body = rows[1].children[2];
+  assert.equal(body.children[0].className, "empty-answer");
 });
