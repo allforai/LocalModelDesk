@@ -91,6 +91,30 @@ test("resources 面板将下载、续传、取消和删除操作路由到资源 
   ]);
 });
 
+test("别的模型下载中：本行「下载」禁用且卡片内写原因（F4）", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async (path) => ({ ok: true, json: async () => {
+    if (path === "/api/resources/catalog") return [{ key: "a", name: "甲", gb: 1 }, { key: "b", name: "乙", gb: 1 }];
+    if (String(path).startsWith("/api/resources/status")) return {
+      download: { state: "running", key: "a" },
+      models: [{ key: "a", state: "partial", percent: 5, disk_bytes: 1 }, { key: "b", state: "missing", disk_bytes: 0 }],
+    };
+    return { free_bytes: 1, total_bytes: 2 };
+  }});
+  const doc = { createElement: (tag) => new FakeElement(tag) };
+  const elements = Object.fromEntries(["refresh", "list", "error", "disk"].map((name) => [name, new FakeElement()]));
+  const root = new FakeElement(); root.ownerDocument = doc;
+  root.querySelector = (selector) => elements[selector.match(/data-res-(.+)\]/)[1]];
+  await createResourcesPane(root).refresh();
+  const rowB = elements.list.children[1];
+  const download = find(rowB, (el) => el.tagName === "button" && el.textContent === "下载");
+  assert.equal(download.disabled, true);
+  const why = find(rowB, (el) => el.className === "hint res-disabled-reason");
+  assert.equal(why.textContent, "已有一个下载在进行（同时只允许一个）");
+  assert.equal(find(elements.list.children[0], (el) => el.className === "hint res-disabled-reason"), null);
+});
+
 class Element { constructor(tag = "div") { this.tagName = tag; this.dataset = {}; this.textContent = ""; this.children = []; this.listeners = {}; this.disabled = false; this.className = ""; this.title = ""; this.hidden = false; }
   append(...n) { this.children.push(...n); } replaceChildren(...n) { this.children = n; }
   addEventListener(t, l) { this.listeners[t] = l; } click() { return this.listeners.click?.(); } }

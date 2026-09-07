@@ -100,3 +100,26 @@ def test_to_json_is_plain_data(tmp_path):
     payload = status.to_json()
     assert json.dumps(payload)
     assert payload["gaps"][0]["expected_size"] == 100
+
+
+def test_incomplete_cache_bytes_count_toward_percent_but_not_bytes_local(tmp_path):
+    directory = model_dir(tmp_path)
+    (directory / "tokenizer.json").write_bytes(b"b" * 60)
+    cache = directory / ".cache" / "huggingface" / "download"
+    cache.mkdir(parents=True)
+    (cache / "model.safetensors.abc123.incomplete").write_bytes(b"x" * 70)
+    status = verify_tree(GLM, MANIFEST, tmp_path)
+    assert status.state == "partial"
+    assert status.bytes_local == 60
+    assert status.bytes_in_flight == 70
+    assert status.percent == 65.0          # (60 + 70) / 200
+
+
+def test_incomplete_bytes_are_capped_at_expected_total(tmp_path):
+    directory = model_dir(tmp_path)
+    cache = directory / ".cache" / "huggingface" / "download"
+    cache.mkdir(parents=True)
+    (cache / "big.incomplete").write_bytes(b"x" * 500)
+    status = verify_tree(GLM, MANIFEST, tmp_path)
+    assert status.state == "partial"
+    assert status.percent == 100.0 or status.percent < 100.0 and status.bytes_in_flight == 200

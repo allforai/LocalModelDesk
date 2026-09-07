@@ -124,6 +124,12 @@ export function createResourcesPane(root) {
       });
       actions.append(button);
     }
+    if (view.downloadDisabled && view.downloadDisabledReason) {
+      const why = doc.createElement("p");
+      why.className = "hint res-disabled-reason";
+      why.textContent = view.downloadDisabledReason;
+      actions.append(why);
+    }
     li.append(actions);
     return li;
   }
