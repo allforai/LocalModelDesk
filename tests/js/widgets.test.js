@@ -31,6 +31,14 @@ class FakeElement {
     this.listeners[type] = listener;
   }
 
+  setAttribute(name, value) {
+    (this.attrs ??= {})[name] = value;
+  }
+
+  focus() {
+    this.focused = true;
+  }
+
   click() {
     this.listeners.click?.();
   }

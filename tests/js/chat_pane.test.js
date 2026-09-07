@@ -21,6 +21,7 @@ class Element {
   }
   replaceChildren(...nodes) { this.children = []; this.append(...nodes); }
   addEventListener(type, listener) { this.listeners[type] = listener; }
+  setAttribute(name, value) { (this.attrs ??= {})[name] = value; }
   click() { return this.listeners.click?.({ preventDefault() {} }); }
   remove() { this.parentNode?.children.splice(this.parentNode.children.indexOf(this), 1); }
   focus() {}
