@@ -44,7 +44,8 @@ fi
 # build was explicitly allowed to be adhoc.  Notarization is a separate, later step, so an
 # "Unnotarized Developer ID" verdict from Gatekeeper is acceptable here; "no usable signature" is not.
 SPCTL_OUT="$(spctl --assess --type execute -vv "$APP" 2>&1 || true)"
-if ! codesign -dvv "$APP" 2>&1 | grep -q "Authority=Developer ID Application"; then
+CODESIGN_INFO="$(codesign -dvv "$APP" 2>&1 || true)"
+if ! printf '%s' "$CODESIGN_INFO" | grep -q "Authority=Developer ID Application"; then
   if [[ "${LMD_ALLOW_ADHOC:-0}" != "1" ]]; then
     fail "V1b 未用 Developer ID Application 签名（spctl: $(printf '%s' "$SPCTL_OUT" | tr '\n' ' ')）；设置 LMD_ALLOW_ADHOC=1 以允许本机调试用 adhoc 签名"
   fi
