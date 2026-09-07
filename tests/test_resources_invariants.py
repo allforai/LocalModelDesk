@@ -13,8 +13,8 @@ from desk.resources.catalog import CATALOG
 REPO = Path(__file__).resolve().parents[1]
 
 SKIP_DIRS = {
-    ".git", "__pycache__", ".pytest_cache", "node_modules", "docs", "dist",
-    ".venv-desk", ".venv-music3", "llms", "minimax-h3", "minimax-music3",
+    ".git", ".claude", "__pycache__", ".pytest_cache", "node_modules", "docs",
+    "dist", ".venv-desk", ".venv-music3", "llms", "minimax-h3", "minimax-music3",
     "outputs",
 }
 TEXT_SUFFIXES = {
