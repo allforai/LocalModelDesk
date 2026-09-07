@@ -11,6 +11,7 @@ class Element {
   append(...nodes) { for (const node of nodes) { node.parentNode = this; this.children.push(node); if (this.tagName === "select" && !this.value) this.value = node.value; } }
   replaceChildren(...nodes) { this.children = []; this.append(...nodes); }
   addEventListener(type, listener) { this.listeners[type] = listener; }
+  setAttribute(name, value) { (this.attrs ??= {})[name] = value; }
   click() { return this.listeners.click?.({ preventDefault() {} }); }
   remove() { this.parentNode?.children.splice(this.parentNode.children.indexOf(this), 1); }
   focus() {}

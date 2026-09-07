@@ -88,7 +88,7 @@ export function createChatPane(root) {
     try {
       const snapshot = await api.memorySnapshot();
       const { warn, message } = needsWarning(Math.round(entry.gb * 1024 ** 3), snapshot);
-      if (warn && !await confirmDialog(doc, { title: "内存警告", message, confirmLabel: "仍要加载" })) return;
+      if (warn && !await confirmDialog(doc, { title: "内存警告", message, confirmLabel: "仍要加载", danger: false })) return;
       await api.loadLlm(entry.key);
       await pollUntilSettled();
     } catch (error) { setError(error.message); }
