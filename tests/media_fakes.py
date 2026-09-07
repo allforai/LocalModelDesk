@@ -67,12 +67,18 @@ class FakeExecutor:
 
 
 class FakeArbiter:
-    def __init__(self):
+    def __init__(self, memory_warning=None):
         self.acquired: list[tuple] = []
         self.released: list[str] = []
+        self.precheck_calls: list[tuple] = []
+        self.memory_warning = memory_warning
 
-    def can_start_heavy(self, kind):
-        return {"ok": True, "reason": None}
+    def can_start_heavy(self, kind, estimated_bytes=None):
+        self.precheck_calls.append((kind, estimated_bytes))
+        result = {"ok": True, "reason": None}
+        if self.memory_warning:
+            result["memory_warning"] = self.memory_warning
+        return result
 
     def acquire_heavy(self, kind, label):
         token = f"permit-{len(self.acquired) + 1}"
@@ -89,16 +95,24 @@ class FakeHistory:
     def append(self, entry): self.entries.append(entry); return entry
 
 
-def make_service(tmp_path: Path, *, executor=None):
+def make_service(tmp_path: Path, *, executor=None, memory_warning=None):
     executor = executor or FakeExecutor()
-    arbiter, history = FakeArbiter(), FakeHistory()
+    arbiter, history = FakeArbiter(memory_warning=memory_warning), FakeHistory()
     roots = SimpleNamespace(outputs_root=tmp_path / "outputs", models_root=tmp_path / "models",
         mlx_h3_cmd=("/fake/bin/mlx-h3",), mlx_h3_env={"PYTHONPATH": "/fake/pylibs/h3"})
     caps = {"mlx_h3": SimpleNamespace(present=True, detail="")}
     service = MediaService(resolve_paths=lambda: roots, probe_capabilities=lambda: caps,
-        arbiter=arbiter, list_catalog=lambda: [SimpleNamespace(key="h3", relpath="minimax-h3")],
+        arbiter=arbiter, list_catalog=lambda: [SimpleNamespace(key="h3", relpath="minimax-h3", gb=103.0)],
         append_history=history.append, executor=executor, clock=lambda: FIXED_TIME)
     return service, SimpleNamespace(executor=executor, arbiter=arbiter, history=history)
+
+
+def service_factory(tmp_path: Path):
+    """Returns a factory(**kwargs) -> (service, arbiter) for tests that need to vary arbiter behaviour."""
+    def factory(*, memory_warning=None, executor=None):
+        service, deps = make_service(tmp_path, executor=executor, memory_warning=memory_warning)
+        return service, deps.arbiter
+    return factory
 
 
 def finished_snapshot(service, start_fn, timeout=5.0):

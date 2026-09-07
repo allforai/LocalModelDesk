@@ -94,6 +94,24 @@ test("job views do not create independent polling timers and still apply shell-d
   assert.equal(music.parts["job-player"].firstChild.tagName, "audio");
 });
 
+test("内存不足被拒时先确认再以 force 重提", async () => {
+  const video = pane({ "video-prompt": "海边", "video-size": "512x288", "video-frames": "49", "video-steps": "16", "video-start": "" });
+  const doc = video.ownerDocument; doc.body = new Element();
+  const confirmed = []; globalThis.__confirmForTest = async () => { confirmed.push(1); return true; };
+  const responses = [
+    { ok: false, status: 409, json: async () => ({ error: { code: "insufficient_memory", message: "需 103 GB，可用 60 GB" } }) },
+    { ok: true, status: 200, json: async () => ({ job_id: 1, status: "running" }) },
+  ];
+  const previous = globalThis.fetch; const calls = [];
+  globalThis.fetch = async (url, options = {}) => { calls.push({ url, options }); return responses.shift(); };
+  try {
+    createVideoPane(video, { confirm: globalThis.__confirmForTest });
+    await video.parts["video-start"].click();
+    assert.equal(confirmed.length, 1);
+    assert.equal(JSON.parse(calls[1].options.body).force, true);
+  } finally { globalThis.fetch = previous; delete globalThis.__confirmForTest; }
+});
+
 test("媒体面板在其他重作业运行时禁用开始按钮，并在结束后恢复", () => {
   const video = pane({ "video-prompt": "海浪", "video-size": "512x288", "video-frames": "25", "video-steps": "8", "video-start": "" });
   const music = pane({ "music-caption": "轻快", "music-lyrics": "la", "music-duration": "30", "music-start": "" });

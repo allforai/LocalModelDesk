@@ -51,7 +51,7 @@ class MediaService:
 
     def start_video_job(self, *, prompt, width, height, frames, steps,
                         mode="text", first_frame=None, last_frame=None, ref_video=None,
-                        use_audio=True) -> dict:
+                        use_audio=True, force=False) -> dict:
         _nonempty("prompt", prompt)
         for name, value in (("width", width), ("height", height), ("frames", frames), ("steps", steps)):
             _positive_int(name, value)
@@ -75,15 +75,15 @@ class MediaService:
         params = {"prompt": prompt, "width": width, "height": height, "frames": frames, "steps": steps}
         if mode != "text":
             params.update(mode=mode, use_audio=use_audio, **{key: value[0] for key, value in assets.items()})
-        return self._start("video", params)
+        return self._start("video", params, force=force)
 
-    def start_music_job(self, *, caption, lyrics, duration) -> dict:
+    def start_music_job(self, *, caption, lyrics, duration, force=False) -> dict:
         _nonempty("caption", caption)
         if not isinstance(lyrics, str) or isinstance(duration, bool) or not isinstance(duration, (int, float)) or duration <= 0:
             raise MediaError("invalid_params", "lyrics must be a string and duration must be positive", 400)
-        return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration})
+        return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration}, force=force)
 
-    def _start(self, kind: str, params: dict) -> dict:
+    def _start(self, kind: str, params: dict, *, force: bool = False) -> dict:
         with self._lock:
             if self._state["status"] == "running":
                 raise MediaError("media_busy", "a media job is already running", 409)
@@ -93,11 +93,20 @@ class MediaService:
                 raise MediaError("capability_missing", f"{cap_key} is unavailable: {getattr(cap, 'detail', '')}", 503)
             roots = self._resolve_paths()
             catalog_key = "h3" if kind == "video" else "music3"
-            model_root = Path(roots.models_root) / {e.key: e.relpath for e in self._list_catalog()}[catalog_key]
-            pre = self._arbiter.can_start_heavy(kind)
+            catalog = list(self._list_catalog())
+            model_root = Path(roots.models_root) / {e.key: e.relpath for e in catalog}[catalog_key]
+            estimated = int({e.key: e.gb for e in catalog}[catalog_key] * 1024 ** 3)
+            pre = self._arbiter.can_start_heavy(kind, estimated_bytes=estimated)
             if not pre.get("ok"):
                 reason = pre.get("reason") or {}
                 raise MediaError(reason.get("code", "refused"), reason.get("message", "arbiter refused"), 409, reason)
+            warning = pre.get("memory_warning")
+            if warning and not force:
+                required = warning["required_bytes"] / 1024 ** 3
+                available = warning["available_bytes"] / 1024 ** 3
+                raise MediaError("insufficient_memory",
+                                  f"生成约需 {required:.1f} GiB 内存，当前可用 {available:.1f} GiB，可能失败或拖慢整机",
+                                  409, warning)
             job_id = self._state["job_id"] + 1
             grant = self._arbiter.acquire_heavy(kind, f"job-{job_id}")
             if not grant.get("ok"):
