@@ -24,7 +24,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       guard let self, self.status.needsSetup else { return }
       self.refreshConfig()
     }
-    windowController.onRetry = { [weak self] in self?.startServer() }
+    windowController.onRetry = { [weak self] in
+      guard let self else { return }
+      _ = self.server.terminateEmbeddedServer()   // a hung child would otherwise trip portConflict
+      self.startServer()
+    }
     poller.onUpdate = { [weak self] result in self?.handlePoll(result) }
     status.server = .starting
     statusController.render(status)
@@ -89,10 +93,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     case .failure(let error):
       status.desk = nil
       status.lastPollError = error.message
-      if poller.consecutiveFailures >= 3 && !server.isChildRunning {
+      switch pollFailureAction(consecutiveFailures: poller.consecutiveFailures,
+                               childRunning: server.isChildRunning) {
+      case .keepWaiting:
+        break
+      case .serviceExited:
         status.server = .failed(.spawnFailed("服务已退出"))
         windowController.showErrorPage(
           reason: "台面服务意外退出（连续 \(poller.consecutiveFailures) 次状态拉取失败）。",
+          logPath: DeskPaths.serverStdoutLogURL.path)
+        poller.stop()
+      case .serviceUnresponsive:
+        status.server = .failed(.spawnFailed("服务无响应"))
+        windowController.showErrorPage(
+          reason: "台面服务无响应（连续 \(poller.consecutiveFailures) 次状态拉取超时）。点「重试」将重启服务。",
           logPath: DeskPaths.serverStdoutLogURL.path)
         poller.stop()
       }

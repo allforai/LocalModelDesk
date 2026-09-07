@@ -113,7 +113,13 @@ final class ServerController {
       }
     }
 
-    let portFree = PortGuard.ensureFree(port: spec.port, grace: 2.0)
+    let portFree: Bool
+    if wasOwned {
+      portFree = PortGuard.ensureFree(port: spec.port, grace: 2.0)
+    } else {
+      // Attached: the listener belongs to someone else; observe, never signal.
+      portFree = PortGuard.listeners(onPort: spec.port).isEmpty
+    }
     let llmPortFree = wasOwned && spec.llmPort != nil
       ? PortGuard.listeners(onPort: spec.llmPort!).isEmpty
       : nil

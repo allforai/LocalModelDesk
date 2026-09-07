@@ -67,3 +67,29 @@ func menuTitle(for status: ShellStatus) -> String {
   default: return "状态不可读"
   }
 }
+
+/// Dark, themed error page shown in place of ui:deskShell when the service is down or unresponsive.
+func errorPageHTML(reason: String, logPath: String) -> String {
+  func esc(_ s: String) -> String {
+    s.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;")
+     .replacingOccurrences(of: ">", with: "&gt;").replacingOccurrences(of: "\"", with: "&quot;")
+  }
+  return """
+  <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>LocalModelDesk</title>
+  <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#14161a;color:#e7e9ee;font:14px/1.6 -apple-system,"PingFang SC",sans-serif}
+  main{max-width:36em;padding:32px;background:#1d2026;border:1px solid #2c313a;border-radius:8px}h1{font-size:20px;margin:0 0 12px}
+  code{font:13px ui-monospace,Menlo,monospace;color:#9aa3b2;word-break:break-all}
+  button{margin-top:16px;padding:8px 12px;border-radius:6px;border:1px solid #4f8cff;background:#4f8cff;color:#fff;font:inherit;cursor:pointer}</style></head>
+  <body><main><h1>服务未运行</h1><p id="reason">\(esc(reason))</p><p>日志：<code>\(esc(logPath))</code></p>
+  <button onclick="window.webkit.messageHandlers.shellRetry.postMessage('retry')">重试</button></main></body></html>
+  """
+}
+
+enum PollFailureAction: Equatable { case keepWaiting, serviceExited, serviceUnresponsive }
+
+/// After `threshold` consecutive poll failures the shell must surface a problem whether or not
+/// the child is alive: a hung service is as unusable as an exited one (cross-exam G19/G31).
+func pollFailureAction(consecutiveFailures: Int, childRunning: Bool, threshold: Int = 3) -> PollFailureAction {
+  if consecutiveFailures < threshold { return .keepWaiting }
+  return childRunning ? .serviceUnresponsive : .serviceExited
+}
