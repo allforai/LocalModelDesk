@@ -127,6 +127,13 @@ test("音乐面板空歌词时本地拦截并提示", async () => {
   } finally { globalThis.fetch = previous; }
 });
 
+test("音乐面板：风格描述留空时前端直接提示，不发请求", async () => {
+  const music = pane({ "music-caption": "   ", "music-lyrics": "一二三", "music-duration": "10", "music-start": "" });
+  createMusicPane(music, {});
+  await withFetch([], async (calls) => { await music.parts["music-start"].click(); assert.equal(calls.length, 0); });
+  assert.equal(music.parts["music-error"].textContent, "请填写风格描述");
+});
+
 test("回到面板时 sync 会补画已完成作业的播放器，并显示已用时长", async () => {
   const video = pane({ "video-prompt": "", "video-size": "512x288", "video-frames": "49", "video-steps": "16", "video-start": "" });
   const p = createVideoPane(video, {});

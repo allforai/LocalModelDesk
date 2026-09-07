@@ -37,7 +37,7 @@ def test_media_routes_adapter_and_error_envelopes(tmp_path):
     ]
 
     status, payload = routes[("POST", "/api/media/video")]({"prompt": ""}, {})
-    assert (status, payload["error"]["code"]) == (400, "invalid_params")
+    assert (status, payload["error"]["code"]) == (400, "prompt_required")
     assert set(payload["error"]) == {"code", "message", "detail"}
 
     service._probe_capabilities = lambda: {}
