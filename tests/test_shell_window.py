@@ -94,15 +94,22 @@ def test_cmd_w_keeps_app_and_server_alive(shell_app):
     assert shell_app.fake.poll() is None
 
 
-def test_cmd_q_terminates_app_and_service(shell_app):
-    """R-shell-04: Quit exits App and leaves no listener in attach mode."""
+def test_cmd_q_exits_app_and_spares_the_attached_service(shell_app):
+    """R-shell-04 + G20: Quit exits App; a service it did not start survives.
+
+    R-shell-04 only obliges the shell to terminate the *embedded* service — that
+    path is covered by test_shell_lifecycle.test_owned_sigterm_reaps_child_family_and_ports.
+    Here the listener belongs to a foreign process (the fake service the fixture
+    starts), so quitting must observe it, never signal it.
+    """
     wait_for_window(shell_app.proc.pid)
     hotkey(shell_app.proc.pid, "CmdOrCtrl+Q")
     deadline = time.time() + 30
     while time.time() < deadline and shell_app.proc.poll() is None:
         time.sleep(0.5)
     assert shell_app.proc.poll() is not None, "App must exit after Cmd+Q"
-    assert not port_listening(shell_app.port), "attached Desk listener must be gone after quit"
+    assert shell_app.fake.poll() is None, "attached foreign service must survive quit"
+    assert port_listening(shell_app.port), "foreign listener must still be serving"
 
 
 def test_server_death_shows_error_text(shell_app):

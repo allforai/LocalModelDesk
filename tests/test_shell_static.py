@@ -87,7 +87,13 @@ def test_main_window_error_page_mechanism():
     assert "loadHTMLString" in text
     assert "shellRetry" in text
     assert "didFailProvisionalNavigation" in text
-    assert "服务未运行" in text
+    # The page template itself lives in ShellStatus.swift so the headless harness
+    # can render it (Plan A task 20); MainWindowController only loads it.
+    assert "errorPageHTML(reason:" in text
+    template = _read("ShellStatus.swift")
+    assert "func errorPageHTML(reason: String, logPath: String) -> String" in template
+    assert "服务未运行" in template
+    assert "shellRetry" in template
 
 
 def test_main_window_registers_retry_bridge_before_webview_creation():
