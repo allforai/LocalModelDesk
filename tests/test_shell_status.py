@@ -36,3 +36,17 @@ def test_menu_title(fixture, expected):
                           capture_output=True, text=True, timeout=30)
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.strip() == expected
+
+
+@pytest.mark.parametrize("failures,child,expected", [
+    (1, "true", "keepWaiting"),
+    (2, "false", "keepWaiting"),
+    (3, "false", "serviceExited"),
+    (3, "true", "serviceUnresponsive"),
+    (7, "true", "serviceUnresponsive"),
+])
+def test_poll_failure_action(failures, child, expected):
+    proc = subprocess.run([harness_path(), "poll-failure", str(failures), child],
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == expected

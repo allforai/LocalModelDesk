@@ -67,3 +67,12 @@ func menuTitle(for status: ShellStatus) -> String {
   default: return "状态不可读"
   }
 }
+
+enum PollFailureAction: Equatable { case keepWaiting, serviceExited, serviceUnresponsive }
+
+/// After `threshold` consecutive poll failures the shell must surface a problem whether or not
+/// the child is alive: a hung service is as unusable as an exited one (cross-exam G19/G31).
+func pollFailureAction(consecutiveFailures: Int, childRunning: Bool, threshold: Int = 3) -> PollFailureAction {
+  if consecutiveFailures < threshold { return .keepWaiting }
+  return childRunning ? .serviceUnresponsive : .serviceExited
+}
