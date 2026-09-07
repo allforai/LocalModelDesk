@@ -137,19 +137,20 @@ def test_owned_sigterm_reaps_child_family_and_ports(tmp_path):
         subprocess.run(["pkill", "-f", str(launcher)], capture_output=True)
 
 
-def test_attached_sigterm_reaps_listener(tmp_path):
+def test_attached_sigterm_leaves_foreign_service_alive(tmp_path):
+    """G20: quitting an attached shell must not reap a service it did not start."""
     port = free_port()
     fake = start_fake_desk(port)
     harness = run_harness("--port", str(port), "--log", str(tmp_path / "server.log"))
     try:
         assert read_line(harness) == "ATTACHED"
         harness.send_signal(signal.SIGTERM)
-        assert harness.wait(timeout=60) == 0
+        harness.wait(timeout=60)  # attached mode leaves the foreign listener up: port_free is False
         report = json.loads(read_line(harness))
-        assert report["port_free"] is True
+        assert report["port_free"] is False
         assert report["llm_port_free"] is None
-        assert not port_listening(port)
-        fake.wait(timeout=10)
+        assert fake.poll() is None, "attached service was killed on quit"
+        assert port_listening(port)
     finally:
         for proc in (harness, fake):
             if proc.poll() is None:
