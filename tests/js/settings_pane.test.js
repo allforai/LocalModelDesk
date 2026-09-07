@@ -46,7 +46,10 @@ test("settings 面板两步保存，并以 apply 后的实测状态、URL 与无
     assert.equal(controls.get("[data-settings-openai-url]").textContent, "http://<本机局域网地址>:8770/v1");
     assert.equal(controls.get("[data-settings-anthropic-url]").textContent, "http://<本机局域网地址>:8770");
     assert.match(controls.get("[data-settings-lan-note]").textContent, /局域网 IP/);
-    assert.match(controls.get("[data-settings-auth-warning]").textContent, /无鉴权/);
+    // 未监听（含绑定失败）时不展示无鉴权警示与 base URL 区（G30 G27）。
+    assert.equal(controls.get("[data-settings-auth-warning]").hidden, true);
+    assert.equal(controls.get("[data-settings-openai-url]").hidden, true);
+    assert.equal(controls.get("[data-settings-auth-warning]").textContent, "");
 
     controls.get("[data-settings-enabled]").checked = false;
     controls.get("[data-settings-host]").value = " 127.0.0.1 ";
@@ -120,3 +123,40 @@ test("settings 面板可扫描、应用并重新进入模型目录设置", async
     assert.ok(calls.some(([path, method, body]) => path === "/api/config" && method === "PUT" && body === '{"first_run_done":false}'));
   } finally { globalThis.fetch = oldFetch; }
 });
+
+test("端口越界时不发请求并给出中文错误", async () => {
+  const { createSettingsPane } = await import("../../desk/static/js/panes/settings.js");
+  const { root, controls } = makePane();
+  const previous = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => { calls += 1; return new Response("{}", { status: 200 }); };
+  try {
+    const pane = createSettingsPane(root);
+    controls.get("[data-settings-port]").value = "99999";
+    await controls.get("[data-settings-save]").click();
+    assert.equal(calls, 0);
+    assert.equal(controls.get("[data-settings-error]").textContent, "端口须在 1 到 65535 之间");
+  } finally { globalThis.fetch = previous; }
+});
+
+test("未监听时隐藏无鉴权警告与 base URL 区", async () => {
+  const { createSettingsPane } = await import("../../desk/static/js/panes/settings.js");
+  const { root, controls } = makePane();
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (path, options = {}) => new Response(JSON.stringify(
+    path === "/api/config"
+      ? { models_root: "/m" }
+      : {
+          config: { enabled: false, host: "0.0.0.0", port: 8770 },
+          status: {
+            enabled: false, listening: false, host: "0.0.0.0", port: 8770,
+            lan_host: "192.168.1.2", auth: "none", last_error: null,
+          },
+        }), { status: 200 });
+  try {
+    const pane = createSettingsPane(root);
+    await pane.init();
+    assert.equal(controls.get("[data-settings-auth-warning]").hidden, true);
+    assert.equal(controls.get("[data-settings-openai-url]").hidden, true);
+    assert.equal(controls.get("[data-settings-copy-openai]").hidden, true);
+  } finally { globalThis.fetch = previous; }});

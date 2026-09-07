@@ -17,3 +17,9 @@ test("0.0.0.0：占位符 + 附注", () => {
   assert.equal(u.anthropic, "http://<本机局域网地址>:8770");
   assert.ok(u.note.includes("局域网 IP"));
 });
+
+test("0.0.0.0 用后端给的局域网地址，而不是占位符", () => {
+  const urls = baseUrls({ host: "0.0.0.0", port: 8770, lanHost: "192.168.31.68" });
+  assert.equal(urls.openai, "http://192.168.31.68:8770/v1");
+  assert.equal(urls.note, "监听所有网卡；其他设备用 192.168.31.68 访问，本机也可用 127.0.0.1");
+});
