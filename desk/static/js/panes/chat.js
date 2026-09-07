@@ -11,7 +11,7 @@ import { addIcon } from "../icons.js";
 import { renderMarkdown } from "../pure/markdown.js";
 import { formatTimestamp } from "../pure/format.js";
 
-export function createChatPane(root) {
+export function createChatPane(root, ctx = {}) {
   const doc = root.ownerDocument;
   const els = {
     sessionList: root.querySelector("[data-session-list]"),
@@ -32,6 +32,8 @@ export function createChatPane(root) {
   let streaming = false;
   let sessionsTick = 0;
   let modelName = "";
+  let lastLoadedKey = null;
+  let llmStatus = "idle";
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
   const current = () => sessions.find((s) => s.id === currentId) ?? null;
@@ -52,7 +54,7 @@ export function createChatPane(root) {
         : `${entry.gb} GiB（目录）`;
       const option = doc.createElement("option");
       option.value = entry.key;
-      const marks = [entry.params, entry.quant, entry.vision ? "视觉" : null].filter(Boolean).join(" · ");
+      const marks = [entry.params, entry.name?.includes(entry.quant ?? " ") ? null : entry.quant, entry.vision ? "视觉" : null].filter(Boolean).join(" · ");
       option.textContent = `${entry.name} · ${sizeText}${marks ? ` · ${marks}` : ""}${ready ? "" : "（未下载/不完整）"}`;
       option.disabled = !ready;
       els.modelSelect.append(option);
@@ -63,16 +65,21 @@ export function createChatPane(root) {
 
   function renderLlm(payload) {
     const state = payload.state;
+    llmStatus = state.status;
     els.modelState.dataset.status = state.status;
     if (state.status === "idle") els.modelState.textContent = "未加载";
     else if (state.status === "loading") els.modelState.textContent = `加载中：${state.model_key ?? ""}`;
     else if (state.status === "loaded") {
       els.modelState.textContent = `已加载：${payload.loaded_model?.name ?? state.model_key}`;
-      if (state.model_key) els.modelSelect.value = state.model_key;
+      if (state.model_key && state.model_key !== lastLoadedKey) { els.modelSelect.value = state.model_key; lastLoadedKey = state.model_key; }
+    } else if (state.error?.code === "evicted") {
+      els.modelState.textContent = "已被媒体任务让出内存，可重新加载";
     } else {
       const tail = state.error?.log_tail ? `\n${state.error.log_tail}` : "";
       els.modelState.textContent = `加载失败（${state.error?.code ?? "?"}）：${state.error?.message ?? ""}${tail}`;
     }
+    if (state.status !== "loaded") lastLoadedKey = state.status === "loading" ? lastLoadedKey : null;
+    els.unloadBtn.disabled = state.status === "idle" || state.status === "loading";
     modelName = payload.loaded_model?.name ?? state.model_key ?? modelName;
   }
 
@@ -89,10 +96,20 @@ export function createChatPane(root) {
     setError("");
     const entry = catalog.find((item) => item.key === els.modelSelect.value);
     if (!entry) return;
+    const confirm = ctx.confirm ?? ((options) => confirmDialog(doc, options));
     try {
+      if (llmStatus === "loaded" && lastLoadedKey && lastLoadedKey !== entry.key) {
+        const from = catalog.find((item) => item.key === lastLoadedKey)?.name ?? lastLoadedKey;
+        const go = await confirm({ title: "换模型", message: `将先卸载「${from}」，再加载「${entry.name}」。`, confirmLabel: "换模型", danger: false });
+        if (!go) return;
+        await api.unloadLlm();
+        renderLlm(await api.llmStatus());
+      } else if (llmStatus === "loaded" && lastLoadedKey === entry.key) {
+        return;
+      }
       const snapshot = await api.memorySnapshot();
       const { warn, message } = needsWarning(Math.round(entry.gb * 1024 ** 3), snapshot);
-      if (warn && !await confirmDialog(doc, { title: "内存警告", message, confirmLabel: "仍要加载", danger: false })) return;
+      if (warn && !await confirm({ title: "内存警告", message, confirmLabel: "仍要加载", danger: false })) return;
       await api.loadLlm(entry.key);
       await pollUntilSettled();
     } catch (error) { setError(error.message); }
@@ -106,7 +123,7 @@ export function createChatPane(root) {
     } catch (error) { setError(error.message); }
   }
 
-  function messageNode(message, live = false) {
+  function messageNode(message, live = false, fallbackName = "") {
     const wrap = doc.createElement("div");
     wrap.className = `msg msg-${message.role}`;
     if (message.role === "user") {
@@ -123,7 +140,7 @@ export function createChatPane(root) {
     const dot = doc.createElement("span");
     dot.className = "dot";
     const name = doc.createElement("span");
-    name.textContent = message.model ?? (modelName || "模型");
+    name.textContent = message.model || fallbackName || modelName || "模型";
     who.append(dot, name);
     const details = doc.createElement("details");
     details.className = "thinking";
@@ -134,7 +151,14 @@ export function createChatPane(root) {
     details.append(summary, reasoningEl);
     const contentEl = doc.createElement("div");
     contentEl.className = "md";
-    contentEl.append(renderMarkdown(doc, message.content ?? ""));
+    if (!live && !(message.content ?? "").trim()) {
+      const empty = doc.createElement("p");
+      empty.className = "empty-answer";
+      empty.textContent = "（这条回答没有内容）";
+      contentEl.append(empty);
+    } else {
+      contentEl.append(renderMarkdown(doc, message.content ?? ""));
+    }
     const errorEl = doc.createElement("p");
     errorEl.className = "inline-error";
     wrap.append(who, details, contentEl, errorEl);
@@ -145,7 +169,7 @@ export function createChatPane(root) {
     return { wrap, details, summary, reasoningEl, contentEl, errorEl };
   }
 
-  function showMessages(list) {
+  function showMessages(list, fallbackModelName = "") {
     els.messages.replaceChildren();
     if (!list.length) {
       const empty = doc.createElement("p");
@@ -154,11 +178,13 @@ export function createChatPane(root) {
       els.messages.append(empty);
       return;
     }
-    for (const message of list) messageNode(message);
+    for (const message of list) messageNode(message, false, fallbackModelName);
   }
 
+  const sessionModelName = (session) => catalog.find((item) => item.key === session?.model)?.name ?? session?.model ?? "";
+
   function renderMessages() {
-    showMessages(current()?.messages ?? []);
+    showMessages(current()?.messages ?? [], sessionModelName(current()));
   }
 
   async function refreshSessions(selectId) {

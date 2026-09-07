@@ -57,6 +57,8 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .composer{display:flex;gap:var(--gap);align-items:flex-end;max-width:820px;width:100%;margin:0 auto}
 .composer textarea{flex:1;background:var(--panel);border-radius:16px;padding:12px 16px}
 .messages[data-streaming="1"]~.composer textarea{opacity:.7}
+[data-model-state][data-status="loaded"]{color:var(--ok)}[data-model-state][data-status="error"]{color:var(--busy)}
+.empty-answer{color:var(--muted);font-style:italic}
 
 /* 6a. cards + session list */
 .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:16px}
