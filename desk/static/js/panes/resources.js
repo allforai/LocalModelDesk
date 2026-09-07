@@ -18,11 +18,20 @@ export function createResourcesPane(root) {
     disk: root.querySelector("[data-res-disk]"),
   };
 
-  async function refresh() {
+  function refreshLabel() {
+    return els.refreshBtn?.querySelector?.("[data-label]") ?? els.refreshBtn;
+  }
+
+  async function refresh({ revalidate = false } = {}) {
     if (els.error) els.error.textContent = "";
+    if (revalidate && els.refreshBtn) {
+      els.refreshBtn.disabled = true;
+      const label = refreshLabel();
+      if (label) label.textContent = "校验中…";
+    }
     try {
       const [catalogPayload, statusPayload, disk] = await Promise.all([
-        api.listCatalog(), api.verifyAllModels(), api.diskUsage(),
+        api.listCatalog(), api.verifyAllModels(revalidate), api.diskUsage(),
       ]);
       const catalog = catalogPayload.models ?? catalogPayload;
       const statuses = statusPayload.models ?? [];
@@ -30,6 +39,12 @@ export function createResourcesPane(root) {
       render(catalog, statuses, downloadProgress, disk ?? statusPayload.disk);
     } catch (err) {
       if (els.error) els.error.textContent = err.message;
+    } finally {
+      if (revalidate && els.refreshBtn) {
+        els.refreshBtn.disabled = false;
+        const label = refreshLabel();
+        if (label) label.textContent = "重新校验";
+      }
     }
   }
 
@@ -117,6 +132,6 @@ export function createResourcesPane(root) {
     return details;
   }
 
-  els.refreshBtn?.addEventListener("click", refresh);
-  return { refresh };
+  els.refreshBtn?.addEventListener("click", () => refresh({ revalidate: true }));
+  return { refresh: () => refresh() };
 }

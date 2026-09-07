@@ -85,3 +85,38 @@ test("resources 面板将下载、续传、取消和删除操作路由到资源 
     ["/api/resources/download/cancel", undefined],
   ]);
 });
+
+class Element { constructor(tag = "div") { this.tagName = tag; this.dataset = {}; this.textContent = ""; this.children = []; this.listeners = {}; this.disabled = false; this.className = ""; this.title = ""; this.hidden = false; }
+  append(...n) { this.children.push(...n); } replaceChildren(...n) { this.children = n; }
+  addEventListener(t, l) { this.listeners[t] = l; } click() { return this.listeners.click?.(); } }
+function makePane() {
+  const parts = { "res-refresh": new Element("button"), "res-list": new Element("ul"), "res-error": new Element("p"), "res-disk": new Element("span") };
+  return { parts, root: { ownerDocument: { body: new Element("body"), createElement: (t) => new Element(t) }, querySelector: (s) => parts[s.match(/^\[data-([\w-]+)\]$/)[1]] } };
+}
+
+test("点『重新校验』发 refresh=1，按钮期间禁用并显示校验中", async () => {
+  const { root, parts } = makePane();
+  const urls = []; const releases = [];
+  const previous = globalThis.fetch;
+  globalThis.fetch = (url) => {
+    urls.push(String(url));
+    return new Promise((resolve) => {
+      releases.push(() => resolve({ ok: true, status: 200, json: async () => (String(url).includes("catalog") ? [] : { models: [], disk: { free_bytes: 1, total_bytes: 2 } }) }));
+    });
+  };
+  try {
+    createResourcesPane(root);
+    const clicking = parts["res-refresh"].click();
+    // The refresh button, per Task 16's UI note, wraps its label in a
+    // `[data-label]` span; the test double has no querySelector so the
+    // implementation falls back to the button's own textContent.
+    assert.equal(parts["res-refresh"].disabled, true);
+    assert.equal(parts["res-refresh"].textContent, "校验中…");
+    while (releases.length < 4) await Promise.resolve();
+    for (const release of releases) release();
+    await clicking;
+    assert.ok(urls.some((u) => u.includes("/api/resources/status?refresh=1")));
+    assert.equal(parts["res-refresh"].disabled, false);
+    assert.equal(parts["res-refresh"].textContent, "重新校验");
+  } finally { globalThis.fetch = previous; }
+});
