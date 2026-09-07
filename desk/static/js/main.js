@@ -16,7 +16,7 @@ import { isDrawerCloseKey } from "./pure/drawer.js";
 
 const $ = (selector) => document.querySelector(selector);
 const store = createStore({ activeTab: "chat" });
-let panes; let statusbar; let settings; let failures = 0;
+let panes; let statusbar; let settings; let failures = 0; let modelNames = {};
 let jobActive = false; let jobLogFrom = 0; let lastJobId = null;
 
 function fatal(message) { const el = $("#fatal"); el.hidden = false; el.textContent = message; }
@@ -38,6 +38,7 @@ function enterDesk() {
   setDeskShellHidden(false);
   if (!panes) {
     statusbar = createStatusBar($("#statusbar"));
+    api.listCatalog().then((entries) => { modelNames = Object.fromEntries((entries.models ?? entries).map((e) => [e.key, e.name])); }).catch(() => {});
     const onStarted = (job) => { jobActive = job.status === "running"; lastJobId = job.job_id ?? null; jobLogFrom = job.next_log_from ?? 0; };
     panes = { chat:createChatPane($("#pane-chat")), video:createVideoPane($("#pane-video"), { onStarted }), music:createMusicPane($("#pane-music"), { onStarted }), resources:createResourcesPane($("#pane-resources")), library:createLibraryPane($("#pane-library"), { applyFill }) };
     settings = createSettingsPane($("#pane-settings"), { onReset: () => globalThis.location.reload() });
@@ -78,7 +79,8 @@ function applyFill(plan) { if (plan) { panes[plan.pane].fill(plan.fields); showT
 function applyHeavyAvailability(deskState) {
   const llm = heavyAvailability(deskState, "llm");
   const media = heavyAvailability(deskState, "media");
-  panes.chat.setHeavyAllowed(llm.allowed, llm.reason);
+  const llmAllowed = llm.allowed || llm.code === "llm_already_held";
+  panes.chat.setHeavyAllowed(llmAllowed, llmAllowed ? "" : llm.reason);
   panes.video.setHeavyAllowed(media.allowed, media.reason);
   panes.music.setHeavyAllowed(media.allowed, media.reason);
 }
@@ -95,7 +97,7 @@ async function tick() {
   try {
     const [deskState, memory, llm] = await Promise.all([api.deskState(), api.memorySnapshot(), api.llmStatus()]);
     const download = await panes.resources.refresh();
-    failures = 0; statusbar.offline(false); statusbar.update(deskState, memory, download); applyHeavyAvailability(deskState); store.set({ deskState, memory });
+    failures = 0; statusbar.offline(false); statusbar.update(deskState, memory, download, modelNames); applyHeavyAvailability(deskState); store.set({ deskState, memory });
     panes.chat.applyLlmStatus(llm);
     await panes.chat.refreshSessionsIfStale();
     if (deskState.media_busy) jobActive = true;

@@ -54,6 +54,18 @@ export function addIcon(control, name, doc = control?.ownerDocument ?? globalThi
   return control;
 }
 
+export function setIcon(control, name, doc = control?.ownerDocument ?? globalThis.document) {
+  if (!control || !doc) return control;
+  const fresh = iconNode(doc, name);
+  fresh.className = fresh.className ? fresh.className : "icon";
+  if (fresh.setAttribute) fresh.setAttribute("class", `icon icon-${name}`); else fresh.className = `icon icon-${name}`;
+  const existing = control.children ? [...control.children].find((child) => String(child.className ?? "").includes("icon")) : control.querySelector?.(".icon");
+  if (existing && control.replaceChild) control.replaceChild(fresh, existing);
+  else if (existing && control.children) control.children[control.children.indexOf(existing)] = fresh;
+  else { control.append(fresh); control.classList?.add?.("with-icon"); }
+  return control;
+}
+
 export function hydrateIcons(root = document) {
   for (const control of root.querySelectorAll("[data-icon-name]")) {
     addIcon(control, control.dataset.iconName);

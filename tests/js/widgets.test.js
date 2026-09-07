@@ -98,3 +98,19 @@ test("confirmDialog 渲染文案，确认或取消后移除弹层并返回选择
   assert.equal(await confirmed, true);
   assert.equal(doc.body.children.length, 0);
 });
+
+test("statusbar 写 data-ok 并换图标（F1）", () => {
+  const parts = { mem: new FakeElement(), holder: new FakeElement(), media: new FakeElement(), next: new FakeElement() };
+  const nextPart = new FakeElement(); nextPart.append(parts.next);
+  const icon = new FakeElement("svg"); icon.className = "icon"; nextPart.children.unshift(icon);
+  const root = new FakeElement();
+  root.ownerDocument = { createElement: (tag) => new FakeElement(tag) };
+  root.querySelector = (selector) => ({ "[data-mem]": parts.mem, "[data-holder]": parts.holder, "[data-media]": parts.media, "[data-next]": parts.next, ".status-next": nextPart })[selector];
+  const bar = createStatusBar(root);
+  bar.update({ holder: { kind: "video", label: "1" }, media_busy: true, can_start: { ok: false, reason: "media_busy" } }, { total_bytes: 2, used_bytes: 1, available_bytes: 1 });
+  assert.equal(nextPart.dataset.ok, "0");
+  assert.equal(nextPart.children[0].className, "icon icon-x");
+  bar.update({ holder: null, media_busy: false, can_start: { ok: true } }, { total_bytes: 2, used_bytes: 1, available_bytes: 1 });
+  assert.equal(nextPart.dataset.ok, "1");
+  assert.equal(nextPart.children[0].className, "icon icon-check");
+});
