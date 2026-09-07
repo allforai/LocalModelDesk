@@ -20,7 +20,7 @@ export function createVideoPane(root, ctx = {}) {
     const option = root.ownerDocument.createElement("option");
     option.value = String(value); option.textContent = label; els.frames.append(option);
   }
-  const jobView = createJobView(root, { mediaTag: "video" });
+  const jobView = createJobView(root, { mediaTag: "video", kind: "video" });
   const mode = root.querySelector("[data-video-mode]");
   const uploadStatus = root.querySelector("[data-video-upload-status]");
   let submitting = false, heavyAllowed = true, blockedReason = "";

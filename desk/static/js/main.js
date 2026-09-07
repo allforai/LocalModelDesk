@@ -88,8 +88,9 @@ function applyHeavyAvailability(deskState) {
 async function tickJob() {
   const payload = await api.jobStatus(jobLogFrom, lastJobId);
   const pane = payload.kind === "music" ? panes.music : panes.video;
-  if (payload.job_id !== lastJobId) { pane.jobView.reset(); lastJobId = payload.job_id; jobLogFrom = 0; }
-  pane.jobView.apply(payload); jobLogFrom = payload.next_log_from ?? jobLogFrom;
+  const changed = payload.job_id !== lastJobId;
+  if (changed) { lastJobId = payload.job_id; jobLogFrom = 0; }
+  pane.jobView.apply(payload, { replaceLog: changed }); jobLogFrom = payload.next_log_from ?? jobLogFrom;
   if (payload.status !== "running") jobActive = false;
 }
 

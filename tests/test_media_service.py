@@ -41,6 +41,16 @@ def test_initial_job_state_shape(tmp_path):
         "log": "", "next_log_from": 0, "log_len": 0, "log_truncated": False, "elapsed_s": None}
 
 
+def test_missing_caption_and_prompt_have_chinese_codes(tmp_path):
+    service = make_service(tmp_path)[0]
+    with pytest.raises(MediaError) as exc:
+        service.start_music_job(caption="  ", lyrics="la", duration=10)
+    assert (exc.value.code, exc.value.message, exc.value.http_status) == ("caption_required", "请填写风格描述", 400)
+    with pytest.raises(MediaError) as exc:
+        service.start_video_job(prompt="", width=512, height=288, frames=49, steps=16)
+    assert (exc.value.code, exc.value.message) == ("prompt_required", "请填写视频提示词")
+
+
 def test_video_job_refuses_when_memory_warning_unless_forced(service_factory):
     warning = {"code": "insufficient_memory", "required_bytes": 10, "available_bytes": 1,
                "message": "model requires about 0.0 GB; 0.0 GB is currently available"}
@@ -167,7 +177,6 @@ class TestStartDiscipline:
     VALID = dict(prompt="p", width=512, height=288, frames=73, steps=10)
 
     @pytest.mark.parametrize("bad", [
-        dict(prompt=""), dict(prompt="   "), dict(prompt=None),
         dict(width=0), dict(width=-1), dict(width="512"), dict(width=True),
         dict(height=0), dict(frames=0), dict(steps=0),
     ])
@@ -181,8 +190,20 @@ class TestStartDiscipline:
         assert deps.executor.spawned == []
         assert service.job_status()["status"] == "idle"
 
+    @pytest.mark.parametrize("bad", [dict(prompt=""), dict(prompt="   "), dict(prompt=None)])
+    def test_empty_prompt_is_prompt_required_in_chinese(self, tmp_path, bad):
+        service, deps = make_service(tmp_path)
+        with pytest.raises(MediaError) as err:
+            service.start_video_job(**{**self.VALID, **bad})
+        assert err.value.code == "prompt_required"
+        assert err.value.message == "请填写视频提示词"
+        assert err.value.http_status == 400
+        assert deps.arbiter.acquired == []
+        assert deps.executor.spawned == []
+        assert service.job_status()["status"] == "idle"
+
     @pytest.mark.parametrize("bad", [
-        dict(caption=""), dict(caption=None), dict(lyrics=None),
+        dict(lyrics=None),
         dict(duration=0), dict(duration=-3.0), dict(duration="30"),
     ])
     def test_invalid_music_params_never_spawns(self, tmp_path, bad):
@@ -191,6 +212,17 @@ class TestStartDiscipline:
         with pytest.raises(MediaError) as err:
             service.start_music_job(**{**valid, **bad})
         assert err.value.code == "invalid_params"
+        assert err.value.http_status == 400
+        assert deps.executor.spawned == []
+
+    @pytest.mark.parametrize("bad", [dict(caption=""), dict(caption=None)])
+    def test_empty_caption_is_caption_required_in_chinese(self, tmp_path, bad):
+        service, deps = make_service(tmp_path)
+        valid = dict(caption="c", lyrics="l", duration=30.0)
+        with pytest.raises(MediaError) as err:
+            service.start_music_job(**{**valid, **bad})
+        assert err.value.code == "caption_required"
+        assert err.value.message == "请填写风格描述"
         assert err.value.http_status == 400
         assert deps.executor.spawned == []
 

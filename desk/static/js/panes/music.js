@@ -8,7 +8,7 @@ export function createMusicPane(root, ctx = {}) {
     duration: root.querySelector("[data-music-duration]"), startBtn: root.querySelector("[data-music-start]"),
     error: root.querySelector("[data-music-error]"), hint: root.querySelector("[data-music-hint]"),
   };
-  const jobView = createJobView(root, { mediaTag: "audio" });
+  const jobView = createJobView(root, { mediaTag: "audio", kind: "music" });
   async function submit(params) {
     try { return await api.startMusicJob(params); }
     catch (error) {
@@ -21,6 +21,7 @@ export function createMusicPane(root, ctx = {}) {
   els.startBtn.addEventListener("click", async () => {
     els.error.textContent = "";
     try {
+      if (!els.caption.value.trim()) throw new Error("请填写风格描述");
       if (!els.lyrics.value.trim()) throw new Error("请填写歌词：Music 3 需要歌词才能生成");
       const job = await submit({ caption: els.caption.value, lyrics: els.lyrics.value, duration: Number(els.duration.value) });
       if (!job) return;

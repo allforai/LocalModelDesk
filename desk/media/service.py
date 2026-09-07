@@ -20,9 +20,9 @@ class MediaError(Exception):
         self.code, self.message, self.http_status, self.detail = code, message, http_status, detail or {}
 
 
-def _nonempty(name: str, value: Any) -> None:
+def _nonempty(name: str, value: Any, *, code: str = "invalid_params", message: str | None = None) -> None:
     if not isinstance(value, str) or not value.strip():
-        raise MediaError("invalid_params", f"{name} must be a non-empty string", 400)
+        raise MediaError(code, message or f"{name} must be a non-empty string", 400)
 
 
 def _positive_int(name: str, value: Any) -> None:
@@ -52,7 +52,7 @@ class MediaService:
     def start_video_job(self, *, prompt, width, height, frames, steps,
                         mode="text", first_frame=None, last_frame=None, ref_video=None,
                         use_audio=True, force=False) -> dict:
-        _nonempty("prompt", prompt)
+        _nonempty("prompt", prompt, code="prompt_required", message="请填写视频提示词")
         for name, value in (("width", width), ("height", height), ("frames", frames), ("steps", steps)):
             _positive_int(name, value)
         if mode not in ("text", "image", "reference") or not isinstance(use_audio, bool):
@@ -78,7 +78,7 @@ class MediaService:
         return self._start("video", params, force=force)
 
     def start_music_job(self, *, caption, lyrics, duration, force=False) -> dict:
-        _nonempty("caption", caption)
+        _nonempty("caption", caption, code="caption_required", message="请填写风格描述")
         if not isinstance(lyrics, str) or isinstance(duration, bool) or not isinstance(duration, (int, float)) or duration <= 0:
             raise MediaError("invalid_params", "lyrics must be a string and duration must be positive", 400)
         if not lyrics.strip():
