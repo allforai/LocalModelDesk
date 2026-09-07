@@ -19,7 +19,7 @@ def test_full_journey_makes_zero_requests_to_8767(page, context, tmp_path):
         harness.chat_script.run_to_end()
         pane.locator("[data-chat-input]").fill("零直连旅程")
         pane.get_by_role("button", name="发送").click()
-        expect(pane.locator(".msg-assistant .msg-content").last).to_have_text("你好，世界")
+        expect(pane.locator(".msg-assistant .md").last).to_have_text("你好，世界")
 
         pane.get_by_role("button", name="卸载").click()
         expect(pane.get_by_role("button", name="加载")).to_be_visible()

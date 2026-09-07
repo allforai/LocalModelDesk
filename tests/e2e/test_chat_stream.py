@@ -16,16 +16,16 @@ def test_chat_stream_flushes_each_delta_and_persists_completed_exchange(
 
         pane.locator("[data-chat-input]").fill("你好")
         pane.get_by_role("button", name="发送").click()
-        expect(pane.locator(".reasoning pre").last).to_have_text("让我想想，")
+        expect(pane.locator(".msg-assistant .thinking p").last).to_have_text("让我想想，")
 
         harness.chat_script.step()
-        expect(pane.locator(".reasoning pre").last).to_have_text("让我想想，想好了。")
+        expect(pane.locator(".msg-assistant .thinking p").last).to_have_text("让我想想，想好了。")
 
         harness.chat_script.step()
-        expect(pane.locator(".msg-assistant .msg-content").last).to_have_text("你好")
+        expect(pane.locator(".msg-assistant .md").last).to_have_text("你好")
 
         harness.chat_script.step()
-        expect(pane.locator(".msg-assistant .msg-content").last).to_have_text("你好，世界")
+        expect(pane.locator(".msg-assistant .md").last).to_have_text("你好，世界")
         expect(pane.get_by_role("button", name="发送")).to_be_enabled()
 
         expected_messages = [
@@ -35,7 +35,11 @@ def test_chat_stream_flushes_each_delta_and_persists_completed_exchange(
 
         def exchange_is_persisted():
             sessions = harness.library.list_chat_sessions()
-            return bool(sessions) and sessions[0]["messages"][-2:] == expected_messages and sessions[0]["model"] == "glm"
+            if not sessions or sessions[0]["model"] != "glm":
+                return False
+            last_two = sessions[0]["messages"][-2:]
+            trimmed = [{k: v for k, v in message.items() if k != "thinking_s"} for message in last_two]
+            return trimmed == expected_messages
 
         wait_until(exchange_is_persisted)
     assert audit_violations == []
