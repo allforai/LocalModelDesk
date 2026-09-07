@@ -1,6 +1,7 @@
 """Facade assembling catalog, manifests, verification, disk usage, and downloads."""
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import threading
@@ -20,8 +21,10 @@ from .verify import ModelStatus, unknown_status, verify_tree
 
 
 class _SubprocessExecutor:
-    def spawn(self, cmd, cwd=None):
-        return subprocess.Popen(cmd, cwd=cwd)
+    def spawn(self, cmd, cwd=None, extra_env=None):
+        env = dict(os.environ)
+        env.update(extra_env or {})
+        return subprocess.Popen(cmd, cwd=cwd, env=env)
 
 
 class _InjectableDownloader(Downloader):
@@ -54,18 +57,13 @@ class _InjectableDownloader(Downloader):
             try:
                 handle = self._executor.spawn(
                     [*hf_cmd, "download", model.hf_repo, "--local-dir",
-                     str(Path(roots.models_root) / model.relpath)], cwd=None)
+                     str(Path(roots.models_root) / model.relpath)], cwd=None,
+                    extra_env=dict(getattr(roots, "hf_env", {}) or {}))
             except FileNotFoundError as exc:
                 raise HfCliMissingError("hf command is unavailable") from exc
-            now = self._clock()
-            self._progress = DownloadProgress(key=model.key, state="running",
-                                              bytes_total=manifest.total_bytes if manifest else 0,
-                                              started_at=str(now))
-            self._handle, self._model, self._manifest = handle, model, manifest
-            self._cancel_at = None
-            self._previous_done, self._previous_sample = 0, now
+            result = self._begin(model, manifest, handle)
             self._thread_factory(target=self._sample_loop, daemon=True).start()
-            return self._progress.copy()
+            return result
 
     def _sample_loop(self) -> None:
         while True:

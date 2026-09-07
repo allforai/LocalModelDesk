@@ -46,6 +46,7 @@ def get_paths(_req) -> dict:
         "music_env": dict(roots.music_env),
         "media_cli_dir": str(roots.media_cli_dir),
         "hf_cmd": list(roots.hf_cmd),
+        "hf_env": dict(roots.hf_env),
         "data_root": str(roots.data_root),
         "config_path": str(roots.config_path),
         "logs_dir": str(roots.logs_dir),
