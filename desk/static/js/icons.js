@@ -57,11 +57,15 @@ export function addIcon(control, name, doc = control?.ownerDocument ?? globalThi
 export function setIcon(control, name, doc = control?.ownerDocument ?? globalThis.document) {
   if (!control || !doc) return control;
   const fresh = iconNode(doc, name);
-  fresh.className = fresh.className ? fresh.className : "icon";
-  if (fresh.setAttribute) fresh.setAttribute("class", `icon icon-${name}`); else fresh.className = `icon icon-${name}`;
-  const existing = control.children ? [...control.children].find((child) => String(child.className ?? "").includes("icon")) : control.querySelector?.(".icon");
-  if (existing && control.replaceChild) control.replaceChild(fresh, existing);
-  else if (existing && control.children) control.children[control.children.indexOf(existing)] = fresh;
+  // Never assign `className` on the node: SVGElement.className is a read-only SVGAnimatedString and
+  // the assignment throws in strict mode (cross-exam recheck-2 q20). Use the class attribute instead.
+  if (fresh.setAttribute) fresh.setAttribute("class", `icon icon-${name}`);
+  else fresh.className = `icon icon-${name}`;
+  const isIcon = (child) => child?.classList?.contains?.("icon")
+    ?? String(child?.getAttribute?.("class") ?? child?.className ?? "").split(/\s+/).includes("icon");
+  const existing = control.children ? [...control.children].find(isIcon) : control.querySelector?.(".icon");
+  if (existing && typeof control.replaceChild === "function") control.replaceChild(fresh, existing);
+  else if (existing && Array.isArray(control.children)) control.children[control.children.indexOf(existing)] = fresh;
   else { control.append(fresh); control.classList?.add?.("with-icon"); }
   return control;
 }

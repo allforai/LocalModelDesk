@@ -44,11 +44,12 @@ body.drawer-open { overflow:hidden; }
 body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009; z-index:24; }
 
 /* 5. chat (ChatGPT-style) */
-#pane-chat{display:flex;gap:var(--margin)}
+#pane-chat{display:flex;gap:var(--margin);height:calc(100vh - 94px);min-height:0;overflow:hidden}
+.sessions{overflow:auto;min-height:0}
 .sessions{width:240px;flex:none}
-.chat-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.chat-main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
 .model-row{display:flex;gap:var(--gap);align-items:center;flex-wrap:wrap}
-.messages{flex:1;min-height:300px;overflow:auto;display:flex;flex-direction:column;gap:32px;max-width:820px;width:100%;margin:0 auto;padding:16px 4px}
+.messages{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:32px;max-width:820px;width:100%;margin:0 auto;padding:16px 4px}
 .msg-user{align-self:flex-end;max-width:70%}.msg-user .bubble{background:var(--bubble);border-radius:18px;padding:10px 16px;line-height:1.6;white-space:pre-wrap}
 .msg-assistant{align-self:flex-start;max-width:100%;line-height:1.7}
 .who{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:10px}.who .dot{width:20px;height:20px;border-radius:50%;background:var(--accent)}
