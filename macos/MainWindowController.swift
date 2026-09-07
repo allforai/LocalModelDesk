@@ -7,6 +7,7 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
   private let window: NSWindow
   private var webView: WKWebView!
   private let baseURL: URL
+  private var lastFragment: String?
   var onRetry: (() -> Void)?
 
   init(baseURL: URL) {
@@ -34,9 +35,14 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
 
   var isWindowVisible: Bool { window.isVisible }
 
-  /// Loads ui:deskShell.
+  /// Loads ui:deskShell, restoring the tab that was active before an error page replaced it.
   func loadDeskShell() {
-    webView.load(URLRequest(url: baseURL))
+    var url = baseURL
+    if let fragment = lastFragment, var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) {
+      components.fragment = fragment
+      url = components.url ?? baseURL
+    }
+    webView.load(URLRequest(url: url))
   }
 
   /// Closing the window hides it; the application and embedded server remain alive.
@@ -47,16 +53,8 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
 
   /// Displays an error page that stays available even when the service is down.
   func showErrorPage(reason: String, logPath: String) {
-    let html = """
-    <!doctype html><html><head><meta charset="utf-8"><title>LocalModelDesk</title></head>
-    <body style="font-family: -apple-system, sans-serif; padding: 2em; max-width: 40em; margin: auto;">
-      <h1>服务未运行</h1>
-      <p id="reason">\(Self.escapeHTML(reason))</p>
-      <p>日志：<code>\(Self.escapeHTML(logPath))</code></p>
-      <button onclick="window.webkit.messageHandlers.shellRetry.postMessage('retry')">重试</button>
-    </body></html>
-    """
-    webView.loadHTMLString(html, baseURL: nil)
+    lastFragment = webView.url?.fragment
+    webView.loadHTMLString(errorPageHTML(reason: reason, logPath: logPath), baseURL: nil)
     showWindow()
   }
 
@@ -69,11 +67,5 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
                withError error: Error) {
     showErrorPage(reason: "页面加载失败：\(error.localizedDescription)",
                   logPath: DeskPaths.serverStdoutLogURL.path)
-  }
-
-  private static func escapeHTML(_ string: String) -> String {
-    string.replacingOccurrences(of: "&", with: "&amp;")
-      .replacingOccurrences(of: "<", with: "&lt;")
-      .replacingOccurrences(of: ">", with: "&gt;")
   }
 }

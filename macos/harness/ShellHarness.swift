@@ -28,6 +28,9 @@ struct ShellHarness {
       let pgrepTool = args.count >= 3 ? args[2] : "/usr/bin/pgrep"
       PortGuard.reap(pids: PortGuard.family(matching: args[1], pgrepTool: pgrepTool), grace: 2.0)
       exit(PortGuard.family(matching: args[1], pgrepTool: pgrepTool).isEmpty ? 0 : 3)
+    case "error-page":
+      guard args.count >= 3 else { exit(64) }
+      print(errorPageHTML(reason: args[1], logPath: args[2]))
     case "poll-failure":
       guard args.count >= 3, let failures = Int(args[1]) else { exit(64) }
       switch pollFailureAction(consecutiveFailures: failures, childRunning: args[2] == "true") {

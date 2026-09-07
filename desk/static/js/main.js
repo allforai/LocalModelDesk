@@ -10,6 +10,7 @@ import { createLibraryPane } from "./panes/library.js";
 import { createFirstRunPane } from "./panes/firstrun.js";
 import { createSettingsPane } from "./panes/settings.js";
 import { heavyAvailability } from "./pure/desk_state.js";
+import { tabFromHash } from "./pure/tab_hash.js";
 
 const $ = (selector) => document.querySelector(selector);
 const store = createStore({ activeTab: "chat" });
@@ -44,6 +45,7 @@ function enterDesk() {
     globalThis.setInterval(tick, 2000);
   }
   panes.chat.init(); tick();
+  showTab(tabFromHash(globalThis.location?.hash));
 }
 
 function setDeskShellHidden(hidden) {
@@ -54,6 +56,7 @@ function showTab(name) {
   for (const button of document.querySelectorAll("#tabs [data-tab]")) button.classList.toggle("active", button.dataset.tab === name);
   for (const section of document.querySelectorAll("main > [data-pane]")) section.hidden = section.dataset.pane !== name;
   store.set({ activeTab:name });
+  if (globalThis.location) globalThis.history?.replaceState(null, "", `#tab=${name}`);
   if (name === "resources") panes.resources.refresh();
   if (name === "library") panes.library.refresh();
 }

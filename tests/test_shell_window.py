@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from shell_helpers import ROOT, free_port, port_listening, start_fake_desk
+from shell_helpers import ROOT, free_port, harness_path, port_listening, start_fake_desk
 
 
 ORCA = "orca"
@@ -120,3 +120,13 @@ def test_server_death_shows_error_text(shell_app):
     else:
         pytest.fail(f"no service-death explanation within 40s; last tree:\n{tree[-2000:]}")
     assert shell_app.proc.poll() is None
+
+
+def test_error_page_is_dark_themed_and_names_the_reason():
+    proc = subprocess.run([harness_path(), "error-page", "服务无响应", "/tmp/x.log"],
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    html = proc.stdout
+    assert "background:#14161a" in html and "color:#e7e9ee" in html
+    assert "<h1>服务未运行</h1>" in html and "服务无响应" in html
+    assert 'onclick="window.webkit.messageHandlers.shellRetry.postMessage' in html
