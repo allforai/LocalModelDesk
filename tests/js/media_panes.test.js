@@ -63,7 +63,7 @@ test("jobview appends polling logs, shows failures, and cancels through document
   controller.jobView.apply({ status: "error", log: "two", error: { code: "media_busy", message: "忙" } });
   assert.equal(video.parts["job-log"].textContent, "onetwo");
   assert.equal(video.parts["job-log"].scrollTop, 40);
-  assert.equal(video.parts["job-error"].textContent, "media_busy：忙");
+  assert.equal(video.parts["job-error"].children[0].textContent, "生成失败（media_busy）");
   assert.equal(video.parts["job-cancel"].hidden, true);
   await withFetch([{ status: "cancelled" }], async (calls) => { await video.parts["job-cancel"].click(); assert.equal(calls[0].url, "/api/media/cancel"); });
   assert.equal(video.parts["job-status"].textContent, "已取消");
@@ -92,6 +92,45 @@ test("job views do not create independent polling timers and still apply shell-d
   assert.equal(video.parts["job-player"].firstChild.tagName, "video");
   assert.equal(music.parts["job-log"].textContent, "threefour");
   assert.equal(music.parts["job-player"].firstChild.tagName, "audio");
+});
+
+test("内存不足被拒时先确认再以 force 重提", async () => {
+  const video = pane({ "video-prompt": "海边", "video-size": "512x288", "video-frames": "49", "video-steps": "16", "video-start": "" });
+  const doc = video.ownerDocument; doc.body = new Element();
+  const confirmed = []; globalThis.__confirmForTest = async () => { confirmed.push(1); return true; };
+  const responses = [
+    { ok: false, status: 409, json: async () => ({ error: { code: "insufficient_memory", message: "需 103 GB，可用 60 GB" } }) },
+    { ok: true, status: 200, json: async () => ({ job_id: 1, status: "running" }) },
+  ];
+  const previous = globalThis.fetch; const calls = [];
+  globalThis.fetch = async (url, options = {}) => { calls.push({ url, options }); return responses.shift(); };
+  try {
+    createVideoPane(video, { confirm: globalThis.__confirmForTest });
+    await video.parts["video-start"].click();
+    assert.equal(confirmed.length, 1);
+    assert.equal(JSON.parse(calls[1].options.body).force, true);
+  } finally { globalThis.fetch = previous; delete globalThis.__confirmForTest; }
+});
+
+test("音乐面板空歌词时本地拦截并提示", async () => {
+  const music = pane({ "music-caption": "民谣", "music-lyrics": "", "music-duration": "10", "music-start": "" });
+  const previous = globalThis.fetch; let calls = 0;
+  globalThis.fetch = async () => { calls += 1; return { ok: true, json: async () => ({}) }; };
+  try {
+    createMusicPane(music, {});
+    await music.parts["music-start"].click();
+    assert.equal(calls, 0);
+    assert.equal(music.parts["music-error"].textContent, "请填写歌词：Music 3 需要歌词才能生成");
+  } finally { globalThis.fetch = previous; }
+});
+
+test("回到面板时 sync 会补画已完成作业的播放器，并显示已用时长", async () => {
+  const video = pane({ "video-prompt": "", "video-size": "512x288", "video-frames": "49", "video-steps": "16", "video-start": "" });
+  const p = createVideoPane(video, {});
+  await withFetch([{ job_id: 3, status: "done", output: "h3-1.mp4", started_at: 10, finished_at: 87 }], async () => { await p.jobView.sync(); });
+  assert.equal(video.parts["job-player"].firstChild.tagName, "video");
+  p.jobView.apply({ job_id: 4, status: "running", elapsed_s: 12 });
+  assert.equal(video.parts["job-status"].textContent, "生成中…（已用 12秒）");
 });
 
 test("媒体面板在其他重作业运行时禁用开始按钮，并在结束后恢复", () => {

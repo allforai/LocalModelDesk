@@ -38,13 +38,14 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
             height=payload.get("height"), frames=payload.get("frames"),
             steps=payload.get("steps"), mode=payload.get("mode", "text"),
             first_frame=payload.get("first_frame"), last_frame=payload.get("last_frame"),
-            ref_video=payload.get("ref_video"), use_audio=payload.get("use_audio", True)))
+            ref_video=payload.get("ref_video"), use_audio=payload.get("use_audio", True),
+            force=bool(payload.get("force", False))))
 
     def start_music(body, _query):
         payload = body or {}
         return _run(lambda: service.start_music_job(
             caption=payload.get("caption"), lyrics=payload.get("lyrics"),
-            duration=payload.get("duration")))
+            duration=payload.get("duration"), force=bool(payload.get("force", False))))
 
     def cancel(_body, _query):
         return _run(service.cancel_job)

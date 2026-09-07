@@ -1,14 +1,39 @@
 import base64
+import struct
 import subprocess
+import zlib
 
 import pytest
 
+from desk.media.inputs import save_input
 from desk.media.routes import build_routes
 from desk.media.service import MediaError
 from desk.testing.seed import TINY_MP4
 from media_fakes import make_service, finished_snapshot
 
 PNG = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9ZkAAAAASUVORK5CYII=")
+
+
+def make_valid_png(width: int, height: int) -> bytes:
+    """A larger real PNG so a mid-file truncation still leaves valid header/IHDR chunks."""
+    def chunk(tag: bytes, payload: bytes) -> bytes:
+        return struct.pack(">I", len(payload)) + tag + payload + struct.pack(">I", zlib.crc32(tag + payload))
+
+    signature = b"\x89PNG\r\n\x1a\n"
+    ihdr = chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+    raw = b"".join(b"\x00" + bytes([(x + y) % 256 for x in range(width * 3)]) for y in range(height))
+    idat = chunk(b"IDAT", zlib.compress(raw))
+    iend = chunk(b"IEND", b"")
+    return signature + ihdr + idat + iend
+
+
+def test_truncated_png_is_rejected(tmp_path):
+    png = make_valid_png(64, 64)
+    data = base64.b64encode(png[: len(png) // 3]).decode()
+    with pytest.raises(ValueError) as exc:
+        save_input(tmp_path, "a.png", data)
+    assert str(exc.value) == "图片文件已损坏，无法解码"
+    assert not list((tmp_path / ".inputs").glob("*")) if (tmp_path / ".inputs").exists() else True
 
 
 @pytest.mark.parametrize("mode,name,content,key,flag", [

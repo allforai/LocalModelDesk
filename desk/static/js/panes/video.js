@@ -1,5 +1,6 @@
 import * as api from "../api.js";
 import { createJobView } from "../widgets/jobview.js";
+import { confirmDialog } from "../widgets/confirm.js";
 
 const SIZES = [["512x288", "草稿 512×288"], ["768x448", "标准 768×448"], ["1024x576", "清晰 1024×576"]];
 const DURATIONS = [[49, "约 2 秒（快速）"], [73, "约 3 秒"], [124, "约 5 秒（常用）"], [192, "约 8 秒"], [243, "约 10 秒"], [362, "约 15 秒（最长）"]];
@@ -63,6 +64,15 @@ export function createVideoPane(root, ctx = {}) {
     inputs.last_frame.value = "";
     inputs.last_frame.dispatchEvent(new Event("change"));
   });
+  async function submit(params) {
+    try { return await api.startVideoJob(params); }
+    catch (error) {
+      if (error.code !== "insufficient_memory") throw error;
+      const ok = await (ctx.confirm ?? confirmDialog)(root.ownerDocument, { title: "内存可能不足", message: error.message, confirmLabel: "仍要生成" });
+      if (!ok) return null;
+      return api.startVideoJob({ ...params, force: true });
+    }
+  }
   els.startBtn.addEventListener("click", async () => {
     if (submitting || !heavyAllowed) return;
     els.error.textContent = "";
@@ -89,7 +99,8 @@ export function createVideoPane(root, ctx = {}) {
         if (saved[key]) params[key] = saved[key];
       }
       if (uploadStatus) uploadStatus.textContent = "正在提交生成任务…";
-      const job = await api.startVideoJob(params);
+      const job = await submit(params);
+      if (!job) return;
       jobView.start(job); ctx.onStarted?.(job);
     } catch (error) { els.error.textContent = error.message; }
     finally {

@@ -44,6 +44,12 @@ def save_input(root, name, data):
         result = subprocess.run([probe, "-v", "error", "-show_streams", "-show_format",
                                  "-of", "json", str(path)], capture_output=True, timeout=15, check=True)
         info = json.loads(result.stdout)
+        if EXTENSIONS[suffix] == "image":
+            ffmpeg = shutil.which("ffmpeg") or probe.replace("ffprobe", "ffmpeg")
+            decode = subprocess.run([ffmpeg, "-v", "error", "-i", str(path), "-frames:v", "1", "-f", "null", "-"],
+                                    capture_output=True, timeout=30)
+            if decode.returncode != 0:
+                raise ValueError("图片文件已损坏，无法解码")
         visual = next((s for s in info.get("streams", []) if s.get("codec_type") == "video"), None)
         if not visual or not visual.get("width") or not visual.get("height"):
             raise ValueError("文件没有可读取的画面")

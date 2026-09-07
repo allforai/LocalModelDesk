@@ -60,6 +60,8 @@ function showTab(name) {
   if (globalThis.location) globalThis.history?.replaceState(null, "", `#tab=${name}`);
   if (name === "resources") panes.resources.refresh();
   if (name === "library") panes.library.refresh();
+  if (name === "video") panes.video.jobView.sync();
+  if (name === "music") panes.music.jobView.sync();
 }
 
 function applyFill(plan) { if (plan) { panes[plan.pane].fill(plan.fields); showTab(plan.pane); } }

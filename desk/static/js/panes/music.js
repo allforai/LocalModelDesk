@@ -1,5 +1,6 @@
 import * as api from "../api.js";
 import { createJobView } from "../widgets/jobview.js";
+import { confirmDialog } from "../widgets/confirm.js";
 
 export function createMusicPane(root, ctx = {}) {
   const els = {
@@ -8,10 +9,21 @@ export function createMusicPane(root, ctx = {}) {
     error: root.querySelector("[data-music-error]"),
   };
   const jobView = createJobView(root, { mediaTag: "audio" });
+  async function submit(params) {
+    try { return await api.startMusicJob(params); }
+    catch (error) {
+      if (error.code !== "insufficient_memory") throw error;
+      const ok = await (ctx.confirm ?? confirmDialog)(root.ownerDocument, { title: "内存可能不足", message: error.message, confirmLabel: "仍要生成" });
+      if (!ok) return null;
+      return api.startMusicJob({ ...params, force: true });
+    }
+  }
   els.startBtn.addEventListener("click", async () => {
     els.error.textContent = "";
     try {
-      const job = await api.startMusicJob({ caption: els.caption.value, lyrics: els.lyrics.value, duration: Number(els.duration.value) });
+      if (!els.lyrics.value.trim()) throw new Error("请填写歌词：Music 3 需要歌词才能生成");
+      const job = await submit({ caption: els.caption.value, lyrics: els.lyrics.value, duration: Number(els.duration.value) });
+      if (!job) return;
       jobView.start(job); ctx.onStarted?.(job);
     } catch (error) { els.error.textContent = error.message; }
   });
