@@ -112,6 +112,18 @@ test("内存不足被拒时先确认再以 force 重提", async () => {
   } finally { globalThis.fetch = previous; delete globalThis.__confirmForTest; }
 });
 
+test("音乐面板空歌词时本地拦截并提示", async () => {
+  const music = pane({ "music-caption": "民谣", "music-lyrics": "", "music-duration": "10", "music-start": "" });
+  const previous = globalThis.fetch; let calls = 0;
+  globalThis.fetch = async () => { calls += 1; return { ok: true, json: async () => ({}) }; };
+  try {
+    createMusicPane(music, {});
+    await music.parts["music-start"].click();
+    assert.equal(calls, 0);
+    assert.equal(music.parts["music-error"].textContent, "请填写歌词：Music 3 需要歌词才能生成");
+  } finally { globalThis.fetch = previous; }
+});
+
 test("媒体面板在其他重作业运行时禁用开始按钮，并在结束后恢复", () => {
   const video = pane({ "video-prompt": "海浪", "video-size": "512x288", "video-frames": "25", "video-steps": "8", "video-start": "" });
   const music = pane({ "music-caption": "轻快", "music-lyrics": "la", "music-duration": "30", "music-start": "" });

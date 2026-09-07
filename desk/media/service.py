@@ -81,6 +81,8 @@ class MediaService:
         _nonempty("caption", caption)
         if not isinstance(lyrics, str) or isinstance(duration, bool) or not isinstance(duration, (int, float)) or duration <= 0:
             raise MediaError("invalid_params", "lyrics must be a string and duration must be positive", 400)
+        if not lyrics.strip():
+            raise MediaError("lyrics_required", "请填写歌词：Music 3 需要歌词才能生成", 400)
         return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration}, force=force)
 
     def _start(self, kind: str, params: dict, *, force: bool = False) -> dict:
