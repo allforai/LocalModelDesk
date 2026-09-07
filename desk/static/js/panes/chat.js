@@ -7,6 +7,7 @@ import { needsWarning } from "../pure/mem_warn.js";
 import { sortSessions, displayTitle } from "../pure/sessions.js";
 import { confirmDialog } from "../widgets/confirm.js";
 import { renderMarkdown } from "../pure/markdown.js";
+import { formatTimestamp } from "../pure/format.js";
 
 export function createChatPane(root) {
   const doc = root.ownerDocument;
@@ -178,21 +179,25 @@ export function createChatPane(root) {
     els.sessionList.replaceChildren();
     for (const session of sessions) {
       const li = doc.createElement("li");
+      li.className = "card session";
       li.classList.toggle("active", session.id === currentId);
-      const title = doc.createElement("span");
+      const title = doc.createElement("div");
       title.className = "session-title";
       title.textContent = displayTitle(session);
-      title.addEventListener("click", () => {
-        currentId = session.id;
-        renderSessionList();
-        renderMessages();
-      });
+      const meta = doc.createElement("div");
+      meta.className = "session-meta";
+      meta.textContent = [session.model, formatTimestamp(session.updated).slice(11)].filter(Boolean).join(" · ");
+      const actions = doc.createElement("div");
+      actions.className = "session-actions";
       const rename = doc.createElement("button");
+      rename.className = "btn-sm";
       rename.textContent = "改名";
-      rename.addEventListener("click", () => beginRename(li, session));
+      rename.addEventListener("click", (event) => { event.stopPropagation?.(); beginRename(li, session); });
       const remove = doc.createElement("button");
+      remove.className = "btn-danger btn-sm";
       remove.textContent = "删";
-      remove.addEventListener("click", async () => {
+      remove.addEventListener("click", async (event) => {
+        event.stopPropagation?.();
         const go = await confirmDialog(doc, { title: "删除会话", message: `确定删除「${displayTitle(session)}」？该会话的全部消息将被删除。`, confirmLabel: "删除" });
         if (!go) return;
         try {
@@ -200,7 +205,13 @@ export function createChatPane(root) {
           await refreshSessions();
         } catch (error) { setError(error.message); }
       });
-      li.append(title, rename, remove);
+      actions.append(rename, remove);
+      li.addEventListener("click", () => {
+        currentId = session.id;
+        renderSessionList();
+        renderMessages();
+      });
+      li.append(title, meta, actions);
       els.sessionList.append(li);
     }
   }

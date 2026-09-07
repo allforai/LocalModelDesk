@@ -1,4 +1,6 @@
 """R-e2e-04: chat sessions can be managed and survive a browser refresh."""
+import re
+
 from playwright.sync_api import expect
 
 from desk.testing import launch_test_harness
@@ -15,6 +17,7 @@ def test_chat_sessions_can_be_created_switched_renamed_deleted_and_reloaded(
         expect(pane.locator("[data-session-list] li")).to_have_count(2)
 
         original = pane.locator("[data-session-list] li").filter(has_text="新会话").first
+        original.hover()
         original.get_by_role("button", name="改名").click()
         rename_input = pane.locator("[data-session-list] input")
         rename_input.fill("保留会话")
@@ -24,9 +27,10 @@ def test_chat_sessions_can_be_created_switched_renamed_deleted_and_reloaded(
         retained = pane.locator("[data-session-list] li").filter(has_text="保留会话")
         disposable = pane.locator("[data-session-list] li").filter(has_text="新会话")
         disposable.locator(".session-title").click()
-        expect(disposable).to_have_class("active")
+        expect(disposable).to_have_class(re.compile(r"\bactive\b"))
         retained.locator(".session-title").click()
-        expect(retained).to_have_class("active")
+        expect(retained).to_have_class(re.compile(r"\bactive\b"))
+        disposable.hover()
         disposable.get_by_role("button", name="删").click()
         dialog = page.locator(".overlay .dialog")
         expect(dialog).to_contain_text("删除会话")
