@@ -92,6 +92,24 @@ def test_production_runtime_supports_dynamic_patch_routes(tmp_path, monkeypatch)
         runtime.shutdown()
 
 
+def test_runtime_startup_does_not_rewrite_persisted_config(tmp_path, monkeypatch):
+    data_root = _configured_data_root(tmp_path, monkeypatch)
+    legacy = tmp_path / "legacy"
+    (legacy / "minimax-h3").mkdir(parents=True)
+    (legacy / "minimax-h3" / "w.bin").write_bytes(b"x")
+    monkeypatch.setenv("LOCALMODELDESK_MODEL_SCAN_ROOTS", str(legacy))
+    before = (data_root / "config.json").read_bytes()
+    runtime = build_runtime(port=0)
+    # DeskApp.shutdown() blocks forever if serve_forever() never ran (the
+    # underlying ThreadingHTTPServer's shutdown Event is only ever signalled
+    # from inside serve_forever), so start the server before tearing it down.
+    runtime.start_background()
+    try:
+        assert (data_root / "config.json").read_bytes() == before
+    finally:
+        runtime.shutdown()
+
+
 def test_production_modules_never_import_test_fakes():
     from pathlib import Path
 

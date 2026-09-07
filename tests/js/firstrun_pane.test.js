@@ -66,3 +66,11 @@ test("firstrun 面板按所选模式收编，错误原样显示且不离开本�
     assert.equal(done, 1);
   } finally { globalThis.fetch = oldFetch; }
 });
+
+test("首运页把发现到的旧模型树预填进收编输入框", async () => {
+  const { createFirstRunPane } = await import("../../desk/static/js/panes/firstrun.js");
+  const { root, controls } = makePane();
+  const pane = createFirstRunPane(root, { onDone() {} });
+  pane.init({ models_root: "/data/models", discovered: ["/Users/me/LocalModelDesk"] });
+  assert.equal(controls.get("[data-fr-legacy]").value, "/Users/me/LocalModelDesk");
+});

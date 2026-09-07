@@ -14,6 +14,8 @@ export function createFirstRunPane(root, ctx) {
 
   function init(config) {
     els.modelsRoot.value = config?.models_root ?? "";
+    const first = config?.discovered?.[0];
+    if (first && !els.legacyRoot.value) els.legacyRoot.value = first;
   }
 
   els.completeBtn.addEventListener("click", async () => {

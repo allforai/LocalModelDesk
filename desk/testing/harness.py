@@ -164,7 +164,7 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
         ).to_json()),
         ("POST", "/api/adopt", adopt),
         ("POST", "/api/models/discover", lambda _req: {
-            "models_root": str(firstrun.auto_configure_discovered(roots)[0].models_root),
+            "models_root": str(firstrun.apply_discovered(roots)[0].models_root),
             "candidates": firstrun.discover_model_roots(roots),
             "found": bool(firstrun.discover_model_roots(roots)),
         }),

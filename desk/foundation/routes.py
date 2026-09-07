@@ -21,7 +21,11 @@ def _config_json(cfg: config_mod.DeskConfig) -> dict:
 
 def get_config(_req) -> dict:
     roots = _roots()
-    return _config_json(config_mod.read_config(roots))
+    cfg = config_mod.read_config(roots)
+    result = _config_json(cfg)
+    if cfg.needs_setup:
+        result["discovered"] = [item["path"] for item in firstrun.discover_model_roots(roots)]
+    return result
 
 
 def put_config(req) -> dict:
@@ -72,7 +76,7 @@ def post_adopt(req) -> dict:
 
 
 def post_discover(_req) -> dict:
-    config, candidates = firstrun.auto_configure_discovered(_roots())
+    config, candidates = firstrun.apply_discovered(_roots())
     return {
         "models_root": str(config.models_root),
         "candidates": candidates,

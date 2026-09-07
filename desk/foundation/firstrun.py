@@ -89,23 +89,17 @@ def discover_model_roots(roots) -> list[dict]:
     return found
 
 
-def auto_configure_discovered(roots) -> tuple[config_mod.DeskConfig, list[dict]]:
-    """Point at the best discovered tree when it improves the current selection."""
+def apply_discovered(roots) -> tuple[config_mod.DeskConfig, list[dict]]:
+    """User-initiated: adopt the best discovered tree and mark setup complete."""
     try:
         config = config_mod.read_config(roots)
     except ConfigCorruptError:
-        # Keep corrupt configuration observable through /api/config instead of
-        # silently replacing user data during startup.
         return config_mod.default_config(roots.data_root), []
     candidates = discover_model_roots(roots)
     if not candidates:
         return config, []
-    current = next((item for item in candidates if Path(item["path"]) == config.models_root), None)
     best = candidates[0]
-    if current is None or best["score"] > current["score"] or not config.first_run_done:
-        config = config_mod.update_config(
-            roots, models_root=Path(best["path"]), first_run_done=True
-        )
+    config = config_mod.update_config(roots, models_root=Path(best["path"]), first_run_done=True)
     return config, candidates
 
 
