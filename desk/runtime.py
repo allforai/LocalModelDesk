@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 
 from .app import DeskApp, Response
 from .arbiter import Arbiter
-from .foundation import capabilities, config, firstrun, paths, routes as foundation_routes
+from .foundation import capabilities, config, paths, routes as foundation_routes
+from .foundation.errors import ConfigCorruptError
 from .gateway.desk_backend import DeskGatewayBackend
 from .gateway.service import GatewayService
 from .library import LibraryService
@@ -21,6 +23,24 @@ from .resources.http import build_routes as build_resource_routes
 from .resources.service import ResourcesService
 from .ui import StaticAssets
 
+log = logging.getLogger(__name__)
+
+
+def _gateway_config_reader():
+    """Read gateway config for the gateway service; corrupt config disables it
+    instead of raising into startup (a corrupt config.json must not hang or
+    crash the whole service — cross-exam G8)."""
+    def read() -> dict:
+        roots = paths.resolve_paths(default_config_on_corrupt=True)
+        try:
+            return config.read_config(roots).to_json()
+        except ConfigCorruptError:
+            log.error("config.json is corrupt; gateway falls back to defaults with listening disabled")
+            defaults = config.default_config(roots.data_root).to_json()
+            defaults["gateway"]["enabled"] = False
+            return defaults
+    return read
+
 
 @dataclass
 class ProductionRuntime:
@@ -33,12 +53,18 @@ class ProductionRuntime:
     def port(self) -> int:
         return self.app.port
 
+    def _start_gateway(self) -> None:
+        try:
+            self.gateway.start_from_config()
+        except Exception:  # the gateway is optional; the desk must still serve
+            log.exception("gateway failed to start; continuing without it")
+
     def start_background(self) -> None:
-        self.gateway.start_from_config()
+        self._start_gateway()
         self.app.start_background()
 
     def serve_forever(self) -> None:
-        self.gateway.start_from_config()
+        self._start_gateway()
         self.app.serve_forever()
 
     def shutdown(self) -> None:
@@ -101,8 +127,6 @@ def _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway) 
 def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntime:
     """Assemble production services using only real leaf implementations."""
     roots = paths.resolve_paths(default_config_on_corrupt=True)
-    firstrun.auto_configure_discovered(roots)
-    roots = paths.resolve_paths(default_config_on_corrupt=True)
     paths.setup_logging(roots)
     resolve_paths = paths.resolve_paths
     arbiter = Arbiter(DEFAULT_LLM_PORT)
@@ -122,12 +146,7 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
         append_history=library.append_history,
         executor=SubprocessExecutor(),
     )
-    gateway = GatewayService(
-        DeskGatewayBackend(llm, arbiter),
-        lambda: config.read_config(
-            paths.resolve_paths(default_config_on_corrupt=True)
-        ).to_json(),
-    )
+    gateway = GatewayService(DeskGatewayBackend(llm, arbiter), _gateway_config_reader())
     app = DeskApp(host, port)
     _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway)
     app.capabilities = capabilities.probe_capabilities(roots)

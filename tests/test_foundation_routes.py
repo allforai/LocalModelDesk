@@ -81,6 +81,28 @@ def test_discover_endpoint_selects_best_local_tree(server, tmp_path, monkeypatch
     assert payload["candidates"][0]["model_keys"] == ["music3"]
 
 
+def test_get_config_lists_discovered_roots_only_while_setup_is_needed(server, tmp_path, monkeypatch):
+    tree = tmp_path / "legacy"
+    (tree / "minimax-h3").mkdir(parents=True)
+    (tree / "minimax-h3" / "w.bin").write_bytes(b"x")
+    monkeypatch.setenv("LOCALMODELDESK_MODEL_SCAN_ROOTS", str(tree))
+    status, payload = http_call(server, "GET", "/api/config")
+    assert status == 200
+    assert payload["needs_setup"] is True
+    # Membership rather than equality: this test's own execution environment
+    # (a worktree nested under a real checkout that itself contains model
+    # directories) can add unrelated candidates to the scan roots — see
+    # test_discover_endpoint_selects_best_local_tree for the same pre-existing
+    # environmental hazard, unrelated to this task's discovered/apply split.
+    assert str(tree) in payload["discovered"]
+    status, _ = http_call(server, "POST", "/api/first-run", {"models_root": str(tmp_path / "chosen")})
+    assert status == 200
+    status, payload = http_call(server, "GET", "/api/config")
+    assert status == 200
+    assert payload["needs_setup"] is False
+    assert "discovered" not in payload
+
+
 def test_unknown_route_404_and_invalid_json_400(server):
     status, payload = http_call(server, "GET", "/api/nope")
     assert status == 404
