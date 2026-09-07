@@ -36,13 +36,28 @@ async function toError(response) {
   return new DeskApiError(response.status, code, message, detail);
 }
 
+let REQUEST_TIMEOUT_MS = 8000;
+export function setRequestTimeout(ms) { REQUEST_TIMEOUT_MS = ms; }
+
 async function request(path, { method = "GET", body, stream = false } = {}) {
   const options = { method };
   if (body !== undefined) {
     options.headers = { "Content-Type": "application/json" };
     options.body = JSON.stringify(body);
   }
-  const response = await globalThis.fetch(path, options);
+  let timer = null;
+  if (!stream && typeof AbortController === "function") {
+    const controller = new AbortController();
+    options.signal = controller.signal;
+    timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  }
+  let response;
+  try {
+    response = await globalThis.fetch(path, options);
+  } catch (error) {
+    if (error?.name === "AbortError") throw new DeskApiError(0, "timeout", `请求超时（${REQUEST_TIMEOUT_MS / 1000} 秒无响应）`);
+    throw error;
+  } finally { if (timer) clearTimeout(timer); }
   if (!response.ok) throw await toError(response);
   return stream ? response.body : response.json();
 }

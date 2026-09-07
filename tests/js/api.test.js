@@ -59,7 +59,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     "llmStatus", "chatStream", "startVideoJob", "startMusicJob", "cancelJob", "jobStatus", "listOutputs",
     "serveOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
   ];
-  assert.deepEqual(Object.keys(api).sort(), [...names, "DeskApiError"].sort());
+  assert.deepEqual(Object.keys(api).sort(), [...names, "DeskApiError", "setRequestTimeout"].sort());
   await withFetch({}, async (calls) => {
     for (const [name, args, url, method, body] of expected) {
       const result = await api[name](...args);
@@ -123,4 +123,15 @@ test("DeskApiError 在非 JSON 错误时使用 HTTP 状态行", async () => {
       return true;
     });
   });
+});
+
+test("挂起的请求在超时后以 timeout 错误拒绝，而不是永远等待", async () => {
+  const previous = globalThis.fetch;
+  globalThis.fetch = (_url, options = {}) => new Promise((_resolve, reject) => {
+    options.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+  });
+  api.setRequestTimeout(20);
+  try {
+    await assert.rejects(api.deskState(), (error) => error.name === "DeskApiError" && error.code === "timeout");
+  } finally { api.setRequestTimeout(8000); globalThis.fetch = previous; }
 });
