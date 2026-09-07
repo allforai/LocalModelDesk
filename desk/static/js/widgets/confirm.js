@@ -14,7 +14,7 @@ export function confirmDialog(doc, { title, message, confirmLabel = "确定", ca
     const cancelBtn = doc.createElement("button");
     cancelBtn.textContent = cancelLabel;
     const okBtn = doc.createElement("button");
-    okBtn.className = "danger";
+    okBtn.className = "btn-danger";
     okBtn.textContent = confirmLabel;
     const finish = (val) => { overlay.remove(); resolve(val); };
     cancelBtn.addEventListener("click", () => finish(false));

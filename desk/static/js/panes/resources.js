@@ -87,6 +87,7 @@ export function createResourcesPane(root) {
     for (const action of view.actions) {
       const button = doc.createElement("button");
       button.type = "button";
+      button.className = action === "delete" ? "btn-danger" : action === "download" || action === "resume" ? "btn-primary" : "";
       button.textContent = ACTION_LABEL[action];
       addIcon(button, ACTION_ICON[action], doc);
       button.disabled = view.downloadDisabled && (action === "download" || action === "resume");

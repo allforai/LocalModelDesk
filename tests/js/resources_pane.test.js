@@ -121,6 +121,19 @@ test("点『重新校验』发 refresh=1，按钮期间禁用并显示校验中"
   } finally { globalThis.fetch = previous; }
 });
 
+test("删除按钮带 btn-danger，下载带 btn-primary", async () => {
+  const { root, parts } = makePane();
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (url) => ({ ok: true, status: 200, json: async () => String(url).includes("catalog") ? [{ key: "glm", name: "GLM", gb: 16.9 }] : String(url).includes("download") ? { state: "idle" } : { models: [{ key: "glm", state: "partial", percent: 40, disk_bytes: 10, bytes_expected: 20 }], disk: { free_bytes: 1, total_bytes: 2 } } });
+  try {
+    const pane = createResourcesPane(root); await pane.refresh();
+    const li = parts["res-list"].children[0];
+    const buttons = li.children.at(-1).children;
+    assert.equal(buttons.find((b) => b.textContent === "删除").className.includes("btn-danger"), true);
+    assert.equal(buttons.find((b) => b.textContent === "续传").className.includes("btn-primary"), true);
+  } finally { globalThis.fetch = previous; }
+});
+
 test("每行只渲染一次名称与状态", async () => {
   const { root, parts } = makePane();
   const previous = globalThis.fetch;
