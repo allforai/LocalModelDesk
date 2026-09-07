@@ -7,7 +7,7 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .errors import ConfigCorruptError
+from .errors import ConfigCorruptError, ConfigInvalidError
 
 
 CONFIG_VERSION = 1
@@ -78,7 +78,27 @@ def _load_raw(config_path: Path) -> dict | None:
     return raw
 
 
-def _from_raw(raw: dict | None, data_root: Path) -> DeskConfig:
+def _validate(merged: dict, gateway: dict) -> None:
+    """Raise ConfigInvalidError naming the first offending field."""
+    def bad(field: str, reason: str) -> None:
+        raise ConfigInvalidError(f"invalid {field}: {reason}", field=field, reason=reason)
+    if not isinstance(merged["config_version"], int) or isinstance(merged["config_version"], bool):
+        bad("config_version", "must be an integer")
+    if not isinstance(merged["first_run_done"], bool):
+        bad("first_run_done", "must be true or false")
+    for key in ("models_root", "outputs_root"):
+        if not isinstance(merged[key], str) or not merged[key]:
+            bad(key, "must be a non-empty path string")
+    if not isinstance(gateway["enabled"], bool):
+        bad("gateway.enabled", "must be true or false")
+    if not isinstance(gateway["host"], str) or not gateway["host"].strip():
+        bad("gateway.host", "must be a non-empty host string")
+    port = gateway["port"]
+    if isinstance(port, bool) or not isinstance(port, int) or not 1 <= port <= 65535:
+        bad("gateway.port", "must be an integer between 1 and 65535")
+
+
+def _from_raw(raw: dict | None, data_root: Path, *, source: str = "file") -> DeskConfig:
     defaults = _defaults(data_root)
     merged = dict(defaults)
     file_gateway: dict = {}
@@ -90,18 +110,23 @@ def _from_raw(raw: dict | None, data_root: Path) -> DeskConfig:
                 merged[key] = value
     gateway = dict(defaults["gateway"])
     gateway.update({key: value for key, value in file_gateway.items() if key in _GATEWAY_KEYS})
+    try:
+        _validate(merged, gateway)
+    except ConfigInvalidError as exc:
+        if source == "file":
+            raise ConfigCorruptError(
+                f"config.json is corrupt: {exc.message}",
+                path="config.json", parse_error=f"{exc.payload['field']}: {exc.payload['reason']}",
+            ) from exc
+        raise
     extra = {key: value for key, value in (raw or {}).items() if key not in _KNOWN_KEYS}
     return DeskConfig(
-        config_version=int(merged["config_version"]),
-        first_run_done=bool(merged["first_run_done"]),
+        config_version=merged["config_version"],
+        first_run_done=merged["first_run_done"],
         models_root=Path(merged["models_root"]),
         outputs_root=Path(merged["outputs_root"]),
-        gateway=GatewayConfig(
-            enabled=bool(gateway["enabled"]),
-            host=str(gateway["host"]),
-            port=int(gateway["port"]),
-        ),
-        needs_setup=(raw is None) or not bool(merged["first_run_done"]),
+        gateway=GatewayConfig(enabled=gateway["enabled"], host=gateway["host"], port=gateway["port"]),
+        needs_setup=(raw is None) or not merged["first_run_done"],
         extra=extra,
     )
 
@@ -145,7 +170,7 @@ def write_config(roots, config: DeskConfig) -> None:
 
 
 def update_config(roots, **fields) -> DeskConfig:
-    """Locked read-modify-write so concurrent updates cannot drop fields."""
+    """Locked read-validate-write: nothing reaches disk unless it parses back."""
     with _LOCK:
         raw = _load_raw(roots.config_path)
         current = _from_raw(raw, roots.data_root)
@@ -159,5 +184,6 @@ def update_config(roots, **fields) -> DeskConfig:
                 merged[key] = str(value)
             else:
                 merged[key] = value
+        validated = _from_raw(merged, roots.data_root, source="update")
         _atomic_write(roots.config_path, merged)
-        return _from_raw(merged, roots.data_root)
+        return validated
