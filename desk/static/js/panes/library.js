@@ -89,11 +89,18 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
       head.append(title, meta);
       if (entry.error) {
         const [code, ...rest] = entry.error.split(": ");
-        const { title: errorTitle } = describeJobError({ code, message: rest.join(": ") });
+        const { title: errorTitle, detail } = describeJobError({ code, message: rest.join(": ") });
         const error = doc.createElement("p");
         error.className = "inline-error";
         error.textContent = errorTitle;
-        head.append(error);
+        const details = doc.createElement("details");
+        details.className = "lib-error-details";
+        const summary = doc.createElement("summary");
+        summary.textContent = "详情";
+        const pre = doc.createElement("pre");
+        pre.textContent = detail;
+        details.append(summary, pre);
+        head.append(error, details);
       }
     } else {
       const title = doc.createElement("p");

@@ -149,6 +149,25 @@ test("播放时播放器滚入视野且标注正在播放的记录", async (t) =
   assert.equal(elements.player.children[1].textContent, "正在播放：m.wav");
 });
 
+test("失败记录：标题是人话，原始码收进「详情」（F3）", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async (path) => ({ ok: true, json: async () => path === "/api/outputs" ? [] : [{
+    kind: "video", status: "failed", ts: "2026-09-07T03:35:00Z", output: null, error: "exit_nonzero: exit 1",
+    params: { prompt: "镜头缓慢推近", width: 512, height: 288, frames: 49, steps: 16 } }] });
+  const doc = { createElement: (tag) => new FakeElement(tag) };
+  const elements = Object.fromEntries(["refresh", "player", "list", "error"].map((name) => [name, new FakeElement()]));
+  const root = new FakeElement(); root.ownerDocument = doc;
+  root.querySelector = (selector) => elements[selector.match(/data-lib-(.+)\]/)[1]];
+  await createLibraryPane(root, { applyFill() {} }).refresh();
+  const row = elements.list.children[0];
+  const title = find(row, (n) => n.className === "inline-error");
+  assert.equal(title.textContent, "生成程序异常退出");
+  const details = find(row, (n) => n.tagName === "details");
+  assert.ok(details, "缺少详情折叠");
+  assert.equal(find(details, (n) => n.tagName === "pre").textContent, "exit_nonzero: exit 1");
+});
+
 function makeLibrary(outputs, history) {
   globalThis.fetch = async (path) => ({
     ok: true,
