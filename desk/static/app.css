@@ -73,6 +73,8 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .res-progress{width:100%;height:6px;margin-top:8px;accent-color:var(--busy)}
 .res-missing{margin-top:8px;color:var(--muted);font-size:13px}
 .lib-title{margin:0}
+.lib-error-details{font-size:13px;color:var(--muted)}.lib-error-details pre{margin:4px 0 0;white-space:pre-wrap;font:12px ui-monospace,Menlo,monospace}
+.lib-row.playing{border-color:var(--accent)}.lib-row.playing .lib-title::before{content:"▶ ";color:var(--accent)}
 /* 7. badges */
 .badge{font-size:13px;padding:2px 8px;border-radius:999px}
 .badge-ok{background:rgba(63,185,80,.15);color:var(--ok)}

@@ -47,10 +47,10 @@ export function createSettingsPane(root, ctx = {}) {
     els.lanNote.textContent = urls.note ?? "";
 
     const listening = Boolean(status.listening);
-    for (const el of [els.authWarning, els.openaiUrl, els.anthropicUrl, els.copyOpenai, els.copyAnthropic, els.lanNote]) {
-      if (el) el.hidden = !listening || (el === els.lanNote && !urls.note);
-    }
+    for (const el of [els.authWarning, els.openaiUrl, els.anthropicUrl, els.copyOpenai, els.copyAnthropic]) if (el) el.hidden = !listening;
     els.authWarning.textContent = listening ? "当前为无鉴权监听：同一网络任何设备都能调用本机模型" : "";
+    els.lanNote.hidden = false;
+    els.lanNote.textContent = listening ? (urls.note ?? "") : "开启对外接口并「保存并应用」后，这里会显示可复制的地址。";
   }
 
   async function save() {

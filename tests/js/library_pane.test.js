@@ -59,6 +59,9 @@ test("library 面板合并倒序渲染，点击成品就地播放并回填历史
   assert.equal(elements.list.children[1].children[0].children[0].textContent, "海边");
 
   elements.list.children[1].click();
+  assert.match(elements.list.children[1].className, /\bplaying\b/);
+  assert.doesNotMatch(elements.list.children[0].className, /\bplaying\b/);
+  assert.equal(elements.player.children[1].textContent, "正在播放：海边");
   assert.equal(elements.player.children[0].tagName, "video");
   assert.equal(elements.player.children[0].src, "/api/outputs/video%20old.mp4");
 
@@ -147,6 +150,25 @@ test("播放时播放器滚入视野且标注正在播放的记录", async (t) =
 
   assert.equal(scrolled, 1);
   assert.equal(elements.player.children[1].textContent, "正在播放：m.wav");
+});
+
+test("失败记录：标题是人话，原始码收进「详情」（F3）", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async (path) => ({ ok: true, json: async () => path === "/api/outputs" ? [] : [{
+    kind: "video", status: "failed", ts: "2026-09-07T03:35:00Z", output: null, error: "exit_nonzero: exit 1",
+    params: { prompt: "镜头缓慢推近", width: 512, height: 288, frames: 49, steps: 16 } }] });
+  const doc = { createElement: (tag) => new FakeElement(tag) };
+  const elements = Object.fromEntries(["refresh", "player", "list", "error"].map((name) => [name, new FakeElement()]));
+  const root = new FakeElement(); root.ownerDocument = doc;
+  root.querySelector = (selector) => elements[selector.match(/data-lib-(.+)\]/)[1]];
+  await createLibraryPane(root, { applyFill() {} }).refresh();
+  const row = elements.list.children[0];
+  const title = find(row, (n) => n.className === "inline-error");
+  assert.equal(title.textContent, "生成程序异常退出");
+  const details = find(row, (n) => n.tagName === "details");
+  assert.ok(details, "缺少详情折叠");
+  assert.equal(find(details, (n) => n.tagName === "pre").textContent, "exit_nonzero: exit 1");
 });
 
 function makeLibrary(outputs, history) {

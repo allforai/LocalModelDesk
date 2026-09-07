@@ -89,11 +89,18 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
       head.append(title, meta);
       if (entry.error) {
         const [code, ...rest] = entry.error.split(": ");
-        const { title: errorTitle } = describeJobError({ code, message: rest.join(": ") });
+        const { title: errorTitle, detail } = describeJobError({ code, message: rest.join(": ") });
         const error = doc.createElement("p");
         error.className = "inline-error";
         error.textContent = errorTitle;
-        head.append(error);
+        const details = doc.createElement("details");
+        details.className = "lib-error-details";
+        const summary = doc.createElement("summary");
+        summary.textContent = "详情";
+        const pre = doc.createElement("pre");
+        pre.textContent = detail;
+        details.append(summary, pre);
+        head.append(error, details);
       }
     } else {
       const title = doc.createElement("p");
@@ -108,14 +115,16 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
     const actions = doc.createElement("div");
     actions.className = "lib-actions";
     const playable = output ?? (entry?.output ? { name: entry.output, kind: entry.kind } : null);
+    li.outputName = playable?.name ?? null;
+    const rowTitle = entry ? summarize(entry).text : output.name;
     if (playable) {
-      li.addEventListener("click", () => playOutput(playable));
+      li.addEventListener("click", () => playOutput(playable, rowTitle));
       const play = doc.createElement("button");
       play.textContent = "播放";
       addIcon(play, "play", doc);
       play.addEventListener("click", (event) => {
         event.stopPropagation();
-        playOutput(playable);
+        playOutput(playable, rowTitle);
       });
       actions.append(play);
       const reveal = doc.createElement("button");
@@ -142,7 +151,11 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
     return li;
   }
 
-  function playOutput(output) {
+  function playOutput(output, title = "") {
+    for (const row of els.list.children ?? []) {
+      const base = String(row.className ?? "").replace(/\s*\bplaying\b/, "");
+      row.className = row.outputName === output.name ? `${base} playing` : base;
+    }
     els.player.replaceChildren();
     const isVideo = output.kind === "video" || /\.(mp4|webm)$/i.test(output.name);
     const media = doc.createElement(isVideo ? "video" : "audio");
@@ -151,7 +164,7 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
     media.src = api.serveOutput(output.name);
     const caption = doc.createElement("p");
     caption.className = "hint";
-    caption.textContent = `正在播放：${output.name}`;
+    caption.textContent = `正在播放：${title || output.name}`;
     els.player.append(media, caption);
     els.player.scrollIntoView?.({ block: "start", behavior: "smooth" });
   }
