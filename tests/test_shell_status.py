@@ -38,6 +38,20 @@ def test_menu_title(fixture, expected):
     assert proc.stdout.strip() == expected
 
 
+@pytest.mark.parametrize("fixture,expected", [
+    ({"server": "failed", "needs_setup": False, "desk_state": None}, "down"),
+    ({"server": "owned", "needs_setup": False, "desk_state": IDLE}, "idle"),
+    ({"server": "owned", "needs_setup": False, "desk_state": HELD_LLM}, "loaded"),
+    ({"server": "owned", "needs_setup": False, "desk_state": HELD_VIDEO}, "busy"),
+    ({"server": "owned", "needs_setup": False, "desk_state": None}, "down"),
+])
+def test_menu_glyph_state(fixture, expected):
+    proc = subprocess.run([harness_path(), "glyph-state"], input=json.dumps(fixture),
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == expected
+
+
 @pytest.mark.parametrize("failures,child,expected", [
     (1, "true", "keepWaiting"),
     (2, "false", "keepWaiting"),

@@ -68,6 +68,20 @@ func menuTitle(for status: ShellStatus) -> String {
   }
 }
 
+/// The menubar glyph's coarse state, mapped from the same status the title text uses.
+enum MenuGlyphState: String { case down, idle, loaded, busy }
+
+/// The sole mapping from shell status to the menu-bar glyph variant.
+func menuGlyphState(for status: ShellStatus) -> MenuGlyphState {
+  switch status.server {
+  case .starting, .stopped, .failed: return .down
+  case .runningOwned, .runningAttached: break
+  }
+  guard let desk = status.desk else { return .down }
+  guard let kind = desk.holderKind else { return .idle }
+  return kind == "llm" ? .loaded : .busy
+}
+
 /// Dark, themed error page shown in place of ui:deskShell when the service is down or unresponsive.
 func errorPageHTML(reason: String, logPath: String) -> String {
   func esc(_ s: String) -> String {

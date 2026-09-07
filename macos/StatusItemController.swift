@@ -15,7 +15,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     self.api = api
     statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     super.init()
-    configureStatusButton(label: "启动中…")
+    configureStatusButton(label: "启动中…", glyph: .down)
 
     let menu = NSMenu()
     menu.autoenablesItems = false
@@ -28,34 +28,55 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     let openItem = NSMenuItem(title: "打开窗口", action: #selector(openWindow), keyEquivalent: "")
     openItem.target = self
+    openItem.image = NSImage(systemSymbolName: "macwindow", accessibilityDescription: "打开窗口")
+    openItem.indentationLevel = 0
     menu.addItem(openItem)
     let revealItem = NSMenuItem(title: "打开成品目录", action: #selector(revealOutputs), keyEquivalent: "")
     revealItem.target = self
+    revealItem.image = NSImage(systemSymbolName: "folder", accessibilityDescription: "打开成品目录")
+    revealItem.indentationLevel = 0
     menu.addItem(revealItem)
     let settingsItem = NSMenuItem(title: "设置…", action: #selector(openSettings), keyEquivalent: ",")
     settingsItem.target = self
+    settingsItem.image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: "设置")
+    settingsItem.indentationLevel = 0
     menu.addItem(settingsItem)
     menu.addItem(.separator())
     let quitItem = NSMenuItem(title: "退出", action: #selector(quit), keyEquivalent: "")
     quitItem.target = self
+    quitItem.image = NSImage(systemSymbolName: "power", accessibilityDescription: "退出")
+    quitItem.indentationLevel = 0
     menu.addItem(quitItem)
     statusItem.menu = menu
   }
 
-  /// The status model's pure mapping is the sole source of status copy.
+  /// The status model's pure mapping is the sole source of status copy and glyph.
   func render(_ status: ShellStatus) {
     let title = menuTitle(for: status)
-    configureStatusButton(label: title)
+    configureStatusButton(label: title, glyph: menuGlyphState(for: status))
     detailItem.title = "状态：\(title)"
   }
 
-  /// Use the product mark consistently; live state remains available in the menu and tooltip.
-  private func configureStatusButton(label: String) {
+  /// Draws an 18x18 monochrome template "desk" glyph whose state variant marks
+  /// idle/loaded/busy/down at a glance, independent of light/dark menu bars.
+  private func configureStatusButton(label: String, glyph: MenuGlyphState) {
     guard let button = statusItem.button else { return }
-    let image = NSApp.applicationIconImage.copy() as? NSImage
-    image?.size = NSSize(width: 18, height: 18)
-    image?.isTemplate = false
-    image?.accessibilityDescription = "LocalModelDesk：\(label)"
+    let image = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { rect in
+      NSColor.black.setStroke(); NSColor.black.setFill()
+      let body = NSBezierPath(roundedRect: rect.insetBy(dx: 2, dy: 3), xRadius: 3, yRadius: 3)
+      body.lineWidth = 1.5; body.stroke()
+      switch glyph {
+      case .idle: break
+      case .loaded: NSBezierPath(ovalIn: NSRect(x: 11, y: 3, width: 5, height: 5)).fill()
+      case .busy:
+        let tri = NSBezierPath(); tri.move(to: NSPoint(x: 11, y: 3)); tri.line(to: NSPoint(x: 16, y: 5.5)); tri.line(to: NSPoint(x: 11, y: 8)); tri.close(); tri.fill()
+      case .down:
+        let slash = NSBezierPath(); slash.move(to: NSPoint(x: 3, y: 3)); slash.line(to: NSPoint(x: 15, y: 15)); slash.lineWidth = 1.5; slash.stroke()
+      }
+      return true
+    }
+    image.isTemplate = true
+    image.accessibilityDescription = "LocalModelDesk：\(label)"
     button.image = image
     button.imagePosition = .imageOnly
     button.title = ""

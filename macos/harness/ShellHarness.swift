@@ -11,6 +11,7 @@ struct ShellHarness {
     }
     switch command {
     case "map-status": runMapStatus()
+    case "glyph-state": print(menuGlyphState(for: parseStatusFixture()).rawValue)
     case "spawn-probe": runSpawn(Array(args.dropFirst()))
     case "run": runServer(Array(args.dropFirst()))
     case "listeners":
@@ -44,12 +45,12 @@ struct ShellHarness {
     }
   }
 
-  /// Reads fixture JSON from stdin and writes its menu-title mapping to stdout.
-  static func runMapStatus() {
+  /// Reads fixture JSON from stdin and builds the `ShellStatus` it describes.
+  static func parseStatusFixture() -> ShellStatus {
     let data = FileHandle.standardInput.readDataToEndOfFile()
     guard let object = try? JSONSerialization.jsonObject(with: data),
           let fixture = object as? [String: Any] else {
-      FileHandle.standardError.write(Data("map-status: bad fixture JSON\n".utf8))
+      FileHandle.standardError.write(Data("bad fixture JSON\n".utf8))
       exit(65)
     }
 
@@ -66,13 +67,17 @@ struct ShellHarness {
     if let deskState = fixture["desk_state"], !(deskState is NSNull) {
       desk = DeskStateSnapshot.parse(deskState)
     }
-    let status = ShellStatus(
+    return ShellStatus(
       server: server,
       desk: desk,
       needsSetup: fixture["needs_setup"] as? Bool ?? false,
       lastPollError: fixture["poll_error"] as? String
     )
-    print(menuTitle(for: status))
+  }
+
+  /// Reads fixture JSON from stdin and writes its menu-title mapping to stdout.
+  static func runMapStatus() {
+    print(menuTitle(for: parseStatusFixture()))
   }
 
   static func parseSpec(_ args: [String]) -> ServerLaunchSpec {
