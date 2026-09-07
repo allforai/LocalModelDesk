@@ -74,12 +74,37 @@ def test_route_table_covers_module_contract(tmp_path):
     assert set(route_map(svc)) == {
         ("GET", "/api/outputs"),
         ("GET", "/api/outputs/{name}"),
+        ("POST", "/api/outputs/{name}/reveal"),
+        ("POST", "/api/outputs/reveal"),
         ("GET", "/api/history"),
         ("GET", "/api/sessions"),
         ("POST", "/api/sessions"),
         ("PATCH", "/api/sessions/{id}"),
         ("DELETE", "/api/sessions/{id}"),
     }
+
+
+def test_reveal_output_runs_open_minus_R_and_refuses_escape(tmp_path):
+    svc, roots = make_service(tmp_path)
+    calls = []
+    svc.outputs.set_opener(lambda argv, **kw: calls.append(argv))
+    target = roots.outputs_root / "h3-1.mp4"
+    target.write_bytes(b"x")
+
+    route_handlers = route_map(svc)
+    reveal_file = route_handlers[("POST", "/api/outputs/{name}/reveal")]
+    result = reveal_file(LibRequest(path_params={"name": "h3-1.mp4"}))
+    assert result.status == 200
+    assert body_json(result)["revealed"].endswith("h3-1.mp4")
+    assert calls == [["open", "-R", str(target.resolve())]]
+
+    result = reveal_file(LibRequest(path_params={"name": "../config.json"}))
+    assert result.status == 404
+
+    reveal_folder = route_handlers[("POST", "/api/outputs/reveal")]
+    result = reveal_folder(LibRequest())
+    assert result.status == 200
+    assert calls[-1] == ["open", str(roots.outputs_root.resolve())]
 
 
 def test_session_crud_over_http(tmp_path):

@@ -8,6 +8,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
   private let memoryItem = NSMenuItem(title: "内存 —", action: nil, keyEquivalent: "")
   var onOpenWindow: (() -> Void)?
   var onOpenSettings: (() -> Void)?
+  var onRevealOutputs: (() -> Void)?
   var onMenuOpened: (() -> Void)?
 
   init(api: DeskAPI) {
@@ -28,6 +29,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     let openItem = NSMenuItem(title: "打开窗口", action: #selector(openWindow), keyEquivalent: "")
     openItem.target = self
     menu.addItem(openItem)
+    let revealItem = NSMenuItem(title: "打开成品目录", action: #selector(revealOutputs), keyEquivalent: "")
+    revealItem.target = self
+    menu.addItem(revealItem)
     let settingsItem = NSMenuItem(title: "设置…", action: #selector(openSettings), keyEquivalent: ",")
     settingsItem.target = self
     menu.addItem(settingsItem)
@@ -82,6 +86,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
   @objc private func openWindow() { onOpenWindow?() }
 
   @objc private func openSettings() { onOpenSettings?() }
+
+  @objc private func revealOutputs() { onRevealOutputs?() }
 
   @objc private func quit() { NSApp.terminate(nil) }
 }

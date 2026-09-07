@@ -46,6 +46,8 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["jobStatus", [120, 3], "/api/media/job?log_from=120&job_id=3", "GET"],
     ["jobStatus", [], "/api/media/job?log_from=0", "GET"],
     ["listOutputs", [], "/api/outputs", "GET"],
+    ["revealOutput", ["clip.mp4"], "/api/outputs/clip.mp4/reveal", "POST"],
+    ["revealOutput", [], "/api/outputs/reveal", "POST"],
     ["listHistory", [], "/api/history?limit=200", "GET"],
     ["listChatSessions", [], "/api/sessions", "GET"],
     ["createChatSession", [{ title: "Draft" }], "/api/sessions", "POST", { title: "Draft" }],
@@ -58,7 +60,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     "readConfig", "writeConfig", "completeFirstRun", "adoptLegacyModels", "discoverModels", "listCatalog", "verifyAllModels",
     "startDownload", "cancelDownload", "deleteModel", "diskUsage", "memorySnapshot", "deskState", "loadLlm", "unloadLlm",
     "llmStatus", "chatStream", "startVideoJob", "startMusicJob", "cancelJob", "jobStatus", "listOutputs",
-    "serveOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
+    "serveOutput", "revealOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
   ];
   assert.deepEqual(Object.keys(api).sort(), [...names, "uploadMediaInput", "DeskApiError"].sort());
   await withFetch({}, async (calls) => {

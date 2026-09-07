@@ -98,6 +98,8 @@ export const jobStatus = (logFrom = 0, jobId = null) =>
 
 export const listOutputs = () => request(ROUTES.outputs);
 export const serveOutput = (name) => `${ROUTES.outputs}/${encoded(name)}`;
+export const revealOutput = (name) =>
+  json(name ? `${ROUTES.outputs}/${encoded(name)}/reveal` : `${ROUTES.outputs}/reveal`, "POST");
 export const listHistory = (limit = 200) => request(`${ROUTES.history}?limit=${limit}`);
 export const listChatSessions = () => request(ROUTES.sessions);
 export const createChatSession = (init = {}) => json(ROUTES.sessions, "POST", init);

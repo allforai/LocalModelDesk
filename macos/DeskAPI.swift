@@ -21,6 +21,7 @@ final class DeskAPI {
   static let configPath = "/api/config"
   static let firstRunPath = "/api/first-run"
   static let adoptPath = "/api/adopt"
+  static let revealOutputsPath = "/api/outputs/reveal"
 
   let baseURL: URL
   private let session: URLSession
@@ -75,6 +76,10 @@ final class DeskAPI {
     request("POST", Self.adoptPath, body: ["legacy_root": legacyRoot, "mode": mode]) {
       completion($0.map { _ in () })
     }
+  }
+
+  func revealOutputs(completion: @escaping (Result<Void, DeskAPIError>) -> Void) {
+    request("POST", Self.revealOutputsPath, body: [:]) { completion($0.map { _ in () }) }
   }
 
   private func request(_ method: String, _ path: String, body: [String: Any]?,

@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     poller = StatusPoller(api: api)
     statusController.onOpenWindow = { [weak self] in self?.windowController.showWindow() }
     statusController.onOpenSettings = { [weak self] in self?.windowController.showSettings() }
+    statusController.onRevealOutputs = { [weak self] in self?.api.revealOutputs { _ in } }
     statusController.onMenuOpened = { [weak self] in
       guard let self, self.status.needsSetup else { return }
       self.refreshConfig()
