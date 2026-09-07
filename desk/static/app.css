@@ -29,8 +29,8 @@ button:disabled,button[aria-disabled="true"]{opacity:.5;cursor:not-allowed;filte
 .status-part{display:inline-flex;align-items:center;gap:6px;min-width:0;color:var(--muted);white-space:nowrap}
 .status-part>span{overflow:hidden;text-overflow:ellipsis;color:var(--text)}
 .status-holder>span{padding:2px 8px;border:1px solid var(--border);border-radius:999px;background:var(--bg)}
-.status-next{color:var(--ok)}.status-next>span{color:inherit}
-#statusbar[data-tone="busy"] .status-next{color:var(--busy)}
+.status-next{color:var(--muted)}.status-next>span{color:inherit}
+.status-next[data-ok="1"]{color:var(--ok)}.status-next[data-ok="0"]{color:var(--busy)}
 #statusbar[data-offline="1"] .status-next,#statusbar[data-tone="error"] .status-next{color:var(--danger)}
 @media (max-width:800px){#statusbar{grid-template-columns:max-content minmax(100px,1fr) max-content;gap:10px}.status-holder,.status-media{display:none}}
 #tabs{display:flex;gap:4px;padding:0 var(--margin);border-bottom:1px solid var(--border)}
