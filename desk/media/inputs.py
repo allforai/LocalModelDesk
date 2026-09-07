@@ -2,6 +2,7 @@
 import base64
 import binascii
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -11,6 +12,15 @@ import uuid
 MAX_INPUT_BYTES = 32 * 1024 * 1024
 EXTENSIONS = {".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image",
               ".mp4": "video", ".mov": "video", ".webm": "video"}
+
+
+def _tool(name, default=None):
+    """Locate an ffmpeg-suite binary: LOCALMODELDESK_FF* override, then PATH.
+
+    Absolute build-machine prefixes must not appear here: a shipped bundle that
+    names one fails the self-containment check in scripts/verify-app.sh (V3).
+    """
+    return os.environ.get("LOCALMODELDESK_" + name.upper()) or shutil.which(name) or default or name
 
 
 def resolve_input(root, asset_id, kind):
@@ -39,13 +49,12 @@ def save_input(root, name, data):
     path = directory / (uuid.uuid4().hex + suffix)
     try:
         path.write_bytes(raw)
-        probe = shutil.which("ffprobe") or next((str(p) for p in
-            (Path("/opt/homebrew/bin/ffprobe"), Path("/usr/local/bin/ffprobe")) if p.is_file()), "ffprobe")
+        probe = _tool("ffprobe")
         result = subprocess.run([probe, "-v", "error", "-show_streams", "-show_format",
                                  "-of", "json", str(path)], capture_output=True, timeout=15, check=True)
         info = json.loads(result.stdout)
         if EXTENSIONS[suffix] == "image":
-            ffmpeg = shutil.which("ffmpeg") or probe.replace("ffprobe", "ffmpeg")
+            ffmpeg = _tool("ffmpeg", probe.replace("ffprobe", "ffmpeg"))
             decode = subprocess.run([ffmpeg, "-v", "error", "-i", str(path), "-frames:v", "1", "-f", "null", "-"],
                                     capture_output=True, timeout=30)
             if decode.returncode != 0:
