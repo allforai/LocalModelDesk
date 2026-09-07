@@ -68,6 +68,19 @@ def test_adopt_endpoint_point_and_bad_body(server, tmp_path):
     assert payload["error"]["code"] == "legacy_root_invalid"
 
 
+def test_discover_endpoint_selects_best_local_tree(server, tmp_path, monkeypatch):
+    local = tmp_path / "existing"
+    model = local / "minimax-music3"
+    model.mkdir(parents=True)
+    (model / "weight.safetensors").write_bytes(b"x")
+    monkeypatch.setenv("LOCALMODELDESK_MODEL_SCAN_ROOTS", str(local))
+    status, payload = http_call(server, "POST", "/api/models/discover", {})
+    assert status == 200
+    assert payload["found"] is True
+    assert payload["models_root"] == str(local)
+    assert payload["candidates"][0]["model_keys"] == ["music3"]
+
+
 def test_unknown_route_404_and_invalid_json_400(server):
     status, payload = http_call(server, "GET", "/api/nope")
     assert status == 404

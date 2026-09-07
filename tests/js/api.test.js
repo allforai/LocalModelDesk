@@ -26,6 +26,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["writeConfig", [{ gateway: { port: 9000 } }], "/api/config", "PUT", { gateway: { port: 9000 } }],
     ["completeFirstRun", ["/models"], "/api/first-run", "POST", { models_root: "/models" }],
     ["adoptLegacyModels", ["/old", "point"], "/api/adopt", "POST", { legacy_root: "/old", mode: "point" }],
+    ["discoverModels", [], "/api/models/discover", "POST"],
     ["listCatalog", [], "/api/resources/catalog", "GET"],
     ["verifyAllModels", [], "/api/resources/status?refresh=0", "GET"],
     ["verifyAllModels", [true], "/api/resources/status?refresh=1", "GET"],
@@ -54,12 +55,12 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["gatewayConfig", [true], "/api/gateway/config", "POST"],
   ];
   const names = [
-    "readConfig", "writeConfig", "completeFirstRun", "adoptLegacyModels", "listCatalog", "verifyAllModels",
+    "readConfig", "writeConfig", "completeFirstRun", "adoptLegacyModels", "discoverModels", "listCatalog", "verifyAllModels",
     "startDownload", "cancelDownload", "deleteModel", "diskUsage", "memorySnapshot", "deskState", "loadLlm", "unloadLlm",
     "llmStatus", "chatStream", "startVideoJob", "startMusicJob", "cancelJob", "jobStatus", "listOutputs",
     "serveOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
   ];
-  assert.deepEqual(Object.keys(api).sort(), [...names, "DeskApiError"].sort());
+  assert.deepEqual(Object.keys(api).sort(), [...names, "uploadMediaInput", "DeskApiError"].sort());
   await withFetch({}, async (calls) => {
     for (const [name, args, url, method, body] of expected) {
       const result = await api[name](...args);

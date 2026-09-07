@@ -3,8 +3,10 @@ import * as api from "../api.js";
 import { formatBytes } from "../pure/format.js";
 import { rowView } from "../pure/model_status.js";
 import { confirmDialog } from "../widgets/confirm.js";
+import { addIcon } from "../icons.js";
 
 const ACTION_LABEL = { download: "下载", resume: "续传", cancel: "取消", delete: "删除" };
+const ACTION_ICON = { download: "download", resume: "refresh", cancel: "x", delete: "trash" };
 
 export function createResourcesPane(root) {
   const doc = root.ownerDocument;
@@ -72,6 +74,7 @@ export function createResourcesPane(root) {
       const button = doc.createElement("button");
       button.type = "button";
       button.textContent = ACTION_LABEL[action];
+      addIcon(button, ACTION_ICON[action], doc);
       button.disabled = view.downloadDisabled && (action === "download" || action === "resume");
       if (button.disabled) button.title = view.downloadDisabledReason;
       button.addEventListener("click", async () => {

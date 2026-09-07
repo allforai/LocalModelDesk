@@ -63,7 +63,7 @@ class FakeExecutor:
 
     def spawn(self, cmd, *, extra_env=None):
         self.spawned.append({"cmd": list(cmd), "extra_env": dict(extra_env or {})})
-        return FakeHandle(self.script, Path(cmd[-1]), self.lines, ignore_term=self.ignore_term)
+        return FakeHandle(self.script, Path(cmd[cmd.index("--output") + 1]), self.lines, ignore_term=self.ignore_term)
 
 
 class FakeArbiter:

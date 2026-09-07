@@ -150,6 +150,20 @@ def test_last_window_closed_does_not_terminate():
     assert match and "false" in match.group(0)
 
 
+def test_main_menu_exposes_standard_editing_shortcuts():
+    text = _read("AppDelegate.swift")
+    for title, action, key in (
+        ("撤销", "undo:", "z"), ("重做", "redo:", "z"),
+        ("剪切", "NSText.cut", "x"), ("复制", "NSText.copy", "c"),
+        ("粘贴", "NSText.paste", "v"), ("全选", "NSText.selectAll", "a"),
+    ):
+        assert f'withTitle: "{title}"' in text
+        assert action in text
+        assert f'keyEquivalent: "{key}"' in text
+    assert "NSTextView.pasteAsPlainText" in text
+    assert "[.command, .shift]" in text
+
+
 def test_signal_paths_reap():
     main_text = _read("main.swift")
     assert "SIGTERM" in main_text and "SIGINT" in main_text

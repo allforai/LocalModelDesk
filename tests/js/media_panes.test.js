@@ -36,6 +36,7 @@ test("video/music panes use documented DOM selectors, submit media APIs, and fil
   const videoPane = createVideoPane(video, { onStarted: (job) => started.push(job) });
   const musicPane = createMusicPane(music, { onStarted: (job) => started.push(job) });
   assert.deepEqual(video.parts["video-size"].children.map((option) => option.value), ["512x288", "768x448", "1024x576"]);
+  assert.deepEqual(video.parts["video-frames"].children.map((option) => option.textContent), ["约 2 秒（快速）", "约 3 秒", "约 5 秒（常用）", "约 8 秒", "约 10 秒", "约 15 秒（最长）"]);
   videoPane.fill({ prompt: "夜景", width: 1024, height: 576, frames: 57, steps: 20 });
   musicPane.fill({ caption: "爵士", lyrics: "la", duration: 75 });
   assert.equal(video.parts["video-size"].value, "1024x576");
@@ -43,7 +44,7 @@ test("video/music panes use documented DOM selectors, submit media APIs, and fil
   await withFetch([{ job_id: 7, status: "running", kind: "video", log: "started" }, { job_id: 8, status: "done", kind: "music", output: "song.wav" }], async (calls) => {
     await video.parts["video-start"].click(); await music.parts["music-start"].click();
     assert.deepEqual(calls.map(({ url, options }) => [url, JSON.parse(options.body)]), [
-      ["/api/media/video", { prompt: "夜景", width: 1024, height: 576, frames: 57, steps: 20 }],
+      ["/api/media/video", { prompt: "夜景", width: 1024, height: 576, frames: 49, steps: 20 }],
       ["/api/media/music", { caption: "爵士", lyrics: "la", duration: 75 }],
     ]);
   });

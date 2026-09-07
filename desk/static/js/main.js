@@ -10,6 +10,7 @@ import { createLibraryPane } from "./panes/library.js";
 import { createFirstRunPane } from "./panes/firstrun.js";
 import { createSettingsPane } from "./panes/settings.js";
 import { heavyAvailability } from "./pure/desk_state.js";
+import { hydrateIcons } from "./icons.js";
 
 const $ = (selector) => document.querySelector(selector);
 const store = createStore({ activeTab: "chat" });
@@ -37,7 +38,7 @@ function enterDesk() {
     statusbar = createStatusBar($("#statusbar"));
     const onStarted = (job) => { jobActive = job.status === "running"; lastJobId = job.job_id ?? null; jobLogFrom = job.next_log_from ?? 0; };
     panes = { chat:createChatPane($("#pane-chat")), video:createVideoPane($("#pane-video"), { onStarted }), music:createMusicPane($("#pane-music"), { onStarted }), resources:createResourcesPane($("#pane-resources")), library:createLibraryPane($("#pane-library"), { applyFill }) };
-    settings = createSettingsPane($("#pane-settings"));
+    settings = createSettingsPane($("#pane-settings"), { onReset: () => globalThis.location.reload() });
     $("[data-open-settings]").addEventListener("click", () => { $("#pane-settings").hidden = false; settings.init(); });
     $("[data-close-settings]").addEventListener("click", () => { $("#pane-settings").hidden = true; });
     for (const button of document.querySelectorAll("#tabs [data-tab]")) button.addEventListener("click", () => showTab(button.dataset.tab));
@@ -86,4 +87,5 @@ async function tick() {
   } catch (error) { failures += 1; if (failures >= 3) statusbar.offline(true); }
 }
 
+hydrateIcons(document);
 boot();

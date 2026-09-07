@@ -71,6 +71,15 @@ def post_adopt(req) -> dict:
     return {"mode": result.mode, "models_root": str(result.models_root), "adopted": list(result.adopted), "moved_bytes": result.moved_bytes, "source_retained": result.source_retained}
 
 
+def post_discover(_req) -> dict:
+    config, candidates = firstrun.auto_configure_discovered(_roots())
+    return {
+        "models_root": str(config.models_root),
+        "candidates": candidates,
+        "found": bool(candidates),
+    }
+
+
 def build_routes() -> list:
     return [
         ("GET", "/api/config", get_config),
@@ -78,4 +87,5 @@ def build_routes() -> list:
         ("GET", "/api/paths", get_paths),
         ("POST", "/api/first-run", post_first_run),
         ("POST", "/api/adopt", post_adopt),
+        ("POST", "/api/models/discover", post_discover),
     ]

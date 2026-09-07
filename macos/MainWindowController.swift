@@ -32,6 +32,12 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
     NSApp.activate(ignoringOtherApps: true)
   }
 
+  /// Opens the window and forwards to the web shell's settings control.
+  func showSettings() {
+    showWindow()
+    webView.evaluateJavaScript("document.querySelector('[data-open-settings]')?.click()")
+  }
+
   var isWindowVisible: Bool { window.isVisible }
 
   /// Loads ui:deskShell.

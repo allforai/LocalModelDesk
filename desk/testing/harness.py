@@ -16,6 +16,7 @@ from desk.gateway.service import GatewayService
 from desk.library import LibraryService
 from desk.llm.service import LlmService
 from desk.media.service import MediaService
+from desk.media.routes import build_routes as build_media_routes
 from desk.resources.catalog import list_catalog
 from desk.resources.manifest import ManifestFile
 from desk.resources.service import ResourcesService
@@ -162,6 +163,11 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
             if req.body.get("models_root") else None,
         ).to_json()),
         ("POST", "/api/adopt", adopt),
+        ("POST", "/api/models/discover", lambda _req: {
+            "models_root": str(firstrun.auto_configure_discovered(roots)[0].models_root),
+            "candidates": firstrun.discover_model_roots(roots),
+            "found": bool(firstrun.discover_model_roots(roots)),
+        }),
         ("GET", "/api/resources/catalog", lambda _req: [
             entry.to_json() for entry in resources.list_catalog()]),
         ("GET", "/api/resources/status", lambda _req: {
@@ -181,10 +187,8 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
         ("POST", "/api/llm/chat", lambda req: llm.chat_completion(req.body)),
         ("POST", "/api/llm/chat/stream", lambda req: {
             "events": list(llm.chat_stream(req.body))}),
-        ("POST", "/api/media/video", lambda req: media.start_video_job(**req.body)),
-        ("POST", "/api/media/music", lambda req: media.start_music_job(**req.body)),
-        ("POST", "/api/media/cancel", lambda _req: media.cancel_job()),
-        ("GET", "/api/media/job", lambda _req: media.job_status()),
+        *((method, path, lambda req, handler=handler: handler(req.body, req.query))
+          for method, path, handler in build_media_routes(media)),
         ("GET", "/api/state", lambda _req: arbiter.desk_state()),
         ("GET", "/api/memory", lambda _req: arbiter.memory_snapshot()),
         ("GET", "/api/outputs", lambda _req: library.list_outputs()),

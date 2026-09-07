@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .commands import build_h3_command, build_music_command
+from .inputs import save_input, resolve_input
 
 log = logging.getLogger(__name__)
 DEFAULT_LOG_LIMIT = 1024 * 1024
@@ -42,11 +43,39 @@ class MediaService:
         self._log = ""; self._log_dropped = 0; self._log_truncated = False
         self._cancel_requested = False; self._handle = None; self._callbacks: list[Callable[[dict], None]] = []
 
-    def start_video_job(self, *, prompt, width, height, frames, steps) -> dict:
+    def upload_input(self, *, name=None, data=None) -> dict:
+        try:
+            return save_input(self._resolve_paths().outputs_root, name, data)
+        except ValueError as exc:
+            raise MediaError("invalid_input", str(exc), 400) from exc
+
+    def start_video_job(self, *, prompt, width, height, frames, steps,
+                        mode="text", first_frame=None, last_frame=None, ref_video=None,
+                        use_audio=True) -> dict:
         _nonempty("prompt", prompt)
         for name, value in (("width", width), ("height", height), ("frames", frames), ("steps", steps)):
             _positive_int(name, value)
-        return self._start("video", {"prompt": prompt, "width": width, "height": height, "frames": frames, "steps": steps})
+        if mode not in ("text", "image", "reference") or not isinstance(use_audio, bool):
+            raise MediaError("invalid_params", "生成模式或音轨选项无效", 400)
+        assets = {}
+        if mode == "image":
+            assets = {"first_frame": (first_frame, "image")}
+            if last_frame: assets["last_frame"] = (last_frame, "image")
+        elif mode == "reference":
+            assets = {"ref_video": (ref_video, "video")}
+        expected = set(assets)
+        if any(value and key not in expected for key, value in
+               (("first_frame", first_frame), ("last_frame", last_frame), ("ref_video", ref_video))):
+            raise MediaError("invalid_params", "素材与生成模式不匹配", 400)
+        try:
+            for asset_id, kind in assets.values():
+                resolve_input(self._resolve_paths().outputs_root, asset_id, kind)
+        except ValueError as exc:
+            raise MediaError("invalid_input", str(exc), 400) from exc
+        params = {"prompt": prompt, "width": width, "height": height, "frames": frames, "steps": steps}
+        if mode != "text":
+            params.update(mode=mode, use_audio=use_audio, **{key: value[0] for key, value in assets.items()})
+        return self._start("video", params)
 
     def start_music_job(self, *, caption, lyrics, duration) -> dict:
         _nonempty("caption", caption)
@@ -80,7 +109,12 @@ class MediaService:
                 root = Path(roots.outputs_root); root.mkdir(parents=True, exist_ok=True)
                 if kind == "video":
                     output = root / f"h3-{stamp}.mp4"
-                    command = build_h3_command(tuple(roots.mlx_h3_cmd), model_root, output=output, **params)
+                    command_params = dict(params)
+                    command_params.pop("mode", None)
+                    for key in ("first_frame", "last_frame", "ref_video"):
+                        if key in command_params:
+                            command_params[key] = resolve_input(root, command_params[key], "video" if key == "ref_video" else "image")
+                    command = build_h3_command(tuple(roots.mlx_h3_cmd), model_root, output=output, **command_params)
                     extra_env = dict(roots.mlx_h3_env)
                 else:
                     output = root / f"music3-{stamp}.wav"

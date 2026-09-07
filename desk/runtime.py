@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from .app import DeskApp, Response
 from .arbiter import Arbiter
-from .foundation import capabilities, config, paths, routes as foundation_routes
+from .foundation import capabilities, config, firstrun, paths, routes as foundation_routes
 from .gateway.desk_backend import DeskGatewayBackend
 from .gateway.service import GatewayService
 from .library import LibraryService
@@ -100,6 +100,8 @@ def _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway) 
 
 def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntime:
     """Assemble production services using only real leaf implementations."""
+    roots = paths.resolve_paths(default_config_on_corrupt=True)
+    firstrun.auto_configure_discovered(roots)
     roots = paths.resolve_paths(default_config_on_corrupt=True)
     paths.setup_logging(roots)
     resolve_paths = paths.resolve_paths

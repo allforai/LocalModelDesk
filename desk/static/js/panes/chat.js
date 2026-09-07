@@ -6,6 +6,7 @@ import { initialStream, reduceChunk } from "../pure/chat_stream.js";
 import { needsWarning } from "../pure/mem_warn.js";
 import { sortSessions, displayTitle } from "../pure/sessions.js";
 import { confirmDialog } from "../widgets/confirm.js";
+import { addIcon } from "../icons.js";
 
 export function createChatPane(root) {
   const doc = root.ownerDocument;
@@ -167,9 +168,12 @@ export function createChatPane(root) {
       });
       const rename = doc.createElement("button");
       rename.textContent = "改名";
+      addIcon(rename, "pencil", doc);
       rename.addEventListener("click", () => beginRename(li, session));
       const remove = doc.createElement("button");
       remove.textContent = "删";
+      remove.setAttribute?.("aria-label", `删除会话：${displayTitle(session)}`);
+      addIcon(remove, "trash", doc);
       remove.addEventListener("click", async () => {
         const go = await confirmDialog(doc, { title: "删除会话", message: `确定删除「${displayTitle(session)}」？该会话的全部消息将被删除。`, confirmLabel: "删除" });
         if (!go) return;

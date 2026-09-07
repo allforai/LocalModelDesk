@@ -2,6 +2,7 @@
 import * as api from "../api.js";
 import { fillPlan } from "../pure/history_fill.js";
 import { formatBytes, formatDuration, formatTimestamp } from "../pure/format.js";
+import { addIcon } from "../icons.js";
 
 const KIND_LABEL = { video: "视频", music: "音乐", file: "文件" };
 const STATUS_LABEL = { done: "完成", failed: "失败", cancelled: "已取消" };
@@ -49,7 +50,7 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
     const spec = entry.kind === "video"
       ? [
         params.width && params.height ? `${params.width}×${params.height}` : null,
-        params.frames ? `${params.frames}帧` : null,
+        params.frames ? `约 ${Math.round(params.frames / 24)} 秒` : null,
         params.steps ? `${params.steps}步` : null,
       ]
       : [params.duration ? `${params.duration}s` : null];
@@ -98,6 +99,7 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
       li.addEventListener("click", () => playOutput(playable));
       const play = doc.createElement("button");
       play.textContent = "播放";
+      addIcon(play, "play", doc);
       play.addEventListener("click", (event) => {
         event.stopPropagation();
         playOutput(playable);
@@ -108,6 +110,7 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
     if (plan) {
       const fill = doc.createElement("button");
       fill.textContent = "回填参数";
+      addIcon(fill, "sliders", doc);
       fill.addEventListener("click", (event) => {
         event.stopPropagation();
         ctx.applyFill(plan);

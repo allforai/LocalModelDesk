@@ -1,4 +1,5 @@
 import errno
+import os
 
 import pytest
 
@@ -57,3 +58,29 @@ def test_complete_first_run_unwritable_target_does_not_persist(roots, tmp_path, 
         "os_error": "[Errno 13] Permission denied",
     }
     assert not roots.config_path.exists()
+
+
+def test_discovery_ranks_known_local_model_tree_and_auto_configures(roots, tmp_path, monkeypatch):
+    partial = tmp_path / "partial"
+    complete = tmp_path / "complete"
+    (partial / "minimax-h3").mkdir(parents=True)
+    (partial / "minimax-h3" / "weight.safetensors").write_bytes(b"x")
+    for relpath in (
+        "minimax-h3",
+        "minimax-music3",
+        "llms/huihui-ai/Huihui-GLM-4.7-Flash-abliterated-mlx-4bit",
+    ):
+        directory = complete / relpath
+        directory.mkdir(parents=True)
+        (directory / "weight.safetensors").write_bytes(b"x")
+    monkeypatch.setenv(
+        "LOCALMODELDESK_MODEL_SCAN_ROOTS",
+        os.pathsep.join((str(partial), str(complete))),
+    )
+
+    config, candidates = firstrun.auto_configure_discovered(roots)
+
+    assert candidates[0]["path"] == str(complete)
+    assert set(candidates[0]["model_keys"]) == {"h3", "music3", "glm"}
+    assert config.models_root == complete
+    assert config.first_run_done is True

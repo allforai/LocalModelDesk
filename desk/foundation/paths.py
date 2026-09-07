@@ -22,6 +22,12 @@ def normalize_user_path(value) -> Path:
     return Path(value).expanduser().resolve()
 
 
+def home_model_root_candidates() -> tuple[Path, ...]:
+    """Return the small set of conventional model roots under the user home."""
+    home = Path.home()
+    return (home / "LocalModelDesk", home / "localModelDesk", home / "models")
+
+
 @dataclass(frozen=True)
 class PathRoots:
     mode: str
