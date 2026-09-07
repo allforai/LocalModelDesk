@@ -62,3 +62,8 @@ test("拒绝码翻译成中文原因，llm_already_held 指向卸载动作", () 
 test("快照缺失如实说不可用，不编数字", () => {
   assert.equal(renderState(idle, null).memText, "内存读数不可用");
 });
+
+test("状态条内存文案标 GiB", () => {
+  const view = renderState({ can_start: { llm: { ok: true } } }, { total_bytes: 128 * 1024 ** 3, used_bytes: 64 * 1024 ** 3, available_bytes: 64 * 1024 ** 3 });
+  assert.equal(view.memText, "已用 64.0 / 总 128.0 GiB（可用 64.0 GiB）");
+});

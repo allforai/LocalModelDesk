@@ -55,7 +55,7 @@ test("statusbar 将 desk state 和内存快照更新到 DOM，离线时保留失
   const snapshot = { total_bytes: 16 * 1024 ** 3, used_bytes: 6 * 1024 ** 3, available_bytes: 10 * 1024 ** 3 };
 
   bar.update(state, snapshot);
-  assert.equal(parts.mem.textContent, "已用 6.0 / 总 16.0 GB（可用 10.0 GB）");
+  assert.equal(parts.mem.textContent, "已用 6.0 / 总 16.0 GiB（可用 10.0 GiB）");
   assert.equal(parts.holder.textContent, "LLM：Qwen");
   assert.equal(parts.media.textContent, "媒体：空闲");
   assert.equal(parts.next.textContent, "可开下一件重活");

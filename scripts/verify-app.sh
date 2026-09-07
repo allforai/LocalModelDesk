@@ -40,6 +40,13 @@ if ! OUT="$(codesign --verify --deep --strict --verbose=2 "$APP" 2>&1)"; then
   fail "V1 签名验证失败: $OUT"
 fi
 
+# V1b: Gatekeeper must accept the bundle unless the build was explicitly allowed to be adhoc.
+if ! spctl --assess --type execute "$APP" 2>&1 | grep -qv rejected; then
+  if [[ "${LMD_ALLOW_ADHOC:-0}" != "1" ]]; then
+    fail "V1b Gatekeeper 拒绝了该包（未用 Developer ID 签名，设置 LMD_ALLOW_ADHOC=1 以允许本机调试用 adhoc 签名）"
+  fi
+fi
+
 # V2: every key required by the packaging plist template must be non-empty.
 for key in CFBundleIdentifier CFBundleName CFBundleExecutable CFBundleShortVersionString \
            CFBundleVersion CFBundleIconFile LSMinimumSystemVersion CFBundlePackageType \

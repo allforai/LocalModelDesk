@@ -63,6 +63,12 @@
 - 首次打开时选择模型目录；默认目录是 `~/Library/Application Support/LocalModelDesk/models`。已有模型可收编已有模型目录：可以直接指向原目录，或把已识别的模型移入新目录，无须重新下载。
 - 默认网关监听 `0.0.0.0:8770`，同一局域网的设备可访问。本服务无鉴权；请只在可信网络中启用，或在设置中关闭网关。
 
+### 构建与签名
+
+- `scripts/build-app.sh` 默认要求 Developer ID Application 证书；用 `security find-identity -v -p codesigning` 查看本机可用身份，再用 `--identity "Developer ID Application: ..."` 传给构建脚本。
+- 仅本机调试可用 adhoc 签名：设置环境变量 `LMD_ALLOW_ADHOC=1` 并传 `--adhoc`；adhoc 签名的应用在其他机器上会被 Gatekeeper 拒绝打开，因此构建脚本在缺少该环境变量时拒绝静默降级为 adhoc。
+- `scripts/verify-app.sh` 会额外用 `spctl --assess --type execute` 校验 Gatekeeper 是否接受该包；未设置 `LMD_ALLOW_ADHOC=1` 时若被拒绝，验证失败。
+
 ## 明确不做
 
 - 不把请求发到云端，也不给多人共用
