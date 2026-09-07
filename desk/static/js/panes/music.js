@@ -8,7 +8,7 @@ export function createMusicPane(root, ctx = {}) {
     duration: root.querySelector("[data-music-duration]"), startBtn: root.querySelector("[data-music-start]"),
     error: root.querySelector("[data-music-error]"), hint: root.querySelector("[data-music-hint]"),
   };
-  const jobView = createJobView(root, { mediaTag: "audio" });
+  const jobView = createJobView(root, { mediaTag: "audio", kind: "music" });
   async function submit(params) {
     try { return await api.startMusicJob(params); }
     catch (error) {
