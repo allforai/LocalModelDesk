@@ -1,6 +1,7 @@
 // ui:settingsPane —— 保存 gateway 配置后显式 apply，并展示实际监听状态。
 import * as api from "../api.js";
 import { baseUrls } from "../pure/base_url.js";
+import { confirmDialog } from "../widgets/confirm.js";
 
 export function createSettingsPane(root, ctx = {}) {
   const els = {
@@ -21,6 +22,7 @@ export function createSettingsPane(root, ctx = {}) {
     modelsScan: root.querySelector("[data-settings-models-scan]"),
     modelsReset: root.querySelector("[data-settings-models-reset]"),
     modelsResult: root.querySelector("[data-settings-models-result]"),
+    urlGroup: root.querySelector("[data-url-group]"),
   };
   let urls = { openai: "", anthropic: "" };
 
@@ -47,6 +49,10 @@ export function createSettingsPane(root, ctx = {}) {
     els.lanNote.textContent = urls.note ?? "";
 
     const listening = Boolean(status.listening);
+    // The "OpenAI base URL" / "Anthropic base URL" labels are static markup with
+    // no value under them when not listening (F5) — hide the whole group, not
+    // just the code/copy controls inside it.
+    if (els.urlGroup) els.urlGroup.hidden = !listening;
     for (const el of [els.authWarning, els.openaiUrl, els.anthropicUrl, els.copyOpenai, els.copyAnthropic]) if (el) el.hidden = !listening;
     els.authWarning.textContent = listening ? "当前为无鉴权监听：同一网络任何设备都能调用本机模型" : "";
     els.lanNote.hidden = false;
@@ -103,6 +109,15 @@ export function createSettingsPane(root, ctx = {}) {
 
   async function resetModels() {
     setError("");
+    // A stray click here must not silently drop the user out of the desk and
+    // back into first-run (A-Task 7b) — confirm first.
+    const confirm = ctx.confirm ?? ((options) => confirmDialog(root.ownerDocument, options));
+    const ok = await confirm({
+      title: "重新设置模型目录",
+      message: "台面会回到首次运行，重新选择模型目录后才能继续使用。已下载的模型不会被删除。",
+      confirmLabel: "回到首次运行",
+    });
+    if (!ok) return;
     try {
       await api.writeConfig({ first_run_done: false });
       if (ctx.onReset) ctx.onReset(); else globalThis.location?.reload?.();

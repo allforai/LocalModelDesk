@@ -549,7 +549,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `desk/static/app.css`
 - Test: `tests/js/settings_pane.test.js`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test("not-listening hides the url labels and puts the hint where they were", () => {
@@ -566,12 +566,12 @@ test("drawer close button is a secondary button", () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tests/js/settings_pane.test.js`
 Expected: FAIL
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `settings.js` 渲染 base URL 区块处，把"标签 + 值"整组用一个容器包起来，未监听时整组 `hidden`，并把引导句放在该容器的位置（而不是区块底部）：
 
@@ -587,7 +587,7 @@ Expected: FAIL
 
 `app.css` 确认 `.btn-secondary` 存在且为 `background:var(--panel);border:1px solid var(--border)`；若当前抽屉关闭按钮用的是别的类名，统一到 `.btn-secondary`。
 
-- [ ] **Step 4: 跑测试确认通过并提交**
+- [x] **Step 4: 跑测试确认通过并提交**
 
 Run: `node --test tests/js/settings_pane.test.js && python3 -m pytest tests/e2e/test_settings_api.py -q`
 Expected: PASS

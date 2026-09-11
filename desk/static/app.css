@@ -20,6 +20,8 @@ button:hover{border-color:var(--muted)}
 .btn-primary:hover{filter:brightness(1.08);border-color:var(--accent)}
 .btn-danger{background:var(--danger);border-color:var(--danger);color:#fff}
 .btn-quiet{background:transparent;border-color:transparent;color:var(--muted)}
+.btn-secondary{background:var(--panel);border:1px solid var(--border);color:var(--text)}
+.btn-secondary:hover{border-color:var(--muted)}
 .btn-sm{padding:4px 8px;font-size:13px}
 button:disabled,button[aria-disabled="true"]{opacity:.5;cursor:not-allowed;filter:none}
 /* 4. statusbar + tabs */

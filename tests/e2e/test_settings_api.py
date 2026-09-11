@@ -22,3 +22,34 @@ def test_settings_panel_shows_openai_and_anthropic_base_urls_without_authenticat
         )
         expect(settings.locator("[data-settings-auth-warning]")).to_contain_text("无鉴权")
     assert audit_violations == []
+
+
+def test_drawer_close_button_looks_like_a_secondary_button(page, tmp_path):
+    """F4: the drawer close button must not render as bare text next to bordered ones."""
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url)
+        page.locator("[data-open-settings]").click()
+        close_button = page.locator("[data-close-settings]")
+        expect(close_button).to_be_visible()
+        style = close_button.evaluate(
+            "el => { const s = getComputedStyle(el); return {border: s.borderColor, bg: s.backgroundColor}; }"
+        )
+        assert style["border"] not in ("transparent", "rgba(0, 0, 0, 0)"), style
+        assert style["bg"] not in ("transparent", "rgba(0, 0, 0, 0)"), style
+
+
+def test_reconfigure_models_root_asks_before_returning_to_first_run(page, tmp_path):
+    """A-Task 7b: a stray click on 'reconfigure' must not silently drop into first-run."""
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url)
+        page.locator("[data-open-settings]").click()
+        page.locator("[data-settings-models-reset]").click()
+        dialog = page.locator(".overlay .dialog")
+        expect(dialog).to_contain_text("首次运行")
+        dialog.get_by_role("button", name="取消").click()
+        expect(page.locator("#pane-firstrun")).to_be_hidden()
+        expect(page.locator("#pane-settings")).to_be_visible()
+
+        page.locator("[data-settings-models-reset]").click()
+        page.locator(".overlay .dialog").get_by_role("button", name="回到首次运行").click()
+        expect(page.locator("#pane-firstrun")).to_be_visible()

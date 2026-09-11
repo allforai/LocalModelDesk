@@ -20,6 +20,9 @@ function makePane() {
   for (const name of ["enabled", "host", "port", "save", "listening", "error", "openai-url", "anthropic-url", "lan-note", "auth-warning", "copy-openai", "copy-anthropic", "models-root", "models-apply", "models-scan", "models-reset", "models-result"]) {
     controls.set(`[data-settings-${name}]`, new Element());
   }
+  controls.set("[data-url-group]", new Element());
+  controls.set("[data-url-hint]", new Element());
+  controls.set("[data-close-settings]", new Element());
   return { controls, root: { querySelector: (selector) => controls.get(selector) } };
 }
 
@@ -109,7 +112,7 @@ test("settings 面板可扫描、应用并重新进入模型目录设置", async
   try {
     const { createSettingsPane } = await import("../../desk/static/js/panes/settings.js");
     const { root, controls } = makePane();
-    const pane = createSettingsPane(root, { onReset: () => { reset += 1; } });
+    const pane = createSettingsPane(root, { onReset: () => { reset += 1; }, confirm: async () => true });
     await pane.init();
     assert.equal(controls.get("[data-settings-models-root]").value, "/wrong");
     await controls.get("[data-settings-models-scan]").click();
@@ -122,6 +125,27 @@ test("settings 面板可扫描、应用并重新进入模型目录设置", async
     assert.ok(calls.some(([path]) => path === "/api/models/discover"));
     assert.ok(calls.some(([path]) => path === "/api/first-run"));
     assert.ok(calls.some(([path, method, body]) => path === "/api/config" && method === "PUT" && body === '{"first_run_done":false}'));
+  } finally { globalThis.fetch = oldFetch; }
+});
+
+test("reconfigure asks before dropping the user back into first-run (A-Task7b)", async () => {
+  const oldFetch = globalThis.fetch;
+  const asked = [];
+  const calls = [];
+  globalThis.fetch = async (path, options = {}) => {
+    calls.push([path, options.method ?? "GET"]);
+    if (path === "/api/gateway/config") return new Response(JSON.stringify({ config: {}, status: {} }), { status: 200 });
+    return new Response(JSON.stringify({ models_root: "/m" }), { status: 200 });
+  };
+  try {
+    const { createSettingsPane } = await import("../../desk/static/js/panes/settings.js");
+    const { root, controls } = makePane();
+    const pane = createSettingsPane(root, { confirm: async (options) => { asked.push(options); return false; } });
+    await pane.init();
+    await controls.get("[data-settings-models-reset]").click();
+    assert.equal(asked.length, 1);
+    assert.ok(asked[0].message.includes("首次运行"), asked[0].message);
+    assert.equal(calls.filter(([path, method]) => path === "/api/config" && method === "PUT").length, 0);
   } finally { globalThis.fetch = oldFetch; }
 });
 
@@ -174,6 +198,30 @@ test("监听状态用徽标类表达", async () => {
     const pane = createSettingsPane(root);
     await pane.init();
     assert.equal(controls.get("[data-settings-listening]").className, "badge badge-ok");
+  } finally { globalThis.fetch = oldFetch; }
+});
+
+test("not-listening hides the url label group, listening shows it (F5)", async () => {
+  const oldFetch = globalThis.fetch;
+  let listening = false;
+  globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/config" && (options.method ?? "GET") === "GET") return new Response(JSON.stringify({ models_root: "/models" }), { status: 200 });
+    return new Response(JSON.stringify({
+      config: { enabled: listening, host: "127.0.0.1", port: 8770 },
+      status: { enabled: listening, listening, host: "127.0.0.1", port: 8770, auth: "none", last_error: null },
+    }), { status: 200 });
+  };
+  try {
+    const { createSettingsPane } = await import("../../desk/static/js/panes/settings.js");
+    const { root, controls } = makePane();
+    const pane = createSettingsPane(root);
+    await pane.init();
+    assert.equal(controls.get("[data-url-group]").hidden, true, "未监听态不该留下无内容的 URL 标签组");
+    assert.equal(controls.get("[data-settings-lan-note]").hidden, false);
+
+    listening = true;
+    await pane.init();
+    assert.equal(controls.get("[data-url-group]").hidden, false);
   } finally { globalThis.fetch = oldFetch; }
 });
 
