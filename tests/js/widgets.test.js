@@ -21,6 +21,11 @@ class FakeElement {
     }
   }
 
+  replaceChildren(...children) {
+    this.children = [];
+    this.append(...children);
+  }
+
   remove() {
     const siblings = this.parentNode?.children;
     if (siblings) siblings.splice(siblings.indexOf(this), 1);
@@ -53,31 +58,65 @@ function find(node, predicate) {
   return null;
 }
 
-test("statusbar 将 desk state 和内存快照更新到 DOM，离线时保留失联提示", () => {
+function wideOf(part) {
+  return part.children.find((c) => c.className === "wide-only")?.textContent;
+}
+function narrowOf(part) {
+  return part.children.find((c) => c.className === "narrow-only")?.textContent;
+}
+function makeStatusBar() {
   const parts = Object.fromEntries(["mem", "holder", "media", "next"]
     .map((name) => [name, new FakeElement("span")]));
+  const nextPart = new FakeElement("span");
   const root = new FakeElement("header");
-  root.querySelector = (selector) => parts[selector.slice(6, -1)];
-  const bar = createStatusBar(root);
+  root.ownerDocument = { createElement: (tag) => new FakeElement(tag) };
+  root.querySelector = (selector) => ({
+    "[data-mem]": parts.mem, "[data-holder]": parts.holder,
+    "[data-media]": parts.media, "[data-next]": parts.next,
+    ".status-next": nextPart,
+  })[selector];
+  return { bar: createStatusBar(root), root, parts, nextPart };
+}
+
+test("statusbar 将 desk state 和内存快照更新到 DOM，离线时保留失联提示", () => {
+  const { bar, root, parts } = makeStatusBar();
   const state = { holder: { kind: "llm", label: "Qwen" }, media_busy: false, can_start: { ok: true } };
   const snapshot = { total_bytes: 16 * 1024 ** 3, used_bytes: 6 * 1024 ** 3, available_bytes: 10 * 1024 ** 3 };
 
   bar.update(state, snapshot);
-  assert.equal(parts.mem.textContent, "已用 6.0 / 总 16.0 GiB（可用 10.0 GiB）");
-  assert.equal(parts.holder.textContent, "内存里：Qwen");
-  assert.equal(parts.media.textContent, "媒体：空闲");
-  assert.equal(parts.next.textContent, "可开下一件重活");
+  assert.equal(wideOf(parts.mem), "已用 6.0 / 总 16.0 GiB（可用 10.0 GiB）");
+  assert.equal(wideOf(parts.holder), "内存里：Qwen");
+  assert.equal(wideOf(parts.media), "媒体：空闲");
+  assert.equal(wideOf(parts.next), "可开下一件重活");
   assert.equal(root.dataset.tone, "ok");
 
   bar.offline(true);
   bar.update(state, snapshot);
   assert.equal(root.dataset.offline, "1");
-  assert.equal(parts.next.textContent, "服务失联");
+  assert.equal(wideOf(parts.next), "服务失联");
 
   bar.offline(false);
   bar.update(state, snapshot);
   assert.equal(root.dataset.offline, "0");
-  assert.equal(parts.next.textContent, "可开下一件重活");
+  assert.equal(wideOf(parts.next), "可开下一件重活");
+});
+
+test("holder chip keeps its label while media is busy (W4)", () => {
+  const { bar, parts } = makeStatusBar();
+  bar.update({ holder: { kind: "video", label: "job-1" }, media_busy: true, can_start: { media: { ok: false, reason: { message: "媒体作业进行中" } } } });
+  const wide = wideOf(parts.holder);
+  assert.ok(wide.includes("内存里"), `持有者部件丢了前缀：${wide}`);
+  assert.ok(wide.includes("视频生成中"), wide);
+});
+
+test("every status part offers a compact alternative for narrow widths", () => {
+  const { bar, parts } = makeStatusBar();
+  bar.update({ holder: null, media_busy: false, can_start: { ok: true } });
+  for (const name of ["mem", "holder", "media", "next"]) {
+    const part = parts[name];
+    assert.ok(wideOf(part), `${name} 缺长文案`);
+    assert.ok(narrowOf(part), `${name} 缺短文案`);
+  }
 });
 
 test("confirmDialog 渲染文案，确认或取消后移除弹层并返回选择", async () => {

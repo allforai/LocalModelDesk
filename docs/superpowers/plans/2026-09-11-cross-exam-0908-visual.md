@@ -209,7 +209,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 **Interfaces:**
 - Produces: `createStatusBar(...).update(state)` 为每个部件同时写入长文案与短文案两个 span
 
-- [ ] **Step 1: 写失败测试（单元）**
+- [x] **Step 1: 写失败测试（单元）**
 
 `tests/js/widgets.test.js` 追加：
 
@@ -236,12 +236,12 @@ test("every status part offers a compact alternative", () => {
 
 `makeStatusBar()` 按该文件既有的 `createStatusBar` + `FakeElement` 用法写。
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tests/js/widgets.test.js`
 Expected: FAIL（持有者文本为"视频生成中"，无"内存里"；无 wide/narrow 双文案）
 
-- [ ] **Step 3: 实现 —— 双文案与前缀**
+- [x] **Step 3: 实现 —— 双文案与前缀**
 
 `desk/static/js/widgets/statusbar.js` 里每个部件的写值处改为写两个 span。示例（持有者部件，其余三个同理）：
 
@@ -279,7 +279,7 @@ function setPart(part, wide, narrow, doc) {
 
 其中 `nextText` 为 `"可开下一件重活"` / `"不可：媒体作业进行中"`，`nextShort` 为 `"可开工"` / `"忙"`。内存部件 `wide` 用现有完整文案，`narrow` 用 `已用 75.9/128 GiB`。
 
-- [ ] **Step 4: 实现 —— 编排与断点**
+- [x] **Step 4: 实现 —— 编排与断点**
 
 `desk/static/app.css:26` 的 `#statusbar` 改为：
 
@@ -295,12 +295,12 @@ function setPart(part, wide, narrow, doc) {
 
 `margin-left:auto` 让"设置"贴右，四个状态部件紧挨成一组，消除 W6 的孤立漂浮。
 
-- [ ] **Step 5: 跑测试确认通过**
+- [x] **Step 5: 跑测试确认通过**
 
 Run: `node --test tests/js/widgets.test.js`
 Expected: PASS
 
-- [ ] **Step 6: 加 e2e 宽度回归**
+- [x] **Step 6: 加 e2e 宽度回归**
 
 `tests/e2e/test_statusbar_memory.py` 追加：
 
@@ -320,7 +320,7 @@ def test_four_states_are_never_truncated(page, tmp_path, width):
         assert clipped == [], f"{width} 宽下被截断：{clipped}"
 ```
 
-- [ ] **Step 7: 跑 e2e 并提交**
+- [x] **Step 7: 跑 e2e 并提交**
 
 Run: `python3 -m pytest tests/e2e/test_statusbar_memory.py -q`
 Expected: PASS

@@ -23,17 +23,18 @@ button:hover{border-color:var(--muted)}
 .btn-sm{padding:4px 8px;font-size:13px}
 button:disabled,button[aria-disabled="true"]{opacity:.5;cursor:not-allowed;filter:none}
 /* 4. statusbar + tabs */
-#statusbar{display:grid;grid-template-columns:max-content max-content minmax(0,max-content) minmax(96px,1fr) max-content;gap:16px;align-items:center;height:48px;padding:0 var(--margin);background:var(--panel);border-bottom:2px solid var(--border);overflow:hidden}
-.status-media{min-width:0;overflow:hidden}
-#statusbar [data-open-settings]{justify-self:end}
+#statusbar{display:flex;align-items:center;gap:16px;height:48px;padding:0 var(--margin);background:var(--panel);border-bottom:2px solid var(--border);overflow:hidden}
+#statusbar .status-part{flex:0 0 auto}
+#statusbar [data-open-settings]{margin-left:auto}
 #statusbar[data-tone="ok"]{border-color:var(--ok)}#statusbar[data-tone="busy"]{border-color:var(--busy)}#statusbar[data-offline="1"],#statusbar[data-tone="error"]{border-color:var(--danger)}
-.status-part{display:inline-flex;align-items:center;gap:6px;min-width:0;color:var(--muted);white-space:nowrap}
-.status-part>span{overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.status-part{display:inline-flex;align-items:center;gap:6px;color:var(--muted);white-space:nowrap}
+.status-part>span{color:var(--text)}
 .status-holder>span{padding:2px 8px;border:1px solid var(--border);border-radius:999px;background:var(--bg)}
 .status-next{color:var(--muted)}.status-next>span{color:inherit}
 .status-next[data-ok="1"]{color:var(--ok)}.status-next[data-ok="0"]{color:var(--busy)}
 #statusbar[data-offline="1"] .status-next,#statusbar[data-tone="error"] .status-next{color:var(--danger)}
-@media (max-width:800px){#statusbar{grid-template-columns:max-content minmax(100px,1fr) max-content;gap:10px}.status-holder,.status-media{display:none}}
+.narrow-only{display:none}
+@media (max-width:1100px){.wide-only{display:none}.narrow-only{display:inline}#statusbar{gap:10px}}
 #tabs{display:flex;gap:4px;padding:0 var(--margin);border-bottom:1px solid var(--border)}
 #tabs button{min-width:78px;background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0;color:var(--muted);padding:10px 12px}
 #tabs button:hover{color:var(--text)}
