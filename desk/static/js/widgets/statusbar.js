@@ -44,6 +44,9 @@ export function createStatusBar(root) {
       const nextNarrow = view.nextOk ? "可开工" : "忙";
       setPart(doc, mem, view.memText, view.memText);
       setPart(doc, holder, `内存里：${name}`, name);
+      // Same badge family as the chat pane's model-state pill (F15): loaded llm
+      // holds it (ok), a media job holds it (busy), nothing holds it (none).
+      if (holder) holder.className = `badge badge-${deskState?.holder ? (deskState.holder.kind === "llm" ? "ok" : "busy") : "none"}`;
       setPart(doc, media, view.mediaText, `媒体：${deskState?.media_busy ? "忙" : "空闲"}`);
       setPart(doc, next, isOffline ? "服务失联" : view.nextText, isOffline ? "服务失联" : nextNarrow);
       root.dataset.tone = view.tone;

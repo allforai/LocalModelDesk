@@ -990,7 +990,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `desk/static/app.css:62`
 - Test: `tests/js/chat_pane.test.js`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test("model state renders as a badge in the shared family", () => {
@@ -1001,12 +1001,12 @@ test("model state renders as a badge in the shared family", () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tests/js/chat_pane.test.js`
 Expected: FAIL
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `chat.js:renderLlm` 每个分支在写完文案后设类名：
 
@@ -1019,7 +1019,7 @@ Expected: FAIL
 
 `app.css:62` 删掉 `[data-model-state][data-status=...]` 两条颜色规则（改由 `.badge-*` 提供），并让状态条胶囊也复用同一族：`.status-holder>span` 改为 `.status-holder>span{}` 留空并在 `statusbar.js` 里给该 span 加 `className = "badge badge-none"`（持有者为模型时 `badge-ok`，媒体忙时 `badge-busy`）。
 
-- [ ] **Step 4: 跑测试确认通过并提交**
+- [x] **Step 4: 跑测试确认通过并提交**
 
 Run: `node --test tests/js/chat_pane.test.js tests/js/widgets.test.js && python3 -m pytest tests/e2e -q`
 Expected: PASS

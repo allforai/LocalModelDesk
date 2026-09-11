@@ -75,6 +75,10 @@ export function createChatPane(root, ctx = {}) {
     renderLlm(status);
   }
 
+  // Same visual family as the status-bar holder pill (badge/badge-*), instead of
+  // bare colored text (F15).
+  const BADGE_KIND = { idle: "none", loading: "busy", loaded: "ok", error: "unknown" };
+
   function renderLlm(payload) {
     const state = payload.state;
     llmStatus = state.status;
@@ -90,6 +94,8 @@ export function createChatPane(root, ctx = {}) {
       const tail = state.error?.log_tail ? `\n${state.error.log_tail}` : "";
       els.modelState.textContent = `加载失败（${state.error?.code ?? "?"}）：${state.error?.message ?? ""}${tail}`;
     }
+    const badgeKind = state.error?.code === "evicted" ? "busy" : (BADGE_KIND[state.status] ?? "unknown");
+    els.modelState.className = `badge badge-${badgeKind}`;
     if (state.status !== "loaded") lastLoadedKey = state.status === "loading" ? lastLoadedKey : null;
     els.unloadBtn.disabled = state.status === "idle" || state.status === "loading";
     modelName = payload.loaded_model?.name ?? state.model_key ?? modelName;

@@ -357,6 +357,23 @@ test("send button keeps its icon in every state (F3)", async () => {
   } finally { globalThis.fetch = oldFetch; }
 });
 
+test("model state renders as a badge in the shared family (F15)", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const pane = createChatPane(root);
+  const badge = controls.get("[data-model-state]");
+
+  pane.applyLlmStatus({ state: { status: "idle" } });
+  assert.ok(badge.className.includes("badge"), badge.className);
+  assert.ok(badge.className.includes("badge-none"), badge.className);
+
+  pane.applyLlmStatus({ state: { status: "loaded", model_key: "glm" }, loaded_model: { name: "GLM" } });
+  assert.ok(badge.className.includes("badge-ok"), badge.className);
+
+  pane.applyLlmStatus({ state: { status: "error", model_key: "glm", error: { code: "evicted", message: "让出内存" } } });
+  assert.ok(badge.className.includes("badge-busy"), badge.className);
+});
+
 test("历史消息用会话模型名，空回答有占位（F8/F9）", async () => {
   const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
   const { controls, root } = makePane();

@@ -29,7 +29,6 @@ button:disabled,button[aria-disabled="true"]{opacity:.5;cursor:not-allowed;filte
 #statusbar[data-tone="ok"]{border-color:var(--ok)}#statusbar[data-tone="busy"]{border-color:var(--busy)}#statusbar[data-offline="1"],#statusbar[data-tone="error"]{border-color:var(--danger)}
 .status-part{display:inline-flex;align-items:center;gap:6px;color:var(--muted);white-space:nowrap}
 .status-part>span{color:var(--text)}
-.status-holder>span{padding:2px 8px;border:1px solid var(--border);border-radius:999px;background:var(--bg)}
 .status-next{color:var(--muted)}.status-next>span{color:inherit}
 .status-next[data-ok="1"]{color:var(--ok)}.status-next[data-ok="0"]{color:var(--busy)}
 #statusbar[data-offline="1"] .status-next,#statusbar[data-tone="error"] .status-next{color:var(--danger)}
@@ -62,7 +61,6 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .composer{display:flex;gap:var(--gap);align-items:flex-end;max-width:var(--chat-col);width:100%;margin:16px auto 0}
 .composer textarea{flex:1;background:var(--panel);border-radius:16px;padding:12px 16px}
 .messages[data-streaming="1"]~.composer textarea{opacity:.7}
-[data-model-state][data-status="loaded"]{color:var(--ok)}[data-model-state][data-status="error"]{color:var(--busy)}
 .empty-answer{color:var(--muted);font-style:italic}
 
 /* 6a. cards + session list */
