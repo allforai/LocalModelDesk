@@ -72,6 +72,43 @@ test("jobview appends polling logs, shows failures, and cancels through document
   assert.equal(video.parts["job-status"].textContent, "已取消");
 });
 
+test("a finished job from another pane does not masquerade as this pane's state (F14)", () => {
+  const music = pane({ "music-caption": "x", "music-lyrics": "y", "music-duration": "30", "music-start": "" });
+  const musicPane = createMusicPane(music);
+  musicPane.jobView.apply({ job_id: 3, status: "done", kind: "video", started_at: 1, finished_at: 31 });
+  assert.ok(music.parts["job-status"].textContent.includes("空闲"), music.parts["job-status"].textContent);
+});
+
+test("busy reason replaces the idle hint instead of a stale finished-job caption (F14)", () => {
+  const music = pane({ "music-caption": "x", "music-lyrics": "y", "music-duration": "30", "music-start": "" });
+  const musicPane = createMusicPane(music);
+  musicPane.jobView.apply({ job_id: null, status: "idle", kind: null }, { busyReason: "媒体作业进行中" });
+  const text = music.parts["job-status"].textContent;
+  assert.ok(text.includes("媒体作业进行中"), text);
+  assert.ok(!text.includes("填好左侧参数"), "忙态还挂着空闲引导句");
+});
+
+test("setBusyReason updates an idle pane in place, but never a running/done one (F14)", () => {
+  const music = pane({ "music-caption": "x", "music-lyrics": "y", "music-duration": "30", "music-start": "" });
+  const musicPane = createMusicPane(music);
+  musicPane.jobView.setBusyReason("媒体作业进行中");
+  assert.ok(music.parts["job-status"].textContent.includes("媒体作业进行中"), music.parts["job-status"].textContent);
+
+  musicPane.jobView.apply({ job_id: 9, status: "done", kind: "music", started_at: 1, finished_at: 5 });
+  musicPane.jobView.setBusyReason("媒体作业进行中");
+  assert.ok(!music.parts["job-status"].textContent.includes("媒体作业进行中"), "已完成的状态被忙态覆盖了");
+});
+
+test("setBusyReason still applies after a sync() against the backend's never-started sentinel (job_id 0)", () => {
+  const music = pane({ "music-caption": "x", "music-lyrics": "y", "music-duration": "30", "music-start": "" });
+  const musicPane = createMusicPane(music);
+  // The real backend's idle sentinel is job_id 0, not null — a naive `!= null`
+  // guard would treat that as "a job exists" and never let the reason through.
+  musicPane.jobView.apply({ job_id: 0, status: "idle", kind: null, log: "" });
+  musicPane.jobView.setBusyReason("媒体作业进行中");
+  assert.ok(music.parts["job-status"].textContent.includes("媒体作业进行中"), music.parts["job-status"].textContent);
+});
+
 test("job views do not create independent polling timers and still apply shell-delivered job updates", async () => {
   const video = pane({ "video-prompt": "海浪", "video-size": "512x288", "video-frames": "25", "video-steps": "8", "video-start": "" });
   const music = pane({ "music-caption": "轻快", "music-lyrics": "la", "music-duration": "30", "music-start": "" });

@@ -16,6 +16,7 @@ export function createJobView(root, { mediaTag, kind = null }) {
   };
   let jobId = null;
   let logText = "";
+  let lastStatus = "idle";
   function reset() {
     jobId = null; logText = "";
     els.log.textContent = ""; els.player.replaceChildren(); els.error.textContent = "";
@@ -23,7 +24,11 @@ export function createJobView(root, { mediaTag, kind = null }) {
     if (els.progress) { els.progress.hidden = true; els.progress.indeterminate = false; }
     if (els.logDetails) els.logDetails.open = false;
   }
-  function statusText(job) {
+  function statusText(job, opts = {}) {
+    // A busy reason from the mutex (another heavy job holding memory) must
+    // replace the idle hint outright — showing both "空闲…生成" and "媒体作业
+    // 进行中" in the same spot is a direct contradiction (widewin gap #9).
+    if (job.status === "idle" && opts.busyReason) return opts.busyReason;
     if (job.status === "running" && typeof job.elapsed_s === "number") return `生成中…（已用 ${formatDuration(job.elapsed_s)}）`;
     const duration = job.started_at && job.finished_at ? `（耗时 ${formatDuration(job.finished_at - job.started_at)}）` : "";
     return `${STATUS_LABEL[job.status] ?? job.status}${duration}`;
@@ -36,10 +41,11 @@ export function createJobView(root, { mediaTag, kind = null }) {
     const block = renderErrorBlock(root.ownerDocument, error);
     els.error.replaceChildren(...block.children);
   }
-  function apply(payload, { replaceLog = false } = {}) {
-    if (kind && payload.kind && payload.kind !== kind) { reset(); apply(IDLE); return null; }
+  function apply(payload, { replaceLog = false, busyReason = "" } = {}) {
+    if (kind && payload.kind && payload.kind !== kind) { reset(); apply(IDLE, { busyReason }); return null; }
     if (payload.job_id !== jobId) { reset(); jobId = payload.job_id ?? null; replaceLog = true; }
-    els.status.textContent = statusText(payload);
+    lastStatus = payload.status ?? "idle";
+    els.status.textContent = statusText(payload, { busyReason });
     if (els.status.dataset) els.status.dataset.state = payload.status ?? "idle";
     els.cancelBtn.hidden = payload.status !== "running";
     if (typeof payload.log === "string") {
@@ -65,8 +71,18 @@ export function createJobView(root, { mediaTag, kind = null }) {
   els.cancelBtn.addEventListener("click", async () => {
     try { apply(await api.cancelJob()); } catch (error) { els.error.textContent = error.message; }
   });
-  async function sync() {
-    try { apply(await api.jobStatus(0, null), { replaceLog: true }); } catch { /* offline: keep what we have */ }
+  async function sync(opts = {}) {
+    try { apply(await api.jobStatus(0, null), { replaceLog: true, busyReason: opts.busyReason }); } catch { /* offline: keep what we have */ }
   }
-  return { reset, apply, start, sync };
+  // Called every tick regardless of whether this pane's own job is being
+  // polled — so a pane sitting idle on screen while the *other* kind starts
+  // a job updates its caption immediately, not only on the next tab switch
+  // (widewin gap #9). Never touches a running/done/error caption.
+  function setBusyReason(reason) {
+    // The backend's "never started a job yet" sentinel is job_id 0, not null —
+    // only a genuinely non-zero job id should block this.
+    if (lastStatus !== "idle" || jobId) return;
+    els.status.textContent = statusText({ status: "idle" }, { busyReason: reason });
+  }
+  return { reset, apply, start, sync, setBusyReason };
 }

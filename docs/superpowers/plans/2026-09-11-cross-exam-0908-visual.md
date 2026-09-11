@@ -924,7 +924,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 **Interfaces:**
 - Produces: `apply(payload, { busyReason })`——忙态时空闲文案让位给原因
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test("a finished job from another pane does not masquerade as this pane's state", () => {
@@ -942,12 +942,12 @@ test("busy reason replaces the idle hint", () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tests/js/widgets.test.js`
 Expected: FAIL
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `jobview.js`：`apply` 已有 `kind` 不匹配就回落 `IDLE` 的分支（第 41 行），确认音乐面板拿到 video 作业时走这条；若条件写成了"kind 为空才回落"，改为严格相等比较：
 
@@ -966,7 +966,7 @@ function statusText(job, opts = {}) {
 
 `apply(payload, opts)` 把 `opts` 透传给 `statusText`；`main.js` 的 tick 在调用 `jobview.apply`/`sync` 时传入 `{ busyReason: state.can_start?.media?.ok ? null : state.can_start?.media?.reason?.message }`。
 
-- [ ] **Step 4: 跑测试确认通过并提交**
+- [x] **Step 4: 跑测试确认通过并提交**
 
 Run: `node --test tests/js/widgets.test.js tests/js/media_panes.test.js && python3 -m pytest tests/e2e/test_mutex_ui.py -q`
 Expected: PASS

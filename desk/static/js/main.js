@@ -17,7 +17,7 @@ import { isDrawerCloseKey } from "./pure/drawer.js";
 const $ = (selector) => document.querySelector(selector);
 const store = createStore({ activeTab: "chat" });
 let panes; let statusbar; let settings; let failures = 0; let modelNames = {};
-let jobActive = false; let jobLogFrom = 0; let lastJobId = null;
+let jobActive = false; let jobLogFrom = 0; let lastJobId = null; let mediaBusyReason = "";
 
 function fatal(message) { const el = $("#fatal"); el.hidden = false; el.textContent = message; }
 
@@ -70,8 +70,8 @@ function showTab(name) {
   if (globalThis.location) globalThis.history?.replaceState(null, "", `#tab=${name}`);
   if (name === "resources") panes.resources.refresh();
   if (name === "library") panes.library.refresh();
-  if (name === "video") panes.video.jobView.sync();
-  if (name === "music") panes.music.jobView.sync();
+  if (name === "video") panes.video.jobView.sync({ busyReason: mediaBusyReason });
+  if (name === "music") panes.music.jobView.sync({ busyReason: mediaBusyReason });
 }
 
 function applyFill(plan) { if (plan) { panes[plan.pane].fill(plan.fields); showTab(plan.pane); } }
@@ -83,6 +83,11 @@ function applyHeavyAvailability(deskState) {
   panes.chat.setHeavyAllowed(llmAllowed, llmAllowed ? "" : llm.reason);
   panes.video.setHeavyAllowed(media.allowed, media.reason);
   panes.music.setHeavyAllowed(media.allowed, media.reason);
+  // Idle panes must say why they can't start, not silently keep the last
+  // finished job's caption while their own button is disabled (F14, gap #9).
+  mediaBusyReason = media.allowed ? "" : media.reason;
+  panes.video.jobView.setBusyReason(mediaBusyReason);
+  panes.music.jobView.setBusyReason(mediaBusyReason);
 }
 
 async function tickJob() {
@@ -90,7 +95,7 @@ async function tickJob() {
   const pane = payload.kind === "music" ? panes.music : panes.video;
   const changed = payload.job_id !== lastJobId;
   if (changed) { lastJobId = payload.job_id; jobLogFrom = 0; }
-  pane.jobView.apply(payload, { replaceLog: changed }); jobLogFrom = payload.next_log_from ?? jobLogFrom;
+  pane.jobView.apply(payload, { replaceLog: changed, busyReason: mediaBusyReason }); jobLogFrom = payload.next_log_from ?? jobLogFrom;
   if (payload.status !== "running") jobActive = false;
 }
 

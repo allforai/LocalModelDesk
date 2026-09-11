@@ -30,6 +30,27 @@ def test_media_job_disables_other_heavy_controls_shows_reason_and_restores(page,
         expect(page.locator("#statusbar")).to_contain_text("可开下一件重活")
 
 
+def test_idle_pane_shows_the_busy_reason_while_sitting_on_that_tab(page, tmp_path):
+    """F14 / widewin gap #9: sitting on the music tab (never switching away) while a
+    video job starts elsewhere must still update the idle caption on the next 2s
+    tick — not leave 'busy reason' and 'idle · fill in the form' contradicting
+    each other until the user happens to revisit the tab."""
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url)
+        page.locator("#tabs [data-tab='music']").click()
+        music = page.locator("#pane-music")
+        expect(music.locator("[data-job-status]")).to_contain_text("空闲")
+
+        # Start the video job without ever navigating away from the music tab —
+        # its own pane is `hidden` in the DOM but its start button still works.
+        page.evaluate(
+            "() => { document.querySelector('#pane-video [data-video-prompt]').value = 'a quiet street in rain';"
+            " document.querySelector('#pane-video [data-video-start]').click(); }"
+        )
+        expect(music.locator("[data-job-status]")).to_contain_text("媒体作业进行中")
+        expect(music.locator("[data-job-status]")).not_to_contain_text("填好左侧参数")
+
+
 def test_disabled_reason_sits_the_same_distance_in_both_panes(page, tmp_path):
     """S2: the same disabled-reason message must sit the same distance from the
     generate button in both media panes (F7/W7)."""
