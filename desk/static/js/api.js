@@ -36,8 +36,8 @@ async function toError(response) {
   return new DeskApiError(response.status, code, message, detail);
 }
 
-let REQUEST_TIMEOUT_MS = 8000;
-export function setRequestTimeout(ms) { REQUEST_TIMEOUT_MS = ms; }
+// setRequestTimeout 已删（零调用点，F13 census 2026-09-08）。
+const REQUEST_TIMEOUT_MS = 8000;
 
 async function request(path, { method = "GET", body, stream = false } = {}) {
   const options = { method };

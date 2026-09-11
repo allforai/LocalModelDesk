@@ -199,6 +199,7 @@ class MediaService:
             return state
 
     def on_job_finished(self, callback: Callable[[dict], None]) -> Callable[[], None]:
+        """Test seam: production code never calls this (census 2026-09-08, F13)."""
         with self._lock: self._callbacks.append(callback)
         def unsubscribe() -> None:
             with self._lock:

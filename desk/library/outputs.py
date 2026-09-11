@@ -63,7 +63,8 @@ class OutputsStore:
         return path if path.is_file() else None
 
     def set_opener(self, opener) -> None:
-        """Override the subprocess launcher used by :meth:`reveal` (tests)."""
+        """Override the subprocess launcher used by :meth:`reveal` (tests).
+        Test seam: production code never calls this (census 2026-09-08, F13)."""
         self._opener = opener
 
     def reveal(self, name: str | None = None) -> Path:

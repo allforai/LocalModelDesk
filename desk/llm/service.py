@@ -440,7 +440,8 @@ class LlmService:
         yield done_event(usage, finish_reason)
 
     def wait_settled(self, timeout_s: float = 5.0) -> dict[str, Any]:
-        """Wait for an in-flight load; intended for polling callers and tests."""
+        """Wait for an in-flight load; intended for polling callers and tests.
+        Test seam: production code never calls this (census 2026-09-08, F13)."""
         deadline = time.monotonic() + timeout_s
         while time.monotonic() < deadline:
             with self._lock:

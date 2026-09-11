@@ -1511,21 +1511,21 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `desk/llm/service.py`, `desk/media/service.py`, `desk/library/outputs.py`（只加注释）
 - Test: `tests/js/store.test.js`, `tests/js/api.test.js`, `tests/test_foundation_main.py`, `tests/test_resources_events.py`
 
-- [ ] **Step 1: 先删测试里的调用点，确认红**
+- [x] **Step 1: 先删测试里的调用点，确认红**
 
 把 `tests/js/store.test.js` 里针对 `get`/`subscribe` 的用例删除；`tests/js/api.test.js` 里 `setRequestTimeout` 的三处删除；`tests/test_foundation_main.py:23` 的 `build_app` 用例删除；`tests/test_resources_events.py` 里 `subscribe_*` 的用例删除。
 
 Run: `node --test tests/js/*.test.js && python3 -m pytest tests/test_foundation_main.py tests/test_resources_events.py -q`
 Expected: PASS（删掉测试后仍绿，说明这些符号确实没有别的消费者）
 
-- [ ] **Step 2: 删实现**
+- [x] **Step 2: 删实现**
 
 - `desk/static/js/store.js`：删除 `get` 与 `subscribe`，只留 `set` 与内部状态；
 - `desk/static/js/api.js:40`：删除 `setRequestTimeout` 及其内部变量（若超时值只此一处使用，改为模块常量）；
 - `desk/__main__.py:18-22`：删除 `build_app`；
 - `desk/resources/events.py`：删除 `subscribe_progress`/`subscribe_finished`，并把 `emit_*` 的文档注释改为 `"""Fan-out hook: no in-process subscriber today; kept as the seam downloads publish through."""`
 
-- [ ] **Step 3: 给保留的测试 seam 标注**
+- [x] **Step 3: 给保留的测试 seam 标注**
 
 在 `LlmService.wait_settled`、`MediaService.on_job_finished`、`OutputsStore.set_opener` 三处的 docstring 末尾各加一句：
 
@@ -1533,12 +1533,12 @@ Expected: PASS（删掉测试后仍绿，说明这些符号确实没有别的消
     """... Test seam: production code never calls this (census 2026-09-08, F13)."""
 ```
 
-- [ ] **Step 4: 跑全量**
+- [x] **Step 4: 跑全量**
 
 Run: `python3 -m pytest -q && node --test tests/js/*.test.js && python3 -m pytest tests/e2e -q`
 Expected: PASS
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add -A

@@ -4,7 +4,6 @@ import os
 import threading
 import time
 
-from .app import DeskApp
 from .runtime import build_runtime
 
 
@@ -41,13 +40,6 @@ def runtime_port() -> int:
     except ValueError:
         return 8766
     return port if 1 <= port <= 65535 else 8766
-
-
-def build_app(host: str = "127.0.0.1", port: int = 8766) -> DeskApp:
-    """Compatibility helper returning the fully assembled production app."""
-    runtime = build_runtime(host, port)
-    runtime.app.runtime = runtime
-    return runtime.app
 
 
 def main() -> None:
