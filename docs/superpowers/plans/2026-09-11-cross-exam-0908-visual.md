@@ -1185,7 +1185,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `desk/static/app.css:70-72`
 - Test: `tests/js/sessions.test.js`, `tests/e2e/test_sessions.py`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/e2e/test_sessions.py` 追加：
 
@@ -1200,12 +1200,12 @@ def test_clicking_a_card_switches_instead_of_renaming(page, tmp_path):
         assert "active" in (cards.nth(1).get_attribute("class") or "")
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/e2e/test_sessions.py -q -k switches`
 Expected: FAIL（出现 `<input>`）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `app.css` 把动作按钮从"绝对定位覆盖卡片"改成"卡片自己的一列"，hover 只切换可见性而不改变布局：
 
@@ -1218,7 +1218,7 @@ Expected: FAIL（出现 `<input>`）
 
 删除原 `.session{position:relative}` 与 `.session-actions{position:absolute;right:8px;bottom:8px}`。这样标题区永远占据卡片中心，动作按钮只在右侧自己的列里出现/隐藏，不再与点击点重叠。
 
-- [ ] **Step 4: 两条基线补注（Task 开头"不修的两条"）**
+- [x] **Step 4: 两条基线补注（Task 开头"不修的两条"）**
 
 在 `docs/cross-exam/2026-09-08-localmodeldesk-widewin/visual/visual-baseline.json` 的 `categories.components` 规则数组里，K4 后追加：
 
@@ -1228,7 +1228,7 @@ Expected: FAIL（出现 `<input>`）
 
 > K5 附注：系统输入法来源指示器出现在输入框内是 macOS 行为，不计入输入框元素。
 
-- [ ] **Step 5: 跑测试确认通过并提交**
+- [x] **Step 5: 跑测试确认通过并提交**
 
 Run: `python3 -m pytest tests/e2e/test_sessions.py -q && node --test tests/js/sessions.test.js`
 Expected: PASS

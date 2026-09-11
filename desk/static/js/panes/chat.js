@@ -257,14 +257,17 @@ export function createChatPane(root, ctx = {}) {
       meta.textContent = [session.model, formatTimestamp(session.updated).slice(11)].filter(Boolean).join(" · ");
       const actions = doc.createElement("div");
       actions.className = "session-actions";
+      // Icon-only (F7): text labels ("改名"/"删") widened this hover-revealed
+      // column past the card's horizontal center, so a plain click meant to
+      // switch sessions could land on a button instead. The accessible name
+      // still comes through via aria-label.
       const rename = doc.createElement("button");
       rename.className = "btn-sm";
-      rename.textContent = "改名";
+      rename.setAttribute?.("aria-label", "改名");
       addIcon(rename, "pencil", doc);
       rename.addEventListener("click", (event) => { event.stopPropagation?.(); beginRename(li, session); });
       const remove = doc.createElement("button");
       remove.className = "btn-danger btn-sm";
-      remove.textContent = "删";
       remove.setAttribute?.("aria-label", `删除会话：${displayTitle(session)}`);
       addIcon(remove, "trash", doc);
       remove.addEventListener("click", async (event) => {

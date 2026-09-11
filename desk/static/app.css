@@ -68,11 +68,16 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 /* 6a. cards + session list */
 .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:16px}
 .sessions ul,[data-res-list],[data-lib-list]{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px}
-.session{cursor:pointer;position:relative;padding:12px}.session.active{border-color:var(--accent)}
+/* The hover-revealed actions used to sit position:absolute over the card's own
+   center, so a click meant to switch sessions could land on "改名" instead
+   (F7). They now get their own grid column that never overlaps the title. */
+.session{cursor:pointer;padding:12px;display:grid;grid-template-columns:minmax(0,1fr) max-content;column-gap:8px;align-items:center}
+.session.active{border-color:var(--accent)}
+.session-title,.session-meta{grid-column:1}
 .session-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .session-meta{font-size:13px;color:var(--muted);margin-top:4px}
-.session-actions{display:none;position:absolute;right:8px;bottom:8px;gap:6px}
-.session:hover .session-actions,.session:focus-within .session-actions{display:flex}
+.session-actions{grid-column:2;grid-row:1/-1;display:flex;gap:6px;visibility:hidden}
+.session:hover .session-actions,.session:focus-within .session-actions{visibility:visible}
 /* 6b. cards: resources + library rows — actions form their own right-hand
    column spanning the full card height, instead of a third row on the left
    with the right two-thirds of a wide card sitting empty (F11/W8). */
