@@ -1271,7 +1271,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 **Interfaces:**
 - Produces: harness 的路由集合 ⊇ 生产路由集合（除有意排除者，且排除项必须在测试里逐条列名）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/test_e2e_harness_assembly.py` 追加：
 
@@ -1291,12 +1291,12 @@ def test_harness_mirrors_every_production_route(tmp_path):
 
 `production_route_table()` 在同文件里实现为：把 `desk/foundation/routes.py`、`desk/resources/http.py`、`desk/llm/routes.py`、`desk/media/routes.py`、`desk/library/http.py` 的 `build_routes`/`routes` 用假 service 调一遍，收集 `(method, pattern)`，再并上 `desk/runtime.py` 里直接挂的四条（`/api/state`、`/api/memory`、`GET|POST /api/gateway/config`）。
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_e2e_harness_assembly.py -q`
 Expected: FAIL，列出 `/api/resources/status/{key}`、`/api/outputs/reveal`、`/api/outputs/{name}/reveal` 等缺失项
 
-- [ ] **Step 3: 实现 —— 用 build_routes 取代手抄**
+- [x] **Step 3: 实现 —— 用 build_routes 取代手抄**
 
 `desk/testing/harness.py` 的 `_mount_routes` 里，把手写的 foundation/resources/llm/library 条目换成各模块的 `build_routes`：
 
@@ -1321,12 +1321,12 @@ Expected: FAIL，列出 `/api/resources/status/{key}`、`/api/outputs/reveal`、
 
 删除 `/api/paths` 的 lambda 假造与 `GET /api/resources/status/`（尾斜杠那条永不可达）。保留 `dispatch_with_static` 的 SSE 特判，但在它上方加一行注释说明它有意抢在路由表之前，并把路由表里同名的 `POST /api/llm/chat/stream` 保留（由 `build_routes` 提供，不再是死代码，因为非浏览器调用会走它）。
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_e2e_harness_assembly.py tests/test_e2e_fakes.py tests/test_e2e_seed.py -q`
 Expected: PASS
 
-- [ ] **Step 5: 新增 e2e 覆盖 reveal 与 Range**
+- [x] **Step 5: 新增 e2e 覆盖 reveal 与 Range**
 
 新建 `tests/e2e/test_outputs_range.py`：
 
@@ -1355,12 +1355,12 @@ def test_partial_content_and_reveal(page, tmp_path):
 
 若素材库行没有 `data-output-name`，在 `desk/static/js/panes/library.js` 的 `rowNode` 里给 `li` 加 `(li.dataset ??= {}).outputName = entry.output;`（并在 `tests/js/library_pane.test.js` 补一条断言）。
 
-- [ ] **Step 6: 跑 e2e**
+- [x] **Step 6: 跑 e2e**
 
 Run: `python3 -m pytest tests/e2e -q`
 Expected: PASS（19 passed）
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add desk/testing/harness.py desk/static/js/panes/library.js tests/test_e2e_harness_assembly.py tests/e2e/test_outputs_range.py tests/js/library_pane.test.js

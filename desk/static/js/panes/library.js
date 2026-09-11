@@ -116,6 +116,7 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
     actions.className = "lib-actions";
     const playable = output ?? (entry?.output ? { name: entry.output, kind: entry.kind } : null);
     li.outputName = playable?.name ?? null;
+    if (playable?.name) (li.dataset ??= {}).outputName = playable.name;
     const rowTitle = entry ? summarize(entry).text : output.name;
     if (playable) {
       li.addEventListener("click", () => playOutput(playable, rowTitle));

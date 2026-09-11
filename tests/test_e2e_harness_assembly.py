@@ -67,6 +67,47 @@ def test_launch_test_harness_serves_real_routes_on_ephemeral_ports(tmp_path):
             assert any(path.startswith(required) or required.startswith(path) for path in prefixes)
 
 
+def production_route_table():
+    """Collect (method, pattern) from every production route module.
+
+    None of these ``build_routes``/``routes`` calls invoke the service they
+    are given -- they only build closures over it -- so a bare ``object()``
+    stand-in is safe here and never touches real paths or state.
+    """
+    from desk.foundation import routes as foundation_routes
+    from desk.library import http as library_http
+    from desk.llm import routes as llm_routes
+    from desk.media import routes as media_routes
+    from desk.resources import http as resources_http
+
+    fake_service = object()
+    table = set()
+    table.update((method, path) for method, path, _handler in foundation_routes.build_routes())
+    table.update((method, path) for method, path, _handler in resources_http.build_routes(fake_service))
+    table.update((route.method, route.path) for route in llm_routes.build_routes(fake_service))
+    table.update((method, path) for method, path, _handler in media_routes.build_routes(fake_service))
+    table.update((method, path) for method, path, _handler in library_http.routes(fake_service))
+    table.update({
+        ("GET", "/api/state"),
+        ("GET", "/api/memory"),
+        ("GET", "/api/gateway/config"),
+        ("POST", "/api/gateway/config"),
+    })
+    return table
+
+
+def test_harness_mirrors_every_production_route(tmp_path):
+    """harness 少一条路由，e2e 就有一整块测不到（R-e2e-01）."""
+    from desk.testing.harness import launch_test_harness
+
+    with launch_test_harness(tmp_path) as harness:
+        harness_routes = {(m, p) for m, p, _handler in harness.app._routes}
+    production_routes = production_route_table()
+
+    missing = production_routes - harness_routes
+    assert missing == set(), f"harness 缺少生产路由：{sorted(missing)}"
+
+
 def test_launch_test_harness_can_start_unconfigured(tmp_path):
     with launch_test_harness(tmp_path, configured=False) as harness:
         status, config = _get(harness.base_url + "/api/config")

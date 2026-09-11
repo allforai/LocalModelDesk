@@ -123,6 +123,7 @@ test("每条成品有『在访达中显示』并调用 reveal 接口", async (t)
   assert.ok(buttons.map((b) => b.textContent).includes("在访达中显示"));
   buttons.find((b) => b.textContent === "在访达中显示").click();
   assert.ok(calls.some(([url, method]) => url === "/api/outputs/h3-1.mp4/reveal" && method === "POST"));
+  assert.equal(elements.list.children[0].dataset.outputName, "h3-1.mp4");
 });
 
 test("播放时播放器滚入视野且标注正在播放的记录", async (t) => {

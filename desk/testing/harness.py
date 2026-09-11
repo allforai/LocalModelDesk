@@ -8,16 +8,19 @@ from pathlib import Path
 import socket
 from types import SimpleNamespace
 
-from desk.app import DeskApp
+from desk.app import DeskApp, Response
 from desk.arbiter.core import Arbiter
 from desk.foundation import capabilities, config, firstrun, paths
 from desk.foundation.paths import normalize_user_path
 from desk.gateway.service import GatewayService
 from desk.library import LibraryService
+from desk.library import http as library_http
+from desk.llm.routes import build_routes as build_llm_routes
 from desk.llm.service import LlmService
 from desk.media.service import MediaService
 from desk.media.routes import build_routes as build_media_routes
 from desk.resources.catalog import list_catalog
+from desk.resources.http import build_routes as build_resource_routes
 from desk.resources.manifest import ManifestFile
 from desk.resources.service import ResourcesService
 from desk.ui import StaticAssets
@@ -96,6 +99,7 @@ class TestHarness:
     gateway_port: int
     seeded: dict[str, str]
     routes: list[tuple[str, str]]
+    reveal_calls: list[list[str]]
     _closed: bool = False
     _unsubscribe: Callable[[], None] | None = None
 
@@ -149,15 +153,60 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
             "source_retained": result.source_retained,
         }
 
+    def get_paths(_req):
+        caps = capabilities.probe_capabilities(roots)
+        return {
+            "mode": roots.mode,
+            "resources_root": str(roots.resources_root),
+            "static_dir": str(roots.static_dir),
+            "venv_python": str(roots.venv_python),
+            "mlx_h3_cmd": list(roots.mlx_h3_cmd),
+            "mlx_h3_env": dict(roots.mlx_h3_env),
+            "music_python": str(roots.music_python),
+            "music_env": dict(roots.music_env),
+            "media_cli_dir": str(roots.media_cli_dir),
+            "hf_cmd": list(roots.hf_cmd),
+            "hf_env": dict(roots.hf_env),
+            "data_root": str(roots.data_root),
+            "config_path": str(roots.config_path),
+            "logs_dir": str(roots.logs_dir),
+            "sessions_dir": str(roots.sessions_dir),
+            "history_path": str(roots.history_path),
+            "models_root": str(roots.models_root),
+            "outputs_root": str(roots.outputs_root),
+            "capabilities": {
+                name: {"present": cap.present, "path": cap.path, "detail": cap.detail}
+                for name, cap in caps.items()
+            },
+        }
+
+    def resource_adapter(req, handler):
+        # Mirrors desk/runtime.py's unwrap: the shipped chat selector consumes
+        # the catalog as a bare array, not the {"models": [...]} envelope.
+        status, payload = handler(req.query, req.body, **req.path_params)
+        if req.path == "/api/resources/catalog" and isinstance(payload, dict):
+            payload = payload.get("models", payload)
+        return status, payload
+
+    def llm_adapter(req, handler):
+        result = handler(req.body)
+        return Response(result.status, result.body, sse=result.sse)
+
+    def library_adapter(req, handler):
+        result = handler(library_http.LibRequest(
+            path_params=req.path_params, query=req.query,
+            headers=req.headers, body=req.raw_body,
+        ))
+        return Response(result.status, result.body, result.headers)
+
     table = [
         ("GET", "/api/config", lambda _req: {
             **config.read_config(roots).to_json(),
             "needs_setup": config.read_config(roots).needs_setup,
         }),
         ("PUT", "/api/config", lambda req: config.update_config(roots, **req.body).to_json()),
-        ("GET", "/api/paths", lambda _req: {"data_root": str(roots.data_root),
-                                                "models_root": str(roots.models_root),
-                                                "outputs_root": str(roots.outputs_root)}),
+        ("POST", "/api/config/reset", lambda _req: config.reset_config(roots)),
+        ("GET", "/api/paths", get_paths),
         ("POST", "/api/first-run", lambda req: firstrun.complete_first_run(
             roots, normalize_user_path(req.body["models_root"])
             if req.body.get("models_root") else None,
@@ -168,38 +217,16 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
             "candidates": firstrun.discover_model_roots(roots),
             "found": bool(firstrun.discover_model_roots(roots)),
         }),
-        ("GET", "/api/resources/catalog", lambda _req: [
-            entry.to_json() for entry in resources.list_catalog()]),
-        ("GET", "/api/resources/status", lambda _req: {
-            "models": [status.to_json() for status in resources.verify_all_models()],
-            "disk": resources.disk_usage().to_json()}),
-        ("GET", "/api/resources/status/", lambda _req: {
-            "models": [status.to_json() for status in resources.verify_all_models()]}),
-        ("GET", "/api/resources/disk", lambda _req: resources.disk_usage().to_json()),
-        ("GET", "/api/resources/download", lambda _req: resources.download_progress().__dict__),
-        ("POST", "/api/resources/download", lambda req: resources.start_download(str(req.body.get("key", ""))).__dict__),
-        ("POST", "/api/resources/download/cancel", lambda _req: resources.cancel_download().__dict__),
-        ("POST", "/api/resources/delete", lambda req: resources.delete_model(
-            str(req.body.get("key", "")), req.body.get("confirm"))),
-        ("GET", "/api/llm/status", lambda _req: llm.status()),
-        ("POST", "/api/llm/load", lambda req: {"state": llm.load(str(req.body.get("key", "")))}),
-        ("POST", "/api/llm/unload", lambda _req: {"state": llm.unload()}),
-        ("POST", "/api/llm/chat", lambda req: llm.chat_completion(req.body)),
-        ("POST", "/api/llm/chat/stream", lambda req: {
-            "events": list(llm.chat_stream(req.body))}),
+        *((method, path, lambda req, handler=handler: resource_adapter(req, handler))
+          for method, path, handler in build_resource_routes(resources)),
+        *((route.method, route.path, lambda req, handler=route.handler: llm_adapter(req, handler))
+          for route in build_llm_routes(llm)),
         *((method, path, lambda req, handler=handler: handler(req.body, req.query))
           for method, path, handler in build_media_routes(media)),
+        *((method, path, lambda req, handler=handler: library_adapter(req, handler))
+          for method, path, handler in library_http.routes(library)),
         ("GET", "/api/state", lambda _req: arbiter.desk_state()),
         ("GET", "/api/memory", lambda _req: arbiter.memory_snapshot()),
-        ("GET", "/api/outputs", lambda _req: library.list_outputs()),
-        ("GET", "/api/history", lambda _req: library.list_history()),
-        ("GET", "/api/sessions", lambda _req: library.list_chat_sessions()),
-        ("POST", "/api/sessions", lambda req: library.create_chat_session(
-            req.body.get("title"), req.body.get("model"))),
-        ("PATCH", "/api/sessions", lambda req: library.update_chat_session(
-            req.path.rsplit("/", 1)[-1], req.body)),
-        ("DELETE", "/api/sessions", lambda req: library.delete_chat_session(
-            req.path.rsplit("/", 1)[-1])),
         ("POST", "/api/gateway/config", lambda _req: gateway.handle_config_request("POST")[1]),
         ("GET", "/api/gateway/config", lambda _req: gateway.handle_config_request("GET")[1]),
     ]
@@ -255,6 +282,10 @@ def launch_test_harness(
         sleep=lambda _seconds: None,
     )
     library = LibraryService(roots)
+    reveal_calls: list[list[str]] = []
+    # Real "open -R" would launch Finder during test runs; record calls instead
+    # (mirrors the seam tests/test_library_http.py already exercises).
+    library.outputs.set_opener(lambda argv, **_kw: reveal_calls.append(list(argv)))
     llm = LlmService(
         FakeLlmBackend(chat_script), arbiter, resources,
         SimpleNamespace(resolve_paths=lambda: roots), port=0,
@@ -278,6 +309,10 @@ def launch_test_harness(
     def dispatch_with_static(handler, method: str) -> None:
         resolved = static_assets.resolve(handler.path)
         if resolved is None:
+            # Intentionally pre-empts the route table below: every POST here
+            # streams SSE frames directly, before _find() ever sees the
+            # request, regardless of what the /api/llm/chat/stream entry
+            # built by build_llm_routes (kept in the table below) would do.
             if method == "POST" and handler.path.split("?", 1)[0] == "/api/llm/chat/stream":
                 length = int(handler.headers.get("Content-Length") or 0)
                 body = json.loads(handler.rfile.read(length).decode("utf-8")) if length else {}
@@ -315,5 +350,6 @@ def launch_test_harness(
         app, gateway, roots, arbiter, resources, llm, media, library,
         chat_script, media_script, download_control, clock,
         f"http://127.0.0.1:{app.port}", roots.data_root, roots.models_root,
-        roots.outputs_root, gateway_port, seeded, route_specs, _unsubscribe=unsubscribe,
+        roots.outputs_root, gateway_port, seeded, route_specs, reveal_calls,
+        _unsubscribe=unsubscribe,
     )
