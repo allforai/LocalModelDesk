@@ -1042,7 +1042,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `desk/static/app.css:52,59`
 - Test: `tests/e2e/test_chat_layout.py`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/e2e/test_chat_layout.py` 追加：
 
@@ -1058,16 +1058,16 @@ def test_messages_and_composer_keep_a_16px_gap(page, tmp_path):
         assert gap >= 16, gap
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/e2e/test_chat_layout.py -q -k gap`
 Expected: FAIL（约 7px）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `.messages` 的 `padding:16px 4px` 改为 `padding:16px 4px 0`，并在 `.composer` 加 `margin-top:16px`；`#pane-chat` 的高度计算已用 `calc(100vh - 94px)`，多出的 16px 由 `.messages` 的 `flex:1` 吸收，不会溢出。
 
-- [ ] **Step 4: 跑测试确认通过并提交**
+- [x] **Step 4: 跑测试确认通过并提交**
 
 Run: `python3 -m pytest tests/e2e/test_chat_layout.py -q`
 Expected: PASS

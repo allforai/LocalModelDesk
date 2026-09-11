@@ -49,14 +49,14 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .sessions{width:240px;flex:none}
 .chat-main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
 .model-row{display:flex;gap:var(--gap);align-items:center;flex-wrap:wrap}
-.messages{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:32px;max-width:var(--chat-col);width:100%;margin:0 auto;padding:16px 4px}
+.messages{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:32px;max-width:var(--chat-col);width:100%;margin:0 auto;padding:16px 4px 0}
 .msg-user{align-self:flex-end;max-width:70%}.msg-user .bubble{background:var(--bubble);border-radius:18px;padding:10px 16px;line-height:1.6;white-space:pre-wrap}
 .msg-assistant{align-self:flex-start;max-width:100%;line-height:1.7}
 .who{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:10px}.who .dot{width:20px;height:20px;border-radius:50%;background:var(--accent)}
 .thinking{margin:0 0 12px;color:var(--muted);font-size:13px}.thinking summary{cursor:pointer;list-style:none;display:inline-flex;gap:6px}.thinking summary::before{content:"▸";font-size:11px}.thinking[open] summary::before{content:"▾"}
 .thinking p{margin:8px 0 0 10px;padding-left:12px;border-left:2px solid var(--border);white-space:pre-wrap}
 .md p{margin:0 0 12px}.md h3{font-size:16px;margin:12px 0 6px}.md h4{font-size:14px;margin:10px 0 4px}.md pre{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;overflow:auto}.md code{font:13px ui-monospace,Menlo,monospace}.md ul,.md ol{margin:0 0 12px 20px}
-.composer{display:flex;gap:var(--gap);align-items:flex-end;max-width:var(--chat-col);width:100%;margin:0 auto}
+.composer{display:flex;gap:var(--gap);align-items:flex-end;max-width:var(--chat-col);width:100%;margin:16px auto 0}
 .composer textarea{flex:1;background:var(--panel);border-radius:16px;padding:12px 16px}
 .messages[data-streaming="1"]~.composer textarea{opacity:.7}
 [data-model-state][data-status="loaded"]{color:var(--ok)}[data-model-state][data-status="error"]{color:var(--busy)}

@@ -32,3 +32,15 @@ def test_composer_tracks_the_message_column(page, tmp_path):
             " document.querySelector('.composer').getBoundingClientRect().width]"
         )
         assert abs(widths[0] - widths[1]) < 2
+
+
+def test_messages_and_composer_keep_a_16px_gap(page, tmp_path):
+    """N6: the scroll list must not be clipped right against the composer."""
+    page.set_viewport_size({"width": 1200, "height": 832})
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url)
+        page.wait_for_selector(".composer")
+        gap = page.evaluate(
+            "() => document.querySelector('.composer').getBoundingClientRect().top"
+            " - document.querySelector('.messages').getBoundingClientRect().bottom")
+        assert gap >= 16, gap
