@@ -281,6 +281,24 @@ test("thinking block renders markdown like the answer does (F2)", async () => {
   assert.equal(reasoningEl.className, "md");
 });
 
+test("thinking fold always states the duration when it was recorded (N1/W5)", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const pane = createChatPane(root);
+  pane.showMessages([{ role: "assistant", content: "a", reasoning: "r", thinking_s: 7 }]);
+  const details = controls.get("[data-messages]").children[0].children[1];
+  assert.equal(details.children[0].textContent, "已思考 7 秒");
+});
+
+test("thinking fold says so plainly when the duration was never recorded (N1/W5)", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const pane = createChatPane(root);
+  pane.showMessages([{ role: "assistant", content: "a", reasoning: "r" }]);
+  const details = controls.get("[data-messages]").children[0].children[1];
+  assert.equal(details.children[0].textContent, "思考过程（未记录时长）");
+});
+
 test("历史消息用会话模型名，空回答有占位（F8/F9）", async () => {
   const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
   const { controls, root } = makePane();

@@ -145,7 +145,11 @@ export function createChatPane(root, ctx = {}) {
     const details = doc.createElement("details");
     details.className = "thinking";
     const summary = doc.createElement("summary");
-    summary.textContent = live ? "思考中…" : message.thinking_s ? `已思考 ${Math.round(message.thinking_s)} 秒` : "思考过程";
+    summary.textContent = live
+      ? "思考中…"
+      : Number.isFinite(message.thinking_s)
+        ? `已思考 ${Math.max(1, Math.round(message.thinking_s))} 秒`
+        : "思考过程（未记录时长）";
     const reasoningEl = doc.createElement("div");
     reasoningEl.className = "md";
     reasoningEl.append(renderMarkdown(doc, message.reasoning ?? ""));

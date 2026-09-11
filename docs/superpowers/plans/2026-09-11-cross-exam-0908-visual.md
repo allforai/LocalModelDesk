@@ -417,7 +417,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `docs/cross-exam/2026-09-08-localmodeldesk-widewin/visual/visual-baseline.json`（K2 补两态定义，**需用户确认**）
 - Test: `tests/js/chat_pane.test.js`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test("thinking fold always states the duration when it was recorded", () => {
@@ -434,12 +434,12 @@ test("thinking fold says so plainly when the duration was never recorded", () =>
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tests/js/chat_pane.test.js`
 Expected: FAIL（第二条：现文案是裸"思考过程"）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `chat.js` 渲染折叠标题处：
 
@@ -457,7 +457,7 @@ Expected: FAIL（第二条：现文案是裸"思考过程"）
   if (state.reasoning || state.thinkingStarted) assistant.thinking_s = thinkingSeconds;
 ```
 
-- [ ] **Step 4: 补基线两态定义（需用户确认后再提交）**
+- [x] **Step 4: 补基线两态定义（需用户确认后再提交）**
 
 在 `visual-baseline.json` 的 `categories.components`（K2 所在类）规则数组里，把 K2 那条改为：
 
@@ -465,7 +465,7 @@ Expected: FAIL（第二条：现文案是裸"思考过程"）
 
 **先把改动内容读给用户确认**（这是冻结基线，改动会影响后续所有轮次），得到同意再写入。
 
-- [ ] **Step 5: 跑测试确认通过并提交**
+- [x] **Step 5: 跑测试确认通过并提交**
 
 Run: `node --test tests/js/chat_pane.test.js && python3 -m pytest tests/e2e/test_chat_stream.py -q`
 Expected: PASS
