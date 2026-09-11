@@ -146,8 +146,9 @@ export function createChatPane(root, ctx = {}) {
     details.className = "thinking";
     const summary = doc.createElement("summary");
     summary.textContent = live ? "思考中…" : message.thinking_s ? `已思考 ${Math.round(message.thinking_s)} 秒` : "思考过程";
-    const reasoningEl = doc.createElement("p");
-    reasoningEl.textContent = message.reasoning ?? "";
+    const reasoningEl = doc.createElement("div");
+    reasoningEl.className = "md";
+    reasoningEl.append(renderMarkdown(doc, message.reasoning ?? ""));
     details.append(summary, reasoningEl);
     const contentEl = doc.createElement("div");
     contentEl.className = "md";
@@ -284,7 +285,7 @@ export function createChatPane(root, ctx = {}) {
       const body = await api.chatStream(session.messages);
       for await (const line of sseDataLines(body)) {
         state = reduceChunk(state, line);
-        live.reasoningEl.textContent = state.reasoning;
+        live.reasoningEl.replaceChildren(renderMarkdown(doc, state.reasoning));
         live.details.hidden = !state.reasoning;
         if (state.content && !firstContentSeen) {
           firstContentSeen = true;

@@ -262,6 +262,25 @@ test("未加载时「卸载」禁用；被驱逐显示让出文案而非加载�
   assert.equal(controls.get("[data-unload]").disabled, false);
 });
 
+function textOf(node) {
+  if (!node) return "";
+  if (!node.children || !node.children.length) return node.textContent ?? "";
+  return node.children.map(textOf).join("");
+}
+
+test("thinking block renders markdown like the answer does (F2)", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const pane = createChatPane(root);
+  pane.showMessages([{ role: "assistant", content: "答案", reasoning: "**目标：** 五句话\n* 第一点", thinking_s: 5 }]);
+  const details = controls.get("[data-messages]").children[0].children[1];
+  const flat = textOf(details);
+  assert.ok(!flat.includes("**目标：**"), `思考块里出现了未渲染的 Markdown 源码：${flat}`);
+  assert.ok(flat.includes("目标："), "思考块内容丢了");
+  const reasoningEl = details.children[1];
+  assert.equal(reasoningEl.className, "md");
+});
+
 test("历史消息用会话模型名，空回答有占位（F8/F9）", async () => {
   const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
   const { controls, root } = makePane();

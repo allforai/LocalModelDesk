@@ -347,7 +347,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 **Interfaces:**
 - Consumes: `desk/static/js/pure/markdown.js` 已有的渲染函数（与正文同一个）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/js/chat_pane.test.js` 追加：
 
@@ -364,12 +364,12 @@ test("thinking block renders markdown like the answer does", () => {
 
 用该文件既有的 `makePane()`/`find()` 与实际导出的渲染函数名。
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tests/js/chat_pane.test.js`
 Expected: FAIL（`**目标：**` 原样出现）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `desk/static/js/panes/chat.js` 里构造思考块正文的地方，当前是往 `<p>` 里塞 `textContent`。改为复用正文的 Markdown 渲染：
 
@@ -389,12 +389,12 @@ Expected: FAIL（`**目标：**` 原样出现）
 .thinking .md ul,.thinking .md ol{margin:0 0 8px 18px}
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `node --test tests/js/chat_pane.test.js tests/js/markdown.test.js && python3 -m pytest tests/e2e/test_chat_stream.py -q`
 Expected: PASS
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add desk/static/js/panes/chat.js desk/static/app.css tests/js/chat_pane.test.js
