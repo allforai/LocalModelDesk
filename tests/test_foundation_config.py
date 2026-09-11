@@ -124,6 +124,18 @@ def test_atomic_write_replace_failure_keeps_old_file(tmp_path, monkeypatch):
     assert [p for p in tmp_path.iterdir() if "tmp" in p.name] == []
 
 
+def test_reset_backs_up_the_broken_file_and_starts_over(tmp_path):
+    """坏配置必须可一键重设，且坏文件留一份备份（J25）。"""
+    roots = make_roots(tmp_path)
+    roots.config_path.write_text("{not json", encoding="utf-8")
+
+    result = config_mod.reset_config(roots)
+
+    assert Path(result["backup"]).read_text(encoding="utf-8") == "{not json"
+    assert result["needs_setup"] is True
+    assert config_mod.read_config(roots).first_run_done is False
+
+
 def test_atomic_write_serialization_failure_keeps_old_file(tmp_path, monkeypatch):
     roots = make_roots(tmp_path)
     config_mod.update_config(roots, first_run_done=True)

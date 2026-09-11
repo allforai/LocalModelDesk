@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import threading
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -67,13 +68,13 @@ def _load_raw(config_path: Path) -> dict | None:
         raw = json.loads(config_path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
         raise ConfigCorruptError(
-            f"config.json is corrupt: {config_path}: {exc}",
-            path=str(config_path), parse_error=str(exc),
+            "配置文件无法读取（内容不是合法 JSON）；可以点「重新设置」重建一份，坏文件会自动备份。",
+            path=str(config_path), parse_error=str(exc), recoverable=True,
         ) from exc
     if not isinstance(raw, dict):
         raise ConfigCorruptError(
-            f"config.json is corrupt: {config_path}: top level is not an object",
-            path=str(config_path), parse_error="top level is not an object",
+            "配置文件无法读取（顶层结构不是对象）；可以点「重新设置」重建一份，坏文件会自动备份。",
+            path=str(config_path), parse_error="top level is not an object", recoverable=True,
         )
     return raw
 
@@ -167,6 +168,17 @@ def write_config(roots, config: DeskConfig) -> None:
     """api:writeConfig — atomically write a complete configuration document."""
     with _LOCK:
         _atomic_write(roots.config_path, config.to_json())
+
+
+def reset_config(roots) -> dict:
+    """Move a broken config aside and start the first-run flow instead of dead-ending."""
+    path = Path(roots.config_path)
+    backup = None
+    with _LOCK:
+        if path.exists():
+            backup = path.with_name(f"config.broken-{time.strftime('%Y%m%d-%H%M%S')}.json")
+            path.replace(backup)
+    return {"backup": str(backup) if backup else None, "needs_setup": True}
 
 
 def update_config(roots, **fields) -> DeskConfig:

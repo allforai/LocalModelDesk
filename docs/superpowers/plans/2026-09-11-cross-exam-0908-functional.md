@@ -941,7 +941,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 **Interfaces:**
 - Produces: `ConfigCorruptError.payload` 带 `backup_hint`；`POST /api/config/reset` → `{"backup": "<路径>", "needs_setup": true}`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/test_foundation_config.py` 追加：
 
@@ -960,12 +960,12 @@ def test_reset_backs_up_the_broken_file_and_starts_over(tmp_path):
 
 `make_roots` 用该文件已有的构造 helper。
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_foundation_config.py::test_reset_backs_up_the_broken_file_and_starts_over -q`
 Expected: FAIL, `NameError: name 'reset_config' is not defined`
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `desk/foundation/config.py` 追加：
 
@@ -993,7 +993,7 @@ def reset_config(roots) -> dict:
 
 `desk/foundation/errors.py` 的 `ConfigCorruptError.__init__` 接受并透传 `recoverable`。
 
-- [ ] **Step 4: 加路由**
+- [x] **Step 4: 加路由**
 
 `desk/foundation/routes.py` 的 `build_routes()` 里加一条：
 
@@ -1006,12 +1006,12 @@ def reset_config(roots) -> dict:
 
 `tests/test_foundation_routes.py` 追加断言该路由返回 200 且 body 含 `needs_setup`。
 
-- [ ] **Step 5: 跑测试确认通过**
+- [x] **Step 5: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_foundation_config.py tests/test_foundation_routes.py -q`
 Expected: PASS
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add desk/foundation/ tests/test_foundation_config.py tests/test_foundation_routes.py

@@ -32,6 +32,17 @@ def test_put_config_merges_subset(server):
     assert payload["gateway"]["host"] == "0.0.0.0"
 
 
+def test_config_reset_endpoint_backs_up_broken_file(server, tmp_path):
+    config_path = tmp_path / "data" / "config.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text("{not json", encoding="utf-8")
+
+    status, payload = http_call(server, "POST", "/api/config/reset", {})
+    assert status == 200
+    assert payload["needs_setup"] is True
+    assert payload["backup"]
+
+
 def test_get_paths_includes_capabilities(server):
     status, payload = http_call(server, "GET", "/api/paths")
     assert status == 200

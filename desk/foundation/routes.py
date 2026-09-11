@@ -32,6 +32,13 @@ def put_config(req) -> dict:
     return _config_json(config_mod.update_config(_roots(), **req.body))
 
 
+def post_config_reset(_req) -> dict:
+    # Corrupt config must not block recovery: resolve roots with defaults
+    # instead of re-raising the same ConfigCorruptError we're here to fix.
+    roots = paths_mod.resolve_paths(default_config_on_corrupt=True)
+    return config_mod.reset_config(roots)
+
+
 def get_paths(_req) -> dict:
     roots = paths_mod.resolve_paths(default_config_on_corrupt=True)
     caps = caps_mod.probe_capabilities(roots)
@@ -89,6 +96,7 @@ def build_routes() -> list:
     return [
         ("GET", "/api/config", get_config),
         ("PUT", "/api/config", put_config),
+        ("POST", "/api/config/reset", post_config_reset),
         ("GET", "/api/paths", get_paths),
         ("POST", "/api/first-run", post_first_run),
         ("POST", "/api/adopt", post_adopt),
