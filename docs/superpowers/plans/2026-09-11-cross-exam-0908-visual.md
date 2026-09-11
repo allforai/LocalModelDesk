@@ -1372,7 +1372,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `desk/static/js/main.js`（启动时的标签决定）
 - Test: `tests/js/main_hash.test.js`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test("a fresh load with no hash always lands on chat", () => {
@@ -1383,14 +1383,14 @@ test("a fresh load with no hash always lands on chat", () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tests/js/main_hash.test.js`
 Expected: FAIL（未知值未回落到 chat，或函数未导出）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3 (partial — pure module only): 实现**
 
-`pure/tab_hash.js` 导出 `initialTab(hash)`，对不在白名单内的值一律返回 `"chat"`；`main.js` 启动时用它，并在首运结束后显式 `location.hash = "#tab=chat"`，让壳重载后落点确定。
+`pure/tab_hash.js` 导出 `initialTab(hash)`，对不在白名单内的值一律返回 `"chat"`（done, delegates to existing `tabFromHash`). `main.js` 启动时改用它，并在首运结束后显式 `location.hash = "#tab=chat"` — **BLOCKED**: `main.js` is owned by lane B-core; this lane owns only `pure/tab_hash.js` and `tests/js/main_hash.test.js`. Main session must wire `main.js` line 52 (`showTab(tabFromHash(...))`) to call `initialTab` instead and set `location.hash = "#tab=chat"` after first run.
 
 - [ ] **Step 4: 跑测试确认通过并提交**
 
