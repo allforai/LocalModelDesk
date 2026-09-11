@@ -61,7 +61,7 @@
 **Interfaces:**
 - Produces: `.messages` 与 `.composer` 共用同一个响应式宽度上限（两者必须一致，否则输入区与消息列错位）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 新建 `tests/e2e/test_chat_layout.py`：
 
@@ -101,12 +101,12 @@ def test_composer_tracks_the_message_column(page, tmp_path):
         assert abs(widths[0] - widths[1]) < 2
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/e2e/test_chat_layout.py -q`
 Expected: FAIL, `1920 宽下消息列两侧留白 788px = 41.0%`
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `desk/static/app.css`：把两处 `max-width:820px` 换成同一个可变上限。在文件顶部的 `:root` 变量块里加一行：
 
@@ -118,12 +118,12 @@ Expected: FAIL, `1920 宽下消息列两侧留白 788px = 41.0%`
 
 理由：1440 窗口下 62vw ≈ 893px（留白 ≈ 24%，与参考图 21.7% 同档）；1920 下取上限 1100px（主区 1608px，留白 508px = 26.5%，进入 40% 以内）；900 窗口下取下限 680px 仍不挤压。
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/e2e/test_chat_layout.py -q`
 Expected: PASS（3 passed）
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add desk/static/app.css tests/e2e/test_chat_layout.py
