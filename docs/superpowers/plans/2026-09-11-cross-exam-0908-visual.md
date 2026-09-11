@@ -866,7 +866,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `desk/static/app.css`
 - Test: `tests/e2e/test_library_panel.py`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 def test_audio_player_matches_the_dark_palette(page, tmp_path):
@@ -879,12 +879,12 @@ def test_audio_player_matches_the_dark_palette(page, tmp_path):
         assert "dark" in scheme
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/e2e/test_library_panel.py -q -k palette`
 Expected: FAIL（`colorScheme` 为 `normal`）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `app.css` 的播放器段：
 
@@ -896,7 +896,7 @@ Expected: FAIL（`colorScheme` 为 `normal`）
 
 `color-scheme:dark` 让 WebKit/Chromium 用暗色原生控件（这是唯一不写死厂商私有伪元素就能改原生控件配色的办法）。
 
-- [ ] **Step 4: 跑测试确认通过并提交**
+- [x] **Step 4: 跑测试确认通过并提交**
 
 Run: `python3 -m pytest tests/e2e/test_library_panel.py tests/e2e/test_music_flow.py -q`
 Expected: PASS

@@ -104,7 +104,7 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .job{display:flex;flex-direction:column;gap:12px}
 [data-job-progress]{width:100%;height:6px;accent-color:var(--busy)}
 .job-log pre{max-height:240px;overflow:auto;white-space:pre-wrap;font:13px ui-monospace,Menlo,monospace;color:var(--muted);margin:8px 0 0}
-[data-job-player] video,[data-job-player] audio,[data-lib-player] video{max-width:100%;border-radius:var(--radius)}
+[data-job-player] video,[data-job-player] audio,[data-lib-player] video,[data-lib-player] audio{max-width:100%;border-radius:var(--radius);color-scheme:dark;background:var(--panel)}
 .job-status{margin:0;font-weight:600}
 .job-status[data-state="running"]{color:var(--busy)}.job-status[data-state="done"]{color:var(--ok)}
 .job-status[data-state="error"]{color:var(--danger)}.job-status[data-state="error"]::before{content:"✕ ";}
@@ -120,7 +120,7 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
    flex `gap` is the single source of truth for spacing between its rows. */
 .hint:empty{display:none}
 .form>p{margin:0}
-[data-job-player] audio,[data-lib-player] audio{width:100%;color-scheme:dark}
+[data-job-player] audio,[data-lib-player] audio{width:100%;border:1px solid var(--border)}
 .file-row{display:flex;align-items:center;gap:8px}.file-pick .btn{display:inline-block;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer}
 /* 9. dialogs + drawer */
 .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0009;z-index:30}

@@ -40,6 +40,29 @@ def _run_music(page):
     expect(pane.locator("audio[controls]")).to_be_visible()
 
 
+def test_audio_player_matches_the_dark_palette(page, tmp_path):
+    """C1: the player must not be the single lightest rectangle on screen (F10/W3)."""
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url)
+        page.locator("#tabs [data-tab='music']").dispatch_event("click")
+        pane = page.locator("#pane-music")
+        pane.locator("[data-music-caption]").fill("warm acoustic folk")
+        pane.locator("[data-music-lyrics]").fill("under amber skies")
+        pane.locator("[data-music-start]").dispatch_event("click")
+        expect(pane.locator("[data-job-log]")).to_contain_text("step 1/10")
+        harness.media_script.step()
+        expect(pane.locator("[data-job-log]")).to_contain_text("step 5/10")
+        harness.media_script.step()
+        audio = pane.locator("[data-job-player] audio")
+        expect(audio).to_be_visible()
+        style = audio.evaluate(
+            "el => { const s = getComputedStyle(el);"
+            " return {scheme: s.colorScheme, bg: s.backgroundColor}; }"
+        )
+        assert "dark" in style["scheme"], style
+        assert style["bg"] not in ("rgba(0, 0, 0, 0)", "transparent"), style
+
+
 def test_history_refill_and_playback(page, tmp_path, audit_violations):
     with launch_test_harness(tmp_path) as harness:
         harness.media_script.jobs.clear()
