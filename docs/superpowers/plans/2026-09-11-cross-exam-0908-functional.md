@@ -304,7 +304,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Consumes: Task 1 的 `ensure_own_process_group`
 - Produces: 环境变量契约 `LMD_PARENT_PID`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/test_foundation_main.py` 追加：
 
@@ -319,12 +319,12 @@ def test_parent_watchdog_stops_when_parent_disappears():
     assert stopped.wait(2.0)
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_foundation_main.py::test_parent_watchdog_stops_when_parent_disappears -q`
 Expected: FAIL, `ImportError: cannot import name 'watch_parent'`
 
-- [ ] **Step 3: 实现看门狗**
+- [x] **Step 3: 实现看门狗**
 
 `desk/__main__.py` 加入：
 
@@ -354,12 +354,12 @@ def watch_parent(parent_pid: int, *, interval: float = 3.0, on_gone=None) -> thr
         watch_parent(int(parent))
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_foundation_main.py -q`
 Expected: PASS
 
-- [ ] **Step 5: 壳传自己的 pid**
+- [x] **Step 5: 壳传自己的 pid**
 
 `macos/DeskPaths.swift` 的 `embeddedEnvironment(resources:)` 返回字典里加一项：
 
@@ -367,12 +367,12 @@ Expected: PASS
       "LMD_PARENT_PID": String(ProcessInfo.processInfo.processIdentifier),
 ```
 
-- [ ] **Step 6: 跑壳契约测试**
+- [x] **Step 6: 跑壳契约测试**
 
 Run: `python3 -m pytest tests/test_shell_static.py tests/test_shell_lifecycle.py -q`
 Expected: PASS
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add desk/__main__.py macos/DeskPaths.swift tests/test_foundation_main.py

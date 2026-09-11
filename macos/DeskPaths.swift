@@ -25,6 +25,7 @@ enum DeskPaths {
       "PYTHONDONTWRITEBYTECODE": "1",
       "LMD_SHELL_PORT": String(port),
       "LOCALMODELDESK_DATA_ROOT": userDataRoot.path,
+      "LMD_PARENT_PID": String(ProcessInfo.processInfo.processIdentifier),
     ]
   }
 
