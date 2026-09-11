@@ -121,8 +121,10 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .url-row{display:flex;gap:8px;align-items:center}.url-row code{flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);font:13px ui-monospace,Menlo,monospace;overflow:auto}
 .warn{color:var(--busy)}
 #pane-firstrun{position:fixed;inset:0;z-index:20;overflow:auto;background:var(--bg);padding:var(--margin)}
-.firstrun-wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.firstrun-wrap{max-width:min(1300px,calc(100% - 48px));margin:0 auto;display:flex;flex-direction:column;gap:16px}
 .firstrun-wrap .card{display:grid;gap:10px}
+.firstrun-wrap label{display:grid;gap:6px}
+.firstrun-wrap input:not([type=radio]){width:100%}
 
 /* 11. state colours + motion */
 .hint-busy{color:var(--busy)}.hint-busy:empty{display:none}

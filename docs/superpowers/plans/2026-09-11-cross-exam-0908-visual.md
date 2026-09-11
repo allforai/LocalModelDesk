@@ -143,7 +143,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `desk/static/app.css:123-125`
 - Test: `tests/e2e/test_firstrun.py`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/e2e/test_firstrun.py` 追加：
 
@@ -165,12 +165,12 @@ def test_firstrun_uses_the_window_and_inputs_show_full_paths(page, tmp_path):
 
 `launch_test_harness(..., first_run=True)` 用该文件既有用例造首运态的同一写法。
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/e2e/test_firstrun.py -q -k full_paths`
 Expected: FAIL（留白 66.7%）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `desk/static/app.css:124` 的 `.firstrun-wrap`：
 
@@ -180,12 +180,12 @@ Expected: FAIL（留白 66.7%）
 .firstrun-wrap input:not([type=radio]){width:100%}
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/e2e/test_firstrun.py -q && node --test tests/js/firstrun_pane.test.js`
 Expected: PASS
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add desk/static/app.css tests/e2e/test_firstrun.py
