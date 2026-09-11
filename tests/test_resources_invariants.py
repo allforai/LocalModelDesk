@@ -1,8 +1,7 @@
 """R-resources-01 and census A01/A02/A20/A21 repository-wide guards.
 
-``initModels.sh`` and ``media-gui/server.py`` are the only legacy catalog
-copies tolerated until packaging removes them. Any other catalog copy or weak
-presence check is a regression.
+`desk/resources/catalog.py` is the single catalog definition. No legacy copy is
+tolerated any more (the media-gui prototype was deleted 2026-09-11).
 """
 import os
 from pathlib import Path
@@ -23,7 +22,7 @@ TEXT_SUFFIXES = {
 }
 
 ALLOWED = {"desk/resources/catalog.py"}
-LEGACY = {"initModels.sh", "media-gui/server.py"}
+LEGACY: set[str] = set()
 TESTS_PREFIX = "tests/"
 
 

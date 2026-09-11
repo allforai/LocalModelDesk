@@ -43,15 +43,12 @@ def test_entitlements_is_empty_dict():
     assert data == {}
 
 
+LEGACY_PATHS = ("initModels.sh", "run-h3.sh", "run-music3.py", "unload-llm.sh", "media-gui")
+
+
 def test_no_legacy_scripts_in_repo():
-    legacy_scripts = (
-        "initModels.sh",
-        "run-h3.sh",
-        "run-music3.py",
-        "unload-llm.sh",
-        "media-gui/start.sh",
-    )
-    assert all(not (REPO / script).exists() for script in legacy_scripts)
+    for relative in LEGACY_PATHS:
+        assert not (REPO / relative).exists(), f"遗留原型仍在仓库：{relative}"
 
 
 def test_icon_source_is_1024_png():

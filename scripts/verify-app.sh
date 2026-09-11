@@ -116,9 +116,9 @@ if [[ -x "$PYBIN" ]]; then
 fi
 
 # V7: application functionality supersedes these legacy checkout scripts.
-for script in initModels.sh run-h3.sh run-music3.py unload-llm.sh media-gui/start.sh; do
+for script in initModels.sh run-h3.sh run-music3.py unload-llm.sh media-gui; do
   if [[ -e "$SOURCE_ROOT/$script" ]]; then
-    fail "V7 旧脚本仍存在: $SOURCE_ROOT/$script"
+    fail "V7 遗留原型仍存在: $SOURCE_ROOT/$script"
   fi
 done
 

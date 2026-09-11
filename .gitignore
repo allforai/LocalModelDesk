@@ -15,7 +15,6 @@ __pycache__/
 
 # Logs and local state
 *.log
-media-gui/chat-history.json
 
 # Generated media
 outputs/
@@ -26,7 +25,7 @@ outputs/
 # Local build products
 dist/
 
-# Downloaded model trees — restore with ./initModels.sh
+# Downloaded model trees — 由应用内「资源」面板下载
 llms/
 minimax-h3/
 minimax-music3/

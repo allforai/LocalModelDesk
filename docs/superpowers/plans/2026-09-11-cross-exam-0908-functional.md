@@ -1193,7 +1193,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `tests/test_resources_invariants.py:1-6,25-26,88-92`
 - Modify: `.gitignore:18,29`
 
-- [ ] **Step 1: 改测试，让"目录还在"变成失败**
+- [x] **Step 1: 改测试，让"目录还在"变成失败**
 
 `tests/test_packaging.py` 的 `test_no_legacy_scripts_in_repo` 名单里把 `"media-gui/start.sh"` 换成 `"media-gui"`，并把断言改成同时覆盖文件与目录：
 
@@ -1216,12 +1216,12 @@ tolerated any more (the media-gui prototype was deleted 2026-09-11).
 """
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_packaging.py tests/test_resources_invariants.py -q`
 Expected: FAIL, `遗留原型仍在仓库：media-gui`
 
-- [ ] **Step 3: 删除目录并修 verify-app 与 .gitignore**
+- [x] **Step 3: 删除目录并修 verify-app 与 .gitignore**
 
 ```bash
 git rm -r --cached media-gui
@@ -1238,17 +1238,17 @@ for script in initModels.sh run-h3.sh run-music3.py unload-llm.sh media-gui; do
 
 `.gitignore`：删掉第 18 行 `media-gui/chat-history.json`；第 29 行注释改为 `# Downloaded model trees — 由应用内「资源」面板下载`。
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_packaging.py tests/test_resources_invariants.py tests/test_shell_static.py -q`
 Expected: PASS
 
-- [ ] **Step 5: 跑打包校验**
+- [x] **Step 5: 跑打包校验**
 
 Run: `./scripts/verify-app.sh --app dist/LocalModelDesk.app`
 Expected: `verify-app: OK`
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add -A
