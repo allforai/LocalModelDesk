@@ -108,10 +108,13 @@ def test_incomplete_cache_bytes_count_toward_percent_but_not_bytes_local(tmp_pat
     cache = directory / ".cache" / "huggingface" / "download"
     cache.mkdir(parents=True)
     (cache / "model.safetensors.abc123.incomplete").write_bytes(b"x" * 70)
-    status = verify_tree(GLM, MANIFEST, tmp_path)
+    # A download is actively running for this model (active_since predates the
+    # blob's mtime), so its .incomplete bytes count as in-flight progress.
+    status = verify_tree(GLM, MANIFEST, tmp_path, active_since=0.0)
     assert status.state == "partial"
     assert status.bytes_local == 60
     assert status.bytes_in_flight == 70
+    assert status.stale_bytes == 0
     assert status.percent == 65.0          # (60 + 70) / 200
 
 
@@ -120,6 +123,40 @@ def test_incomplete_bytes_are_capped_at_expected_total(tmp_path):
     cache = directory / ".cache" / "huggingface" / "download"
     cache.mkdir(parents=True)
     (cache / "big.incomplete").write_bytes(b"x" * 500)
-    status = verify_tree(GLM, MANIFEST, tmp_path)
+    status = verify_tree(GLM, MANIFEST, tmp_path, active_since=0.0)
     assert status.state == "partial"
     assert status.percent == 100.0 or status.percent < 100.0 and status.bytes_in_flight == 200
+
+
+def test_stale_incomplete_is_reported_not_counted(tmp_path):
+    """没有下载在跑时，.incomplete 是上次的死数据，不许算成进度（J18）。"""
+    directory = model_dir(tmp_path)
+    cache = directory / ".cache" / "huggingface" / "download"
+    cache.mkdir(parents=True)
+    (cache / "model.safetensors.deadbeef.incomplete").write_bytes(b"x" * 400)
+
+    status = verify_tree(GLM, MANIFEST, tmp_path, active_since=None)
+    assert status.bytes_in_flight == 0
+    assert status.stale_bytes == 400
+    assert status.percent == 0.0
+
+
+def test_stale_incomplete_from_a_previous_attempt_is_excluded_while_new_attempt_runs(tmp_path):
+    """陈旧残片（旧 attempt）与新残片（当前 attempt）并存时，只有新的计入进度（J18）。"""
+    import os
+    import time
+
+    directory = model_dir(tmp_path)
+    cache = directory / ".cache" / "huggingface" / "download"
+    cache.mkdir(parents=True)
+    dead = cache / "model.safetensors.olddead.incomplete"
+    dead.write_bytes(b"x" * 40)
+    past = time.time() - 3600
+    os.utime(dead, (past, past))
+    active_since = time.time()
+    fresh = cache / "model.safetensors.newhash.incomplete"
+    fresh.write_bytes(b"y" * 15)
+
+    status = verify_tree(GLM, MANIFEST, tmp_path, active_since=active_since)
+    assert status.bytes_in_flight == 15
+    assert status.stale_bytes == 40

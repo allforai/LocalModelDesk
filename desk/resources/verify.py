@@ -29,6 +29,7 @@ class ModelStatus:
     manifest_fetched_at: str | None
     reason: str | None = None
     bytes_in_flight: int = 0
+    stale_bytes: int = 0
 
     def to_json(self) -> dict:
         payload = asdict(self)
@@ -36,24 +37,43 @@ class ModelStatus:
         return payload
 
 
-def _in_flight_bytes(model_dir: Path) -> int:
-    """Bytes sitting in hf's .incomplete files: downloaded but not yet moved into place."""
+def _incomplete_bytes(model_dir: Path, active_since: float | None) -> tuple[int, int]:
+    """Split hf's .incomplete blobs into (this attempt's in-flight, previous attempts' stale).
+
+    A blob only belongs to the current attempt when its mtime is no older than
+    ``active_since`` (with a 1s buffer for filesystem timestamp coarseness). When
+    ``active_since`` is None (no download is currently running for this model),
+    every .incomplete blob is dead weight from a past, now-unresumable attempt —
+    it must be reported, never counted toward progress (J18).
+    """
     cache = model_dir / ".cache" / "huggingface" / "download"
-    total = 0
+    fresh = stale = 0
     try:
         for path in cache.rglob("*.incomplete"):
             try:
-                if path.is_file():
-                    total += path.stat().st_size
+                if not path.is_file():
+                    continue
+                stat = path.stat()
             except OSError:
                 continue
+            if active_since is not None and stat.st_mtime + 1 >= active_since:
+                fresh += stat.st_size
+            else:
+                stale += stat.st_size
     except OSError:
-        return 0
-    return total
+        return 0, 0
+    return fresh, stale
 
 
-def verify_tree(entry: ModelEntry, manifest: Manifest, models_root: Path) -> ModelStatus:
-    """Stat manifest paths and return their byte-accurate completeness status."""
+def verify_tree(entry: ModelEntry, manifest: Manifest, models_root: Path, *,
+                 active_since: float | None = None) -> ModelStatus:
+    """Stat manifest paths and return their byte-accurate completeness status.
+
+    ``active_since`` should be the wall-clock time the current download attempt
+    (if any) started; pass None when no download is running for this model so
+    leftover .incomplete blobs from a dead attempt are reported as stale rather
+    than counted as in-flight progress (J18).
+    """
     model_dir = Path(models_root) / entry.relpath
     expected_total = manifest.total_bytes
     local_total = 0
@@ -68,7 +88,8 @@ def verify_tree(entry: ModelEntry, manifest: Manifest, models_root: Path) -> Mod
         if local_size != file.size:
             gaps.append(FileGap(file.path, file.size, local_size))
 
-    in_flight = 0 if not gaps else min(_in_flight_bytes(model_dir), max(expected_total - local_total, 0))
+    fresh, stale = _incomplete_bytes(model_dir, active_since)
+    in_flight = 0 if not gaps else min(fresh, max(expected_total - local_total, 0))
     counted = local_total + in_flight
     state = "present" if not gaps else "missing" if counted == 0 else "partial"
     percent = round(min(counted / expected_total, 1.0) * 100.0, 2) if expected_total else 0.0
@@ -83,6 +104,7 @@ def verify_tree(entry: ModelEntry, manifest: Manifest, models_root: Path) -> Mod
         manifest_source=manifest.source,
         manifest_fetched_at=manifest.fetched_at,
         bytes_in_flight=in_flight,
+        stale_bytes=stale,
     )
 
 
@@ -99,4 +121,5 @@ def unknown_status(entry: ModelEntry, disk_bytes_: int) -> ModelStatus:
         manifest_source="none",
         manifest_fetched_at=None,
         reason="manifest_unavailable",
+        stale_bytes=0,
     )

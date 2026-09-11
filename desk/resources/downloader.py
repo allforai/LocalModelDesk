@@ -70,7 +70,12 @@ class Downloader:
             except Exception:
                 manifest = None
             destination = Path(roots.models_root) / model.relpath
+            self._model = model
+            self._purge_incomplete()
             command = [*hf_cmd, "download", model.hf_repo, "--local-dir", str(destination)]
+            revision = getattr(manifest, "revision", None) if manifest is not None else None
+            if revision:
+                command += ["--revision", revision]
             try:
                 handle = self._executor.spawn(
                     command, cwd=None, extra_env=dict(getattr(roots, "hf_env", {}) or {}))
@@ -95,6 +100,12 @@ class Downloader:
     def progress(self) -> DownloadProgress:
         with self._lock:
             return self._progress.copy()
+
+    @property
+    def attempt_wall(self) -> float:
+        """Wall-clock time the current (or most recent) attempt started."""
+        with self._lock:
+            return self._attempt_wall
 
     def cancel(self) -> DownloadProgress:
         with self._lock:

@@ -54,10 +54,16 @@ class _InjectableDownloader(Downloader):
                 manifest = self._manifest_store.get(model, refresh=True)
             except Exception:
                 manifest = None
+            destination = Path(roots.models_root) / model.relpath
+            self._model = model
+            self._purge_incomplete()
+            command = [*hf_cmd, "download", model.hf_repo, "--local-dir", str(destination)]
+            revision = getattr(manifest, "revision", None) if manifest is not None else None
+            if revision:
+                command += ["--revision", revision]
             try:
                 handle = self._executor.spawn(
-                    [*hf_cmd, "download", model.hf_repo, "--local-dir",
-                     str(Path(roots.models_root) / model.relpath)], cwd=None,
+                    command, cwd=None,
                     extra_env=dict(getattr(roots, "hf_env", {}) or {}))
             except FileNotFoundError as exc:
                 raise HfCliMissingError("hf command is unavailable") from exc
@@ -132,7 +138,11 @@ class ResourcesService:
             manifest = self._manifests.get(model, refresh=refresh)
         except ManifestUnavailableError:
             return unknown_status(model, dir_bytes(model_dir))
-        return verify_tree(model, manifest, Path(roots.models_root))
+        progress = self._downloader.progress()
+        active_since = self._downloader.attempt_wall if (
+            progress.state == "running" and progress.key == model.key
+        ) else None
+        return verify_tree(model, manifest, Path(roots.models_root), active_since=active_since)
 
     def verify_all_models(self, refresh: bool = False) -> list[ModelStatus]:
         return [self.verify_model(model.key, refresh=refresh) for model in CATALOG]

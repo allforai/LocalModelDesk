@@ -101,13 +101,29 @@ def test_progress_ignores_incomplete_files_from_earlier_attempts(tmp_path):
     past = time.time() - 3600
     os.utime(stale, (past, past))
     downloader.start("h3")
+    # A dead shard from a previous, now-unresumable attempt is purged before the
+    # new attempt begins (J18), so it can never inflate this attempt's progress.
+    assert not stale.exists()
     fresh = cache / "new.incomplete"
     fresh.write_bytes(b"x" * 3)
     _wait_for(lambda: downloader.progress().bytes_done == 3)
-    assert downloader.progress().stale_bytes == 5
+    assert downloader.progress().stale_bytes == 0
     control.finish([("weights/a.bin", 10)])
     _wait_for(lambda: downloader.progress().state == "finished")
     assert not stale.exists() and not fresh.exists()
+
+
+def test_start_purges_unresumable_leftovers(tmp_path):
+    """hf 换新临时文件名重下时，旧残片是纯占盘死数据，必须在新 attempt 前清掉（J18）。"""
+    downloader, _control, _events = _downloader(tmp_path)
+    cache = tmp_path / "models" / "minimax-h3" / ".cache" / "huggingface" / "download"
+    cache.mkdir(parents=True)
+    leftover = cache / "a.bin.old.incomplete"
+    leftover.write_bytes(b"x" * 4096)
+
+    downloader.start("h3")
+
+    assert not leftover.exists()
 
 
 def test_start_download_passes_hf_env_to_executor(tmp_path):

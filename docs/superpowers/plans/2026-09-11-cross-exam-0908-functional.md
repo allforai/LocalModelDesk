@@ -459,7 +459,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 **Interfaces:**
 - Produces: `verify_tree(entry, manifest, models_root, *, active_since: float | None = None)`；`ModelStatus.stale_bytes: int`；`Downloader._purge_incomplete()` 在新一次 attempt 开始前调用
 
-- [ ] **Step 1: 写失败测试 —— 陈旧残片不计进度**
+- [x] **Step 1: 写失败测试 —— 陈旧残片不计进度**
 
 `tests/test_resources_verify.py` 追加：
 
@@ -482,12 +482,12 @@ def test_stale_incomplete_is_reported_not_counted(tmp_path):
 
 按该测试文件里已有的构造器名调整 `ModelEntry`/`Manifest`/`ManifestFile` 的字段（以文件内既有用例为准）。
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_resources_verify.py::test_stale_incomplete_is_reported_not_counted -q`
 Expected: FAIL, `TypeError: verify_tree() got an unexpected keyword argument 'active_since'`
 
-- [ ] **Step 3: 实现 verify_tree 的 attempt 感知**
+- [x] **Step 3: 实现 verify_tree 的 attempt 感知**
 
 `desk/resources/verify.py`：`_in_flight_bytes` 改为按时间戳分桶：
 
@@ -523,12 +523,12 @@ def _incomplete_bytes(model_dir: Path, active_since: float | None) -> tuple[int,
 
 `ModelStatus` 增加字段 `stale_bytes: int = 0`，在 `verify_tree` 的返回里传 `stale_bytes=stale`，`unknown_status` 里传 `stale_bytes=0`，`to_json` 里带上该键。
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_resources_verify.py -q`
 Expected: PASS
 
-- [ ] **Step 5: 服务层把"是否正在下载"传进去**
+- [x] **Step 5: 服务层把"是否正在下载"传进去**
 
 `desk/resources/service.py` 里所有调用 `verify_tree(...)` 的地方，传入当前 attempt 的墙钟：
 
@@ -549,7 +549,7 @@ Expected: PASS
             return self._attempt_wall
 ```
 
-- [ ] **Step 6: 写失败测试 —— 新 attempt 开始前清掉不可续的残片**
+- [x] **Step 6: 写失败测试 —— 新 attempt 开始前清掉不可续的残片**
 
 `tests/test_resources_downloader.py` 追加：
 
@@ -569,12 +569,12 @@ def test_start_purges_unresumable_leftovers(tmp_path, downloader_factory):
 
 `downloader_factory` 用该测试文件已有的 fake executor/manifest 构造方式（照搬文件内既有用例的 fixture 名与参数）。
 
-- [ ] **Step 7: 跑测试确认失败**
+- [x] **Step 7: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_resources_downloader.py::test_start_purges_unresumable_leftovers -q`
 Expected: FAIL（文件仍在）
 
-- [ ] **Step 8: 实现 —— 起跑前清场并固定 revision**
+- [x] **Step 8: 实现 —— 起跑前清场并固定 revision**
 
 `desk/resources/downloader.py` 的 `start()` 中，`destination = ...` 之后、`command = [...]` 之前插入：
 
@@ -589,17 +589,17 @@ Expected: FAIL（文件仍在）
 
 （把原来那行 `command = [...]` 删掉，避免重复。）`desk/resources/service.py` 里的 `_InjectableDownloader.start` 做同样改动——两处必须一致。
 
-- [ ] **Step 9: 跑测试确认通过**
+- [x] **Step 9: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_resources_downloader.py tests/test_resources_service.py tests/test_resources_http.py -q`
 Expected: PASS
 
-- [ ] **Step 10: 跑全量 + e2e**
+- [x] **Step 10: 跑全量 + e2e**
 
 Run: `python3 -m pytest -q && python3 -m pytest tests/e2e -q`
 Expected: PASS
 
-- [ ] **Step 11: 提交**
+- [x] **Step 11: 提交**
 
 ```bash
 git add desk/resources/ tests/test_resources_verify.py tests/test_resources_downloader.py
