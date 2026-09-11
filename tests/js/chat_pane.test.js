@@ -387,6 +387,40 @@ test("after eviction the dropdown still points at the evicted model", async () =
   assert.equal(select.value, "superqwen");
 });
 
+test("an interrupted answer is labelled, not left mid-thought", async () => {
+  const oldFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (path, options = {}) => {
+    calls.push(path);
+    if (path === "/api/resources/catalog") return json([]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    if (path === "/api/sessions") return json([{ id: "s1", title: "t", messages: [], updated: "2026-01-01" }]);
+    if (path === "/api/llm/chat/stream") {
+      return stream(['{"type":"delta","reasoning":"想了一半"}', '{"type":"error","code":"evicted","message":"LLM 已被媒体任务驱逐"}']);
+    }
+    throw new Error(`unexpected request ${path} ${options.method ?? "GET"}`);
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { root, controls } = makePane();
+    const pane = createChatPane(root);
+    await pane.init();
+    controls.get("[data-chat-input]").value = "你好";
+    await controls.get("[data-send]").click();
+    const assistant = controls.get("[data-messages]").children[1];
+    const details = assistant.children[1];
+    const summary = details.children[0];
+    const body = assistant.children[2];
+    assert.ok(summary.textContent.includes("已中断"), summary.textContent);
+    assert.notEqual(summary.textContent, "思考中…");
+    assert.equal(body.children[0].className, "empty-answer");
+    assert.equal(controls.get("[data-send]").disabled, false);
+    // The interrupted turn must not be persisted.
+    assert.ok(!calls.includes("/api/sessions/s1"), "半成品消息被写回了会话历史");
+  } finally { globalThis.fetch = oldFetch; }
+});
+
 test("历史消息用会话模型名，空回答有占位（F8/F9）", async () => {
   const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
   const { controls, root } = makePane();

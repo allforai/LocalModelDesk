@@ -1305,7 +1305,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `desk/static/js/panes/chat.js`（流式失败/驱逐处理）
 - Test: `tests/js/chat_pane.test.js`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test("an interrupted answer is labelled, not left mid-thought", () => {
@@ -1321,12 +1321,12 @@ test("an interrupted answer is labelled, not left mid-thought", () => {
 
 按 `chat.js` 实际的流式状态对象命名调整方法名。
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tests/js/chat_pane.test.js`
 Expected: FAIL
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 在流式错误/连接中断的收尾处（`stream.js` 的 error 回调进到 `chat.js` 的地方）加：
 
@@ -1347,7 +1347,7 @@ Expected: FAIL
 
 并确保这条消息**不写进会话历史**（`send()` 的 push 只在正常结束时执行），避免把半成品持久化。
 
-- [ ] **Step 4: 跑测试确认通过并提交**
+- [x] **Step 4: 跑测试确认通过并提交**
 
 Run: `node --test tests/js/chat_pane.test.js tests/js/chat_stream.test.js && python3 -m pytest tests/e2e/test_chat_stream.py -q`
 Expected: PASS

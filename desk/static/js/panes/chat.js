@@ -332,6 +332,17 @@ export function createChatPane(root, ctx = {}) {
       delete els.messages.dataset.streaming;
     }
     if (state.error) {
+      // A media job that evicted the model (or any other mid-stream failure)
+      // must not leave the bubble stuck on "思考中…" with half a thought and
+      // no answer (widewin gap #1). Label it plainly instead.
+      live.summary.textContent = state.error.code === "evicted" ? "已中断：内存让给了媒体作业" : "已中断";
+      live.details.open = false;
+      if (!state.content) {
+        const note = doc.createElement("p");
+        note.className = "empty-answer";
+        note.textContent = "这条回答没有生成完，可重新发送。";
+        live.contentEl.replaceChildren(note);
+      }
       live.errorEl.textContent = `出错（${state.error.code}）：${state.error.message}`;
       session.messages.pop();
       return;
