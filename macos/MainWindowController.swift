@@ -21,6 +21,7 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
     config.userContentController.add(self, name: "shellRetry")
     webView = WKWebView(frame: .zero, configuration: config)
     window.title = "LocalModelDesk"
+    window.tabbingMode = .disallowed
     window.center()
     window.contentView = webView
     window.isReleasedWhenClosed = false

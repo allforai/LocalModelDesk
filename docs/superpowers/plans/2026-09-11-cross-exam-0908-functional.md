@@ -1629,17 +1629,17 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `macos/`（`NSWindow` 创建处，文件名以实际为准，通常是 `AppDelegate.swift` 或 `MainWindow.swift`）
 - Test: `tests/test_packaging.py`, `tests/test_shell_window.py`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/test_packaging.py` 的 Info.plist 必备键测试里，把 `NSHumanReadableCopyright` 加进名单。
 `tests/test_shell_window.py` 追加一条静态断言：源码里出现 `tabbingMode = .disallowed`。
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_packaging.py tests/test_shell_window.py -q`
 Expected: FAIL
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `scripts/build-app.sh` 写 Info.plist 的地方加一行：
 
@@ -1653,7 +1653,7 @@ Expected: FAIL
     window.tabbingMode = .disallowed
 ```
 
-- [ ] **Step 4: 跑测试确认通过并提交**
+- [x] **Step 4: 跑测试确认通过并提交**
 
 Run: `python3 -m pytest tests/test_packaging.py tests/test_shell_window.py -q`
 Expected: PASS

@@ -214,6 +214,17 @@ def test_verify_flags_pyvenv_and_bin(tmp_path):
     assert "/bin" in result.stderr
 
 
+def test_build_writes_copyright_into_info_plist():
+    """未拉的线 #8: 「关于」面板不该留一行空文本——版权行必须真的写进 Info.plist。"""
+    build = (REPO / "scripts" / "build-app.sh").read_text()
+    render_at = build.index('echo "==> [5/9] Render Info.plist"')
+    icon_at = build.index('echo "==> [6/9] Build icon"')
+    assert "NSHumanReadableCopyright" in build
+    assert "PlistBuddy" in build
+    copyright_at = build.index("NSHumanReadableCopyright")
+    assert render_at < copyright_at < icon_at
+
+
 def test_build_precompiles_desk_bytecode_before_signing():
     build = (REPO / "scripts" / "build-app.sh").read_text()
     precompile_at = build.index("compileall -q -f")

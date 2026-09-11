@@ -129,6 +129,12 @@ def test_server_death_shows_error_text(shell_app):
     assert shell_app.proc.poll() is None
 
 
+def test_main_window_disallows_tab_bar():
+    """未拉的线 #8: 应用不支持多标签窗口，别让系统在窗口菜单里塞「显示标签页」。"""
+    source = (ROOT / "macos" / "MainWindowController.swift").read_text()
+    assert "tabbingMode = .disallowed" in source
+
+
 def test_error_page_is_dark_themed_and_names_the_reason():
     proc = subprocess.run([harness_path(), "error-page", "服务无响应", "/tmp/x.log"],
                           capture_output=True, text=True, timeout=30)
