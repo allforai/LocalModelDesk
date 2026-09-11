@@ -801,7 +801,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 **Interfaces:**
 - Produces: `apply_config()` 在绑定失败时恢复上一次成功的 `(enabled, host, port)` 并回写 config
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/test_gateway_service.py` 追加：
 
@@ -831,12 +831,12 @@ def test_failed_bind_rolls_back_to_the_last_good_config():
 
 `_FakeServer` 用该文件里已有的假服务器类（照搬既有用例的名字）。
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_gateway_service.py::test_failed_bind_rolls_back_to_the_last_good_config -q`
 Expected: FAIL（`listening` 为 False、`host` 仍是坏地址）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `desk/gateway/service.py`：`__init__` 里加 `self._last_good: tuple | None = None`、`self.on_rollback = None`。
 
@@ -896,12 +896,12 @@ def _bind_message(host: str, port: int, exc: OSError) -> str:
         return self.status()
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_gateway_service.py -q`
 Expected: PASS
 
-- [ ] **Step 5: 接上回写**
+- [x] **Step 5: 接上回写**
 
 `desk/runtime.py` 组装 `GatewayService` 之后加：
 
@@ -911,12 +911,12 @@ Expected: PASS
 
 （`config_mod` 用该文件里已有的导入名。）
 
-- [ ] **Step 6: 跑测试与 e2e**
+- [x] **Step 6: 跑测试与 e2e**
 
 Run: `python3 -m pytest tests/test_gateway_service.py tests/test_production_runtime.py -q && python3 -m pytest tests/e2e/test_settings_api.py -q`
 Expected: PASS
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add desk/gateway/service.py desk/runtime.py tests/test_gateway_service.py

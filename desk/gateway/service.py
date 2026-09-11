@@ -8,6 +8,19 @@ from .lan import lan_candidates, pick_lan_host, read_ifconfig
 
 _DEFAULTS = {"enabled": True, "host": "0.0.0.0", "port": 8770}
 
+_BIND_HINTS = {
+    48: "该端口已被占用，换一个端口再试",
+    49: "本机没有这个地址，请填 0.0.0.0、127.0.0.1 或本机网卡地址",
+    13: "该端口需要更高权限，请改用 1024 以上的端口",
+}
+
+
+def _bind_message(host: str, port: int, exc: OSError) -> str:
+    """OS 原文永远不是唯一解释（视觉基线 C3/F2）：附上人话提示与系统原文两份说明。"""
+    hint = _BIND_HINTS.get(exc.errno, "请检查主机与端口")
+    detail = exc.strerror or str(exc)
+    return f"无法绑定 {host}:{port}——{hint}（系统报告：{detail}）"
+
 
 def _lan_host(host: str) -> tuple[str, list[str]]:
     """Resolve a reachable LAN address for a wildcard bind, else echo the explicit host.
@@ -33,15 +46,18 @@ class GatewayService:
         self._applied = None
         self._bound_port = None
         self._last_error = None
+        self._last_good: tuple | None = None
+        self.on_rollback = None
 
     def _gateway_config(self) -> dict:
         cfg = dict(_DEFAULTS)
         cfg.update((self._read_config() or {}).get("gateway") or {})
         return cfg
 
-    def start_from_config(self) -> None:
-        """Listen only when enabled; record bind errors without raising them."""
-        cfg = self._gateway_config()
+    def _start(self, cfg: dict) -> None:
+        """Bind (or not) from an explicit config dict — never re-reads storage, so a
+        rollback can retry the last-known-good config even if storage still holds the
+        bad one (F12)."""
         self._applied = (bool(cfg["enabled"]), cfg["host"], cfg["port"])
         self._last_error = None
         if not cfg["enabled"]:
@@ -50,26 +66,41 @@ class GatewayService:
             self._server = self._server_factory((cfg["host"], cfg["port"]), self._backend)
         except OSError as exc:
             self._server = None
-            detail = exc.strerror or str(exc)
-            self._last_error = (
-                f"bind {cfg['host']}:{cfg['port']} failed: [errno {exc.errno}] {detail}"
-            )
+            self._last_error = _bind_message(cfg["host"], cfg["port"], exc)
             return
         self._bound_port = self._server.server_address[1]
         self._thread = threading.Thread(
             target=self._server.serve_forever, name="gateway-http", daemon=True
         )
         self._thread.start()
+        self._last_good = self._applied
+
+    def start_from_config(self) -> None:
+        """Listen only when enabled; record bind errors without raising them."""
+        self._start(self._gateway_config())
 
     def apply_config(self) -> dict:
-        """Re-read configuration and replace the listener when it has changed."""
+        """Re-read configuration and replace the listener when it has changed.
+
+        A bind failure never leaves the gateway parked on the bad config: it rolls back
+        to the last address that actually bound and persists that rollback (F12), while
+        keeping the plain-Chinese failure reason visible in `last_error`.
+        """
         cfg = self._gateway_config()
         wanted = (bool(cfg["enabled"]), cfg["host"], cfg["port"])
         listening = self._server is not None
         if wanted == self._applied and listening == wanted[0]:
             return self.status()
         self.stop()
-        self.start_from_config()
+        self._start(cfg)
+        if self._server is None and wanted[0] and self._last_good is not None and self._last_good != wanted:
+            failure = self._last_error
+            enabled, host, port = self._last_good
+            restored = {"enabled": enabled, "host": host, "port": port}
+            if self.on_rollback is not None:
+                self.on_rollback(restored)
+            self._start(restored)
+            self._last_error = failure
         return self.status()
 
     def stop(self) -> None:

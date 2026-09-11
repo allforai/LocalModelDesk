@@ -147,6 +147,7 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
         executor=SubprocessExecutor(),
     )
     gateway = GatewayService(DeskGatewayBackend(llm, arbiter), _gateway_config_reader())
+    gateway.on_rollback = lambda cfg: config.update_config(roots, gateway=cfg)
     app = DeskApp(host, port)
     _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway)
     app.capabilities = capabilities.probe_capabilities(roots)

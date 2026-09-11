@@ -24,8 +24,9 @@ def _connect_refused(host, port):
 def service_factory():
     services = []
 
-    def make(read_config, backend=None):
-        svc = GatewayService(backend or FakeBackend(), read_config)
+    def make(read_config, backend=None, server_factory=None):
+        kwargs = {} if server_factory is None else {"server_factory": server_factory}
+        svc = GatewayService(backend or FakeBackend(), read_config, **kwargs)
         services.append(svc)
         return svc
 
@@ -231,3 +232,55 @@ def test_status_keeps_explicit_host(service_factory):
     _holder, read = _config(enabled=True, host="127.0.0.1", port=0)
     svc = service_factory(read)
     assert svc.status()["lan_host"] == "127.0.0.1"
+
+
+class _FakeServer:
+    """Binds only when the requested host is not the poisoned one (F12 rollback test)."""
+
+    _bad_host = "10.255.255.1"
+
+    def __init__(self, address, backend=None):
+        if address[0] == self._bad_host:
+            raise OSError(49, "Can't assign requested address")
+        self.server_address = address
+
+    def serve_forever(self):
+        pass
+
+    def shutdown(self):
+        pass
+
+    def server_close(self):
+        pass
+
+
+def test_failed_bind_rolls_back_to_the_last_good_config(service_factory):
+    """一次误填的主机不许把网关写死成关闭态（F12）。"""
+    stored = {"gateway": {"enabled": True, "host": "127.0.0.1", "port": 8770}}
+    writes = []
+
+    svc = service_factory(lambda: stored, server_factory=_FakeServer)
+    svc.on_rollback = lambda cfg: writes.append(cfg)
+    svc.start_from_config()
+    assert svc.status()["listening"] is True
+
+    stored["gateway"] = {"enabled": True, "host": "10.255.255.1", "port": 8770}
+    status = svc.apply_config()
+
+    assert status["listening"] is True
+    assert status["host"] == "127.0.0.1"
+    assert writes == [{"enabled": True, "host": "127.0.0.1", "port": 8770}]
+    assert status["last_error"] is not None
+    assert "无法绑定" in status["last_error"]
+
+
+def test_bind_errno_49_message_is_plain_chinese(service_factory):
+    """OS 原文不能是唯一解释；至少要给出人话提示（视觉基线 C3/F2）。"""
+    stored = {"gateway": {"enabled": True, "host": "10.255.255.1", "port": 8770}}
+    svc = service_factory(lambda: stored, server_factory=_FakeServer)
+    svc.start_from_config()
+    status = svc.status()
+    assert status["listening"] is False
+    assert "无法绑定" in status["last_error"]
+    assert "10.255.255.1" in status["last_error"]
+    assert "8770" in status["last_error"]
