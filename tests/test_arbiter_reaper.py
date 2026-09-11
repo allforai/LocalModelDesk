@@ -67,3 +67,22 @@ def test_sigterm_immune_listener_falls_through_to_sigkill():
 def test_result_to_dict_shape():
     result = ReapResult(ok=True, port=1, killed_pids=[2]).to_dict()
     assert set(result) == {"ok", "port", "killed_pids", "error"}
+
+
+def test_reap_port_spares_processes_we_do_not_own():
+    """端口上的陌生进程不是我们的孩子，不许杀（P1）。"""
+    with listener() as (proc, port):
+        result = reap_port(port, term_timeout=0.3, kill_timeout=0.3, owned_pids=set())
+        assert result.killed_pids == []
+        assert proc.poll() is None
+
+
+def test_reap_port_kills_pid_in_owned_set():
+    """owned_pids 里的 pid 照常收割，过滤不能误伤自己人。"""
+    with listener() as (proc, port):
+        result = reap_port(
+            port, term_timeout=3.0, kill_timeout=3.0, owned_pids={proc.pid}
+        )
+        assert result.ok is True
+        assert proc.pid in result.killed_pids
+        assert _listening_pids(port) == []

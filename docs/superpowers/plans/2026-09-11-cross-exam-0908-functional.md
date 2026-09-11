@@ -395,7 +395,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 **Interfaces:**
 - Produces: `reap_port(port, *, owned_pids)`——只杀集合内的 pid
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/test_arbiter_reaper.py` 追加（沿用该文件既有的 fake 注入风格；若既有测试用别的注入名，按文件内实际签名调整）：
 
@@ -413,12 +413,12 @@ def test_reap_port_spares_processes_we_do_not_own():
     assert {pid for pid, _ in killed} == {101}
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_arbiter_reaper.py -q`
 Expected: FAIL（`reap_port` 不接受 `owned_pids`）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 在 `desk/arbiter/reaper.py` 的 `reap_port` 签名里加关键字参数 `owned_pids: set[int] | None = None`，并在取到监听者列表之后、发信号之前插入：
 
@@ -429,12 +429,12 @@ Expected: FAIL（`reap_port` 不接受 `owned_pids`）
 
 在调用点（`desk/llm/service.py` 里收 8767 的地方）传入本进程 spawn 过的 pid 集合；若该处目前无记录，用 `{self._proc.pid}`（已存在的子进程句柄）。
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_arbiter_reaper.py tests/llm -q`
 Expected: PASS
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add desk/arbiter/reaper.py desk/llm/service.py tests/test_arbiter_reaper.py

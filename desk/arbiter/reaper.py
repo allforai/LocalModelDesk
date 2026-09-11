@@ -56,11 +56,25 @@ def _signal_and_wait(pids, sig, timeout, port, errors):
 
 
 def reap_port(
-    port: int, *, term_timeout: float = 5.0, kill_timeout: float = 3.0
+    port: int,
+    *,
+    term_timeout: float = 5.0,
+    kill_timeout: float = 3.0,
+    owned_pids: set[int] | None = None,
 ) -> ReapResult:
-    """TERM then KILL every listener; succeed only if the final check is empty."""
+    """TERM then KILL listeners we own; succeed only if the final check is empty.
+
+    ``owned_pids`` scopes the kill to processes this arbiter actually spawned.
+    A stranger listening on the port is never signaled, even if it never
+    frees the port (P1: port reaping must verify ownership, same as the
+    shell's path-prefix reaping).
+    """
     errors: list[str] = []
     initial = _listening_pids(port)
+    if not initial:
+        return ReapResult(ok=True, port=port, killed_pids=[])
+    if owned_pids is not None:
+        initial = [pid for pid in initial if pid in owned_pids]
     if not initial:
         return ReapResult(ok=True, port=port, killed_pids=[])
 
