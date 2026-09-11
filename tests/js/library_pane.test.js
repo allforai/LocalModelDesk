@@ -165,9 +165,11 @@ test("失败记录：标题是人话，原始码收进「详情」（F3）", asy
   root.querySelector = (selector) => elements[selector.match(/data-lib-(.+)\]/)[1]];
   await createLibraryPane(root, { applyFill() {} }).refresh();
   const row = elements.list.children[0];
-  const title = find(row, (n) => n.className === "inline-error");
+  const block = find(row, (n) => n.className === "inline-error job-error");
+  assert.ok(block, "素材库失败行没有用作业面板同一张错误卡片（F8）");
+  const title = find(block, (n) => n.tagName === "strong");
   assert.equal(title.textContent, "生成程序异常退出");
-  const details = find(row, (n) => n.tagName === "details");
+  const details = find(block, (n) => n.tagName === "details");
   assert.ok(details, "缺少详情折叠");
   assert.equal(find(details, (n) => n.tagName === "pre").textContent, "exit_nonzero: exit 1");
 });

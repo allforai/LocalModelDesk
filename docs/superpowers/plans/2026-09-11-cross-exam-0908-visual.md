@@ -773,7 +773,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 **Interfaces:**
 - Produces: `renderErrorBlock(doc, { code, message, log_tail }) -> HTMLElement`（`.job-error` 卡片，内含 `<strong>` 标题与"详情"折叠）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/js/library_pane.test.js` 追加：
 
@@ -787,12 +787,12 @@ test("library failure uses the same error card as the job pane", () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tests/js/library_pane.test.js`
 Expected: FAIL
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 新建 `desk/static/js/widgets/error_block.js`：
 
@@ -843,7 +843,7 @@ function renderError(error) {
 .job-error{border:1px solid var(--danger);background:rgba(229,83,75,.08);border-radius:var(--radius);padding:12px;display:grid;gap:8px}
 ```
 
-- [ ] **Step 4: 跑测试确认通过并提交**
+- [x] **Step 4: 跑测试确认通过并提交**
 
 Run: `node --test tests/js/*.test.js && python3 -m pytest tests/e2e/test_library_panel.py tests/e2e/test_video_flow.py -q`
 Expected: PASS

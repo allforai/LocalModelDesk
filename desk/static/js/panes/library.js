@@ -3,7 +3,7 @@ import * as api from "../api.js";
 import { fillPlan } from "../pure/history_fill.js";
 import { formatBytes, formatDuration, formatTimestamp } from "../pure/format.js";
 import { addIcon } from "../icons.js";
-import { describeJobError } from "../pure/job_error.js";
+import { renderErrorBlock } from "../widgets/error_block.js";
 
 const KIND_LABEL = { video: "视频", music: "音乐", file: "文件" };
 const STATUS_LABEL = { done: "完成", failed: "失败", cancelled: "已取消" };
@@ -89,18 +89,7 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
       head.append(title, meta);
       if (entry.error) {
         const [code, ...rest] = entry.error.split(": ");
-        const { title: errorTitle, detail } = describeJobError({ code, message: rest.join(": ") });
-        const error = doc.createElement("p");
-        error.className = "inline-error";
-        error.textContent = errorTitle;
-        const details = doc.createElement("details");
-        details.className = "lib-error-details";
-        const summary = doc.createElement("summary");
-        summary.textContent = "详情";
-        const pre = doc.createElement("pre");
-        pre.textContent = detail;
-        details.append(summary, pre);
-        head.append(error, details);
+        head.append(renderErrorBlock(doc, { code, message: rest.join(": ") }));
       }
     } else {
       const title = doc.createElement("p");
