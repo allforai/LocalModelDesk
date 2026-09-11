@@ -1384,7 +1384,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 **Interfaces:**
 - Produces: `estimate_bytes(kind: str, params: dict) -> int`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 新建 `tests/test_media_memory_estimate.py`：
 
@@ -1416,12 +1416,12 @@ def test_music_has_its_own_baseline():
     assert estimate_bytes("music", {"duration": 10}) < 40 * GIB
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_media_memory_estimate.py -q`
 Expected: FAIL, `ModuleNotFoundError: No module named 'desk.media.memory_estimate'`
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 新建 `desk/media/memory_estimate.py`：
 
@@ -1463,12 +1463,12 @@ def estimate_bytes(kind: str, params: dict) -> int:
     return int(fixed + per_unit * max(volume - 1.0, 0.0))
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_media_memory_estimate.py -q`
 Expected: PASS
 
-- [ ] **Step 5: 接进服务**
+- [x] **Step 5: 接进服务**
 
 `desk/media/service.py:97-101` 替换：
 
@@ -1483,12 +1483,12 @@ Expected: PASS
 
 （`params` 是该方法里已有的作业参数字典；若变量名不同，用实际名字。）
 
-- [ ] **Step 6: 跑测试确认通过**
+- [x] **Step 6: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_media_service.py tests/test_media_routes.py -q && node --test tests/js/mem_warn.test.js`
 Expected: PASS
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add desk/media/memory_estimate.py desk/media/service.py tests/test_media_memory_estimate.py

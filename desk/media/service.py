@@ -94,10 +94,12 @@ class MediaService:
             if cap is None or not cap.present:
                 raise MediaError("capability_missing", f"{cap_key} is unavailable: {getattr(cap, 'detail', '')}", 503)
             roots = self._resolve_paths()
+            from .memory_estimate import estimate_bytes
+
             catalog_key = "h3" if kind == "video" else "music3"
             catalog = list(self._list_catalog())
             model_root = Path(roots.models_root) / {e.key: e.relpath for e in catalog}[catalog_key]
-            estimated = int({e.key: e.gb for e in catalog}[catalog_key] * 1024 ** 3)
+            estimated = estimate_bytes(kind, params)
             pre = self._arbiter.can_start_heavy(kind, estimated_bytes=estimated)
             if not pre.get("ok"):
                 reason = pre.get("reason") or {}
