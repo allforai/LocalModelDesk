@@ -57,6 +57,19 @@
 - 视频和音频留在本机
 - 能从历史里点开旧成品，并把当时的提示词和参数填回去
 
+### 安装与卸载
+
+```bash
+# 安装（目标目录必须已存在；默认装到 /Applications）
+./scripts/install-app.sh --app dist/LocalModelDesk.app
+
+# 卸载（先看要删什么，再真删；模型目录永远保留）
+./scripts/uninstall-app.sh --dry-run
+./scripts/uninstall-app.sh
+```
+
+`--help` 可列出全部参数。卸载默认保留 `~/Library/Application Support/LocalModelDesk` 下的数据；加 `--purge-data` 才会清除（模型目录仍保留）。
+
 ### 安装后的实际行为
 
 - 安装后不会自动启动；从“应用程序”打开本地模型台后，服务才会随应用启动。关闭窗口不会退出，使用菜单栏图标或“退出本地模型台”才会停止它。

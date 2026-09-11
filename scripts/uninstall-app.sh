@@ -10,10 +10,21 @@ LA_DIR="$HOME/Library/LaunchAgents"
 PURGE=0
 DRY_RUN=0
 
-usage() {
-  echo 'Usage: uninstall-app.sh [--app-path P] [--data-root P] [--launch-agents-dir P] [--purge-data] [--dry-run]' >&2
-  exit 2
+usage_text() {
+  cat <<'EOF'
+Usage: uninstall-app.sh [--app-path P] [--data-root P] [--launch-agents-dir P] [--purge-data] [--dry-run]
+
+  --app-path P          应用包路径，默认 /Applications/LocalModelDesk.app
+  --data-root P         数据目录，默认 ~/Library/Application Support/LocalModelDesk
+  --launch-agents-dir P LaunchAgents 目录，默认 ~/Library/LaunchAgents
+  --purge-data          同时清除数据目录（模型目录始终保留）
+  --dry-run             只打印将要执行的操作，不真的删除
+  --help, -h            打印本帮助并退出
+EOF
 }
+
+usage() { usage_text >&2; exit 2; }
+help() { usage_text; exit 0; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -22,6 +33,7 @@ while [[ $# -gt 0 ]]; do
     --launch-agents-dir) [[ $# -ge 2 ]] || usage; LA_DIR="$2"; shift 2 ;;
     --purge-data) PURGE=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
+    --help|-h) help ;;
     *) usage ;;
   esac
 done
@@ -129,11 +141,17 @@ if [[ -e "$APP_PATH" || -L "$APP_PATH" ]]; then
   else
     fail "refusing to remove $APP_PATH: unexpected bundle id ${ACTUAL_ID:-<missing>}"
   fi
+else
+  echo "uninstall-app: skip: 应用包不存在，无需删除：$APP_PATH"
 fi
 
 # User data is deliberately retained unless the protected purge workflow is requested.
-if [[ "$PURGE" == 1 && -d "$DATA_ROOT" ]]; then
-  purge_data
+if [[ "$PURGE" == 1 ]]; then
+  if [[ -d "$DATA_ROOT" ]]; then
+    purge_data
+  else
+    echo "uninstall-app: skip: 数据目录不存在，无需清除：$DATA_ROOT"
+  fi
 fi
 
 [[ "$FAILED" == 0 ]] || exit 1

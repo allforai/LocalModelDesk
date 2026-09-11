@@ -298,6 +298,20 @@ def test_install_to_tmp_dest(tmp_path):
     assert repeated.returncode == 0, repeated.stderr
 
 
+def test_install_help_exits_zero():
+    out = run([REPO / "scripts" / "install-app.sh", "--help"])
+    assert out.returncode == 0
+    assert "--dest" in out.stdout
+
+
+def test_install_names_the_missing_dest(tmp_path):
+    missing = tmp_path / "nope"
+    out = run([REPO / "scripts" / "install-app.sh", "--dest", missing])
+    assert out.returncode == 2
+    assert "目标目录不存在" in out.stderr
+    assert str(missing) in out.stderr
+
+
 def uninstall(app, launch_agents, data_root, env, *extra):
     return subprocess.run([
         str(REPO / "scripts" / "uninstall-app.sh"),

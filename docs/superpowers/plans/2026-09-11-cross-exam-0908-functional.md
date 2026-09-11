@@ -1097,7 +1097,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 **Interfaces:**
 - Produces: `--help` → 退出码 0；`--dest` 不存在 → stderr 含"目标目录不存在"且退出码 2
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/test_packaging.py` 追加：
 
@@ -1119,12 +1119,12 @@ def test_install_names_the_missing_dest(tmp_path):
     assert str(missing) in out.stderr
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_packaging.py -q -k install`
 Expected: FAIL（`--help` 返回 2；缺失目录只打 usage）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `scripts/install-app.sh` 的 `usage()` 之后加：
 
@@ -1146,12 +1146,12 @@ arg loop 里加一条 `--help|-h) help ;;`。
 
 `scripts/uninstall-app.sh` 做同样的 `--help|-h` 与 `die` 处理（对 `--app-path`、`--data-root` 的不存在给出人话，但**不**因不存在而失败——卸载允许目标已消失，只打印 `skip:`）。
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_packaging.py -q`
 Expected: PASS
 
-- [ ] **Step 5: 补 README**
+- [x] **Step 5: 补 README**
 
 `README.md` 的"### 安装后的实际行为"之前插入：
 
@@ -1170,7 +1170,7 @@ Expected: PASS
 `--help` 可列出全部参数。卸载默认保留 `~/Library/Application Support/LocalModelDesk` 下的数据；加 `--purge-data` 才会清除（模型目录仍保留）。
 ```
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add scripts/install-app.sh scripts/uninstall-app.sh README.md tests/test_packaging.py
