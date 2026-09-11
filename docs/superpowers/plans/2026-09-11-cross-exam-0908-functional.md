@@ -624,7 +624,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Produces: `lan_candidates(ifconfig_output: str) -> list[str]`、`pick_lan_host(ifconfig_output: str) -> str | None`
 - Consumes（B 计划设置面板）：`status()["lan_host"]`、新增 `status()["lan_candidates"]`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 新建 `tests/test_gateway_lan.py`：
 
@@ -659,12 +659,12 @@ def test_no_usable_interface_returns_none():
     assert pick_lan_host("lo0:\n\tinet 127.0.0.1 netmask 0xff000000\n") is None
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_gateway_lan.py -q`
 Expected: FAIL, `ModuleNotFoundError: No module named 'desk.gateway.lan'`
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 新建 `desk/gateway/lan.py`：
 
@@ -739,12 +739,12 @@ def read_ifconfig(run=subprocess.run) -> str:
     return done.stdout or ""
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_gateway_lan.py -q`
 Expected: PASS
 
-- [ ] **Step 5: 接进 gateway status**
+- [x] **Step 5: 接进 gateway status**
 
 `desk/gateway/service.py`：删掉 `_lan_host`，改为
 
@@ -773,12 +773,12 @@ def _lan_host(host: str) -> tuple[str, list[str]]:
         }
 ```
 
-- [ ] **Step 6: 跑测试确认通过**
+- [x] **Step 6: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_gateway_service.py tests/test_gateway_lan.py -q && node --test tests/js/base_url.test.js`
 Expected: PASS
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add desk/gateway/lan.py desk/gateway/service.py tests/test_gateway_lan.py
