@@ -69,6 +69,7 @@ def test_status_shape(service_factory):
         "host": "127.0.0.1",
         "port": port,
         "lan_host": "127.0.0.1",
+        "lan_candidates": ["127.0.0.1"],
         "openai_base_url": f"http://127.0.0.1:{port}/v1",
         "anthropic_base_url": f"http://127.0.0.1:{port}",
         "auth": "none",

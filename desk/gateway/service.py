@@ -1,24 +1,26 @@
 """Gateway lifecycle, configuration application, and gateway status."""
 from __future__ import annotations
 
-import socket
 import threading
 
 from .http_server import GatewayHTTPServer
+from .lan import lan_candidates, pick_lan_host, read_ifconfig
 
 _DEFAULTS = {"enabled": True, "host": "0.0.0.0", "port": 8770}
 
 
-def _lan_host(host: str) -> str:
-    """Resolve a usable LAN address for a wildcard bind, else echo the explicit host."""
+def _lan_host(host: str) -> tuple[str, list[str]]:
+    """Resolve a reachable LAN address for a wildcard bind, else echo the explicit host.
+
+    The default-route probe used to return a VPN tunnel address (100.64.0.0/10) whenever
+    a VPN was up — unreachable from anything else on the LAN (cross-exam 2026-09-08,
+    J8/J19). `desk.gateway.lan` enumerates real interfaces instead.
+    """
     if host != "0.0.0.0":
-        return host
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
-            probe.connect(("10.255.255.255", 1))  # no packet sent; picks the default route's interface
-            return probe.getsockname()[0]
-    except OSError:
-        return "127.0.0.1"
+        return host, [host]
+    output = read_ifconfig()
+    candidates = lan_candidates(output)
+    return (pick_lan_host(output) or "127.0.0.1"), candidates
 
 
 class GatewayService:
@@ -91,13 +93,14 @@ class GatewayService:
             cfg = self._gateway_config()
             enabled, host, port = bool(cfg["enabled"]), cfg["host"], cfg["port"]
             listening = False
-        lan_host = _lan_host(host)
+        lan_host, lan_hosts = _lan_host(host)
         return {
             "enabled": enabled,
             "listening": listening,
             "host": host,
             "port": port,
             "lan_host": lan_host,
+            "lan_candidates": lan_hosts,
             "openai_base_url": f"http://{lan_host}:{port}/v1",
             "anthropic_base_url": f"http://{lan_host}:{port}",
             "auth": "none",
