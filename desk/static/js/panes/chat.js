@@ -88,8 +88,12 @@ export function createChatPane(root, ctx = {}) {
     else if (state.status === "loaded") {
       els.modelState.textContent = `已加载：${payload.loaded_model?.name ?? state.model_key}`;
       if (state.model_key && state.model_key !== lastLoadedKey) { els.modelSelect.value = state.model_key; lastLoadedKey = state.model_key; }
+      delete els.modelSelect.dataset.userPicked;
     } else if (state.error?.code === "evicted") {
       els.modelState.textContent = "已被媒体任务让出内存，可重新加载";
+      // Keep the dropdown pointed at the evicted model, not whatever sat first
+      // in the list, so "加载" reloads the model that was actually kicked out.
+      if (state.model_key && !els.modelSelect.dataset.userPicked) els.modelSelect.value = state.model_key;
     } else {
       const tail = state.error?.log_tail ? `\n${state.error.log_tail}` : "";
       els.modelState.textContent = `加载失败（${state.error?.code ?? "?"}）：${state.error?.message ?? ""}${tail}`;
@@ -344,6 +348,7 @@ export function createChatPane(root, ctx = {}) {
 
   els.loadBtn.addEventListener("click", loadSelected);
   els.unloadBtn.addEventListener("click", unload);
+  els.modelSelect.addEventListener("change", () => { els.modelSelect.dataset.userPicked = "1"; });
   els.sendBtn.addEventListener("click", send);
   els.input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) send();

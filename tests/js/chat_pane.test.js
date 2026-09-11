@@ -374,6 +374,19 @@ test("model state renders as a badge in the shared family (F15)", async () => {
   assert.ok(badge.className.includes("badge-busy"), badge.className);
 });
 
+test("after eviction the dropdown still points at the evicted model", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const select = controls.get("[data-model-select]");
+  const optionA = new Element("option"); optionA.value = "glm";
+  const optionB = new Element("option"); optionB.value = "superqwen";
+  select.append(optionA, optionB);
+  select.value = "glm";
+  const pane = createChatPane(root);
+  pane.applyLlmStatus({ state: { status: "error", model_key: "superqwen", error: { code: "evicted", message: "让出内存" } } });
+  assert.equal(select.value, "superqwen");
+});
+
 test("历史消息用会话模型名，空回答有占位（F8/F9）", async () => {
   const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
   const { controls, root } = makePane();

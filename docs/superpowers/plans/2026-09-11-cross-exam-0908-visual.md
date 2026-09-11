@@ -1251,7 +1251,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `desk/static/js/panes/chat.js:66-84`
 - Test: `tests/js/chat_pane.test.js`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test("after eviction the dropdown still points at the evicted model", () => {
@@ -1262,12 +1262,12 @@ test("after eviction the dropdown still points at the evicted model", () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tests/js/chat_pane.test.js`
 Expected: FAIL（value 为 `glm`）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `renderLlm` 的驱逐分支加一行，把选择器对回被驱逐的 key（仅当用户没有手动改过选择时）：
 
@@ -1282,7 +1282,7 @@ Expected: FAIL（value 为 `glm`）
 
 并在下拉框的 `change` 监听里设 `els.modelSelect.dataset.userPicked = "1"`，在成功加载后清除。
 
-- [ ] **Step 4: 跑测试确认通过并提交**
+- [x] **Step 4: 跑测试确认通过并提交**
 
 Run: `node --test tests/js/chat_pane.test.js && python3 -m pytest tests/e2e/test_mutex_ui.py -q`
 Expected: PASS
