@@ -135,6 +135,17 @@ fi
 if [[ -n "$IDENTITY" ]]; then SIGN+=(--identity "$IDENTITY"); fi
 "${SIGN[@]}"
 
+if [[ -n "${LMD_NOTARY_PROFILE:-}" ]]; then
+  echo "    notarizing with keychain profile $LMD_NOTARY_PROFILE"
+  DITTO_ZIP="$(mktemp -d)/LocalModelDesk.zip"
+  ditto -c -k --keepParent "$APP" "$DITTO_ZIP"
+  xcrun notarytool submit "$DITTO_ZIP" --keychain-profile "$LMD_NOTARY_PROFILE" --wait
+  xcrun stapler staple "$APP"
+  xcrun stapler validate "$APP"
+else
+  echo "    skip notarization: set LMD_NOTARY_PROFILE to a 'xcrun notarytool store-credentials' profile name"
+fi
+
 echo "==> [9/9] Verify"
 PYTHONDONTWRITEBYTECODE=1 "$REPO/scripts/verify-app.sh" "$APP" --source-root "$REPO"
 

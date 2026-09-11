@@ -70,6 +70,17 @@
 
 `--help` 可列出全部参数。卸载默认保留 `~/Library/Application Support/LocalModelDesk` 下的数据；加 `--purge-data` 才会清除（模型目录仍保留）。
 
+### 分发给其他机器（需要 Apple 开发者账号）
+
+一次性准备：
+
+```bash
+xcrun notarytool store-credentials LocalModelDesk \
+  --apple-id <你的 Apple ID> --team-id <Team ID> --password <App 专用密码>
+```
+
+之后出包时带上 `LMD_NOTARY_PROFILE=LocalModelDesk ./scripts/build-app.sh`，脚本会自动提交公证并 staple。不设该变量时只做 Developer ID 签名，本机可用、别的机器会被 Gatekeeper 拦。
+
 ### 安装后的实际行为
 
 - 安装后不会自动启动；从“应用程序”打开本地模型台后，服务才会随应用启动。关闭窗口不会退出，使用菜单栏图标或“退出本地模型台”才会停止它。

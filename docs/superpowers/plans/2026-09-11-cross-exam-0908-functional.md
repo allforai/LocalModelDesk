@@ -1678,7 +1678,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `scripts/build-app.sh`（新增可选公证段）
 - Modify: `README.md`
 
-- [ ] **Step 1: 加公证段（凭据从环境变量读，缺失就跳过并明说）**
+- [x] **Step 1: 加公证段（凭据从环境变量读，缺失就跳过并明说）**
 
 `scripts/build-app.sh` 末尾、verify 之前插入：
 
@@ -1695,7 +1695,7 @@ else
 fi
 ```
 
-- [ ] **Step 2: README 写清一次性准备步骤**
+- [x] **Step 2: README 写清一次性准备步骤**
 
 在"### 安装与卸载"之后加：
 
@@ -1712,7 +1712,7 @@ xcrun notarytool store-credentials LocalModelDesk \
 之后出包时带上 `LMD_NOTARY_PROFILE=LocalModelDesk ./scripts/build-app.sh`，脚本会自动提交公证并 staple。不设该变量时只做 Developer ID 签名，本机可用、别的机器会被 Gatekeeper 拦。
 ```
 
-- [ ] **Step 3: 提交（不执行公证）**
+- [x] **Step 3: 提交（不执行公证）**
 
 ```bash
 git add scripts/build-app.sh README.md
@@ -1722,7 +1722,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 ```
 
-- [ ] **Step 4: 交回用户**
+- [x] **Step 4: 交回用户**
 
 告诉用户：公证需要他们的 Apple ID/Team ID/App 专用密码，脚本已就绪，跑一次 `store-credentials` 后重新出包即可。不要代跑。
 

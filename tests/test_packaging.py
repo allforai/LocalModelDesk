@@ -214,6 +214,23 @@ def test_verify_flags_pyvenv_and_bin(tmp_path):
     assert "/bin" in result.stderr
 
 
+def test_build_has_optional_notarization_gated_on_env_var(tmp_path):
+    """未拉的线 #7: 公证段只在设了 LMD_NOTARY_PROFILE 时跑，缺失时明说跳过而不是裸签。"""
+    build = (REPO / "scripts" / "build-app.sh").read_text()
+    verify_at = build.index('echo "==> [9/9] Verify"')
+    assert "LMD_NOTARY_PROFILE" in build
+    assert "notarytool submit" in build
+    assert "stapler staple" in build
+    notarize_at = build.index("notarytool submit")
+    assert notarize_at < verify_at, "公证必须在 verify（会检查 staple）之前完成"
+
+
+def test_readme_documents_notarization_setup():
+    text = (REPO / "README.md").read_text()
+    assert "notarytool store-credentials" in text
+    assert "LMD_NOTARY_PROFILE" in text
+
+
 def test_build_writes_copyright_into_info_plist():
     """未拉的线 #8: 「关于」面板不该留一行空文本——版权行必须真的写进 Info.plist。"""
     build = (REPO / "scripts" / "build-app.sh").read_text()
