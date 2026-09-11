@@ -112,7 +112,14 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .job [data-job-cancel]{align-self:flex-start}
 .job-error{padding:12px;border:1px solid var(--danger);border-radius:var(--radius);background:rgba(229,83,75,.08)}
 .job-error:empty{display:none}.job-error details{margin-top:8px;color:var(--muted);font-size:13px}.job-error pre{white-space:pre-wrap;margin:4px 0 0;font:12px ui-monospace,Menlo,monospace}
-.form>.hint-busy{margin:-4px 0 0}
+/* A hint paragraph with no text (e.g. the video pane's upload-status line while
+   idle) must not occupy a flex row — otherwise its empty box plus the form's
+   own 12px gap silently doubles the space before whatever comes after it,
+   producing three times the gap the music pane shows for the same message
+   (F7/W7). The browser's default <p> margin is dropped too, so the form's
+   flex `gap` is the single source of truth for spacing between its rows. */
+.hint:empty{display:none}
+.form>p{margin:0}
 [data-job-player] audio,[data-lib-player] audio{width:100%;color-scheme:dark}
 .file-row{display:flex;align-items:center;gap:8px}.file-pick .btn{display:inline-block;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer}
 /* 9. dialogs + drawer */

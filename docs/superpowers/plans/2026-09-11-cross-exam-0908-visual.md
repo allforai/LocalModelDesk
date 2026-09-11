@@ -704,7 +704,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `desk/static/js/panes/video.js`, `desk/static/js/panes/music.js`（若原因元素位置不同）
 - Test: `tests/e2e/test_mutex_ui.py`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/e2e/test_mutex_ui.py` 追加：
 
@@ -726,12 +726,12 @@ def test_disabled_reason_sits_the_same_distance_in_both_panes(page, tmp_path):
 
 选择器与造忙态的方式照该文件既有用例调整。
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/e2e/test_mutex_ui.py -q -k distance`
 Expected: FAIL（49 vs 11）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 在 `app.css` 的表单段加一条统一规则，并删掉两个 pane 各自的临时 margin：
 
@@ -742,7 +742,7 @@ Expected: FAIL（49 vs 11）
 
 检查 `video.js` 是否把原因元素放在了 `.form` 之外（这会产生额外的父级间距）——若是，移到与 `music.js` 同一层级：紧随生成按钮所在的 `.settings-actions` 之后。
 
-- [ ] **Step 4: 跑测试确认通过并提交**
+- [x] **Step 4: 跑测试确认通过并提交**
 
 Run: `python3 -m pytest tests/e2e/test_mutex_ui.py -q && node --test tests/js/media_panes.test.js`
 Expected: PASS
