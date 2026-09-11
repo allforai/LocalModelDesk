@@ -53,8 +53,34 @@ final class StatusItemController: NSObject, NSMenuDelegate {
   /// The status model's pure mapping is the sole source of status copy and glyph.
   func render(_ status: ShellStatus) {
     let title = menuTitle(for: status)
-    configureStatusButton(label: title, glyph: menuGlyphState(for: status))
-    detailItem.title = "状态：\(title)"
+    let glyph = menuGlyphState(for: status)
+    configureStatusButton(label: title, glyph: glyph)
+    let text = "状态：\(title)"
+    detailItem.image = NSImage(systemSymbolName: glyphName(for: glyph), accessibilityDescription: nil)
+    detailItem.attributedTitle = NSAttributedString(
+      string: text, attributes: [.foregroundColor: tintColor(for: glyph)])
+  }
+
+  /// SF Symbol for the status row, mirroring the same three-state distinction (idle/loaded/busy,
+  /// plus down) the menu-bar glyph draws — so the row is never blank next to the four menu items
+  /// below it, which all carry icons (N5).
+  private func glyphName(for glyph: MenuGlyphState) -> String {
+    switch glyph {
+    case .down: return "circle.slash"
+    case .idle: return "circle"
+    case .loaded: return "circle.fill"
+    case .busy: return "waveform"
+    }
+  }
+
+  /// Semantic color for the status row, matching the web statusbar's `--ok`/`--busy` tokens:
+  /// neutral while idle/down, green once something is loaded, orange while busy (N5).
+  private func tintColor(for glyph: MenuGlyphState) -> NSColor {
+    switch glyph {
+    case .down, .idle: return .secondaryLabelColor
+    case .loaded: return .systemGreen
+    case .busy: return .systemOrange
+    }
   }
 
   /// Draws an 18x18 monochrome template "desk" glyph whose state variant marks
@@ -90,8 +116,15 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     case .success(let line):
       memoryItem.title = memoryMenuTitle(used: line.usedBytes, total: line.totalBytes,
                                          available: line.availableBytes)
+      memoryItem.image = NSImage(systemSymbolName: "memorychip", accessibilityDescription: nil)
+      memoryItem.attributedTitle = NSAttributedString(
+        string: memoryItem.title, attributes: [.foregroundColor: NSColor.secondaryLabelColor])
     case .failure:
       memoryItem.title = "内存 不可读"
+      memoryItem.image = NSImage(systemSymbolName: "exclamationmark.triangle",
+                                 accessibilityDescription: nil)
+      memoryItem.attributedTitle = NSAttributedString(
+        string: memoryItem.title, attributes: [.foregroundColor: NSColor.systemRed])
     }
   }
 

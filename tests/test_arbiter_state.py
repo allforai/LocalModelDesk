@@ -49,3 +49,16 @@ def test_unknown_kind_refused():
 
 def test_refusals_carry_messages():
     assert plan_acquire(holder("music"), "llm").reason_message
+
+
+def test_holder_carries_a_human_readable_name():
+    """菜单栏只拿得到 /api/state 的 holder 视图，它必须带显示名（N2）。"""
+    h = Holder(kind="llm", label="glm", token="tok", since=0.0, phase=PHASE_HELD,
+               display="GLM 4.7 Flash 越狱 4bit")
+    assert h.public_view()["display"] == "GLM 4.7 Flash 越狱 4bit"
+
+
+def test_holder_display_falls_back_to_label_when_absent():
+    """没有显式 display 时（旧调用点未传），仍需给出可读值而非 None。"""
+    h = Holder(kind="music", label="job-2", token="tok", since=0.0, phase=PHASE_HELD)
+    assert h.public_view()["display"] == "job-2"

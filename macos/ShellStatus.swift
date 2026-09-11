@@ -21,6 +21,7 @@ enum ServerState: Equatable {
 struct DeskStateSnapshot: Equatable {
   var holderKind: String?
   var holderLabel: String?
+  var holderDisplay: String?
 
   /// Ignores unknown fields, but rejects an absent or malformed `holder`.
   static func parse(_ object: Any) -> DeskStateSnapshot? {
@@ -28,12 +29,13 @@ struct DeskStateSnapshot: Equatable {
       return nil
     }
     if holderValue is NSNull {
-      return DeskStateSnapshot(holderKind: nil, holderLabel: nil)
+      return DeskStateSnapshot(holderKind: nil, holderLabel: nil, holderDisplay: nil)
     }
     guard let holder = holderValue as? [String: Any], let kind = holder["kind"] as? String else {
       return nil
     }
-    return DeskStateSnapshot(holderKind: kind, holderLabel: holder["label"] as? String)
+    return DeskStateSnapshot(holderKind: kind, holderLabel: holder["label"] as? String,
+                              holderDisplay: holder["display"] as? String)
   }
 }
 
@@ -46,9 +48,11 @@ struct ShellStatus {
 }
 
 /// The sole formatter for the menubar memory row; wording mirrors the web statusbar (N1).
+/// Rounded to whole GiB (N3): sub-GiB polling jitter (79.0/79.4/79.2) must read identically
+/// wherever memory is shown, and the web statusbar rounds the same way (pure/format.js).
 func memoryMenuTitle(used: Int64, total: Int64, available: Int64) -> String {
   let gib = 1_073_741_824.0
-  return String(format: "内存 已用 %.1f / 总 %.1f GiB（可用 %.1f GiB）",
+  return String(format: "内存 已用 %.0f / 总 %.0f GiB（可用 %.0f GiB）",
                 Double(used) / gib, Double(total) / gib, Double(available) / gib)
 }
 
@@ -68,9 +72,9 @@ func menuTitle(for status: ShellStatus) -> String {
   guard let kind = desk.holderKind else { return "空闲" }
 
   switch kind {
-  case "llm": return "已加载 \(desk.holderLabel ?? "?")"
-  case "video": return "出片中"
-  case "music": return "出歌中"
+  case "llm": return "已加载 \(desk.holderDisplay ?? desk.holderLabel ?? "?")"
+  case "video": return desk.holderDisplay ?? "视频生成中"
+  case "music": return desk.holderDisplay ?? "音乐生成中"
   default: return "状态不可读"
   }
 }

@@ -23,6 +23,23 @@ class Holder:
     token: str
     since: float
     phase: str
+    display: str | None = None
+
+    def public_view(self) -> dict:
+        """Human-readable holder view for `/api/state` and the menu bar (N2).
+
+        `display` carries a full human-readable name (e.g. a model's catalog
+        name, or a media job's window-matching status text); callers that
+        have not been updated to pass one fall back to `label` so the field
+        is never missing or null.
+        """
+        return {
+            "kind": self.kind,
+            "label": self.label,
+            "display": self.display or self.label,
+            "since": self.since,
+            "phase": self.phase,
+        }
 
 
 @dataclass(frozen=True)

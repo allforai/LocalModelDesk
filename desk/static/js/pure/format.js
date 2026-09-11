@@ -25,6 +25,14 @@ export function formatDuration(seconds) {
   return `${Math.floor(m / 60)}时${String(m % 60).padStart(2, "0")}分`;
 }
 
+// 状态条 / 菜单栏共用的内存读数格式：取整到 GiB（N3 —— 同屏三处读数曾因 0.4 GiB 的
+// 轮询抖动各自四舍五入到 79.0/79.4/79.2，互不相同；取整后三处必须一致，macOS 菜单栏
+// 的 memoryMenuTitle 用同一进制、同一取整方式）。
+export function formatMemoryLine(usedBytes, totalBytes, availableBytes) {
+  const gib = (n) => Math.round(n / GB);
+  return `已用 ${gib(usedBytes)} / 总 ${gib(totalBytes)} GiB（可用 ${gib(availableBytes)} GiB）`;
+}
+
 export function formatRate(bps) {
   if (!Number.isFinite(bps) || bps <= 0) return "—";
   return `${formatBytes(bps)}/s`;

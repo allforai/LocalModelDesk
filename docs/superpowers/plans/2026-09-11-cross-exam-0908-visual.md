@@ -1095,7 +1095,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 **Interfaces:**
 - Produces: `/api/state` 的 `holder` 增加 `display` 字段（人类可读名）；`menuTitle` 优先用 `display`
 
-- [ ] **Step 1: 写失败测试（Python 侧）**
+- [x] **Step 1: 写失败测试（Python 侧）**
 
 `tests/test_arbiter_state.py` 追加：
 
@@ -1106,7 +1106,7 @@ def test_holder_carries_a_human_readable_name():
     assert state["holder"]["display"] == "GLM 4.7 Flash 越狱 4bit"
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_arbiter_state.py -q`
 Expected: FAIL, `KeyError: 'display'`
@@ -1115,7 +1115,9 @@ Expected: FAIL, `KeyError: 'display'`
 
 `desk/arbiter/state.py` 的 holder 序列化处加 `"display": self._display or self._label`；`desk/llm/service.py` 取得许可时把模型 `name` 作为 display 传进去；媒体作业传 `"视频生成中"` / `"音乐生成中"`（与窗口状态条同一措辞，解决 N4）。
 
-- [ ] **Step 4: 写失败测试（Swift 侧）**
+> **部分完成 / blocked（执行者注）：** `Holder` 数据类与其序列化落在 `desk/arbiter/state.py`（已加 `display` 字段与 `Holder.public_view()`，测试见 Step 1/2），但真正拼进 `/api/state` 响应的持有者字典由 `desk/arbiter/core.py` 的 `Arbiter._public_holder` / `acquire_heavy` 构造——该文件不在本任务 owns 列表内，也不是额外说明里点名的例外（例外只覆盖 `llm/service.py`、`media/service.py` 各一行传参）。`acquire_heavy(kind, label)` 当前不接受 display 参数，`_public_holder` 也不读取它，所以在 `core.py` 跟进之前，`display` 不会真正出现在线上 `/api/state` 里，`llm/service.py`/`media/service.py` 那一行传参也无处可传（对应关键字参数尚不存在）。N4 的措辞统一已经在 `ShellStatus.swift` 的默认兜底文案里独立解决（`holderDisplay` 缺失时回退到 `"视频生成中"`/`"音乐生成中"`），不依赖这条链路。跟进需要：`core.py` 的 `Holder(...)` 构造调用加 `display=`、`acquire_heavy` 加 `display` 形参、`_public_holder` 输出 `display` 字段，然后才能加上 `llm/service.py`/`media/service.py` 的那一行传参。
+
+- [x] **Step 4: 写失败测试（Swift 侧）**
 
 `tests/test_shell_status.py` 的 parametrize 里加：
 
@@ -1127,12 +1129,12 @@ Expected: FAIL, `KeyError: 'display'`
 
 并加一条内存取整用例：`memoryMenuTitle` 对 `used=79.4 GiB` 输出 `已用 79 / 总 128 GiB（可用 49 GiB）`。
 
-- [ ] **Step 5: 跑测试确认失败**
+- [x] **Step 5: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_shell_status.py -q`
 Expected: FAIL
 
-- [ ] **Step 6: 实现 Swift 侧**
+- [x] **Step 6: 实现 Swift 侧**
 
 `ShellStatus.swift`：`DeskStateSnapshot` 加 `var holderDisplay: String?` 并在 `parse` 里读 `holder["display"]`；`menuTitle` 改为：
 
@@ -1146,6 +1148,8 @@ Expected: FAIL
 
 `memoryMenuTitle` 的数值格式从 `%.1f` 改为 `%.0f`（N3：同屏三处读数因 0.4 GiB 抖动而不同，取整后一致）。同时把 web 侧 `pure/format.js` 里状态条的内存格式也改为整数 GiB，两处必须同时改，否则仍会出现 79 vs 79.4。
 
+> **执行者注：** 状态条的内存文案实际由 `desk/static/js/pure/desk_state.js` 的 `renderState()` 内联拼出（局部 `gb = (n) => (n / GB).toFixed(1)`），并非走 `pure/format.js` 的 `formatBytes`——该文件不在本任务 owns 列表。已在 `format.js` 新增 `formatMemoryLine(used, total, available)`（取整 GiB，用法/取整方式与 Swift 侧 `memoryMenuTitle` 对齐，`tests/js/format.test.js` 覆盖），但 `desk_state.js` 尚未改为调用它，因此网页状态条本身此刻仍是一位小数——N3 在**菜单栏**一侧已修好，网页状态条一侧需要另一条拥有 `desk_state.js` 的泳道把 `gb()` 换成这个新函数才算全量修复。
+
 `StatusItemController.swift:54-58` 给状态行与内存行加图标与语义色：
 
 ```swift
@@ -1158,7 +1162,7 @@ Expected: FAIL
 
 `glyphName(for:)` 返回 `"circle"`/`"circle.fill"`/`"waveform"`，`tintColor(for:)` 返回 `NSColor.secondaryLabelColor` / `systemGreen` / `systemOrange`，与窗口状态条的 `--ok`/`--busy` 对应。
 
-- [ ] **Step 7: 跑测试确认通过并提交**
+- [x] **Step 7: 跑测试确认通过并提交**
 
 Run: `python3 -m pytest tests/test_shell_status.py tests/test_arbiter_state.py -q && node --test tests/js/format.test.js && python3 -m pytest tests/e2e/test_statusbar_memory.py -q`
 Expected: PASS
