@@ -490,7 +490,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `desk/static/js/panes/chat.js`（发送按钮状态切换处）
 - Test: `tests/js/chat_pane.test.js`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test("send button keeps its icon in every state", () => {
@@ -503,12 +503,12 @@ test("send button keeps its icon in every state", () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tests/js/chat_pane.test.js`
 Expected: FAIL（busy=true 时无 icon）
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 把按钮文案的写法从"整体覆写 textContent"改成"只改文字节点"：
 
@@ -525,7 +525,7 @@ function setButtonLabel(button, text, doc) {
 
 发送按钮初始化时用 `setButtonLabel(els.send, "发送", doc)` 并 `addIcon(els.send, "send", doc)`；状态切换处只调 `setButtonLabel`，不再碰 `textContent`。
 
-- [ ] **Step 4: 跑测试确认通过并提交**
+- [x] **Step 4: 跑测试确认通过并提交**
 
 Run: `node --test tests/js/chat_pane.test.js && python3 -m pytest tests/e2e/test_chat_stream.py tests/e2e/test_mutex_ui.py -q`
 Expected: PASS

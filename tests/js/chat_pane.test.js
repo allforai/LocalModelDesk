@@ -3,10 +3,27 @@ import assert from "node:assert/strict";
 
 class Element {
   constructor(tag = "div") {
-    this.tagName = tag; this.dataset = {}; this.value = ""; this.textContent = "";
+    this.tagName = tag; this.dataset = {}; this.value = ""; this._text = "";
     this.children = []; this.listeners = {}; this.className = ""; this.disabled = false;
     this.hidden = false; this.open = false; this.scrollTop = 0; this.scrollHeight = 1;
     this.classList = { toggle: (name, on) => { if (on) this.className += ` ${name}`; } };
+  }
+  // Mirrors real DOM: reading textContent returns children's text when there are
+  // any, and *writing* it wipes every child (this is exactly the F3 bug: writing
+  // the send button's textContent used to blow away its icon <svg> sibling).
+  get textContent() { return this.children.length ? this.children.map((c) => c.textContent ?? "").join("") : this._text; }
+  set textContent(value) { this._text = value ?? ""; this.children = []; }
+  querySelector(selector) {
+    if (selector !== "[data-label]") return null;
+    const walk = (node) => {
+      for (const child of node.children) {
+        if (child.dataset?.label) return child;
+        const found = walk(child);
+        if (found) return found;
+      }
+      return null;
+    };
+    return walk(this);
   }
   append(...nodes) {
     for (const node of nodes) {
@@ -297,6 +314,47 @@ test("thinking fold says so plainly when the duration was never recorded (N1/W5)
   pane.showMessages([{ role: "assistant", content: "a", reasoning: "r" }]);
   const details = controls.get("[data-messages]").children[0].children[1];
   assert.equal(details.children[0].textContent, "思考过程（未记录时长）");
+});
+
+test("send button keeps its icon in every state (F3)", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const send = controls.get("[data-send]");
+  const icon = new Element("svg");
+  icon.className = "icon icon-send";
+  send.append(icon);
+  const oldFetch = globalThis.fetch;
+  let releaseStream;
+  globalThis.fetch = async (path) => {
+    if (path === "/api/resources/catalog") return json([]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    if (path === "/api/sessions") return json([{ id: "s1", title: "t", messages: [], updated: "2026-01-01" }]);
+    if (path === "/api/llm/chat/stream") {
+      return new Response(new ReadableStream({
+        start(controller) {
+          releaseStream = () => {
+            controller.enqueue(new TextEncoder().encode('data: {"type":"done"}\n\n'));
+            controller.close();
+          };
+        },
+      }), { status: 200 });
+    }
+    throw new Error(`unexpected request ${path}`);
+  };
+  try {
+    const pane = createChatPane(root);
+    await pane.init();
+    controls.get("[data-chat-input]").value = "hi";
+    const clicked = send.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const hasIcon = send.children.some((n) => (n.className || "").includes("icon"));
+    assert.ok(hasIcon, "busy=true 时发送按钮丢了图标");
+    releaseStream();
+    await clicked;
+    const hasIconAfter = send.children.some((n) => (n.className || "").includes("icon"));
+    assert.ok(hasIconAfter, "busy=false 时发送按钮丢了图标");
+  } finally { globalThis.fetch = oldFetch; }
 });
 
 test("历史消息用会话模型名，空回答有占位（F8/F9）", async () => {

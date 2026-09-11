@@ -38,6 +38,18 @@ export function createChatPane(root, ctx = {}) {
   const setError = (text) => { els.error.textContent = text ?? ""; };
   const current = () => sessions.find((s) => s.id === currentId) ?? null;
 
+  // Writing button.textContent replaces every child, icon SVG included (F3).
+  // Route label changes through a dedicated <span data-label> instead so the
+  // icon addIcon()/hydrateIcons() attached earlier survives every state change.
+  function setButtonLabel(button, text) {
+    const label = button.querySelector?.("[data-label]");
+    if (label) { label.textContent = text; return; }
+    const span = doc.createElement("span");
+    (span.dataset ??= {}).label = "1";
+    span.textContent = text;
+    button.append(span);
+  }
+
   async function refreshModels() {
     const [entries, verified, status] = await Promise.all([
       api.listCatalog(), api.verifyAllModels(), api.llmStatus(),
@@ -279,7 +291,7 @@ export function createChatPane(root, ctx = {}) {
     const live = messageNode({ role: "assistant", content: "", reasoning: "" }, true);
     streaming = true;
     els.sendBtn.disabled = true;
-    els.sendBtn.textContent = "生成中…";
+    setButtonLabel(els.sendBtn, "生成中…");
     els.messages.dataset.streaming = "1";
     const thinkStart = Date.now();
     let firstContentSeen = false;
@@ -306,7 +318,7 @@ export function createChatPane(root, ctx = {}) {
     } finally {
       streaming = false;
       els.sendBtn.disabled = false;
-      els.sendBtn.textContent = "发送";
+      setButtonLabel(els.sendBtn, "发送");
       delete els.messages.dataset.streaming;
     }
     if (state.error) {
