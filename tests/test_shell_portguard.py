@@ -1,5 +1,6 @@
 """PortGuard：listeners/ensure-free/family/reap-family。全部随机端口 + tmp_path。"""
 import subprocess
+import sys
 
 from shell_helpers import (FAKE_DESK_SERVER, free_port, harness_path,
                            port_listening, start_script)
@@ -81,3 +82,26 @@ def test_family_and_reap(tmp_path):
             if proc.poll() is None:
                 proc.kill()
                 proc.wait()
+
+
+def test_family_pgid_lists_only_the_group(tmp_path):
+    """按 pgid 查询只返回同组进程，不碰路径相同的无关进程（P1）。"""
+    import time
+
+    mine = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(30)"],
+        start_new_session=True,
+    )
+    stranger = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+    try:
+        time.sleep(0.3)
+        out = subprocess.run(
+            [harness_path(), "family-pgid", str(mine.pid)], capture_output=True, text=True
+        )
+        pids = {int(x) for x in out.stdout.split()}
+        assert mine.pid in pids
+        assert stranger.pid not in pids
+    finally:
+        for proc in (mine, stranger):
+            proc.kill()
+            proc.wait()

@@ -3,6 +3,7 @@ import json
 import os
 import signal
 import subprocess
+import sys
 
 import pytest
 
@@ -12,12 +13,14 @@ from shell_helpers import (FAKE_BAD_LISTENER, free_port, harness_path,
 
 FAMILY_LAUNCHER = """\
 #!/usr/bin/env python3
-import http.server, json, subprocess, sys, time
+import http.server, json, os, subprocess, sys, time
 if "--worker" in sys.argv:
     time.sleep(300)
     sys.exit(0)
+if os.getpgid(0) != os.getpid():
+    os.setpgrp()  # mirrors production's ensure_own_process_group (P1/Task 1)
 port = int(sys.argv[1])
-subprocess.Popen([sys.executable, sys.argv[0], "--worker"], start_new_session=True)
+subprocess.Popen([sys.executable, sys.argv[0], "--worker"])
 class H(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         body = json.dumps({"holder": None, "media_busy": False, "can_start": {}}).encode()
@@ -155,3 +158,43 @@ def test_attached_sigterm_leaves_foreign_service_alive(tmp_path):
         for proc in (harness, fake):
             if proc.poll() is None:
                 proc.kill()
+
+
+def test_owned_sigterm_spares_same_path_stranger(tmp_path):
+    """同一可执行路径、不属于本实例进程组的无关进程退出时必须存活（P1 回归闸）。
+
+    重现 2026-09-08 的 P1：旧实现按路径前缀 pgrep 收割，会误杀任何用同一
+    嵌入式解释器路径起的无关进程（例如同包的第二实例）。新实现按 pgid 收割，
+    stranger 自成一组，必须在壳退出时安然无恙。
+    """
+    import time
+
+    launcher = write_launcher(tmp_path)
+    stranger_port = free_port()
+    stranger = subprocess.Popen([str(launcher), str(stranger_port)])
+    try:
+        deadline = time.time() + 10
+        while time.time() < deadline and not port_listening(stranger_port):
+            time.sleep(0.1)
+        assert port_listening(stranger_port), "stranger never came up"
+
+        port, llm_port = free_port(), free_port()
+        harness = run_harness("--port", str(port), "--llm-port", str(llm_port),
+                              "--launcher", str(launcher), "--launcher-arg", str(port),
+                              "--family-path", str(launcher), "--term-grace", "0.2",
+                              "--log", str(tmp_path / "server.log"))
+        try:
+            line = read_line(harness)
+            assert line.startswith("RUNNING "), line
+            harness.send_signal(signal.SIGTERM)
+            assert harness.wait(timeout=60) == 0
+            json.loads(read_line(harness))
+            assert stranger.poll() is None, "unrelated same-path process was reaped (P1 regression)"
+            assert port_listening(stranger_port)
+        finally:
+            if harness.poll() is None:
+                harness.kill()
+    finally:
+        stranger.kill()
+        stranger.wait()
+        subprocess.run(["pkill", "-f", str(launcher)], capture_output=True)

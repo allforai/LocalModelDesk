@@ -31,6 +31,7 @@ final class ServerController {
   private let spec: ServerLaunchSpec
   private var child: Process?
   private(set) var state: ServerState = .stopped
+  private var ownedGroup: Int32?
 
   init(spec: ServerLaunchSpec) { self.spec = spec }
 
@@ -97,6 +98,7 @@ final class ServerController {
     var killed: [Int32] = []
     if let process = child, process.isRunning {
       let pid = process.processIdentifier
+      ownedGroup = PortGuard.processGroup(of: pid)
       kill(pid, SIGTERM)
       let deadline = Date().addingTimeInterval(spec.termGrace)
       while Date() < deadline && process.isRunning { usleep(100_000) }
@@ -106,18 +108,22 @@ final class ServerController {
     }
     child = nil
 
-    if wasOwned, let prefix = spec.launch?.familyPathPrefix {
-      let stragglers = PortGuard.family(matching: prefix)
+    if wasOwned, let pgid = ownedGroup {
+      let stragglers = PortGuard.familyByGroup(pgid: pgid)
       if !stragglers.isEmpty {
         killed.append(contentsOf: PortGuard.reap(pids: stragglers, grace: 2.0))
       }
     }
 
     let portFree: Bool
-    if wasOwned {
-      portFree = PortGuard.ensureFree(port: spec.port, grace: 2.0)
+    if wasOwned, let pgid = ownedGroup {
+      let ours = Set(PortGuard.familyByGroup(pgid: pgid) + killed)
+      let occupants = PortGuard.listeners(onPort: spec.port).filter { ours.contains($0) }
+      if !occupants.isEmpty { PortGuard.reap(pids: occupants, grace: 2.0) }
+      portFree = PortGuard.listeners(onPort: spec.port).isEmpty
     } else {
-      // Attached: the listener belongs to someone else; observe, never signal.
+      // Attached, or an owned child whose group we could not read: observe, never signal
+      // a listener we cannot prove is ours.
       portFree = PortGuard.listeners(onPort: spec.port).isEmpty
     }
     let llmPortFree = wasOwned && spec.llmPort != nil

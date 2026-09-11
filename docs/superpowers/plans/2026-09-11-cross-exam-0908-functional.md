@@ -63,7 +63,7 @@
 - Produces: `PortGuard.processGroup(of:) -> Int32?`、`PortGuard.familyByGroup(pgid:) -> [Int32]`、harness 子命令 `family-pgid <pgid> [psTool]`
 - Consumes（Task 2）：服务自建进程组这一事实
 
-- [ ] **Step 1: 写失败测试 —— 服务进程自建进程组**
+- [x] **Step 1: 写失败测试 —— 服务进程自建进程组**
 
 `tests/test_foundation_main.py` 末尾追加：
 
@@ -91,12 +91,12 @@ def test_service_becomes_its_own_process_group_leader(tmp_path):
 
 若该文件顶部没有 `REPO`，加上 `REPO = Path(__file__).resolve().parent.parent`（`from pathlib import Path`）。
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_foundation_main.py::test_service_becomes_its_own_process_group_leader -q`
 Expected: FAIL, `ImportError: cannot import name 'ensure_own_process_group'`
 
-- [ ] **Step 3: 实现自建进程组**
+- [x] **Step 3: 实现自建进程组**
 
 `desk/__main__.py` 在 `main()` 之前插入：
 
@@ -112,12 +112,12 @@ def ensure_own_process_group() -> None:
 
 在 `main()` 的第一行调用 `ensure_own_process_group()`，并确保文件顶部 `import os`。
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_foundation_main.py -q`
 Expected: PASS
 
-- [ ] **Step 5: 写失败测试 —— PortGuard 按进程组查询**
+- [x] **Step 5: 写失败测试 —— PortGuard 按进程组查询**
 
 `tests/test_shell_portguard.py` 末尾追加：
 
@@ -150,12 +150,12 @@ def test_family_pgid_lists_only_the_group(tmp_path):
 
 文件顶部若无 `import sys` 请补上。
 
-- [ ] **Step 6: 跑测试确认失败**
+- [x] **Step 6: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_shell_portguard.py::test_family_pgid_lists_only_the_group -q`
 Expected: FAIL（harness 未识别 `family-pgid`，退出码 64，stdout 为空）
 
-- [ ] **Step 7: 实现 PortGuard 的进程组查询**
+- [x] **Step 7: 实现 PortGuard 的进程组查询**
 
 `macos/PortGuard.swift` 中 `family(matching:pgrepTool:)` 之后插入：
 
@@ -179,7 +179,7 @@ Expected: FAIL（harness 未识别 `family-pgid`，退出码 64，stdout 为空�
   /// second instance of the same bundle, so it must never drive a reap (P1, 2026-09-08).
 ```
 
-- [ ] **Step 8: 加 harness 子命令**
+- [x] **Step 8: 加 harness 子命令**
 
 `macos/harness/ShellHarness.swift` 的 `case "family":` 之前插入：
 
@@ -190,12 +190,12 @@ Expected: FAIL（harness 未识别 `family-pgid`，退出码 64，stdout 为空�
       for pid in PortGuard.familyByGroup(pgid: pgid, psTool: psTool) { print(pid) }
 ```
 
-- [ ] **Step 9: 跑测试确认通过**
+- [x] **Step 9: 跑测试确认通过**
 
 Run: `python3 -m pytest tests/test_shell_portguard.py -q`
 Expected: PASS
 
-- [ ] **Step 10: 写失败测试 —— 退出不再杀同路径的陌生进程**
+- [x] **Step 10: 写失败测试 —— 退出不再杀同路径的陌生进程**
 
 `tests/test_shell_lifecycle.py` 末尾追加：
 
@@ -223,7 +223,7 @@ def test_owned_sigterm_spares_same_path_stranger(tmp_path):
         stranger.wait()
 ```
 
-- [ ] **Step 11: 跑测试确认失败，然后改收割路径**
+- [x] **Step 11: 跑测试确认失败，然后改收割路径**
 
 Run: `python3 -m pytest tests/test_shell_lifecycle.py::test_owned_sigterm_spares_same_path_stranger -q`
 Expected: 先 FAIL（`family-pgid` 尚未被 ServerController 使用时此测试其实会过，若已过则直接进入下一步；重点是下面的实现改动）。
@@ -256,7 +256,7 @@ Expected: 先 FAIL（`family-pgid` 尚未被 ServerController 使用时此测试
     }
 ```
 
-- [ ] **Step 12: 端口收割也校验归属**
+- [x] **Step 12: 端口收割也校验归属**
 
 同文件 `portFree` 分支替换为：
 
@@ -272,14 +272,14 @@ Expected: 先 FAIL（`family-pgid` 尚未被 ServerController 使用时此测试
     }
 ```
 
-- [ ] **Step 13: 跑全部 shell 测试**
+- [x] **Step 13: 跑全部 shell 测试**
 
 Run: `python3 -m pytest tests/test_shell_portguard.py tests/test_shell_lifecycle.py tests/test_foundation_main.py -q`
 Expected: PASS（包含既有的 `test_owned_sigterm_reaps_child_family_and_ports` 与 `test_attached_sigterm_leaves_foreign_service_alive`）
 
 **同时解释掉未拉的线 #1：** 盘问开始前 dist 实例（pid 58196）无故消失、无崩溃报告——本次盘问中隔离探针实例退出时两次杀掉用户 dist 实例的服务，就是同一个路径前缀收割。本任务修好后，把那条线标记为"已由 P1 修复解释"，不需要单独调查。
 
-- [ ] **Step 14: 提交**
+- [x] **Step 14: 提交**
 
 ```bash
 git add desk/__main__.py macos/PortGuard.swift macos/ServerController.swift macos/harness/ShellHarness.swift tests/test_foundation_main.py tests/test_shell_portguard.py tests/test_shell_lifecycle.py

@@ -1,9 +1,37 @@
 """Run the Desk HTTP service."""
 from __future__ import annotations
 import os
+import threading
+import time
 
 from .app import DeskApp
 from .runtime import build_runtime
+
+
+def ensure_own_process_group() -> None:
+    """Become our own process group leader so the shell can reap us by pgid, never by path."""
+    try:
+        if os.getpgid(0) != os.getpid():
+            os.setpgrp()
+    except OSError:
+        pass  # already a leader, or a platform without process groups
+
+
+def watch_parent(parent_pid: int, *, interval: float = 3.0, on_gone=None) -> threading.Thread:
+    """Exit with the shell: a force-killed parent must not leave the service holding ports."""
+
+    def loop() -> None:
+        while True:
+            try:
+                os.kill(parent_pid, 0)
+            except OSError:
+                (on_gone or (lambda: os._exit(0)))()
+                return
+            time.sleep(interval)
+
+    thread = threading.Thread(target=loop, name="parent-watchdog", daemon=True)
+    thread.start()
+    return thread
 
 
 def runtime_port() -> int:
@@ -23,6 +51,10 @@ def build_app(host: str = "127.0.0.1", port: int = 8766) -> DeskApp:
 
 
 def main() -> None:
+    ensure_own_process_group()
+    parent = os.environ.get("LMD_PARENT_PID")
+    if parent and parent.isdigit():
+        watch_parent(int(parent))
     runtime = build_runtime(port=runtime_port())
     try:
         runtime.serve_forever()

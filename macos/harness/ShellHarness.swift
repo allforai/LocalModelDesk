@@ -24,6 +24,10 @@ struct ShellHarness {
     case "ensure-free":
       guard args.count >= 2, let port = Int(args[1]) else { exit(64) }
       exit(PortGuard.ensureFree(port: port) ? 0 : 3)
+    case "family-pgid":
+      guard args.count >= 2, let pgid = Int32(args[1]) else { exit(64) }
+      let psTool = args.count >= 3 ? args[2] : "/bin/ps"
+      for pid in PortGuard.familyByGroup(pgid: pgid, psTool: psTool) { print(pid) }
     case "family":
       guard args.count >= 2 else { exit(64) }
       let pgrepTool = args.count >= 3 ? args[2] : "/usr/bin/pgrep"

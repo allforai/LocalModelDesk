@@ -8,10 +8,22 @@ enum PortGuard {
     parsePids(runCapture("/usr/sbin/lsof", ["-tiTCP:\(port)", "-sTCP:LISTEN"]))
   }
 
-  /// Finds processes launched through a given executable path, including detached children.
+  /// Path-prefix match. Test/diagnostic only: it cannot tell our own children from a
+  /// second instance of the same bundle, so it must never drive a reap (P1, 2026-09-08).
   static func family(matching pathPrefix: String, pgrepTool: String = "/usr/bin/pgrep") -> [Int32] {
     parsePids(runCapture(pgrepTool, ["-f", pathPrefix]))
       .filter { $0 != ProcessInfo.processInfo.processIdentifier }
+  }
+
+  /// Lists every live process in one process group — the only ownership-safe reap set.
+  static func familyByGroup(pgid: Int32, psTool: String = "/bin/ps") -> [Int32] {
+    parsePids(runCapture(psTool, ["-o", "pid=", "-g", String(pgid)]))
+      .filter { $0 != ProcessInfo.processInfo.processIdentifier }
+  }
+
+  /// Reads one process's group id; nil when the process is gone.
+  static func processGroup(of pid: Int32, psTool: String = "/bin/ps") -> Int32? {
+    parsePids(runCapture(psTool, ["-o", "pgid=", "-p", String(pid)])).first
   }
 
   /// Sends TERM, waits through the grace period, then KILLs remaining processes.
