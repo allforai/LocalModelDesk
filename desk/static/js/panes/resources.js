@@ -1,6 +1,6 @@
 // ui:resourcesPane —— 模型完整性、磁盘占用与单飞下载操作。
 import * as api from "../api.js";
-import { formatBytes } from "../pure/format.js";
+import { formatBytes, formatDuration } from "../pure/format.js";
 import { rowView } from "../pure/model_status.js";
 import { confirmDialog } from "../widgets/confirm.js";
 import { addIcon } from "../icons.js";
@@ -11,11 +11,13 @@ const ACTION_ICON = { download: "download", resume: "refresh", cancel: "x", dele
 export function createResourcesPane(root) {
   const doc = root.ownerDocument;
   let downloadProgress = null;
+  let modelsRoot = null;
   const els = {
     refreshBtn: root.querySelector("[data-res-refresh]"),
     list: root.querySelector("[data-res-list]"),
     error: root.querySelector("[data-res-error]"),
     disk: root.querySelector("[data-res-disk]"),
+    root: root.querySelector("[data-res-root]"),
   };
 
   function refreshLabel() {
@@ -30,9 +32,11 @@ export function createResourcesPane(root) {
       if (label) label.textContent = "校验中…";
     }
     try {
-      const [catalogPayload, statusPayload, disk] = await Promise.all([
+      const [catalogPayload, statusPayload, disk, config] = await Promise.all([
         api.listCatalog(), api.verifyAllModels(revalidate), api.diskUsage(),
+        modelsRoot === null ? api.readConfig() : null,
       ]);
+      if (config) modelsRoot = config.models_root ?? "";
       const catalog = catalogPayload.models ?? catalogPayload;
       const statuses = statusPayload.models ?? [];
       downloadProgress = statusPayload.download ?? statusPayload.download_progress ?? downloadProgress;
@@ -54,14 +58,15 @@ export function createResourcesPane(root) {
     const statusByKey = new Map(statuses.map((status) => [status.key, status]));
     for (const entry of catalog) {
       const status = statusByKey.get(entry.key) ?? { key: entry.key, state: "unknown" };
-      els.list?.append(rowNode(entry, rowView(entry, status, download)));
+      els.list?.append(rowNode(entry, rowView(entry, status, download), download));
     }
     if (els.disk && disk) {
       els.disk.textContent = `可用 ${formatBytes(disk.free_bytes)} / ${formatBytes(disk.total_bytes)}（剩余空间）`;
     }
+    if (els.root && modelsRoot !== null) els.root.textContent = `模型目录：${modelsRoot}`;
   }
 
-  function rowNode(entry, view) {
+  function rowNode(entry, view, download) {
     const li = doc.createElement("li");
     li.className = "card res-row";
     // The browser tests and future automation address a row by the catalog key,
@@ -80,7 +85,17 @@ export function createResourcesPane(root) {
 
     const meta = doc.createElement("p");
     meta.className = "res-meta";
-    meta.textContent = `预计 ${view.sizeText} · 占用 ${view.diskText}`;
+    const activeDownload = download && download.state === "running" && download.key === entry.key ? download : null;
+    if (activeDownload) {
+      meta.textContent = [
+        `已下 ${formatBytes(activeDownload.bytes_done)} / ${formatBytes(activeDownload.bytes_total)}`,
+        activeDownload.rate_bps ? `${formatBytes(activeDownload.rate_bps)}/s` : null,
+        Number.isFinite(activeDownload.eta_seconds) ? `剩约 ${formatDuration(activeDownload.eta_seconds)}` : null,
+        activeDownload.current_file,
+      ].filter(Boolean).join(" · ");
+    } else {
+      meta.textContent = `预计 ${view.sizeText} · 占用 ${view.diskText}`;
+    }
     li.append(head, meta);
     if (view.pct > 0 && view.pct < 100) {
       const progress = doc.createElement("progress");

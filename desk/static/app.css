@@ -73,7 +73,13 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .session-meta{font-size:13px;color:var(--muted);margin-top:4px}
 .session-actions{display:none;position:absolute;right:8px;bottom:8px;gap:6px}
 .session:hover .session-actions,.session:focus-within .session-actions{display:flex}
-/* 6b. cards: resources + library rows */
+/* 6b. cards: resources + library rows — actions form their own right-hand
+   column spanning the full card height, instead of a third row on the left
+   with the right two-thirds of a wide card sitting empty (F11/W8). */
+.res-row,.lib-row{display:grid;grid-template-columns:minmax(0,1fr) max-content;column-gap:16px;align-items:center}
+.res-row>*,.lib-row>*{grid-column:1}
+.res-row>.res-actions,.lib-row>.lib-actions{grid-column:2;grid-row:1/-1;margin-top:0}
+[data-res-list],[data-lib-list]{margin-top:16px}
 .res-name{margin:0;font-size:16px;font-weight:600}
 .res-meta,.lib-meta{color:var(--muted);font-size:13px;margin:4px 0 0}
 .res-actions,.lib-actions{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}

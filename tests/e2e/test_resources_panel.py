@@ -59,6 +59,26 @@ def test_resources_panel_download_cancel_resume_and_finish(page, tmp_path, wait_
         expect(missing).to_contain_text("齐")
 
 
+def test_resources_panel_shows_the_models_root_and_right_aligns_actions(page, tmp_path):
+    """F11/W8: actions sit in their own right-hand column, not a third row on the left."""
+    page.set_viewport_size({"width": 1920, "height": 1200})
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url)
+        page.get_by_text("资源", exact=True).click()
+        expect(page.locator("#pane-resources")).to_contain_text(str(harness.models_root))
+        key = next(key for key, state in harness.seeded.items()
+                   if state == "present" and key not in ("h3", "music3"))
+        box = page.evaluate(
+            "(sel) => { const card = document.querySelector(sel);"
+            " const actions = card.querySelector('.res-actions');"
+            " const c = card.getBoundingClientRect(); const a = actions.getBoundingClientRect();"
+            " return {cardRight: c.right, actionsRight: a.right, cardWidth: c.width, actionsLeft: a.left - c.left}; }",
+            f'[data-model="{key}"]',
+        )
+        assert box["cardRight"] - box["actionsRight"] <= 20, box
+        assert box["actionsLeft"] > box["cardWidth"] * 0.5, box
+
+
 def test_resources_panel_confirms_deletion(page, tmp_path):
     with launch_test_harness(tmp_path) as harness:
         page.goto(harness.base_url)

@@ -119,7 +119,11 @@ class Element { constructor(tag = "div") { this.tagName = tag; this.dataset = {}
   append(...n) { this.children.push(...n); } replaceChildren(...n) { this.children = n; }
   addEventListener(t, l) { this.listeners[t] = l; } click() { return this.listeners.click?.(); } }
 function makePane() {
-  const parts = { "res-refresh": new Element("button"), "res-list": new Element("ul"), "res-error": new Element("p"), "res-disk": new Element("span") };
+  const parts = {
+    "res-refresh": new Element("button"), "res-list": new Element("ul"),
+    "res-error": new Element("p"), "res-disk": new Element("span"),
+    "res-root": new Element("p"),
+  };
   return { parts, root: { ownerDocument: { body: new Element("body"), createElement: (t) => new Element(t) }, querySelector: (s) => parts[s.match(/^\[data-([\w-]+)\]$/)[1]] } };
 }
 
@@ -161,6 +165,52 @@ test("删除按钮带 btn-danger，下载带 btn-primary", async () => {
     const buttons = li.children.at(-1).children;
     assert.equal(buttons.find((b) => b.textContent === "删除").className.includes("btn-danger"), true);
     assert.equal(buttons.find((b) => b.textContent === "续传").className.includes("btn-primary"), true);
+  } finally { globalThis.fetch = previous; }
+});
+
+test("resources header shows the models root (F11/W8)", async () => {
+  const { root, parts } = makePane();
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (url) => ({ ok: true, status: 200, json: async () => {
+    const path = String(url);
+    if (path.startsWith("/api/config")) return { models_root: "/Users/aa/LocalModelDesk" };
+    if (path.includes("catalog")) return [];
+    if (path.startsWith("/api/resources/status")) return { models: [] };
+    if (path === "/api/resources/download") return {};
+    return { free_bytes: 1, total_bytes: 2 };
+  }});
+  try {
+    const pane = createResourcesPane(root);
+    await pane.refresh();
+    assert.ok(parts["res-root"].textContent.includes("/Users/aa/LocalModelDesk"), parts["res-root"].textContent);
+  } finally { globalThis.fetch = previous; }
+});
+
+test("downloading row names the current file and the rate (F11/W8)", async () => {
+  const { root, parts } = makePane();
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (url) => ({ ok: true, status: 200, json: async () => {
+    const path = String(url);
+    if (path.startsWith("/api/config")) return { models_root: "/m" };
+    if (path.includes("catalog")) return [{ key: "m", name: "M", gb: 1 }];
+    if (path.startsWith("/api/resources/status")) return {
+      models: [{ key: "m", state: "partial", percent: 50, disk_bytes: 5 }],
+      download: {
+        state: "running", key: "m", bytes_done: 5 * 1024 ** 2, bytes_total: 10 * 1024 ** 2,
+        rate_bps: 42e6, eta_seconds: 480, current_file: "model-00003.safetensors",
+      },
+    };
+    if (path === "/api/resources/download") return {};
+    return { free_bytes: 1, total_bytes: 2 };
+  }});
+  try {
+    const pane = createResourcesPane(root);
+    await pane.refresh();
+    const li = parts["res-list"].children[0];
+    const flatten = (node) => [node, ...node.children.flatMap(flatten)];
+    const text = flatten(li).map((n) => n.textContent).join(" ");
+    assert.ok(text.includes("model-00003.safetensors"), text);
+    assert.ok(text.includes("MiB/s"), text);
   } finally { globalThis.fetch = previous; }
 });
 

@@ -611,7 +611,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `desk/static/js/panes/resources.js`
 - Test: `tests/js/resources_pane.test.js`, `tests/e2e/test_resources_panel.py`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/js/resources_pane.test.js` 追加：
 
@@ -633,12 +633,12 @@ test("downloading row names the current file and the rate", () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tests/js/resources_pane.test.js`
 Expected: FAIL
 
-- [ ] **Step 3: 实现 —— 卡片布局**
+- [x] **Step 3: 实现 —— 卡片布局**
 
 `app.css` 的 6b 段加：
 
@@ -652,7 +652,7 @@ Expected: FAIL
 
 `.sessions ul,[data-res-list],[data-lib-list]` 那条已有 `margin:0`，上面的 `margin-top:16px` 需写在其后才生效——放在 6b 段末尾即可。
 
-- [ ] **Step 4: 实现 —— 头部与下载行文案**
+- [x] **Step 4: 实现 —— 头部与下载行文案**
 
 `resources.js` 头部渲染处加一行模型目录（`paths.models_root` 从 `/api/paths` 取；`main.js` 里已有 paths 数据则复用，否则在 `refresh()` 里 `api.paths()` 拉一次）：
 
@@ -680,7 +680,7 @@ Expected: FAIL
 
 `formatBytes`/`formatDuration` 从 `pure/format.js` 导入（该模块已有）。
 
-- [ ] **Step 5: 跑测试确认通过并提交**
+- [x] **Step 5: 跑测试确认通过并提交**
 
 Run: `node --test tests/js/resources_pane.test.js tests/js/library_pane.test.js && python3 -m pytest tests/e2e/test_resources_panel.py -q`
 Expected: PASS
