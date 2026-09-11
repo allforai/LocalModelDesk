@@ -138,6 +138,7 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
     llm = LlmService(
         MlxLmBackend(), arbiter, resources, paths, port=DEFAULT_LLM_PORT
     )
+    arbiter.set_owned_pid_provider(llm.owned_pids)
     media = MediaService(
         resolve_paths=resolve_paths,
         probe_capabilities=lambda: capabilities.probe_capabilities(resolve_paths()),

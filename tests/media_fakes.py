@@ -86,7 +86,7 @@ class FakeArbiter:
             result["memory_warning"] = self.memory_warning
         return result
 
-    def acquire_heavy(self, kind, label):
+    def acquire_heavy(self, kind, label, display=None):
         token = f"permit-{len(self.acquired) + 1}"
         self.acquired.append((kind, label, token))
         return {"ok": True, "token": token}

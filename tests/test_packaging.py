@@ -13,6 +13,7 @@ PLIST_KEYS = [
     "CFBundleIdentifier", "CFBundleName", "CFBundleExecutable",
     "CFBundleShortVersionString", "CFBundleVersion", "CFBundleIconFile",
     "LSMinimumSystemVersion", "CFBundlePackageType", "NSHighResolutionCapable",
+    "NSHumanReadableCopyright",
 ]
 
 
@@ -232,14 +233,16 @@ def test_readme_documents_notarization_setup():
 
 
 def test_build_writes_copyright_into_info_plist():
-    """未拉的线 #8: 「关于」面板不该留一行空文本——版权行必须真的写进 Info.plist。"""
-    build = (REPO / "scripts" / "build-app.sh").read_text()
-    render_at = build.index('echo "==> [5/9] Render Info.plist"')
-    icon_at = build.index('echo "==> [6/9] Build icon"')
-    assert "NSHumanReadableCopyright" in build
-    assert "PlistBuddy" in build
-    copyright_at = build.index("NSHumanReadableCopyright")
-    assert render_at < copyright_at < icon_at
+    """未拉的线 #8: 「关于」面板不该留一行空文本——版权行必须真的写进 Info.plist。
+
+    版权行来自 packaging/Info.plist.template，构建只做 @VERSION@ 替换，所以真实产物与
+    测试夹具（同一模板渲染）都带上它；PLIST_KEYS 与 verify-app V2 负责断言它非空。
+    """
+    template = (REPO / "packaging" / "Info.plist.template").read_text()
+    assert "<key>NSHumanReadableCopyright</key>" in template
+    value = template.split("<key>NSHumanReadableCopyright</key>", 1)[1].split("<string>", 1)[1]
+    assert value.split("</string>", 1)[0].strip(), "版权行不能为空"
+    assert "NSHumanReadableCopyright" in (REPO / "scripts" / "verify-app.sh").read_text()
 
 
 def test_build_precompiles_desk_bytecode_before_signing():

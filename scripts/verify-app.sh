@@ -56,7 +56,7 @@ fi
 # V2: every key required by the packaging plist template must be non-empty.
 for key in CFBundleIdentifier CFBundleName CFBundleExecutable CFBundleShortVersionString \
            CFBundleVersion CFBundleIconFile LSMinimumSystemVersion CFBundlePackageType \
-           NSHighResolutionCapable; do
+           NSHighResolutionCapable NSHumanReadableCopyright; do
   value="$(/usr/libexec/PlistBuddy -c "Print :$key" "$PLIST" 2>/dev/null || true)"
   if [[ -z "$value" ]]; then
     fail "V2 Info.plist 缺键或为空: $key"

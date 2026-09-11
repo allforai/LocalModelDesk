@@ -27,6 +27,7 @@ class Arbiter:
         self.llm_port = llm_port
         self._memory = memory or MemoryReader()
         self._reaper = reaper
+        self._owned_pid_provider: Callable[[], set[int]] | None = None
         self._clock = clock
         self._logger = logger or logging.getLogger(__name__)
         self._transition_lock = threading.Lock()
@@ -107,9 +108,22 @@ class Arbiter:
         """Return the current memory probe as a public dictionary."""
         return self._memory.snapshot().to_dict()
 
+    def set_owned_pid_provider(self, provider: "Callable[[], set[int]] | None") -> None:
+        """Register who reports the pids this desk actually spawned.
+
+        Without it the reaper is asked to free the port blindly; with it a stranger
+        listening on 8767 is left alone (P1: reaping must verify ownership).
+        """
+        self._owned_pid_provider = provider
+
+    def _reap(self, port: int):
+        if self._owned_pid_provider is None:
+            return self._reaper(port)
+        return self._reaper(port, owned_pids=self._owned_pid_provider())
+
     def reap_llm_port(self, port: int) -> dict:
         """Reap listeners on the supplied port, independent of eviction state."""
-        return self._reaper(port).to_dict()
+        return self._reap(port).to_dict()
 
     def desk_state(self) -> dict:
         return self._state_for(self._read_holder())
@@ -139,7 +153,7 @@ class Arbiter:
                 }
         return {"ok": True, "reason": None, "memory_warning": warning}
 
-    def acquire_heavy(self, kind: str, label: str) -> dict:
+    def acquire_heavy(self, kind: str, label: str, display: str | None = None) -> dict:
         """Acquire a token, evicting the active LLM first for media requests."""
         holder = self._read_holder()
         decision = plan_acquire(holder, kind)
@@ -157,16 +171,16 @@ class Arbiter:
 
             token = uuid.uuid4().hex
             if decision.action == "grant":
-                state = self._set_holder(Holder(kind, label, token, self._clock(), PHASE_HELD))
+                state = self._set_holder(Holder(kind, label, token, self._clock(), PHASE_HELD, display))
                 states.append(state)
                 result = {"ok": True, "token": token, "state": state}
             else:
-                acquiring = Holder(kind, label, token, self._clock(), PHASE_ACQUIRING)
+                acquiring = Holder(kind, label, token, self._clock(), PHASE_ACQUIRING, display)
                 states.append(self._set_holder(acquiring))
-                reaped = self._reaper(self.llm_port)
+                reaped = self._reap(self.llm_port)
                 if reaped.ok:
                     state = self._set_holder(
-                        Holder(kind, label, token, self._clock(), PHASE_HELD))
+                        Holder(kind, label, token, self._clock(), PHASE_HELD, display))
                     states.append(state)
                     result = {"ok": True, "token": token, "state": state}
                 else:

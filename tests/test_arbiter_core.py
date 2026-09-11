@@ -267,3 +267,27 @@ def test_late_release_of_stale_token_is_harmless_after_replay():
     assert second_late_release["reason"]["code"] == "not_holder"
     assert arbiter.current_holder()["kind"] == "video"
     assert arbiter.release_heavy(media["token"]) == {"ok": True}
+
+
+def test_reaper_receives_only_the_pids_we_own():
+    """P1：仲裁者收端口前必须把"哪些进程是我们的"告诉 reaper。"""
+    seen = {}
+
+    def fake_reaper(port, owned_pids=None):
+        seen["port"], seen["owned"] = port, owned_pids
+        return ReapResult(ok=True, port=port, killed_pids=[])
+
+    arbiter = Arbiter(8767, reaper=fake_reaper)
+    arbiter.set_owned_pid_provider(lambda: {4242})
+    arbiter.reap_llm_port(8767)
+
+    assert seen["owned"] == {4242}
+
+
+def test_reaper_without_a_provider_is_called_the_old_way():
+    """未注册归属来源时保持旧签名，注入的假 reaper 不必接受关键字参数。"""
+    calls = []
+    arbiter = Arbiter(8767, reaper=lambda port: calls.append(port) or ReapResult(
+        ok=True, port=port, killed_pids=[]))
+    arbiter.reap_llm_port(8767)
+    assert calls == [8767]

@@ -197,7 +197,7 @@ class FakeArbiter:
         self._desk_states = list(desk_states or [{"holder": {"kind": "llm", "label": "glm", "phase": "held"}, "media_busy": False}])
         self._subscribers: list[Any] = []
 
-    def acquire_heavy(self, kind: str, label: str) -> dict:
+    def acquire_heavy(self, kind: str, label: str, display: str | None = None) -> dict:
         _record(self.calls, "acquire", kind, label)
         return _pop(self._acquire)
 

@@ -101,8 +101,6 @@ sanitize_host_paths
 
 echo "==> [5/9] Render Info.plist"
 sed "s/@VERSION@/$VERSION/g" "$REPO/packaging/Info.plist.template" > "$APP/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Add :NSHumanReadableCopyright string '© 2026 LocalModelDesk'" \
-  "$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist"
 
 echo "==> [6/9] Build icon"

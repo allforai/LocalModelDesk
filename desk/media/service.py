@@ -112,7 +112,8 @@ class MediaService:
                                   f"生成约需 {required:.1f} GiB 内存，当前可用 {available:.1f} GiB，可能失败或拖慢整机",
                                   409, warning)
             job_id = self._state["job_id"] + 1
-            grant = self._arbiter.acquire_heavy(kind, f"job-{job_id}")
+            display = "视频生成中" if kind == "video" else "音乐生成中"
+            grant = self._arbiter.acquire_heavy(kind, f"job-{job_id}", display)
             if not grant.get("ok"):
                 reason = grant.get("reason") or {}
                 raise MediaError(reason.get("code", "acquire_refused"), reason.get("message", "arbiter refused"), 409, reason)

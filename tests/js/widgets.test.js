@@ -84,7 +84,7 @@ test("statusbar 将 desk state 和内存快照更新到 DOM，离线时保留失
   const snapshot = { total_bytes: 16 * 1024 ** 3, used_bytes: 6 * 1024 ** 3, available_bytes: 10 * 1024 ** 3 };
 
   bar.update(state, snapshot);
-  assert.equal(wideOf(parts.mem), "已用 6.0 / 总 16.0 GiB（可用 10.0 GiB）");
+  assert.equal(wideOf(parts.mem), "已用 6 / 总 16 GiB（可用 10 GiB）");  // N3：与菜单栏同一取整
   assert.equal(wideOf(parts.holder), "内存里：Qwen");
   assert.equal(wideOf(parts.media), "媒体：空闲");
   assert.equal(wideOf(parts.next), "可开下一件重活");

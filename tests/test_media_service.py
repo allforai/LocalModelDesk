@@ -58,7 +58,9 @@ def test_video_job_refuses_when_memory_warning_unless_forced(service_factory):
     with pytest.raises(MediaError) as exc:
         svc.start_video_job(prompt="x", width=512, height=288, frames=49, steps=16)
     assert exc.value.code == "insufficient_memory" and exc.value.http_status == 409
-    assert arbiter.precheck_calls[-1][1] == int(103.0 * 1024 ** 3)   # h3 catalog gb
+    from desk.media.memory_estimate import estimate_bytes
+    expected = estimate_bytes("video", {"width": 512, "height": 288, "frames": 49, "steps": 16})
+    assert arbiter.precheck_calls[-1][1] == expected   # 按作业参数估算，不再用 catalog 磁盘体积
     job = svc.start_video_job(prompt="x", width=512, height=288, frames=49, steps=16, force=True)
     assert job["status"] == "running"
 

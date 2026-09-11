@@ -59,6 +59,12 @@ class LlmService:
         self._unsubscribe = self._arbiter.subscribe(self._on_desk_state)
         self._closed = False
 
+    def owned_pids(self) -> set[int]:
+        """Pids this service spawned — the only ones the arbiter may reap (P1)."""
+        proc = self._proc
+        pid = getattr(proc, "pid", None)
+        return {pid} if isinstance(pid, int) else set()
+
     def close(self) -> None:
         """Release subscriptions and any child process owned by this service."""
         with self._lock:
@@ -125,7 +131,7 @@ class LlmService:
                 self._load_thread.start()
                 return self._state.to_dict()
 
-        acquired = self._arbiter.acquire_heavy("llm", entry.key)
+        acquired = self._arbiter.acquire_heavy("llm", entry.key, getattr(entry, "name", None))
         if not acquired.get("ok"):
             reason = acquired.get("reason") or {}
             code = reason.get("code") if isinstance(reason, dict) else None

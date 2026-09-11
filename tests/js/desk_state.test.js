@@ -9,12 +9,12 @@ const snapB = { total_bytes: 271437611008, used_bytes: 10 * GB, available_bytes:
 
 test("内存数字来自快照输入而非写死常量（census A09）：两组快照输出各含各的数字", () => {
   const a = renderState(idle, snapA);
-  assert.ok(a.memText.includes("96.0"));
-  assert.ok(a.memText.includes("128.0"));
-  assert.ok(a.memText.includes("32.0"));
+  assert.ok(a.memText.includes("96"));
+  assert.ok(a.memText.includes("128"));
+  assert.ok(a.memText.includes("32"));
   const b = renderState(idle, snapB);
-  assert.ok(b.memText.includes("252.8"));
-  assert.ok(b.memText.includes("240.0"));
+  assert.ok(b.memText.includes("253"));
+  assert.ok(b.memText.includes("240"));
   assert.notEqual(a.memText, b.memText);
 });
 
@@ -65,7 +65,7 @@ test("快照缺失如实说不可用，不编数字", () => {
 
 test("状态条内存文案标 GiB", () => {
   const view = renderState({ can_start: { llm: { ok: true } } }, { total_bytes: 128 * 1024 ** 3, used_bytes: 64 * 1024 ** 3, available_bytes: 64 * 1024 ** 3 });
-  assert.equal(view.memText, "已用 64.0 / 总 128.0 GiB（可用 64.0 GiB）");
+  assert.equal(view.memText, "已用 64 / 总 128 GiB（可用 64 GiB）");  // N3：与菜单栏同一取整
 });
 
 test("状态条四格带字段名，下载中并入媒体格并转为 busy", () => {

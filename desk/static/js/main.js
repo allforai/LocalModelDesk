@@ -11,7 +11,7 @@ import { createFirstRunPane } from "./panes/firstrun.js";
 import { createSettingsPane } from "./panes/settings.js";
 import { heavyAvailability } from "./pure/desk_state.js";
 import { hydrateIcons } from "./icons.js";
-import { tabFromHash } from "./pure/tab_hash.js";
+import { initialTab } from "./pure/tab_hash.js";
 import { isDrawerCloseKey } from "./pure/drawer.js";
 
 const $ = (selector) => document.querySelector(selector);
@@ -49,7 +49,7 @@ function enterDesk() {
     globalThis.setInterval(tick, 2000);
   }
   panes.chat.init(); tick();
-  showTab(tabFromHash(globalThis.location?.hash));
+  showTab(initialTab(globalThis.location?.hash));
 }
 
 function setDeskShellHidden(hidden) {

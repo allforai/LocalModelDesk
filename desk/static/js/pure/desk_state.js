@@ -1,4 +1,5 @@
 // data:deskState + data:memorySnapshot → 状态条视图（R-ui-07）。不含任何内存常量。
+import { formatMemoryLine } from "./format.js";
 const GB = 1024 ** 3;
 const REASON_TEXT = {
   media_busy: "媒体作业进行中",
@@ -28,10 +29,9 @@ export function heavyAvailability(deskState, kind) {
 }
 
 export function renderState(deskState, snapshot, download = null, names = {}) {
-  const gb = (n) => (n / GB).toFixed(1);
   const display = (key) => names?.[key] ?? key;
   const memText = snapshot && Number.isFinite(snapshot.total_bytes)
-    ? `已用 ${gb(snapshot.used_bytes)} / 总 ${gb(snapshot.total_bytes)} GiB（可用 ${gb(snapshot.available_bytes)} GiB）`
+    ? formatMemoryLine(snapshot.used_bytes, snapshot.total_bytes, snapshot.available_bytes)
     : "内存读数不可用";
 
   const holder = deskState?.holder ?? null;
