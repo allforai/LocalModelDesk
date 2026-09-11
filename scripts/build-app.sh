@@ -119,6 +119,8 @@ printf '{"app": "LocalModelDesk", "bundle_version": "%s", "python": "python/bin/
   "$VERSION" > "$RES/bundle.json"
 
 echo "==> [8/9] Sign"
+echo "    precompiling bytecode so a later run cannot write into the signed bundle"
+"$RES/python/bin/python3.13" -s -m compileall -q -f "$RES/desk" >/dev/null
 SIGN=("$REPO/scripts/sign-app.sh" "$APP")
 if [[ "$ADHOC" == 1 ]]; then
   if [[ "${LMD_ALLOW_ADHOC:-0}" != "1" ]]; then

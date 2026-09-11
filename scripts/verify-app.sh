@@ -1,5 +1,5 @@
 #!/bin/bash
-# api:verifyAppBundle — read-only V1–V7 bundle verification.
+# api:verifyAppBundle — read-only V1–V8 bundle verification.
 set -euo pipefail
 
 usage() {
@@ -121,6 +121,20 @@ for script in initModels.sh run-h3.sh run-music3.py unload-llm.sh media-gui; do
     fail "V7 遗留原型仍存在: $SOURCE_ROOT/$script"
   fi
 done
+
+# V8: any Python process started straight out of the signed bundle (without
+# PYTHONDONTWRITEBYTECODE=1) writes __pycache__ back into it, which breaks the
+# code-signing seal — codesign --verify then fails at the worst possible time
+# (in front of the user). build-app.sh precompiles desk/ before signing, so any
+# __pycache__ dated *after* the seal was applied (Contents/_CodeSignature) is a
+# stray, runtime write rather than the build's own precompilation.
+SEAL_MARKER="$APP/Contents/_CodeSignature/CodeResources"
+if [[ -e "$SEAL_MARKER" && -d "$RES/desk" ]]; then
+  STRAY_PYC="$(find "$RES/desk" -name '__pycache__' -newer "$SEAL_MARKER" 2>/dev/null | head -5 || true)"
+  if [[ -n "$STRAY_PYC" ]]; then
+    fail "V8 封条已破：包内出现签名后写入的字节码 $(printf '%s' "$STRAY_PYC" | tr '\n' ' ')"
+  fi
+fi
 
 if [[ -s "$FAILLOG" ]]; then
   echo "verify-app: 发现以下失败（${APP}）:" >&2

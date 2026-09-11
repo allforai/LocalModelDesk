@@ -214,6 +214,26 @@ def test_verify_flags_pyvenv_and_bin(tmp_path):
     assert "/bin" in result.stderr
 
 
+def test_build_precompiles_desk_bytecode_before_signing():
+    build = (REPO / "scripts" / "build-app.sh").read_text()
+    precompile_at = build.index("compileall -q -f")
+    sign_at = build.index('SIGN=("$REPO/scripts/sign-app.sh"')
+    assert "compileall -q -f \"$RES/desk\"" in build
+    assert precompile_at < sign_at
+
+
+def test_verify_flags_a_broken_seal(tmp_path):
+    """包内多出 .pyc 就等于封条破了，verify 必须报出来而不是让 codesign 裸奔（V8）。"""
+    app = make_fake_bundle(tmp_path)
+    intruder = app / "Contents" / "Resources" / "desk" / "__pycache__"
+    intruder.mkdir(parents=True)
+    (intruder / "app.cpython-313.pyc").write_bytes(b"\x00")
+
+    result = verify(app, tmp_path / "source")
+    assert result.returncode != 0
+    assert "封条" in result.stdout + result.stderr
+
+
 def test_verify_reports_all_failures_at_once(tmp_path):
     app = make_fake_bundle(tmp_path)
     resources = app / "Contents" / "Resources"

@@ -1559,7 +1559,7 @@ Claude-Session: https://claude.ai/code/session_01KWaBrH4VVDiYDGZiKms5kK"
 - Modify: `scripts/verify-app.sh`
 - Test: `tests/test_packaging.py`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 `tests/test_packaging.py` 追加：
 
@@ -1577,12 +1577,12 @@ def test_verify_app_flags_a_broken_seal(tmp_path):
     assert "封条" in out.stdout + out.stderr
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `python3 -m pytest tests/test_packaging.py -q -k seal`
 Expected: FAIL
 
-- [ ] **Step 3: 实现 —— 构建时预编译，校验时查封条**
+- [x] **Step 3: 实现 —— 构建时预编译，校验时查封条**
 
 `scripts/build-app.sh` 在签名步骤之前插入：
 
@@ -1603,12 +1603,12 @@ fi
 
 注意 V4 已禁止 `pylibs` 下的 `__pycache__`；V8 补的是 `desk/` 且带"晚于签名"的判据。
 
-- [ ] **Step 4: 跑测试与真实校验**
+- [x] **Step 4: 跑测试与真实校验**
 
 Run: `python3 -m pytest tests/test_packaging.py -q && ./scripts/verify-app.sh --app dist/LocalModelDesk.app`
 Expected: PASS / `verify-app: OK`
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add scripts/build-app.sh scripts/verify-app.sh tests/test_packaging.py
