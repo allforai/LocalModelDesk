@@ -117,7 +117,7 @@ def test_evict_llm_grants_media_invalidates_old_token_and_emits_states():
     assert media["ok"] is True
     assert reaped_ports == [43123]
     assert arbiter.current_holder() == {
-        "kind": "video", "label": "job-a", "since": 42.0, "phase": "held"
+        "kind": "video", "label": "job-a", "display": "job-a", "since": 42.0, "phase": "held"
     }
     assert arbiter.release_heavy(llm["token"])["reason"]["code"] == "not_holder"
     assert [state["holder"]["phase"] for state in states] == [
@@ -291,3 +291,15 @@ def test_reaper_without_a_provider_is_called_the_old_way():
         ok=True, port=port, killed_pids=[]))
     arbiter.reap_llm_port(8767)
     assert calls == [8767]
+
+
+def test_public_holder_carries_the_display_name_for_the_menu_bar():
+    """菜单栏曾显示目录 key『glm』而非模型名（cross-exam 2026-09-13 G16）。"""
+    arbiter = Arbiter(llm_port=43124, reaper=lambda port, **_: ReapResult(ok=True, port=port, killed_pids=[]),
+                      clock=lambda: 1.0)
+    arbiter.acquire_heavy("llm", "glm", "GLM 4.7 Flash 越狱 4bit")
+    assert arbiter.desk_state()["holder"]["display"] == "GLM 4.7 Flash 越狱 4bit"
+    arbiter2 = Arbiter(llm_port=43125, reaper=lambda port, **_: ReapResult(ok=True, port=port, killed_pids=[]),
+                       clock=lambda: 1.0)
+    arbiter2.acquire_heavy("video", "job-1")
+    assert arbiter2.desk_state()["holder"]["display"] == "job-1"
