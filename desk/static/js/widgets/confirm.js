@@ -16,6 +16,7 @@ export function confirmDialog(doc, { title, message, confirmLabel = "确定", ca
     overlay.addEventListener("click", (event) => { if (event.target === overlay) finish(false); });
     doc.addEventListener?.("keydown", onKey);
     row.append(cancelBtn, okBtn); box.append(h, p, row); overlay.append(box); doc.body.append(overlay);
-    okBtn.focus?.();
+    // A destructive dialog must not delete on a reflexive Return (cross-exam open thread, F7).
+    (danger ? cancelBtn : okBtn).focus?.();
   });
 }

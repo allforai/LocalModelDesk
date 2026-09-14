@@ -3,7 +3,8 @@ import pytest
 
 from desk.testing import launch_test_harness
 
-CASES = [(1440, 1000, 0.40), (1920, 1200, 0.40)]
+CASES = [(800, 832, 0.40), (1024, 768, 0.40), (1280, 800, 0.40), (1440, 1000, 0.40),
+         (1920, 1200, 0.40), (2240, 1260, 0.40), (2560, 1440, 0.40)]
 
 
 @pytest.mark.parametrize("width,height,max_ratio", CASES)
@@ -44,3 +45,12 @@ def test_messages_and_composer_keep_a_16px_gap(page, tmp_path):
             "() => document.querySelector('.composer').getBoundingClientRect().top"
             " - document.querySelector('.messages').getBoundingClientRect().bottom")
         assert gap >= 16, gap
+
+
+@pytest.mark.parametrize("width", [800, 2560])
+def test_no_horizontal_overflow_at_the_extremes(page, tmp_path, width):
+    page.set_viewport_size({"width": width, "height": 900})
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url)
+        page.wait_for_selector(".messages")
+        assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")

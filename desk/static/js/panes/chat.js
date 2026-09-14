@@ -283,6 +283,8 @@ export function createChatPane(root, ctx = {}) {
       const li = doc.createElement("li");
       li.className = "card session";
       li.classList.toggle("active", session.id === currentId);
+      li.tabIndex = 0;
+      if (session.id === currentId) li.setAttribute?.("aria-current", "true");
       const title = doc.createElement("div");
       title.className = "session-title";
       title.textContent = displayTitle(session);
@@ -314,10 +316,19 @@ export function createChatPane(root, ctx = {}) {
         } catch (error) { setError(error.message); }
       });
       actions.append(rename, remove);
-      li.addEventListener("click", () => {
+      const select = () => {
         currentId = session.id;
         renderSessionList();
         renderMessages();
+        [...(els.sessionList.children ?? [])].find((node) => node.dataset?.sessionId === session.id)?.focus?.();
+      };
+      (li.dataset ??= {}).sessionId = session.id;
+      li.addEventListener("click", select);
+      li.addEventListener("keydown", (event) => {
+        if (event.target && event.target !== li) return; // buttons and the rename input handle their own keys
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        select();
       });
       li.append(title, meta, actions);
       els.sessionList.append(li);

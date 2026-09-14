@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
+from .audio import wav_seconds
 from .commands import build_h3_command, build_music_command
 from .inputs import save_input, resolve_input
 
@@ -176,9 +177,12 @@ class MediaService:
 
     def _history_entry(self, snap: dict) -> dict:
         error = snap["error"]
-        return {"kind": snap["kind"], "status": {"done": "done", "error": "failed", "cancelled": "cancelled"}[snap["status"]],
+        entry = {"kind": snap["kind"], "status": {"done": "done", "error": "failed", "cancelled": "cancelled"}[snap["status"]],
             "params": snap["params"], "output": snap["output"], "duration_s": snap["finished_at"] - snap["started_at"],
             "error": f"{error['code']}: {error['message']}" if error else None}
+        if snap["kind"] == "music" and snap["status"] == "done" and snap["output"]:
+            entry["audio_seconds"] = wav_seconds(Path(self._resolve_paths().outputs_root) / snap["output"])
+        return entry
 
     def cancel_job(self) -> dict:
         with self._lock:

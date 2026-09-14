@@ -577,3 +577,32 @@ test("流式中页面关闭：把问句和已出的半句带 keepalive 写回会
     await sending;
   } finally { globalThis.fetch = oldFetch; }
 });
+
+test("会话卡片可 Tab 聚焦，Enter/Space 切换（P2，cross-exam 2026-09-13 G5）", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (path) => {
+    if (path === "/api/sessions") return json([
+      { id: "s1", title: "一", messages: [], updated: "2026-09-07T10:05:00" },
+      { id: "s2", title: "二", messages: [], updated: "2026-09-07T10:04:00" },
+    ]);
+    if (String(path).includes("catalog")) return json([]);
+    if (String(path).includes("status")) return json({ models: [] });
+    return json({ state: { status: "idle" } });
+  };
+  try {
+    const pane = createChatPane(root);
+    await pane.init();
+    const list = controls.get("[data-session-list]");
+    assert.equal(list.children[0].tabIndex, 0);
+    assert.equal(list.children[0].attrs["aria-current"], "true");
+    let prevented = false;
+    list.children[1].listeners.keydown({ key: " ", preventDefault() { prevented = true; } });
+    assert.equal(prevented, true);
+    assert.match(list.children[1].className, /\bactive\b/);
+    list.children[0].listeners.keydown({ key: "Enter", preventDefault() {} });
+    assert.match(list.children[0].className, /\bactive\b/);
+    list.children[1].listeners.keydown({ key: "a", preventDefault() { throw new Error("不应拦截普通按键"); } });
+  } finally { globalThis.fetch = previous; }
+});

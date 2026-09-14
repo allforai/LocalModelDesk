@@ -74,3 +74,17 @@ def test_video_parameters_progress_and_player_src_follow_finished_output(
         response = page.request.get(f"{harness.base_url}{player.get_attribute('src')}")
         assert response.status in (200, 206)
     assert audit_violations == []
+
+
+def test_first_frame_picker_is_reachable_by_keyboard(page, tmp_path, audit_violations):
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url + "#tab=video")
+        page.locator("[data-video-mode]").select_option("image")
+        picker = page.locator("[data-video-first]")
+        picker.focus()
+        assert page.evaluate("document.activeElement.matches('[data-video-first]')")
+        with page.expect_file_chooser() as chooser_info:
+            page.keyboard.press("Space")
+        chooser_info.value.set_files(files=[{"name": "a.png", "mimeType": "image/png", "buffer": b"\x89PNG\r\n\x1a\n" + b"0" * 64}])
+        expect(page.locator("[data-video-first-name]")).to_have_text("a.png")
+    assert audit_violations == []

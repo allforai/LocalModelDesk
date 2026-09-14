@@ -199,3 +199,27 @@ test("没有成品时显示引导语", async (t) => {
   assert.equal(parts["lib-list"].children[0].className, "empty");
   assert.equal(parts["lib-list"].children[0].textContent, "还没有成品。去「视频」或「音乐」面板生成第一件，它会出现在这里。");
 });
+
+test("歌曲记录按成品实际时长标注，并注明请求值", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async (path) => ({
+    ok: true,
+    json: async () => path === "/api/outputs"
+      ? [{ name: "music3-1.wav", kind: "music", ts: "2026-09-13T10:00:00Z" }]
+      : [{ kind: "music", status: "done", ts: "2026-09-13T10:00:00Z", output: "music3-1.wav",
+           params: { caption: "民谣", lyrics: "啦", duration: 300 }, audio_seconds: 29.71 }],
+  });
+  const doc = { createElement: (tag) => new FakeElement(tag) };
+  const elements = Object.fromEntries(["refresh", "player", "list", "error"].map((name) => [name, new FakeElement()]));
+  const root = new FakeElement();
+  root.ownerDocument = doc;
+  root.querySelector = (selector) => elements[selector.match(/data-lib-(.+)\]/)[1]];
+  const pane = createLibraryPane(root, { applyFill() {} });
+
+  await pane.refresh();
+
+  const meta = find(elements.list.children[0], (el) => el.className === "lib-meta");
+  assert.ok(meta.textContent.includes("成品 30 秒（请求 300 秒）"), meta.textContent);
+  assert.ok(!meta.textContent.includes("300s"), meta.textContent);
+});

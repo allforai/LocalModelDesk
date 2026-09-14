@@ -61,7 +61,9 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
         params.frames ? `约 ${Math.round(params.frames / 24)} 秒` : null,
         params.steps ? `${params.steps}步` : null,
       ]
-      : [params.duration ? `${params.duration}s` : null];
+      : [Number.isFinite(entry.audio_seconds)
+          ? `成品 ${Math.round(entry.audio_seconds)} 秒${params.duration ? `（请求 ${params.duration} 秒）` : ""}`
+          : params.duration ? `${params.duration}s` : null];
     return {
       text: text.length > 60 ? `${text.slice(0, 60)}…` : text,
       spec: spec.filter(Boolean).join(" · "),
