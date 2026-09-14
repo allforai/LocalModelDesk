@@ -127,3 +127,30 @@ def test_unknown_route_404_and_invalid_json_400(server):
         raised = exc.code, json.loads(exc.read())
     assert raised[0] == 400
     assert raised[1]["error"]["code"] == "bad_request"
+
+
+def test_sse_client_disconnect_closes_the_event_generator():
+    import socket
+    import threading
+
+    from desk.app import DeskApp, Response
+
+    closed = threading.Event()
+
+    def events():
+        try:
+            for index in range(10_000):
+                yield {"type": "delta", "text": "x" * 512, "index": index}
+        finally:
+            closed.set()
+
+    app = DeskApp(port=0)
+    app.add_routes([("GET", "/sse", lambda _req: Response(sse=events()))])
+    app.start_background()
+    try:
+        with socket.create_connection(("127.0.0.1", app.port), timeout=5) as sock:
+            sock.sendall(b"GET /sse HTTP/1.1\r\nHost: x\r\n\r\n")
+            sock.recv(1024)
+        assert closed.wait(5.0)
+    finally:
+        app.shutdown()

@@ -118,12 +118,20 @@ class DeskApp:
                     for name, value in headers.items():
                         self.send_header(name, value)
                     self.end_headers()
-                    for event in response.sse:
-                        frame = b"data: " + json.dumps(
-                            event, ensure_ascii=False
-                        ).encode("utf-8") + b"\n\n"
-                        self.wfile.write(frame)
-                        self.wfile.flush()
+                    events = response.sse
+                    try:
+                        for event in events:
+                            frame = b"data: " + json.dumps(
+                                event, ensure_ascii=False
+                            ).encode("utf-8") + b"\n\n"
+                            self.wfile.write(frame)
+                            self.wfile.flush()
+                    except (BrokenPipeError, ConnectionResetError):
+                        log.info("sse client went away on %s", self.path)
+                    finally:
+                        close = getattr(events, "close", None)
+                        if callable(close):
+                            close()
                     return
                 body = response.body
                 if hasattr(body, "read") and callable(body.read):
