@@ -205,7 +205,7 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
             "needs_setup": config.read_config(roots).needs_setup,
         }),
         ("PUT", "/api/config", lambda req: config.update_config(roots, **req.body).to_json()),
-        ("POST", "/api/config/reset", lambda _req: config.reset_config(roots)),
+        ("POST", "/api/config/reset", lambda req: config.reset_config(roots, force=bool((req.body or {}).get("force")))),
         ("GET", "/api/paths", get_paths),
         ("POST", "/api/first-run", lambda req: firstrun.complete_first_run(
             roots, normalize_user_path(req.body["models_root"])

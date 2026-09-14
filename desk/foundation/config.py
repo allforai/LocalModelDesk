@@ -8,7 +8,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .errors import ConfigCorruptError, ConfigInvalidError
+from .errors import ConfigCorruptError, ConfigInvalidError, ConfigNotCorruptError
 
 
 CONFIG_VERSION = 1
@@ -170,11 +170,22 @@ def write_config(roots, config: DeskConfig) -> None:
         _atomic_write(roots.config_path, config.to_json())
 
 
-def reset_config(roots) -> dict:
-    """Move a broken config aside and start the first-run flow instead of dead-ending."""
+def reset_config(roots, *, force: bool = False) -> dict:
+    """Move a broken config aside and start the first-run flow instead of dead-ending.
+
+    A config that still parses is left alone unless ``force`` is set: a stray call must
+    not rename a good file and fall back to default gateway settings (G2).
+    """
     path = Path(roots.config_path)
     backup = None
     with _LOCK:
+        if path.exists() and not force:
+            try:
+                _load_raw(path)
+            except ConfigCorruptError:
+                pass
+            else:
+                raise ConfigNotCorruptError("配置文件是好的，不需要重新设置")
         if path.exists():
             backup = path.with_name(f"config.broken-{time.strftime('%Y%m%d-%H%M%S')}.json")
             path.replace(backup)
