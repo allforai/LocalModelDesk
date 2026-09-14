@@ -28,3 +28,10 @@ export function reduceChunk(state, line) {
   if (!text && !reasoning) return state;
   return { ...state, content: state.content + text, reasoning: state.reasoning + reasoning };
 }
+
+// 发给模型的历史：只要 role/content；中断且一个字都没出的回答不算一轮（P3）。
+export function wireMessages(messages) {
+  return messages
+    .filter((message) => !(message.role === "assistant" && message.interrupted && !(message.content ?? "").trim()))
+    .map((message) => ({ role: message.role, content: message.content ?? "" }));
+}
