@@ -65,3 +65,23 @@ def test_failed_port_reap_fails_before_spawn_and_releases_reservation(tmp_path):
     assert "spawn" not in names
     assert names.index("reap") < names.index("release")
     assert ("release", "tok-1") in testbed.calls
+
+
+def test_stranger_on_llm_port_fails_before_spawn_with_its_pid(tmp_path):
+    from desk.llm.state import ERR_PORT_BUSY
+
+    testbed = make_service(
+        tmp_path,
+        arbiter_kw={"listeners": [{"pid": 4242, "command": "python3 -m http.server 8767"}]},
+    )
+
+    testbed.service.load("glm")
+    final = testbed.service.wait_settled()
+
+    assert final["status"] == "error"
+    assert final["error"]["code"] == ERR_PORT_BUSY
+    assert "4242" in final["error"]["message"]
+    assert "http.server" in final["error"]["message"]
+    names = [call[0] for call in testbed.calls]
+    assert "spawn" not in names
+    assert ("release", "tok-1") in testbed.calls

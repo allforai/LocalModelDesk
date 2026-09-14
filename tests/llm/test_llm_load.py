@@ -15,7 +15,7 @@ def test_load_happy_path_order_and_state(tmp_path):
     assert final["loaded_at"] is not None
     assert final["error"] is None
     names = [call[0] for call in testbed.calls]
-    assert names[:3] == ["acquire", "reap", "spawn"]
+    assert names[:4] == ["acquire", "reap", "listeners", "spawn"]
     assert names.index("spawn") < names.index("health")
     assert ("acquire", "llm", "glm") in testbed.calls
     assert ("reap", DEFAULT_LLM_PORT) in testbed.calls

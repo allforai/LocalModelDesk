@@ -8,7 +8,7 @@ import uuid
 from collections.abc import Callable
 
 from .memory import MemoryReader
-from .reaper import ReapResult, reap_port
+from .reaper import ReapResult, port_listeners, reap_port
 from .state import Holder, PHASE_ACQUIRING, PHASE_HELD, plan_acquire
 
 
@@ -124,6 +124,10 @@ class Arbiter:
     def reap_llm_port(self, port: int) -> dict:
         """Reap listeners on the supplied port, independent of eviction state."""
         return self._reap(port).to_dict()
+
+    def llm_port_listeners(self, port: int) -> list[dict]:
+        """Listeners still on the LLM port after reaping — strangers the arbiter will not kill."""
+        return port_listeners(port)
 
     def desk_state(self) -> dict:
         return self._state_for(self._read_holder())

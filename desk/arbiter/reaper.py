@@ -37,6 +37,15 @@ def _listening_pids(port: int) -> list[int]:
     return pids
 
 
+def port_listeners(port: int) -> list[dict]:
+    """Who is listening on ``port`` (excluding us), with the command line for a human message."""
+    listeners = []
+    for pid in _listening_pids(port):
+        proc = subprocess.run(["ps", "-o", "command=", "-p", str(pid)], capture_output=True, text=True)
+        listeners.append({"pid": pid, "command": proc.stdout.strip()})
+    return listeners
+
+
 def _signal_and_wait(pids, sig, timeout, port, errors):
     """Signal PIDs and return the listeners remaining after ``timeout``."""
     for pid in pids:
