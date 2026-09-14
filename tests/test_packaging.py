@@ -543,6 +543,8 @@ def test_build_script_strips_build_paths_from_bytecode():
     assert "export PYTHONDONTWRITEBYTECODE=1" in text
     assert '-s "$RES" -p "LocalModelDesk.app/Contents/Resources" "$RES/desk"' in text
     assert 'find "$RES/python" "$RES/pylibs" "$RES/desk" -type d -name __pycache__ -prune -exec rm -rf {} +' in text
+    # Clearing the variable for compileall lets the stdlib it imports cache pycs carrying the build path.
+    assert "PYTHONDONTWRITEBYTECODE= " not in text
 
 
 def test_bundle_declares_chinese_development_region():

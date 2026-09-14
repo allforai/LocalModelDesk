@@ -130,7 +130,9 @@ printf '{"app": "LocalModelDesk", "bundle_version": "%s", "python": "python/bin/
 echo "==> [8/9] Sign"
 echo "    precompiling bytecode so a later run cannot write into the signed bundle"
 find "$RES/python" "$RES/pylibs" "$RES/desk" -type d -name __pycache__ -prune -exec rm -rf {} +
-PYTHONDONTWRITEBYTECODE= "$RES/python/bin/python3.13" -s -m compileall -q -f \
+# compileall writes the files it is asked to compile regardless of PYTHONDONTWRITEBYTECODE;
+# keeping the variable set stops the stdlib modules it imports from caching build paths (G1).
+"$RES/python/bin/python3.13" -s -m compileall -q -f \
   -s "$RES" -p "LocalModelDesk.app/Contents/Resources" "$RES/desk" >/dev/null
 SIGN=("$REPO/scripts/sign-app.sh" "$APP")
 if [[ "$ADHOC" == 1 ]]; then
