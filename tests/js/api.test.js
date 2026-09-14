@@ -144,3 +144,16 @@ test("挂起的请求在超时后以 timeout 错误拒绝，而不是永远等�
     globalThis.setTimeout = previousSetTimeout;
   }
 });
+
+test("updateChatSession 可带 keepalive，页面关闭时请求不被浏览器丢弃", async () => {
+  const oldFetch = globalThis.fetch;
+  const seen = [];
+  globalThis.fetch = async (path, options) => { seen.push([path, options]); return new Response("{}", { status: 200 }); };
+  try {
+    const api = await import("../../desk/static/js/api.js");
+    await api.updateChatSession("s1", { messages: [] }, { keepalive: true });
+    assert.equal(seen[0][0], "/api/sessions/s1");
+    assert.equal(seen[0][1].method, "PATCH");
+    assert.equal(seen[0][1].keepalive, true);
+  } finally { globalThis.fetch = oldFetch; }
+});

@@ -408,6 +408,18 @@ export function createChatPane(root, ctx = {}) {
   els.loadBtn.addEventListener("click", loadSelected);
   els.unloadBtn.addEventListener("click", unload);
   els.modelSelect.addEventListener("change", () => { els.modelSelect.dataset.userPicked = "1"; });
+  // Closing or reloading the page mid-reply must not lose the question (P3 path 6).
+  function saveLiveTurnOnPageHide() {
+    if (!liveTurn) return;
+    const { session, state } = liveTurn;
+    const partial = { role: "assistant", content: state.content };
+    if (state.reasoning) partial.reasoning = state.reasoning;
+    partial.interrupted = { code: "page_closed", message: "页面关闭时回答还没生成完" };
+    api.updateChatSession(session.id, { messages: [...session.messages, partial], model: els.modelSelect.value || null }, { keepalive: true })
+      .catch(() => {});
+  }
+  (ctx.window ?? globalThis).addEventListener?.("pagehide", saveLiveTurnOnPageHide);
+
   els.sendBtn.addEventListener("click", send);
   els.input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) send();

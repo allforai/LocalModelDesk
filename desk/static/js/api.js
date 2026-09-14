@@ -39,8 +39,9 @@ async function toError(response) {
 // setRequestTimeout 已删（零调用点，F13 census 2026-09-08）。
 const REQUEST_TIMEOUT_MS = 8000;
 
-async function request(path, { method = "GET", body, stream = false } = {}) {
+async function request(path, { method = "GET", body, stream = false, keepalive = false } = {}) {
   const options = { method };
+  if (keepalive) options.keepalive = true;
   if (body !== undefined) {
     options.headers = { "Content-Type": "application/json" };
     options.body = JSON.stringify(body);
@@ -118,6 +119,7 @@ export const revealOutput = (name) =>
 export const listHistory = (limit = 200) => request(`${ROUTES.history}?limit=${limit}`);
 export const listChatSessions = () => request(ROUTES.sessions);
 export const createChatSession = (init = {}) => json(ROUTES.sessions, "POST", init);
-export const updateChatSession = (id, patch) => json(`${ROUTES.sessions}/${encoded(id)}`, "PATCH", patch);
+export const updateChatSession = (id, patch, { keepalive = false } = {}) =>
+  request(`${ROUTES.sessions}/${encoded(id)}`, { method: "PATCH", body: patch, keepalive });
 export const deleteChatSession = (id) => json(`${ROUTES.sessions}/${encoded(id)}`, "DELETE");
 export const gatewayConfig = (apply = false) => request(ROUTES.gatewayConfig, { method: apply ? "POST" : "GET" });

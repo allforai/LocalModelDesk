@@ -492,3 +492,43 @@ test("历史消息用会话模型名，空回答有占位（F8/F9）", async () 
   const body = rows[1].children[2];
   assert.equal(body.children[0].className, "empty-answer");
 });
+
+test("流式中页面关闭：把问句和已出的半句带 keepalive 写回会话（P3 路径 6）", async () => {
+  const oldFetch = globalThis.fetch;
+  const saved = [];
+  let releaseStream;
+  globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/resources/catalog") return json([]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    if (path === "/api/sessions") return json([{ id: "s1", title: "t", messages: [], updated: "2026-01-01" }]);
+    if (path === "/api/llm/chat/stream") {
+      return new Response(new ReadableStream({ start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"type":"delta","text":"半句"}\n\n'));
+        releaseStream = () => controller.close();
+      } }), { status: 200 });
+    }
+    if (path === "/api/sessions/s1") { saved.push([JSON.parse(options.body), options.keepalive]); return json({ id: "s1", title: "t", updated: "2026-01-02" }); }
+    throw new Error(`unexpected request ${path}`);
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { root, controls } = makePane();
+    const listeners = {};
+    const pane = createChatPane(root, { window: { addEventListener: (type, fn) => { listeners[type] = fn; } } });
+    await pane.init();
+    controls.get("[data-chat-input]").value = "你好";
+    const sending = controls.get("[data-send]").click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    listeners.pagehide();
+
+    assert.equal(saved[0][1], true);
+    assert.deepEqual(saved[0][0].messages, [
+      { role: "user", content: "你好" },
+      { role: "assistant", content: "半句", interrupted: { code: "page_closed", message: "页面关闭时回答还没生成完" } },
+    ]);
+    releaseStream();
+    await sending;
+  } finally { globalThis.fetch = oldFetch; }
+});
