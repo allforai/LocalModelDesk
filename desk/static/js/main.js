@@ -13,17 +13,19 @@ import { heavyAvailability } from "./pure/desk_state.js";
 import { hydrateIcons } from "./icons.js";
 import { initialTab } from "./pure/tab_hash.js";
 import { isDrawerCloseKey } from "./pure/drawer.js";
+import { showFatal } from "./widgets/fatal.js";
 
 const $ = (selector) => document.querySelector(selector);
 const store = createStore({ activeTab: "chat" });
 let panes; let statusbar; let settings; let failures = 0; let modelNames = {};
 let jobActive = false; let jobLogFrom = 0; let lastJobId = null; let mediaBusyReason = "";
 
-function fatal(message) { const el = $("#fatal"); el.hidden = false; el.textContent = message; }
-
 async function boot() {
   let config;
-  try { config = await api.readConfig(); } catch (error) { fatal(`无法读取配置：${error.message}`); return; }
+  try { config = await api.readConfig(); } catch (error) {
+    showFatal($("#fatal"), error, { resetConfig: api.resetConfig, reload: () => globalThis.location.reload() });
+    return;
+  }
   if (config.needs_setup ?? !config.first_run_done) enterFirstRun(config); else enterDesk();
 }
 

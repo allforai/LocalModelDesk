@@ -1,6 +1,6 @@
 // The browser's only HTTP boundary. UI modules consume named operations, never routes.
 const ROUTES = {
-  config: "/api/config", firstRun: "/api/first-run", adopt: "/api/adopt", discoverModels: "/api/models/discover",
+  config: "/api/config", configReset: "/api/config/reset", firstRun: "/api/first-run", adopt: "/api/adopt", discoverModels: "/api/models/discover",
   catalog: "/api/resources/catalog", status: "/api/resources/status",
   download: "/api/resources/download", cancelDownload: "/api/resources/download/cancel",
   deleteModel: "/api/resources/delete", disk: "/api/resources/disk", memory: "/api/memory", deskState: "/api/state",
@@ -68,6 +68,7 @@ const encoded = (value) => encodeURIComponent(value);
 
 export const readConfig = () => request(ROUTES.config);
 export const writeConfig = (patch) => json(ROUTES.config, "PUT", patch);
+export const resetConfig = () => json(ROUTES.configReset, "POST", {});
 export const completeFirstRun = (modelsRoot) =>
   json(ROUTES.firstRun, "POST", modelsRoot ? { models_root: modelsRoot } : {});
 export const adoptLegacyModels = (legacyRoot, mode) =>

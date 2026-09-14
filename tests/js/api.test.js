@@ -57,7 +57,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["gatewayConfig", [true], "/api/gateway/config", "POST"],
   ];
   const names = [
-    "readConfig", "writeConfig", "completeFirstRun", "adoptLegacyModels", "discoverModels", "listCatalog", "verifyAllModels",
+    "readConfig", "writeConfig", "resetConfig", "completeFirstRun", "adoptLegacyModels", "discoverModels", "listCatalog", "verifyAllModels",
     "startDownload", "cancelDownload", "deleteModel", "diskUsage", "memorySnapshot", "deskState", "loadLlm", "unloadLlm",
     "llmStatus", "chatStream", "startVideoJob", "startMusicJob", "cancelJob", "jobStatus", "listOutputs",
     "serveOutput", "revealOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
