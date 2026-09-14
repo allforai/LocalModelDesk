@@ -136,11 +136,12 @@ def test_production_modules_never_import_test_fakes():
         assert "desk.testing" not in Path(relative).read_text(encoding="utf-8")
 
 
-def test_shutdown_closes_media_before_llm(tmp_path, monkeypatch):
+def test_shutdown_closes_downloads_and_media_before_llm(tmp_path, monkeypatch):
     _configured_data_root(tmp_path, monkeypatch)
     runtime = build_runtime(port=0)
     order = []
     runtime.gateway.stop = lambda: order.append("gateway")
+    runtime.resources.close = lambda: order.append("resources")
     runtime.media.close = lambda: order.append("media")
     runtime.llm.close = lambda: order.append("llm")
     real_app_shutdown = runtime.app.shutdown
@@ -148,4 +149,4 @@ def test_shutdown_closes_media_before_llm(tmp_path, monkeypatch):
     runtime.start_background()
     runtime.shutdown()
     runtime.shutdown()
-    assert order == ["gateway", "media", "llm", "app"]
+    assert order == ["gateway", "resources", "media", "llm", "app"]

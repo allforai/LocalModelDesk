@@ -95,6 +95,9 @@ class ResourcesService:
     def download_progress(self) -> DownloadProgress:
         return self._downloader.progress()
 
+    def close(self) -> None:
+        self._downloader.close()
+
     def delete_model(self, key: str, confirm: str | None = None) -> dict:
         model = catalog.entry(key)
         if confirm != model.key:

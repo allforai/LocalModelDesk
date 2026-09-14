@@ -153,3 +153,20 @@ def test_start_download_passes_hf_env_to_executor(tmp_path):
         models_root=tmp_path / "models", hf_cmd=(sys.executable,), hf_env={"PYTHONPATH": "/pylibs/desk"})
     downloader.start("h3")
     assert control.envs[-1] == {"PYTHONPATH": "/pylibs/desk"}
+
+
+def test_close_terminates_a_running_download_and_keeps_parts(tmp_path):
+    downloader, control, _events = _downloader(tmp_path)
+    downloader.start("h3")
+    part = part_path(tmp_path / "models" / "minimax-h3", "weights/a.bin")
+    part.parent.mkdir(parents=True, exist_ok=True)
+    part.write_bytes(b"xx")
+
+    closer = threading.Thread(target=downloader.close, kwargs={"timeout_s": 2.0})
+    closer.start()
+    _wait_for(lambda: control.handle.terminated)
+    control.exit_terminated()
+    closer.join(3.0)
+
+    assert not closer.is_alive()
+    assert part.exists()

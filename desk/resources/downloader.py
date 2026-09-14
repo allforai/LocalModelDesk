@@ -128,6 +128,23 @@ class Downloader:
         self._events.emit_progress(snapshot)
         return snapshot
 
+    def close(self, timeout_s: float = 3.0) -> None:
+        """Stop a running fetch on shutdown; its .part files stay for the next resume."""
+        with self._lock:
+            handle = self._handle
+            running = handle is not None and self._progress.state == "running"
+        if not running:
+            return
+        try:
+            self.cancel()
+        except NotDownloadingError:
+            return
+        deadline = time.monotonic() + timeout_s
+        while handle.poll() is None and time.monotonic() < deadline:
+            time.sleep(0.05)
+        if handle.poll() is None:
+            handle.kill()
+
     def _sample_loop(self) -> None:
         while True:
             with self._lock:
