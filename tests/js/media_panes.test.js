@@ -79,6 +79,30 @@ test("a finished job from another pane does not masquerade as this pane's state 
   assert.ok(music.parts["job-status"].textContent.includes("空闲"), music.parts["job-status"].textContent);
 });
 
+test("视频/音乐面板各有看手气与优化提示词，写回各自的输入框", async () => {
+  const video = pane({ "video-prompt": "", "video-size": "768x448", "video-frames": "49", "video-steps": "16", "video-start": "", "video-assist": "" });
+  const music = pane({ "music-caption": "民谣", "music-lyrics": "", "music-duration": "60", "music-start": "", "music-assist": "" });
+  const videoPane = createVideoPane(video);
+  const musicPane = createMusicPane(music);
+  const videoButtons = video.parts["video-assist"].children;
+  const musicButtons = music.parts["music-assist"].children;
+  assert.deepEqual(videoButtons.slice(0, 3).map((b) => b.textContent), ["看手气", "优化提示词", "恢复原文"]);
+  assert.deepEqual(musicButtons.slice(0, 2).map((b) => b.textContent), ["看手气", "优化提示词"]);
+
+  videoPane.setAssistAvailable(true, "");
+  musicPane.setAssistAvailable(true, "");
+  const previous = globalThis.fetch;
+  const replies = [{ task: "video", action: "lucky", text: "雨夜街角" }, { task: "music", action: "refine", text: "木吉他民谣", lyrics: "第一行" }];
+  globalThis.fetch = async () => new Response(JSON.stringify(replies.shift()), { status: 200 });
+  try {
+    await videoButtons[0].click();
+    await musicButtons[1].click();
+  } finally { globalThis.fetch = previous; }
+  assert.equal(video.parts["video-prompt"].value, "雨夜街角");
+  assert.equal(music.parts["music-caption"].value, "木吉他民谣");
+  assert.equal(music.parts["music-lyrics"].value, "第一行");
+});
+
 test("busy reason replaces the idle hint instead of a stale finished-job caption (F14)", () => {
   const music = pane({ "music-caption": "x", "music-lyrics": "y", "music-duration": "30", "music-start": "" });
   const musicPane = createMusicPane(music);
