@@ -47,6 +47,7 @@ class ProductionRuntime:
     app: DeskApp
     gateway: GatewayService
     llm: LlmService
+    media: MediaService
     _closed: bool = False
 
     @property
@@ -72,6 +73,7 @@ class ProductionRuntime:
             return
         self._closed = True
         self.gateway.stop()
+        self.media.close()
         self.llm.close()
         self.app.shutdown()
 
@@ -152,4 +154,4 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
     app = DeskApp(host, port)
     _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway)
     app.capabilities = capabilities.probe_capabilities(roots)
-    return ProductionRuntime(app, gateway, llm)
+    return ProductionRuntime(app, gateway, llm, media)

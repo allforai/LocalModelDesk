@@ -512,3 +512,25 @@ class TestJobFinishedEvent:
         snap = finished_snapshot(service, lambda: service.start_video_job(**self.VALID))
 
         assert snap["status"] == status
+
+
+def test_close_cancels_running_job_and_waits_for_terminal_state(tmp_path):
+    """应用退出时在跑的媒体作业不能变成孤儿（R-shell-04，cross-exam 2026-09-13 G12）。"""
+    service, deps = make_service(tmp_path, executor=FakeExecutor("block"))
+    service._term_grace_s = 0.01
+    service.start_video_job(prompt="rain", width=512, height=288, frames=73, steps=10)
+    assert service.job_status()["status"] == "running"
+
+    service.close()
+
+    snap = service.job_status()
+    assert snap["status"] == "cancelled"
+    assert deps.arbiter.released == ["permit-1"]
+
+
+def test_close_without_running_job_is_a_noop(tmp_path):
+    service, deps = make_service(tmp_path)
+    service.close()
+    service.close()
+    assert service.job_status()["status"] == "idle"
+    assert deps.arbiter.released == []

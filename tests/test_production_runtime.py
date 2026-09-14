@@ -134,3 +134,18 @@ def test_production_modules_never_import_test_fakes():
 
     for relative in ("desk/runtime.py", "desk/__main__.py", "desk/gateway/desk_backend.py"):
         assert "desk.testing" not in Path(relative).read_text(encoding="utf-8")
+
+
+def test_shutdown_closes_media_before_llm(tmp_path, monkeypatch):
+    _configured_data_root(tmp_path, monkeypatch)
+    runtime = build_runtime(port=0)
+    order = []
+    runtime.gateway.stop = lambda: order.append("gateway")
+    runtime.media.close = lambda: order.append("media")
+    runtime.llm.close = lambda: order.append("llm")
+    real_app_shutdown = runtime.app.shutdown
+    runtime.app.shutdown = lambda: (order.append("app"), real_app_shutdown())
+    runtime.start_background()
+    runtime.shutdown()
+    runtime.shutdown()
+    assert order == ["gateway", "media", "llm", "app"]
