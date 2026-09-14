@@ -94,7 +94,7 @@ func menuGlyphState(for status: ShellStatus) -> MenuGlyphState {
 }
 
 /// Dark, themed error page shown in place of ui:deskShell when the service is down or unresponsive.
-func errorPageHTML(reason: String, logPath: String) -> String {
+func errorPageHTML(reason: String, logPath: String, logTail: String = "") -> String {
   func esc(_ s: String) -> String {
     s.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;")
      .replacingOccurrences(of: ">", with: "&gt;").replacingOccurrences(of: "\"", with: "&quot;")
@@ -106,9 +106,10 @@ func errorPageHTML(reason: String, logPath: String) -> String {
   h1{font-size:20px;margin:0 0 12px;color:#e5534b}h1::before{content:"✕ "}
   .danger{color:#e5534b}details{margin-top:12px;color:#9aa3b2;font-size:13px}summary{cursor:pointer}
   code{font:13px ui-monospace,Menlo,monospace;color:#9aa3b2;word-break:break-all}
+  pre{white-space:pre-wrap;font:12px ui-monospace,Menlo,monospace;color:#9aa3b2;max-height:16em;overflow:auto}
   button{margin-top:16px;padding:8px 12px;border-radius:6px;border:1px solid #4f8cff;background:#4f8cff;color:#fff;font:inherit;cursor:pointer}</style></head>
   <body><main><h1 class="danger">服务未响应</h1><p id="reason">\(esc(reason))</p>
-  <details><summary>详情</summary><p>日志：<code>\(esc(logPath))</code></p></details>
+  <details><summary>详情</summary><p>日志：<code>\(esc(logPath))</code></p>\(logTail.isEmpty ? "" : "<pre>\(esc(logTail))</pre>")</details>
   <button onclick="window.webkit.messageHandlers.shellRetry.postMessage('retry')">重试</button></main></body></html>
   """
 }
@@ -125,4 +126,20 @@ func pollFailureAction(consecutiveFailures: Int, childRunning: Bool, threshold: 
 /// ⌘, with no other modifier opens settings (G8). Pure so the headless harness can test it.
 func isSettingsShortcut(command: Bool, option: Bool, control: Bool, shift: Bool, characters: String?) -> Bool {
   command && !option && !control && !shift && characters == ","
+}
+
+/// Plain-Chinese exit cause for the error page (cross-exam open thread: details had only a log path).
+func serviceExitDescription(status: Int32, signaled: Bool) -> String {
+  guard signaled else { return "退出码 \(status)" }
+  switch status {
+  case 9: return "被信号 9（SIGKILL）结束"
+  case 15: return "被信号 15（SIGTERM）结束"
+  default: return "被信号 \(status) 结束"
+  }
+}
+
+func logTail(_ text: String, maxLines: Int) -> String {
+  let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+  let trimmed = lines.last == "" ? lines.dropLast() : lines[...]
+  return trimmed.suffix(maxLines).map { $0 + "\n" }.joined()
 }

@@ -104,9 +104,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         break
       case .serviceExited:
         status.server = .failed(.spawnFailed("服务已退出"))
+        let cause = server.lastExit.map { "（\(serviceExitDescription(status: $0.status, signaled: $0.signaled))）" } ?? ""
+        let text = (try? String(contentsOf: DeskPaths.serverStdoutLogURL, encoding: .utf8)) ?? ""
         windowController.showErrorPage(
-          reason: "台面服务意外退出（连续 \(poller.consecutiveFailures) 次状态拉取失败）。",
-          logPath: DeskPaths.serverStdoutLogURL.path)
+          reason: "台面服务意外退出\(cause)。",
+          logPath: DeskPaths.serverStdoutLogURL.path,
+          logTail: logTail(text, maxLines: 20))
         poller.stop()
       case .serviceUnresponsive:
         status.server = .failed(.spawnFailed("服务无响应"))

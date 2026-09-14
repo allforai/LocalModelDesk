@@ -37,6 +37,12 @@ final class ServerController {
 
   var isChildRunning: Bool { child?.isRunning ?? false }
 
+  /// Filled when the owned child has exited, for the error page.
+  var lastExit: (status: Int32, signaled: Bool)? {
+    guard let process = child, !process.isRunning else { return nil }
+    return (process.terminationStatus, process.terminationReason == .uncaughtSignal)
+  }
+
   func spawnEmbeddedServer() -> Result<ServerState, ServerFailure> {
     state = .starting
     if healthCheckOK() {

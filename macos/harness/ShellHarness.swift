@@ -39,7 +39,7 @@ struct ShellHarness {
       exit(PortGuard.family(matching: args[1], pgrepTool: pgrepTool).isEmpty ? 0 : 3)
     case "error-page":
       guard args.count >= 3 else { exit(64) }
-      print(errorPageHTML(reason: args[1], logPath: args[2]))
+      print(errorPageHTML(reason: args[1], logPath: args[2], logTail: args.count >= 4 ? args[3] : ""))
     case "poll-failure":
       guard args.count >= 3, let failures = Int(args[1]) else { exit(64) }
       switch pollFailureAction(consecutiveFailures: failures, childRunning: args[2] == "true") {
@@ -53,6 +53,13 @@ struct ShellHarness {
       print(isSettingsShortcut(command: mods.contains("cmd"), option: mods.contains("opt"),
                                control: mods.contains("ctrl"), shift: mods.contains("shift"),
                                characters: args[2]))
+    case "exit-description":
+      guard args.count >= 3, let status = Int32(args[1]) else { exit(64) }
+      print(serviceExitDescription(status: status, signaled: args[2] == "true"))
+    case "log-tail":
+      guard args.count >= 2, let count = Int(args[1]) else { exit(64) }
+      let input = String(decoding: FileHandle.standardInput.readDataToEndOfFile(), as: UTF8.self)
+      print(logTail(input, maxLines: count), terminator: "")
     default:
       FileHandle.standardError.write(Data("unknown subcommand \(command)\n".utf8))
       exit(64)

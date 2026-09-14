@@ -91,7 +91,7 @@ def test_main_window_error_page_mechanism():
     # can render it (Plan A task 20); MainWindowController only loads it.
     assert "errorPageHTML(reason:" in text
     template = _read("ShellStatus.swift")
-    assert "func errorPageHTML(reason: String, logPath: String) -> String" in template
+    assert "func errorPageHTML(reason: String, logPath: String, logTail: String = \"\") -> String" in template
     assert "服务未运行" in template
     assert "shellRetry" in template
 
