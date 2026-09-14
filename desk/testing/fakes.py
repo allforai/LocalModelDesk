@@ -6,9 +6,11 @@ from pathlib import Path
 
 from desk.arbiter.memory import MemorySnapshot
 from desk.arbiter.reaper import ReapResult
+from desk.llm.backend import BackendHttpError
 
 from .scripts import (
     BLOCK_UNTIL_CANCEL,
+    Break,
     ChatScript,
     Delta,
     Done,
@@ -89,13 +91,15 @@ class FakeLlmBackend:
             if isinstance(step, Gate):
                 if wait_gates:
                     step.wait()
-            elif isinstance(step, (Delta, Done)):
+            elif isinstance(step, (Delta, Done, Break)):
                 yield step
             else:
                 raise ScriptExhausted(f"unexpected chat step: {step!r}")
 
     def chat_stream(self, port: int, payload: dict):
         for step in self._iter_steps(payload, wait_gates=True):
+            if isinstance(step, Break):
+                raise BackendHttpError(step.message)
             if isinstance(step, Delta):
                 delta = {}
                 if step.content is not None:
@@ -117,6 +121,8 @@ class FakeLlmBackend:
                     content.append(step.content)
                 if step.reasoning:
                     reasoning.append(step.reasoning)
+            elif isinstance(step, Break):
+                raise BackendHttpError(step.message)
             else:
                 done = step
         if done is None:

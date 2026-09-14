@@ -2,7 +2,7 @@
 // 只做「取数 → 调纯函数 → 写 DOM」；一律 createElement/textContent，无 innerHTML。
 import * as api from "../api.js";
 import { sseDataLines } from "../stream.js";
-import { initialStream, reduceChunk } from "../pure/chat_stream.js";
+import { initialStream, reduceChunk, wireMessages } from "../pure/chat_stream.js";
 import { needsWarning } from "../pure/mem_warn.js";
 import { formatBytes } from "../pure/format.js";
 import { sortSessions, displayTitle } from "../pure/sessions.js";
@@ -34,6 +34,7 @@ export function createChatPane(root, ctx = {}) {
   let modelName = "";
   let lastLoadedKey = null;
   let llmStatus = "idle";
+  let liveTurn = null; // { session, state } while a reply is streaming — read by the pagehide saver
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
   const current = () => sessions.find((s) => s.id === currentId) ?? null;
@@ -188,12 +189,33 @@ export function createChatPane(root, ctx = {}) {
     }
     const errorEl = doc.createElement("p");
     errorEl.className = "inline-error";
+    if (!live && message.interrupted) errorEl.textContent = `回答没有生成完：${message.interrupted.message}`;
+    else if (!live && message.truncated) errorEl.textContent = "已达到长度上限，回答被截断。";
     wrap.append(who, details, contentEl, errorEl);
     details.hidden = !message.reasoning && !live;
     details.open = live;
     els.messages.append(wrap);
     els.messages.scrollTop = els.messages.scrollHeight;
     return { wrap, details, summary, reasoningEl, contentEl, errorEl };
+  }
+
+  function appendRetry() {
+    const row = doc.createElement("div");
+    row.className = "retry-row";
+    const button = doc.createElement("button");
+    (button.dataset ??= {}).retry = "1";
+    button.textContent = "重试";
+    button.addEventListener("click", () => retry());
+    row.append(button);
+    els.messages.append(row);
+  }
+
+  async function retry() {
+    const session = current();
+    if (streaming || !session?.messages?.at(-1)?.interrupted) return;
+    session.messages.pop();
+    renderMessages();
+    await streamReply(session);
   }
 
   function showMessages(list, fallbackModelName = "") {
@@ -206,6 +228,7 @@ export function createChatPane(root, ctx = {}) {
       return;
     }
     for (const message of list) messageNode(message, false, fallbackModelName);
+    if (list.at(-1)?.interrupted) appendRetry();
   }
 
   const sessionModelName = (session) => catalog.find((item) => item.key === session?.model)?.name ?? session?.model ?? "";
@@ -301,58 +324,80 @@ export function createChatPane(root, ctx = {}) {
     session.messages.push({ role: "user", content: text });
     els.input.value = "";
     messageNode({ role: "user", content: text });
+    await streamReply(session);
+  }
+
+  // One reply, from first frame to saved turn. Every ending — done, truncated,
+  // interrupted — is pushed into the session and saved (P3).
+  async function streamReply(session) {
+    setError("");
     const live = messageNode({ role: "assistant", content: "", reasoning: "" }, true);
     streaming = true;
     els.sendBtn.disabled = true;
     setButtonLabel(els.sendBtn, "生成中…");
     els.messages.dataset.streaming = "1";
     const thinkStart = Date.now();
+    const elapsed = () => Math.round((Date.now() - thinkStart) / 1000);
     let firstContentSeen = false;
     let thinkingSeconds = 0;
     let state = initialStream();
+    liveTurn = { session, state };
     try {
-      const body = await api.chatStream(session.messages);
+      const body = await api.chatStream(wireMessages(session.messages));
       for await (const line of sseDataLines(body)) {
         state = reduceChunk(state, line);
+        liveTurn.state = state;
         live.reasoningEl.replaceChildren(renderMarkdown(doc, state.reasoning));
         live.details.hidden = !state.reasoning;
         if (state.content && !firstContentSeen) {
           firstContentSeen = true;
-          thinkingSeconds = Math.round((Date.now() - thinkStart) / 1000);
+          thinkingSeconds = elapsed();
           live.summary.textContent = `已思考 ${thinkingSeconds} 秒`;
           live.details.open = false;
         }
         live.contentEl.replaceChildren(renderMarkdown(doc, state.content));
         if (state.done || state.error) break;
       }
-      if (!state.done && !state.error) state = { ...state, error: { code: "stream_interrupted", message: "流在完成前中断" } };
+      if (!state.done && !state.error) state = { ...state, error: { code: "stream_interrupted", message: "连接在回答完成前断开" } };
     } catch (error) {
       state = { ...state, error: { code: error.code ?? "stream_error", message: error.message } };
     } finally {
+      liveTurn = null;
       streaming = false;
       els.sendBtn.disabled = false;
       setButtonLabel(els.sendBtn, "发送");
       delete els.messages.dataset.streaming;
     }
+    if (!firstContentSeen && state.reasoning) thinkingSeconds = elapsed();
+    const assistant = { role: "assistant", content: state.content };
+    if (state.reasoning) { assistant.reasoning = state.reasoning; assistant.thinking_s = thinkingSeconds; }
     if (state.error) {
-      // A media job that evicted the model (or any other mid-stream failure)
-      // must not leave the bubble stuck on "思考中…" with half a thought and
-      // no answer (widewin gap #1). Label it plainly instead.
+      // Widewin gap #1 / P3: label it plainly, keep what was said, offer a retry.
+      assistant.interrupted = { code: state.error.code, message: state.error.message };
       live.summary.textContent = state.error.code === "evicted" ? "已中断：内存让给了媒体作业" : "已中断";
       live.details.open = false;
       if (!state.content) {
         const note = doc.createElement("p");
         note.className = "empty-answer";
-        note.textContent = "这条回答没有生成完，可重新发送。";
+        note.textContent = "这条回答没有生成完，可点「重试」重新生成。";
         live.contentEl.replaceChildren(note);
       }
-      live.errorEl.textContent = `出错（${state.error.code}）：${state.error.message}`;
-      session.messages.pop();
-      return;
+      live.errorEl.textContent = `回答没有生成完：${state.error.message}`;
+    } else {
+      if (state.reasoning && !firstContentSeen) live.summary.textContent = `已思考 ${Math.max(1, thinkingSeconds)} 秒`;
+      if (!state.content) {
+        const note = doc.createElement("p");
+        note.className = "empty-answer";
+        note.textContent = state.reasoning ? "模型只输出了思考，没有给出回答。" : "（这条回答没有内容）";
+        live.contentEl.replaceChildren(note);
+      }
+      if (state.finishReason === "length") {
+        assistant.truncated = true;
+        live.errorEl.textContent = "已达到长度上限，回答被截断。";
+      }
     }
-    const assistant = { role: "assistant", content: state.content };
-    if (state.reasoning) { assistant.reasoning = state.reasoning; assistant.thinking_s = thinkingSeconds; }
     session.messages.push(assistant);
+    if (state.error && currentId === session.id) appendRetry();
     try {
       const updated = await api.updateChatSession(session.id, { messages: session.messages, model: els.modelSelect.value || null });
       sessions = sortSessions(sessions.map((item) => item.id === updated.id ? updated : item));

@@ -44,6 +44,12 @@ class Done:
 
 
 @dataclass(frozen=True)
+class Break:
+    """Upstream connection drops mid-stream."""
+    message: str = "fake upstream dropped"
+
+
+@dataclass(frozen=True)
 class Line:
     text: str
 
