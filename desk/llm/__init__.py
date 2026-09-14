@@ -2,7 +2,7 @@
 
 from .backend import BackendProcess, LlmBackend, MlxLmBackend
 from .service import LlmService
-from .routes import Route, RouteResult, build_routes, encode_sse
+from .routes import Route, RouteResult, build_routes
 
 from .state import (
     DEFAULT_LLM_PORT,
@@ -63,5 +63,4 @@ __all__ = [
     "done_event",
     "error_event",
     "build_routes",
-    "encode_sse",
 ]

@@ -300,7 +300,6 @@ def launch_test_harness(
         executor=FakeMediaExecutor(media_script),
         clock=clock,
     )
-    unsubscribe = arbiter.subscribe(llm.on_heavy_state_changed)
     app = DeskApp("127.0.0.1", 0)
     static_assets = StaticAssets(roots.static_dir)
     handler_type = app._server.RequestHandlerClass
@@ -351,5 +350,5 @@ def launch_test_harness(
         chat_script, media_script, download_control, clock,
         f"http://127.0.0.1:{app.port}", roots.data_root, roots.models_root,
         roots.outputs_root, gateway_port, seeded, route_specs, reveal_calls,
-        _unsubscribe=unsubscribe,
+        _unsubscribe=llm.close,
     )

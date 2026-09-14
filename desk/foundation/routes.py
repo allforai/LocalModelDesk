@@ -97,6 +97,7 @@ def build_routes() -> list:
         ("GET", "/api/config", get_config),
         ("PUT", "/api/config", put_config),
         ("POST", "/api/config/reset", post_config_reset),
+        # Diagnostic endpoint for support/scripts; the UI deliberately does not call it.
         ("GET", "/api/paths", get_paths),
         ("POST", "/api/first-run", post_first_run),
         ("POST", "/api/adopt", post_adopt),

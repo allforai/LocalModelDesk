@@ -1,6 +1,6 @@
 // ui:resourcesPane —— 模型完整性、磁盘占用与单飞下载操作。
 import * as api from "../api.js";
-import { formatBytes, formatDuration } from "../pure/format.js";
+import { formatBytes, formatDuration, formatRate } from "../pure/format.js";
 import { rowView } from "../pure/model_status.js";
 import { confirmDialog } from "../widgets/confirm.js";
 import { addIcon } from "../icons.js";
@@ -89,7 +89,7 @@ export function createResourcesPane(root) {
     if (activeDownload) {
       meta.textContent = [
         `已下 ${formatBytes(activeDownload.bytes_done)} / ${formatBytes(activeDownload.bytes_total)}`,
-        activeDownload.rate_bps ? `${formatBytes(activeDownload.rate_bps)}/s` : null,
+        activeDownload.rate_bps ? formatRate(activeDownload.rate_bps) : null,
         Number.isFinite(activeDownload.eta_seconds) ? `剩约 ${formatDuration(activeDownload.eta_seconds)}` : null,
         activeDownload.current_file,
       ].filter(Boolean).join(" · ");

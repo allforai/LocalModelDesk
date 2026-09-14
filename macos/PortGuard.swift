@@ -41,6 +41,7 @@ enum PortGuard {
   }
 
   /// Confirms that no listener remains after reaping all listeners on the port.
+  /// Test seam: used only by macos/harness/ShellHarness.swift (ensure-free).
   static func ensureFree(port: Int, grace: TimeInterval = 2.0) -> Bool {
     let pids = listeners(onPort: port)
     if pids.isEmpty { return true }

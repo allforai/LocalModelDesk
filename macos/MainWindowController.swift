@@ -40,8 +40,6 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
     webView.evaluateJavaScript("document.querySelector('[data-open-settings]')?.click()")
   }
 
-  var isWindowVisible: Bool { window.isVisible }
-
   /// Loads ui:deskShell, restoring the tab that was active before an error page replaced it.
   func loadDeskShell() {
     var url = baseURL

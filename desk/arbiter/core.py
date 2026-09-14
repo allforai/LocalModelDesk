@@ -94,9 +94,6 @@ class Arbiter:
 
         return unsubscribe
 
-    def current_holder(self) -> dict | None:
-        return self._public_holder(self._read_holder())
-
     def memory_snapshot(self) -> dict:
         """Return the current memory probe as a public dictionary."""
         return self._memory.snapshot().to_dict()

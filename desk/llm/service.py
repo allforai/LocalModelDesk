@@ -304,32 +304,6 @@ class LlmService:
             self._arbiter.release_heavy(token)
         return result
 
-    def on_heavy_state_changed(self, desk_state: dict[str, Any]) -> None:
-        """Converge a resident model after heavy-work ownership moves away from LLM."""
-        holder = (desk_state or {}).get("holder")
-        if holder and holder.get("kind") == "llm":
-            return
-        token = None
-        with self._lock:
-            if self._state.status != STATUS_LOADED:
-                return
-            log_path = self._log_path(self._paths.resolve_paths())
-            token = self._token
-            self._proc = None
-            self._token = None
-            self._entry = None
-            self._state = LlmState(
-                status=STATUS_ERROR,
-                model_key=self._state.model_key,
-                error=LlmError(
-                    ERR_BACKEND_EXITED,
-                    "重活持有权已易主，mlx-lm 已被收割",
-                    self._backend.log_tail(log_path),
-                ),
-            )
-        if token is not None:
-            self._arbiter.release_heavy(token)
-
     def _teardown_proc_locked(self) -> bool:
         """Stop the owned child and confirm the LLM port has been released."""
         proc = self._proc

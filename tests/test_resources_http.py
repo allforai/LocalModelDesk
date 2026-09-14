@@ -2,7 +2,7 @@ import json
 from types import SimpleNamespace
 
 from desk.resources.catalog import CATALOG
-from desk.resources.http import build_routes, match_route
+from desk.resources.http import build_routes
 from desk.resources.manifest import ManifestFile
 from desk.resources.service import ResourcesService
 
@@ -38,8 +38,33 @@ def make_routes(tmp_path):
     return build_routes(svc), svc, roots
 
 
+def _match_route(routes, method: str, path: str):
+    """Return the first matching handler and its path parameters, if any.
+
+    Production route dispatch lives in DeskApp._find; this is a test-only
+    helper reconstructing just enough matching to drive build_routes()
+    handlers directly (G6, P1).
+    """
+    parts = [part for part in path.split("?", 1)[0].split("/") if part]
+    for route_method, pattern, handler in routes:
+        if route_method != method:
+            continue
+        pattern_parts = [part for part in pattern.split("/") if part]
+        if len(pattern_parts) != len(parts):
+            continue
+        params: dict[str, str] = {}
+        for pattern_part, actual in zip(pattern_parts, parts):
+            if pattern_part.startswith("{") and pattern_part.endswith("}"):
+                params[pattern_part[1:-1]] = actual
+            elif pattern_part != actual:
+                break
+        else:
+            return handler, params
+    return None
+
+
 def call(routes, method, path, query=None, body=None):
-    matched = match_route(routes, method, path)
+    matched = _match_route(routes, method, path)
     assert matched is not None, f"no route for {method} {path}"
     handler, params = matched
     return handler(query or {}, body or {}, **params)
@@ -111,4 +136,4 @@ def test_get_disk(tmp_path):
 
 def test_match_route_none_for_unknown_path(tmp_path):
     routes, *_ = make_routes(tmp_path)
-    assert match_route(routes, "GET", "/api/resources/nope") is None
+    assert _match_route(routes, "GET", "/api/resources/nope") is None

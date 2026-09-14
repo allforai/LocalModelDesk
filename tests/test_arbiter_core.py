@@ -67,7 +67,7 @@ def test_can_start_heavy_is_read_only_and_uses_acquire_decision():
         },
         "memory_warning": None,
     }
-    assert arbiter.current_holder()["kind"] == "llm"
+    assert arbiter.desk_state()["holder"]["kind"] == "llm"
     assert arbiter.release_heavy(llm["token"]) == {"ok": True}
 
 
@@ -116,7 +116,7 @@ def test_evict_llm_grants_media_invalidates_old_token_and_emits_states():
 
     assert media["ok"] is True
     assert reaped_ports == [43123]
-    assert arbiter.current_holder() == {
+    assert arbiter.desk_state()["holder"] == {
         "kind": "video", "label": "job-a", "display": "job-a", "since": 42.0, "phase": "held"
     }
     assert arbiter.release_heavy(llm["token"])["reason"]["code"] == "not_holder"
@@ -139,7 +139,7 @@ def test_evict_failure_restores_llm_holder_and_keeps_its_token_valid():
         "ok": False,
         "reason": {"code": "evict_failed", "message": "still listening"},
     }
-    assert arbiter.current_holder()["kind"] == "llm"
+    assert arbiter.desk_state()["holder"]["kind"] == "llm"
     assert arbiter.release_heavy(llm["token"]) == {"ok": True}
 
 
@@ -244,7 +244,7 @@ def test_mixed_media_race_grants_exactly_one_request():
     assert all(not thread.is_alive() for thread in threads)
     assert sum(result["ok"] for result in results) == 1
     assert len(results) == 16
-    assert arbiter.current_holder()["kind"] in {"video", "music"}
+    assert arbiter.desk_state()["holder"]["kind"] in {"video", "music"}
     assert all(
         result["reason"]["code"] in {"transition_in_progress", "media_busy"}
         for result in results
@@ -265,7 +265,7 @@ def test_late_release_of_stale_token_is_harmless_after_replay():
 
     assert first_late_release["reason"]["code"] == "not_holder"
     assert second_late_release["reason"]["code"] == "not_holder"
-    assert arbiter.current_holder()["kind"] == "video"
+    assert arbiter.desk_state()["holder"]["kind"] == "video"
     assert arbiter.release_heavy(media["token"]) == {"ok": True}
 
 
