@@ -37,6 +37,13 @@ from .state import (
 )
 
 
+def _short_command(command: str, limit: int = 80) -> str:
+    """Program name plus its arguments: an install path can fill the whole limit and hide the clue."""
+    program, _, args = command.strip().partition(" ")
+    short = " ".join(filter(None, (program.rsplit("/", 1)[-1], args.strip())))
+    return short if len(short) <= limit else short[: limit - 1] + "…"
+
+
 class LlmService:
     """Coordinate asynchronous model loading without owning process details."""
 
@@ -178,7 +185,7 @@ class LlmService:
         if strangers:
             first = strangers[0]
             message = (f"端口 {self._port} 被其他程序占用（pid {first['pid']}："
-                       f"{first['command'][:80]}），请先结束它再加载")
+                       f"{_short_command(first['command'])}），请先结束它再加载")
             with self._lock:
                 if generation != self._load_generation:
                     return

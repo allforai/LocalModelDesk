@@ -49,7 +49,7 @@ def test_start_download_spawns_resumable_fetcher_and_counts_part_bytes(tmp_path)
 
     assert progress.state == "running"
     assert control.spawns == [[
-        sys.executable, "-s", fetch_cli.__file__, "download", "appautomaton/minimax-h3-base-8bit-mlx",
+        sys.executable, "-s", "-P", fetch_cli.__file__, "download", "appautomaton/minimax-h3-base-8bit-mlx",
         "--local-dir", str(dest), "--manifest", str(attempt_manifest_path(dest)),
     ]]
     assert json.loads(attempt_manifest_path(dest).read_text()) == {
@@ -170,3 +170,36 @@ def test_close_terminates_a_running_download_and_keeps_parts(tmp_path):
 
     assert not closer.is_alive()
     assert part.exists()
+
+
+def test_the_spawned_fetch_command_really_runs_as_a_script(tmp_path):
+    """Run by path, desk/resources/http.py shadowed the stdlib http package and every real
+    download died on import (found on the real app 2026-09-15). Execute the exact argv."""
+    import subprocess
+    import threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *_args):
+            pass
+
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-Length", "10")
+            self.end_headers()
+            self.wfile.write(b"0123456789")
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        downloader, control, _events = _downloader(tmp_path)
+        downloader.start("h3")
+        argv = control.spawns[0]
+        env = {**os.environ, "HF_ENDPOINT": f"http://127.0.0.1:{server.server_address[1]}"}
+        result = subprocess.run(argv, capture_output=True, text=True, env=env, cwd=tmp_path, timeout=30)
+        assert result.returncode == 0, result.stderr
+        assert (tmp_path / "models" / "minimax-h3" / "weights" / "a.bin").read_bytes() == b"0123456789"
+        control.handle.exit(0)
+    finally:
+        server.shutdown()
+        server.server_close()

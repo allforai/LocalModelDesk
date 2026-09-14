@@ -85,3 +85,19 @@ def test_stranger_on_llm_port_fails_before_spawn_with_its_pid(tmp_path):
     names = [call[0] for call in testbed.calls]
     assert "spawn" not in names
     assert ("release", "tok-1") in testbed.calls
+
+
+def test_port_busy_message_names_the_program_not_its_install_path(tmp_path):
+    """真机上 Homebrew 的完整路径占满 80 字，真正的线索 -m http.server 被截掉了。"""
+    long_path = ("/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/"
+                 "Resources/Python.app/Contents/MacOS/Python")
+    testbed = make_service(
+        tmp_path,
+        arbiter_kw={"listeners": [{"pid": 34325, "command": f"{long_path} -m http.server 8767 --bind 127.0.0.1"}]},
+    )
+
+    testbed.service.load("glm")
+    message = testbed.service.wait_settled()["error"]["message"]
+
+    assert "pid 34325：Python -m http.server 8767 --bind 127.0.0.1" in message
+    assert "/opt/homebrew" not in message

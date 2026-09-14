@@ -84,7 +84,9 @@ class Downloader:
                 "repo": manifest.repo,
                 "files": [{"path": f.path, "size": f.size} for f in manifest.files],
             }, ensure_ascii=False), encoding="utf-8")
-            command = [hf_cmd[0], "-s", fetch_cli.__file__, "download", model.hf_repo,
+            # -P: run by path, the script directory would lead sys.path and desk/resources/http.py
+            # would shadow the stdlib http package the fetcher imports.
+            command = [hf_cmd[0], "-s", "-P", fetch_cli.__file__, "download", model.hf_repo,
                        "--local-dir", str(destination), "--manifest", str(manifest_file)]
             try:
                 handle = self._executor.spawn(
@@ -218,7 +220,7 @@ class Downloader:
                     self._purge_attempt_files()
                 else:
                     self._progress.state = "failed"
-                    self._progress.error = {"code": "download_failed", "message": f"hf exited {code}", "returncode": code}
+                    self._progress.error = {"code": "download_failed", "message": f"下载进程退出，退出码 {code}", "returncode": code}
             final_status: Any = None
             if self._manifest is not None:
                 final_status = verify_tree(self._model, self._manifest, Path(self._resolve_paths().models_root))
