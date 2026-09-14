@@ -14,14 +14,14 @@
     <section id="pane-video" data-pane="video" hidden><div class="form">
       <label>生成方式 <select data-video-mode><option value="text">文生视频</option><option value="image">图生视频</option><option value="reference">视频参考生成</option></select></label>
       <div data-video-images hidden>
-        <div class="file-row"><label class="file-pick"><span class="btn">选择首帧图片</span><input type="file" data-video-first accept="image/png,image/jpeg,image/webp" hidden></label><span class="file-name hint" data-video-first-name>未选择文件</span></div>
+        <div class="file-row"><label class="file-pick"><span class="btn">选择首帧图片</span><input type="file" class="visually-hidden" data-video-first accept="image/png,image/jpeg,image/webp"></label><span class="file-name hint" data-video-first-name>未选择文件</span></div>
         <div data-video-first-preview></div>
-        <div class="file-row"><label class="file-pick"><span class="btn">选择尾帧图片（可选）</span><input type="file" data-video-last accept="image/png,image/jpeg,image/webp" hidden></label><span class="file-name hint" data-video-last-name>未选择文件</span></div>
+        <div class="file-row"><label class="file-pick"><span class="btn">选择尾帧图片（可选）</span><input type="file" class="visually-hidden" data-video-last accept="image/png,image/jpeg,image/webp"></label><span class="file-name hint" data-video-last-name>未选择文件</span></div>
         <div data-video-last-preview></div><button type="button" data-video-clear-last>清除尾帧</button>
         <p class="hint">支持 PNG、JPEG、WebP，每个文件最多 32 MB。</p>
       </div>
       <div data-video-reference hidden>
-        <div class="file-row"><label class="file-pick"><span class="btn">选择参考视频</span><input type="file" data-video-source accept="video/mp4,video/quicktime,video/webm" hidden></label><span class="file-name hint" data-video-source-name>未选择文件</span></div>
+        <div class="file-row"><label class="file-pick"><span class="btn">选择参考视频</span><input type="file" class="visually-hidden" data-video-source accept="video/mp4,video/quicktime,video/webm"></label><span class="file-name hint" data-video-source-name>未选择文件</span></div>
         <div data-video-source-preview></div>
         <label><input type="checkbox" data-video-audio checked>使用原视频音轨作为参考</label>
         <p class="hint">支持 MP4、MOV、WebM，最长 15 秒、最大 32 MB。参考生成不保证逐帧保留原视频动作。</p>
