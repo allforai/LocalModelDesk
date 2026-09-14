@@ -118,4 +118,11 @@ def main(argv: list[str] | None = None, *, sleep=time.sleep) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # This repo bans process-exit calls inside importable desk/ modules (see
+    # test_foundation_invariants.py) so a library import can never kill the host
+    # process. This file is never imported — it only runs standalone, spawned as
+    # its own process — and the caller (Downloader) reads the real process exit
+    # code via Popen.poll(), so the code main() returns must reach the OS. Every
+    # line this script prints already uses flush=True, so skipping atexit/buffer
+    # cleanup here is safe.
+    os._exit(main())
