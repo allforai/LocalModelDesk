@@ -534,3 +534,23 @@ def test_close_without_running_job_is_a_noop(tmp_path):
     service.close()
     assert service.job_status()["status"] == "idle"
     assert deps.arbiter.released == []
+
+
+def test_music_history_records_the_real_output_length(tmp_path, monkeypatch):
+    """请求 300 秒、成品 29.7 秒时素材库不能写 300s（cross-exam 2026-09-13 G10）。"""
+    import desk.media.service as service_mod
+
+    monkeypatch.setattr(service_mod, "wav_seconds", lambda path: 29.71)
+    service, deps = make_service(tmp_path)
+    roots = SimpleNamespace(
+        outputs_root=tmp_path / "outputs", models_root=tmp_path / "models",
+        music_python=Path("/fake/bin/music-python"), media_cli_dir=Path("/fake/media"),
+        music_env={},
+    )
+    service._resolve_paths = lambda: roots
+    service._probe_capabilities = lambda: {"music_runtime": SimpleNamespace(present=True, detail="")}
+    service._list_catalog = lambda: [SimpleNamespace(key="music3", relpath="minimax-music3", gb=27.0)]
+
+    finished_snapshot(service, lambda: service.start_music_job(caption="c", lyrics="l", duration=300))
+
+    assert deps.history.entries[-1]["audio_seconds"] == 29.71

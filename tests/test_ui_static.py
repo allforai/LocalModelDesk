@@ -169,6 +169,10 @@ def test_drawer_and_firstrun_markup_use_shared_form_language():
     assert 'class="drawer-head"' in HTML and 'data-close-settings' in HTML.split('class="drawer-head"', 1)[1].split("</div>", 1)[0]
 
 
+def test_music_duration_field_explains_the_real_length():
+    assert "成品时长由模型按歌词决定" in HTML
+
+
 def test_file_inputs_stay_in_the_tab_order():
     """hidden 的 input 不可聚焦，键盘用户选不了首帧/参考视频（P2）。"""
     import re
