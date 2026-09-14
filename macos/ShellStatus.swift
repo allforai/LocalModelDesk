@@ -125,7 +125,8 @@ func pollFailureAction(consecutiveFailures: Int, childRunning: Bool, threshold: 
 
 /// ⌘, with no other modifier opens settings (G8). Pure so the headless harness can test it.
 func isSettingsShortcut(command: Bool, option: Bool, control: Bool, shift: Bool, characters: String?) -> Bool {
-  command && !option && !control && !shift && characters == ","
+  // A Chinese input method can report the comma key as the full-width "，".
+  command && !option && !control && !shift && (characters == "," || characters == "，")
 }
 
 /// Plain-Chinese exit cause for the error page (cross-exam open thread: details had only a log path).

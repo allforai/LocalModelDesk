@@ -94,6 +94,7 @@ def test_memory_menu_title_matches_web_wording(used, total, available, expected)
 
 @pytest.mark.parametrize("mods,chars,expected", [
     ("cmd", ",", "true"),
+    ("cmd", "，", "true"),
     ("cmd+shift", ",", "false"),
     ("cmd+opt", ",", "false"),
     ("", ",", "false"),
