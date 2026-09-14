@@ -93,7 +93,7 @@ PYBIN="$RES/python/bin/python3.13"
 if [[ ! -x "$PYBIN" ]]; then
   fail "V5 缺内嵌解释器或不可执行: $PYBIN"
 fi
-for path in "$RES/desk" "$RES/pylibs/desk" "$RES/pylibs/music" "$RES/pylibs/h3" \
+for path in "$RES/desk" "$RES/desk/resources/fetch_cli.py" "$RES/pylibs/desk" "$RES/pylibs/music" "$RES/pylibs/h3" \
             "$RES/bundle.json" "$RES/AppIcon.icns"; do
   if [[ ! -e "$path" ]]; then
     fail "V5 缺结构项: $path"
