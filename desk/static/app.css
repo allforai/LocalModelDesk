@@ -1,5 +1,5 @@
 /* 1. tokens */
-:root{color-scheme:dark;--bg:#14161a;--panel:#1d2026;--border:#2c313a;--text:#e7e9ee;--muted:#9aa3b2;--accent:#4f8cff;--danger:#e5534b;--ok:#3fb950;--busy:#d29922;--bubble:#2a2e36;--radius:6px;--radius-card:8px;--gap:8px;--pad:16px;--margin:24px;--chat-col:clamp(680px,62vw,1100px)}
+:root{color-scheme:dark;--bg:#14161a;--panel:#1d2026;--border:#2c313a;--text:#e7e9ee;--muted:#9aa3b2;--accent:#4f8cff;--danger:#e5534b;--ok:#3fb950;--busy:#d29922;--bubble:#2a2e36;--radius:6px;--radius-card:8px;--gap:8px;--pad:16px;--margin:24px;--chat-col:clamp(680px,62vw,1400px)}
 /* 2. base */
 /* Author display rules (notably #pane-chat) must never unhide a hidden pane. */
 [hidden]{display:none !important}
