@@ -148,6 +148,9 @@ def test_verify_passes_clean_fixture(tmp_path):
     desk_init = resources / "desk" / "__init__.py"
     desk_init.parent.mkdir()
     desk_init.write_text("")
+    fetch_cli = resources / "desk" / "resources" / "fetch_cli.py"
+    fetch_cli.parent.mkdir()
+    fetch_cli.write_text("")
     for libdir, package in {
         "desk": "mlx_lm",
         "music": "mlx_minimax_music3",
@@ -304,6 +307,9 @@ def test_install_to_tmp_dest(tmp_path):
     resources = app / "Contents" / "Resources"
     (resources / "AppIcon.icns").write_bytes(b"icns-stub")
     (resources / "desk").mkdir()
+    fetch_cli = resources / "desk" / "resources" / "fetch_cli.py"
+    fetch_cli.parent.mkdir()
+    fetch_cli.write_text("")
     for libdir, package in {
         "desk": "mlx_lm",
         "music": "mlx_minimax_music3",
@@ -479,3 +485,8 @@ def test_readme_states_real_behavior():
         "无鉴权",
     ):
         assert statement in text
+
+
+def test_verify_app_checks_the_resumable_fetcher_is_bundled():
+    text = (REPO / "scripts" / "verify-app.sh").read_text(encoding="utf-8")
+    assert "desk/resources/fetch_cli.py" in text

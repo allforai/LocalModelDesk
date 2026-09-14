@@ -13,8 +13,7 @@ from . import catalog
 from .catalog import CATALOG, ModelEntry
 from .disk import DiskUsage, dir_bytes, disk_usage
 from .downloader import DownloadProgress, Downloader
-from .errors import (ConfirmRequiredError, DownloadBusyError, HfCliMissingError,
-                     ManifestUnavailableError, MediaBusyError, PathEscapeError)
+from .errors import ConfirmRequiredError, DownloadBusyError, ManifestUnavailableError, PathEscapeError
 from .events import ResourceEvents
 from .manifest import ManifestStore, default_fetcher
 from .verify import ModelStatus, unknown_status, verify_tree
@@ -25,69 +24,6 @@ class _SubprocessExecutor:
         env = dict(os.environ)
         env.update(extra_env or {})
         return subprocess.Popen(cmd, cwd=cwd, env=env)
-
-
-class _InjectableDownloader(Downloader):
-    """Downloader variant whose sampler side effects are supplied by the facade."""
-
-    def __init__(self, *args, sleep: Callable, thread_factory: Callable, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._sleep = sleep
-        self._thread_factory = thread_factory
-
-    def start(self, key: str) -> DownloadProgress:
-        with self._lock:
-            if self._handle is not None:
-                raise DownloadBusyError("a download is already running")
-            allowed = self._can_start_heavy()
-            if not allowed.get("ok"):
-                reason = allowed.get("reason") or {}
-                if reason.get("code") == "media_busy":
-                    raise MediaBusyError(reason.get("message", "media job running"), reason)
-                raise MediaBusyError(reason.get("message", "heavy work is running"), reason)
-            model = catalog.entry(key)
-            roots = self._resolve_paths()
-            hf_cmd = tuple(roots.hf_cmd)
-            if not hf_cmd or not Path(hf_cmd[0]).exists():
-                raise HfCliMissingError("hf command is unavailable")
-            try:
-                manifest = self._manifest_store.get(model, refresh=True)
-            except Exception:
-                manifest = None
-            destination = Path(roots.models_root) / model.relpath
-            self._model = model
-            self._purge_incomplete()
-            command = [*hf_cmd, "download", model.hf_repo, "--local-dir", str(destination)]
-            revision = getattr(manifest, "revision", None) if manifest is not None else None
-            if revision:
-                command += ["--revision", revision]
-            try:
-                handle = self._executor.spawn(
-                    command, cwd=None,
-                    extra_env=dict(getattr(roots, "hf_env", {}) or {}))
-            except FileNotFoundError as exc:
-                raise HfCliMissingError("hf command is unavailable") from exc
-            result = self._begin(model, manifest, handle)
-            self._thread_factory(target=self._sample_loop, daemon=True).start()
-            return result
-
-    def _sample_loop(self) -> None:
-        while True:
-            with self._lock:
-                handle = self._handle
-            if handle is None:
-                return
-            self._sample()
-            code = handle.poll()
-            with self._lock:
-                cancelled = self._progress.state == "cancelled"
-                if code is None and self._cancel_at is not None and self._clock() - self._cancel_at >= 8:
-                    handle.kill()
-                    code = handle.poll()
-            if code is not None:
-                self._finish(code, cancelled)
-                return
-            self._sleep(self._sample_interval)
 
 
 def _resolve_delete_target(models_root: Path, entry: ModelEntry) -> Path:
@@ -115,7 +51,7 @@ class ResourcesService:
             cache_dir_provider=lambda: Path(self._resolve_paths().data_root) / "manifests",
             fetcher=fetcher,
         )
-        self._downloader = _InjectableDownloader(
+        self._downloader = Downloader(
             executor=executor if executor is not None else _SubprocessExecutor(),
             manifest_store=self._manifests,
             resolve_paths=resolve_paths,
@@ -158,6 +94,9 @@ class ResourcesService:
 
     def download_progress(self) -> DownloadProgress:
         return self._downloader.progress()
+
+    def close(self) -> None:
+        self._downloader.close()
 
     def delete_model(self, key: str, confirm: str | None = None) -> dict:
         model = catalog.entry(key)

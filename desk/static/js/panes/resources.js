@@ -94,7 +94,7 @@ export function createResourcesPane(root) {
         activeDownload.current_file,
       ].filter(Boolean).join(" · ");
     } else {
-      meta.textContent = `预计 ${view.sizeText} · 占用 ${view.diskText}`;
+      meta.textContent = [`预计 ${view.sizeText} · 占用 ${view.diskText}`, view.note].filter(Boolean).join(" · ");
     }
     li.append(head, meta);
     if (view.pct > 0 && view.pct < 100) {
