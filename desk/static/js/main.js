@@ -16,6 +16,7 @@ import { isDrawerCloseKey } from "./pure/drawer.js";
 
 const $ = (selector) => document.querySelector(selector);
 const store = createStore({ activeTab: "chat" });
+let activeTab = "chat";
 let panes; let statusbar; let settings; let failures = 0; let modelNames = {};
 let jobActive = false; let jobLogFrom = 0; let lastJobId = null; let mediaBusyReason = "";
 
@@ -46,6 +47,10 @@ function enterDesk() {
     $("[data-close-settings]").addEventListener("click", () => setDrawerOpen(false));
     document.addEventListener("keydown", (event) => { if (isDrawerCloseKey(event.key)) setDrawerOpen(false); });
     for (const button of document.querySelectorAll("#tabs [data-tab]")) button.addEventListener("click", () => showTab(button.dataset.tab));
+    globalThis.addEventListener?.("hashchange", () => {
+      const wanted = initialTab(globalThis.location?.hash);
+      if (wanted !== activeTab) showTab(wanted);
+    });
     globalThis.setInterval(tick, 2000);
   }
   panes.chat.init(); tick();
@@ -63,6 +68,7 @@ function setDrawerOpen(open) {
 }
 
 function showTab(name) {
+  activeTab = name;
   setDrawerOpen(false);
   for (const button of document.querySelectorAll("#tabs [data-tab]")) button.classList.toggle("active", button.dataset.tab === name);
   for (const section of document.querySelectorAll("main > [data-pane]")) section.hidden = section.dataset.pane !== name;
