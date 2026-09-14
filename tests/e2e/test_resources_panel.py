@@ -96,3 +96,30 @@ def test_resources_panel_confirms_deletion(page, tmp_path):
         row.get_by_role("button", name="删除").click()
         dialog.get_by_role("button", name="确认").click()
         expect(row).to_contain_text("没下")
+
+
+def test_cancelled_download_keeps_percent_and_says_resumable(page, tmp_path, wait_until):
+    from desk.resources.parts import part_path
+
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url)
+        page.get_by_text("资源", exact=True).click()
+        key = next(key for key, state in harness.seeded.items() if state == "missing")
+        row = _row(page, key)
+
+        row.get_by_role("button", name="下载").click()
+        wait_until(lambda: len(harness.download_control.spawns) == 1)
+        destination = harness.download_control.dest_dir(harness.download_control.spawns[0])
+        part = part_path(destination, "weights/a.safetensors")
+        part.parent.mkdir(parents=True, exist_ok=True)
+        part.write_bytes(b"x" * 300)
+
+        row.get_by_role("button", name="取消").click()
+        wait_until(lambda: harness.download_control.handle.terminated)
+        harness.download_control.exit_terminated()
+        page.get_by_role("button", name="重新校验").click()
+
+        expect(row).to_contain_text("30%")
+        expect(row.locator(".res-meta")).to_contain_text("可续传")
+        expect(row.get_by_role("button", name="续传")).to_be_visible()
+        assert part.stat().st_size == 300
