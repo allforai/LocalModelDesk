@@ -165,7 +165,7 @@ def test_config_request_post_rebinds_to_new_port(service_factory):
     holder["gateway"] = {"enabled": True, "host": "127.0.0.1", "port": p2}
     code, payload = svc.handle_config_request("POST")
     assert code == 200
-    assert payload["status"] == svc.status()
+    assert payload["status"] == {**svc.status(), "apply_error": None}
     assert svc.status()["port"] == p2
     status, _, _ = json_request(p2, "GET", "/v1/models")
     assert status == 200
@@ -270,8 +270,26 @@ def test_failed_bind_rolls_back_to_the_last_good_config(service_factory):
     assert status["listening"] is True
     assert status["host"] == "127.0.0.1"
     assert writes == [{"enabled": True, "host": "127.0.0.1", "port": 8770}]
-    assert status["last_error"] is not None
-    assert "无法绑定" in status["last_error"]
+    assert status["apply_error"] is not None
+    assert "无法绑定" in status["apply_error"]
+    assert svc.status()["last_error"] is None
+
+
+def test_get_status_after_a_rolled_back_save_shows_no_stale_error(service_factory):
+    """回滚后已在监听，刷新页面不该再挂着上次的失败横幅（cross-exam 2026-09-13 G7）。"""
+    stored = {"gateway": {"enabled": True, "host": "127.0.0.1", "port": 8770}}
+    svc = service_factory(lambda: stored, server_factory=_FakeServer)
+    svc.on_rollback = lambda cfg: stored.update(gateway=cfg)
+    svc.start_from_config()
+    stored["gateway"] = {"enabled": True, "host": "10.255.255.1", "port": 8770}
+    code, posted = svc.handle_config_request("POST")
+    assert posted["status"]["apply_error"]
+
+    code, fetched = svc.handle_config_request("GET")
+
+    assert fetched["status"]["listening"] is True
+    assert fetched["status"]["last_error"] is None
+    assert "apply_error" not in fetched["status"]
 
 
 def test_bind_errno_49_message_is_plain_chinese(service_factory):

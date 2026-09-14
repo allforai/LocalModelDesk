@@ -37,7 +37,7 @@ export function createSettingsPane(root, ctx = {}) {
     els.listening.textContent = status.listening ? "监听中" : "未监听";
     els.listening.dataset.listening = String(Boolean(status.listening));
     els.listening.className = `badge ${status.listening ? "badge-ok" : "badge-none"}`;
-    setError(status.last_error);
+    setError(status.apply_error ?? status.last_error);
 
     urls = baseUrls({
       host: status.host ?? config.host,

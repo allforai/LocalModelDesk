@@ -244,3 +244,33 @@ test("未监听时地址区显示引导文案而不是空白（F15）", async ()
     assert.equal(controls.get("[data-settings-openai-url]").hidden, true);
   } finally { globalThis.fetch = oldFetch; }
 });
+
+test("保存失败横幅来自 apply_error；监听中时 GET 不带旧错误；前端校验失败只显示校验文案", async () => {
+  const oldFetch = globalThis.fetch;
+  let getStatus = { enabled: true, listening: true, host: "127.0.0.1", port: 8815, auth: "none", last_error: null };
+  globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/config" && (options.method ?? "GET") === "GET") return new Response(JSON.stringify({ models_root: "/m" }), { status: 200 });
+    if (options.method === "PUT") return new Response("{}", { status: 200 });
+    if (options.method === "POST") return new Response(JSON.stringify({
+      config: { enabled: true, host: "127.0.0.1", port: 8815 },
+      status: { ...getStatus, apply_error: "无法绑定 127.0.0.1:8816——该端口已被占用" },
+    }), { status: 200 });
+    return new Response(JSON.stringify({ config: { enabled: true, host: "127.0.0.1", port: 8815 }, status: getStatus }), { status: 200 });
+  };
+  try {
+    const { createSettingsPane } = await import("../../desk/static/js/panes/settings.js");
+    const { root, controls } = makePane();
+    const pane = createSettingsPane(root);
+    controls.get("[data-settings-host]").value = "127.0.0.1";
+    controls.get("[data-settings-port]").value = "8816";
+    await controls.get("[data-settings-save]").click();
+    assert.equal(controls.get("[data-settings-error]").textContent, "无法绑定 127.0.0.1:8816——该端口已被占用");
+
+    await pane.init();
+    assert.equal(controls.get("[data-settings-error]").textContent, "");
+
+    controls.get("[data-settings-port]").value = "70000";
+    await controls.get("[data-settings-save]").click();
+    assert.equal(controls.get("[data-settings-error]").textContent, "端口须在 1 到 65535 之间");
+  } finally { globalThis.fetch = oldFetch; }
+});
