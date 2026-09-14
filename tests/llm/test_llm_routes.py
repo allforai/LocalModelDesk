@@ -159,3 +159,28 @@ def test_unload_while_loading_cancels_the_load(idle_server):
     assert json.load(response)["state"]["status"] == "idle"
     testbed.backend.health_release.set()
     testbed.service.wait_settled()
+
+
+def _route(service, path):
+    return next(route for route in build_routes(service) if route.path == path)
+
+
+def test_prompt_assist_route_returns_fields(tmp_path):
+    testbed = make_loaded(tmp_path, backend_kw={"chat_result": {
+        "choices": [{"message": {"content": '{"caption": "温柔民谣", "lyrics": "第一行"}'}, "finish_reason": "stop"}],
+        "usage": {"total_tokens": 9},
+    }})
+    result = _route(testbed.service, "/api/llm/prompt-assist").handler({"task": "music", "action": "lucky"})
+    assert result.status == 200
+    assert result.body == {"task": "music", "action": "lucky", "text": "温柔民谣", "lyrics": "第一行"}
+
+
+def test_prompt_assist_route_maps_errors(tmp_path):
+    idle = make_service(tmp_path)
+    handler = _route(idle.service, "/api/llm/prompt-assist").handler
+    no_model = handler({"task": "video", "action": "lucky"})
+    assert no_model.status == 503
+    assert no_model.body["error"]["code"] == "no_model_loaded"
+    bad = handler({"task": "video", "action": "refine", "text": ""})
+    assert bad.status == 400
+    assert bad.body["error"] == {"code": "text_required", "message": "先在输入框里写点东西，再点「优化提示词」"}

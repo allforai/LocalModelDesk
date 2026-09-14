@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Callable, Iterator
 
+from .prompts import PromptAssistError, assist
 from .state import (
     ERR_LOAD_IN_PROGRESS,
     ERR_MEDIA_BUSY,
@@ -54,6 +55,7 @@ def build_routes(service) -> list[Route]:
         Route("GET", "/api/llm/status", lambda _body: RouteResult(200, service.status())),
         Route("POST", "/api/llm/chat", lambda body: _chat(service, body)),
         Route("POST", "/api/llm/chat/stream", lambda body: _chat_stream(service, body)),
+        Route("POST", "/api/llm/prompt-assist", lambda body: _prompt_assist(service, body)),
     ]
 
 
@@ -96,3 +98,14 @@ def _chat_stream(service, body: dict) -> RouteResult:
     except LlmRejected as exc:
         return _rejected(exc)
     return RouteResult(200, sse=events)
+
+
+def _prompt_assist(service, body: dict) -> RouteResult:
+    try:
+        return RouteResult(200, assist(service, body or {}))
+    except PromptAssistError as exc:
+        return RouteResult(exc.http_status, {"error": {"code": exc.code, "message": exc.message}})
+    except LlmRejected as exc:
+        return _rejected(exc)
+    except UpstreamError as exc:
+        return RouteResult(502, {"error": {"code": ERR_UPSTREAM_ERROR, "message": exc.message}})

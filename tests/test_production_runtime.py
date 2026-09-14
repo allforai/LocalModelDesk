@@ -149,3 +149,15 @@ def test_shutdown_closes_media_before_llm(tmp_path, monkeypatch):
     runtime.shutdown()
     runtime.shutdown()
     assert order == ["gateway", "media", "llm", "app"]
+
+
+def test_prompt_assist_is_mounted_in_production(tmp_path, monkeypatch):
+    _configured_data_root(tmp_path, monkeypatch)
+    runtime = build_runtime(port=0)
+    runtime.start_background()
+    try:
+        status, payload = http_call(runtime, "POST", "/api/llm/prompt-assist", {"task": "video", "action": "lucky"})
+        assert status == 503
+        assert payload["error"]["code"] == "no_model_loaded"
+    finally:
+        runtime.shutdown()
