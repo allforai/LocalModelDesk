@@ -78,3 +78,34 @@ def test_stream_prechecks_raise_before_iteration(tmp_path):
 
     assert exc.value.code == "no_model_loaded"
     assert testbed.calls == []
+
+
+def test_stream_supplies_default_max_tokens_when_request_omits_it(tmp_path):
+    """mlx_lm 默认 512 token，推理模型会把预算全花在思考上（cross-exam 2026-09-13 J1/G15）。"""
+    from desk.llm.state import DEFAULT_CHAT_MAX_TOKENS
+
+    testbed = make_loaded(tmp_path, backend_kw={"chunks": CONTENT_CHUNKS})
+    list(testbed.service.chat_stream({"messages": []}))
+    _, _, payload = next(call for call in testbed.calls if call[0] == "chat_stream")
+    assert payload["max_tokens"] == DEFAULT_CHAT_MAX_TOKENS == 8192
+
+
+def test_stream_keeps_caller_max_tokens(tmp_path):
+    testbed = make_loaded(tmp_path, backend_kw={"chunks": CONTENT_CHUNKS})
+    list(testbed.service.chat_stream({"messages": [], "max_tokens": 64}))
+    _, _, payload = next(call for call in testbed.calls if call[0] == "chat_stream")
+    assert payload["max_tokens"] == 64
+
+
+def test_stream_cut_by_eviction_reports_evicted_not_upstream_error(tmp_path):
+    testbed = make_loaded(
+        tmp_path, backend_kw={"chunks": CONTENT_CHUNKS[:2], "stream_error_after": 1}
+    )
+    events = testbed.service.chat_stream({"messages": []})
+    first = next(events)
+    testbed.arbiter.emit({"holder": {"kind": "media", "label": "h3"}, "media_busy": True})
+
+    rest = list(events)
+
+    assert first["type"] == "delta"
+    assert rest[-1] == {"type": "error", "code": "evicted", "message": "内存让给了媒体作业，回答被中断"}

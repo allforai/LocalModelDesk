@@ -8,6 +8,7 @@ from typing import Any
 
 from .backend import BackendHttpError
 from .state import (
+    DEFAULT_CHAT_MAX_TOKENS,
     DEFAULT_LLM_PORT,
     ERR_BACKEND_EXITED,
     ERR_EVICTED,
@@ -409,6 +410,7 @@ class LlmService:
         for key in ("temperature", "top_p", "max_tokens"):
             if request.get(key) is not None:
                 payload[key] = request[key]
+        payload.setdefault("max_tokens", DEFAULT_CHAT_MAX_TOKENS)
         return payload
 
     def chat_completion(self, request: dict[str, Any]) -> dict[str, Any]:
@@ -448,6 +450,14 @@ class LlmService:
         payload["stream_options"] = {"include_usage": True}
         return self._stream_events(payload)
 
+    def _interruption_event(self, fallback_message: str) -> dict[str, Any]:
+        """Name the real cause when the resident model was taken away mid-stream."""
+        with self._lock:
+            error = self._state.error
+        if error is not None and error.code == ERR_EVICTED:
+            return error_event(ERR_EVICTED, "内存让给了媒体作业，回答被中断")
+        return error_event(ERR_UPSTREAM_ERROR, fallback_message)
+
     def _stream_events(self, payload: dict[str, Any]):
         usage = None
         finish_reason = None
@@ -468,10 +478,10 @@ class LlmService:
                 if chunk.get("usage") is not None:
                     usage = chunk["usage"]
         except BackendHttpError as exc:
-            yield error_event(ERR_UPSTREAM_ERROR, str(exc))
+            yield self._interruption_event(str(exc))
             return
         if usage is None or finish_reason is None:
-            yield error_event(ERR_UPSTREAM_ERROR, "上游流终止但缺 usage/finish_reason")
+            yield self._interruption_event("上游流终止但缺 usage/finish_reason")
             return
         yield done_event(usage, finish_reason)
 

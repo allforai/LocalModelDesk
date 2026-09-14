@@ -92,3 +92,15 @@ def test_backend_http_error_is_upstream_error(tmp_path):
 
     with pytest.raises(UpstreamError):
         testbed.service.chat_completion({"messages": []})
+
+
+def test_completion_supplies_default_max_tokens(tmp_path):
+    from desk.llm.state import DEFAULT_CHAT_MAX_TOKENS
+
+    testbed = make_loaded(tmp_path, backend_kw={"chat_result": {
+        "choices": [{"message": {"content": "答"}, "finish_reason": "stop"}],
+        "usage": {"total_tokens": 1},
+    }})
+    testbed.service.chat_completion({"messages": []})
+    _, _, payload = next(call for call in testbed.calls if call[0] == "chat")
+    assert payload["max_tokens"] == DEFAULT_CHAT_MAX_TOKENS

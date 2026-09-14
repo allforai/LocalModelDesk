@@ -104,7 +104,7 @@ async function tick() {
     const [deskState, memory, llm] = await Promise.all([api.deskState(), api.memorySnapshot(), api.llmStatus()]);
     const download = await panes.resources.refresh();
     failures = 0; statusbar.offline(false); statusbar.update(deskState, memory, download, modelNames); applyHeavyAvailability(deskState); store.set({ deskState, memory });
-    panes.chat.applyLlmStatus(llm);
+    panes.chat.applyLlmStatus(llm, deskState);
     await panes.chat.refreshSessionsIfStale();
     if (deskState.media_busy) jobActive = true;
     if (jobActive) await tickJob();

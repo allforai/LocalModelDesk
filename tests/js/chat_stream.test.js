@@ -45,3 +45,22 @@ test("坏 JSON 行跳过且不中断", () => {
   s = reduceChunk(s, '{"type":"delta","text":"好","reasoning":null}');
   assert.equal(s.content, "好");
 });
+
+test("wireMessages 只发 role/content，并跳过没有正文的中断回答", async () => {
+  const { wireMessages } = await import("../../desk/static/js/pure/chat_stream.js");
+  const history = [
+    { role: "user", content: "问一" },
+    { role: "assistant", content: "答一", reasoning: "想", thinking_s: 3 },
+    { role: "user", content: "问二" },
+    { role: "assistant", content: "", reasoning: "想了一半", interrupted: { code: "evicted", message: "让出内存" } },
+    { role: "user", content: "问三" },
+    { role: "assistant", content: "半句", interrupted: { code: "upstream_error", message: "断流" } },
+  ];
+  assert.deepEqual(wireMessages(history), [
+    { role: "user", content: "问一" },
+    { role: "assistant", content: "答一" },
+    { role: "user", content: "问二" },
+    { role: "user", content: "问三" },
+    { role: "assistant", content: "半句" },
+  ]);
+});

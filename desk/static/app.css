@@ -151,3 +151,4 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .hint-busy{color:var(--busy)}.hint-busy:empty{display:none}
 #pane-settings,.overlay{transition:opacity 150ms ease}
 @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+.retry-row{display:flex;justify-content:flex-start;padding-block:4px}

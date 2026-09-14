@@ -2,7 +2,7 @@
 // 只做「取数 → 调纯函数 → 写 DOM」；一律 createElement/textContent，无 innerHTML。
 import * as api from "../api.js";
 import { sseDataLines } from "../stream.js";
-import { initialStream, reduceChunk } from "../pure/chat_stream.js";
+import { initialStream, reduceChunk, wireMessages } from "../pure/chat_stream.js";
 import { needsWarning } from "../pure/mem_warn.js";
 import { formatBytes } from "../pure/format.js";
 import { sortSessions, displayTitle } from "../pure/sessions.js";
@@ -34,6 +34,10 @@ export function createChatPane(root, ctx = {}) {
   let modelName = "";
   let lastLoadedKey = null;
   let llmStatus = "idle";
+  let liveTurn = null; // { session, state } while a reply is streaming — read by the pagehide saver
+  let readyModels = null; // null until the catalog has been read once
+  let heavyAllowed = true;
+  let heavyReason = "";
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
   const current = () => sessions.find((s) => s.id === currentId) ?? null;
@@ -72,6 +76,8 @@ export function createChatPane(root, ctx = {}) {
       els.modelSelect.append(option);
     }
     if (selected) els.modelSelect.value = selected;
+    readyModels = catalog.filter((entry) => byKey.get(entry.key)?.state === "present").length;
+    syncLoadButton();
     renderLlm(status);
   }
 
@@ -79,7 +85,10 @@ export function createChatPane(root, ctx = {}) {
   // bare colored text (F15).
   const BADGE_KIND = { idle: "none", loading: "busy", loaded: "ok", error: "unknown" };
 
-  function renderLlm(payload) {
+  // Without a desk snapshot (older callers) assume the media job still holds memory.
+  const mediaStillHolds = (deskState) => !deskState || Boolean(deskState.media_busy || (deskState.holder && deskState.holder.kind !== "llm"));
+
+  function renderLlm(payload, deskState) {
     const state = payload.state;
     llmStatus = state.status;
     els.modelState.dataset.status = state.status;
@@ -90,7 +99,7 @@ export function createChatPane(root, ctx = {}) {
       if (state.model_key && state.model_key !== lastLoadedKey) { els.modelSelect.value = state.model_key; lastLoadedKey = state.model_key; }
       delete els.modelSelect.dataset.userPicked;
     } else if (state.error?.code === "evicted") {
-      els.modelState.textContent = "已被媒体任务让出内存，可重新加载";
+      els.modelState.textContent = mediaStillHolds(deskState) ? "已被媒体任务让出内存，可重新加载" : "媒体任务已结束，可重新加载";
       // Keep the dropdown pointed at the evicted model, not whatever sat first
       // in the list, so "加载" reloads the model that was actually kicked out.
       if (state.model_key && !els.modelSelect.dataset.userPicked) els.modelSelect.value = state.model_key;
@@ -98,7 +107,9 @@ export function createChatPane(root, ctx = {}) {
       const tail = state.error?.log_tail ? `\n${state.error.log_tail}` : "";
       els.modelState.textContent = `加载失败（${state.error?.code ?? "?"}）：${state.error?.message ?? ""}${tail}`;
     }
-    const badgeKind = state.error?.code === "evicted" ? "busy" : (BADGE_KIND[state.status] ?? "unknown");
+    const badgeKind = state.error?.code === "evicted"
+      ? (mediaStillHolds(deskState) ? "busy" : "none")
+      : (BADGE_KIND[state.status] ?? "unknown");
     els.modelState.className = `badge badge-${badgeKind}`;
     if (state.status !== "loaded") lastLoadedKey = state.status === "loading" ? lastLoadedKey : null;
     els.unloadBtn.disabled = state.status === "idle";
@@ -189,12 +200,33 @@ export function createChatPane(root, ctx = {}) {
     }
     const errorEl = doc.createElement("p");
     errorEl.className = "inline-error";
+    if (!live && message.interrupted) errorEl.textContent = `回答没有生成完：${message.interrupted.message}`;
+    else if (!live && message.truncated) errorEl.textContent = "已达到长度上限，回答被截断。";
     wrap.append(who, details, contentEl, errorEl);
     details.hidden = !message.reasoning && !live;
     details.open = live;
     els.messages.append(wrap);
     els.messages.scrollTop = els.messages.scrollHeight;
     return { wrap, details, summary, reasoningEl, contentEl, errorEl };
+  }
+
+  function appendRetry() {
+    const row = doc.createElement("div");
+    row.className = "retry-row";
+    const button = doc.createElement("button");
+    (button.dataset ??= {}).retry = "1";
+    button.textContent = "重试";
+    button.addEventListener("click", () => retry());
+    row.append(button);
+    els.messages.append(row);
+  }
+
+  async function retry() {
+    const session = current();
+    if (streaming || !session?.messages?.at(-1)?.interrupted) return;
+    session.messages.pop();
+    renderMessages();
+    await streamReply(session);
   }
 
   function showMessages(list, fallbackModelName = "") {
@@ -207,6 +239,7 @@ export function createChatPane(root, ctx = {}) {
       return;
     }
     for (const message of list) messageNode(message, false, fallbackModelName);
+    if (list.at(-1)?.interrupted) appendRetry();
   }
 
   const sessionModelName = (session) => catalog.find((item) => item.key === session?.model)?.name ?? session?.model ?? "";
@@ -302,58 +335,80 @@ export function createChatPane(root, ctx = {}) {
     session.messages.push({ role: "user", content: text });
     els.input.value = "";
     messageNode({ role: "user", content: text });
+    await streamReply(session);
+  }
+
+  // One reply, from first frame to saved turn. Every ending — done, truncated,
+  // interrupted — is pushed into the session and saved (P3).
+  async function streamReply(session) {
+    setError("");
     const live = messageNode({ role: "assistant", content: "", reasoning: "" }, true);
     streaming = true;
     els.sendBtn.disabled = true;
     setButtonLabel(els.sendBtn, "生成中…");
     els.messages.dataset.streaming = "1";
     const thinkStart = Date.now();
+    const elapsed = () => Math.round((Date.now() - thinkStart) / 1000);
     let firstContentSeen = false;
     let thinkingSeconds = 0;
     let state = initialStream();
+    liveTurn = { session, state };
     try {
-      const body = await api.chatStream(session.messages);
+      const body = await api.chatStream(wireMessages(session.messages));
       for await (const line of sseDataLines(body)) {
         state = reduceChunk(state, line);
+        liveTurn.state = state;
         live.reasoningEl.replaceChildren(renderMarkdown(doc, state.reasoning));
         live.details.hidden = !state.reasoning;
         if (state.content && !firstContentSeen) {
           firstContentSeen = true;
-          thinkingSeconds = Math.round((Date.now() - thinkStart) / 1000);
+          thinkingSeconds = elapsed();
           live.summary.textContent = `已思考 ${thinkingSeconds} 秒`;
           live.details.open = false;
         }
         live.contentEl.replaceChildren(renderMarkdown(doc, state.content));
         if (state.done || state.error) break;
       }
-      if (!state.done && !state.error) state = { ...state, error: { code: "stream_interrupted", message: "流在完成前中断" } };
+      if (!state.done && !state.error) state = { ...state, error: { code: "stream_interrupted", message: "连接在回答完成前断开" } };
     } catch (error) {
       state = { ...state, error: { code: error.code ?? "stream_error", message: error.message } };
     } finally {
+      liveTurn = null;
       streaming = false;
       els.sendBtn.disabled = false;
       setButtonLabel(els.sendBtn, "发送");
       delete els.messages.dataset.streaming;
     }
+    if (!firstContentSeen && state.reasoning) thinkingSeconds = elapsed();
+    const assistant = { role: "assistant", content: state.content };
+    if (state.reasoning) { assistant.reasoning = state.reasoning; assistant.thinking_s = thinkingSeconds; }
     if (state.error) {
-      // A media job that evicted the model (or any other mid-stream failure)
-      // must not leave the bubble stuck on "思考中…" with half a thought and
-      // no answer (widewin gap #1). Label it plainly instead.
+      // Widewin gap #1 / P3: label it plainly, keep what was said, offer a retry.
+      assistant.interrupted = { code: state.error.code, message: state.error.message };
       live.summary.textContent = state.error.code === "evicted" ? "已中断：内存让给了媒体作业" : "已中断";
       live.details.open = false;
       if (!state.content) {
         const note = doc.createElement("p");
         note.className = "empty-answer";
-        note.textContent = "这条回答没有生成完，可重新发送。";
+        note.textContent = "这条回答没有生成完，可点「重试」重新生成。";
         live.contentEl.replaceChildren(note);
       }
-      live.errorEl.textContent = `出错（${state.error.code}）：${state.error.message}`;
-      session.messages.pop();
-      return;
+      live.errorEl.textContent = `回答没有生成完：${state.error.message}`;
+    } else {
+      if (state.reasoning && !firstContentSeen) live.summary.textContent = `已思考 ${Math.max(1, thinkingSeconds)} 秒`;
+      if (!state.content) {
+        const note = doc.createElement("p");
+        note.className = "empty-answer";
+        note.textContent = state.reasoning ? "模型只输出了思考，没有给出回答。" : "（这条回答没有内容）";
+        live.contentEl.replaceChildren(note);
+      }
+      if (state.finishReason === "length") {
+        assistant.truncated = true;
+        live.errorEl.textContent = "已达到长度上限，回答被截断。";
+      }
     }
-    const assistant = { role: "assistant", content: state.content };
-    if (state.reasoning) { assistant.reasoning = state.reasoning; assistant.thinking_s = thinkingSeconds; }
     session.messages.push(assistant);
+    if (state.error && currentId === session.id) appendRetry();
     try {
       const updated = await api.updateChatSession(session.id, { messages: session.messages, model: els.modelSelect.value || null });
       sessions = sortSessions(sessions.map((item) => item.id === updated.id ? updated : item));
@@ -364,6 +419,18 @@ export function createChatPane(root, ctx = {}) {
   els.loadBtn.addEventListener("click", loadSelected);
   els.unloadBtn.addEventListener("click", unload);
   els.modelSelect.addEventListener("change", () => { els.modelSelect.dataset.userPicked = "1"; });
+  // Closing or reloading the page mid-reply must not lose the question (P3 path 6).
+  function saveLiveTurnOnPageHide() {
+    if (!liveTurn) return;
+    const { session, state } = liveTurn;
+    const partial = { role: "assistant", content: state.content };
+    if (state.reasoning) partial.reasoning = state.reasoning;
+    partial.interrupted = { code: "page_closed", message: "页面关闭时回答还没生成完" };
+    api.updateChatSession(session.id, { messages: [...session.messages, partial], model: els.modelSelect.value || null }, { keepalive: true })
+      .catch(() => {});
+  }
+  (ctx.window ?? globalThis).addEventListener?.("pagehide", saveLiveTurnOnPageHide);
+
   els.sendBtn.addEventListener("click", send);
   els.input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) send();
@@ -380,10 +447,18 @@ export function createChatPane(root, ctx = {}) {
     try { await refreshSessions(); } catch (error) { setError(error.message); }
   }
 
+  function syncLoadButton() {
+    const noModels = readyModels === 0;
+    els.loadBtn.disabled = !heavyAllowed || noModels;
+    const hint = !heavyAllowed ? heavyReason : noModels ? "还没有下载好的聊天模型，去「资源」页下载" : "";
+    els.loadBtn.title = hint;
+    if (els.loadHint) els.loadHint.textContent = hint;
+  }
+
   function setHeavyAllowed(allowed, reason = "") {
-    els.loadBtn.disabled = !allowed;
-    els.loadBtn.title = allowed ? "" : reason;
-    if (els.loadHint) els.loadHint.textContent = allowed ? "" : reason;
+    heavyAllowed = allowed;
+    heavyReason = reason;
+    syncLoadButton();
   }
 
   async function refreshSessionsIfStale() {

@@ -387,18 +387,23 @@ test("after eviction the dropdown still points at the evicted model", async () =
   assert.equal(select.value, "superqwen");
 });
 
-test("an interrupted answer is labelled, not left mid-thought", async () => {
+test("中断的回答带原因写回会话，并出现重试按钮（P3）", async () => {
   const oldFetch = globalThis.fetch;
-  const calls = [];
+  const patches = [];
+  const streamBodies = [];
+  let streamCalls = 0;
   globalThis.fetch = async (path, options = {}) => {
-    calls.push(path);
     if (path === "/api/resources/catalog") return json([]);
     if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
     if (path === "/api/llm/status") return json({ state: { status: "idle" } });
     if (path === "/api/sessions") return json([{ id: "s1", title: "t", messages: [], updated: "2026-01-01" }]);
     if (path === "/api/llm/chat/stream") {
-      return stream(['{"type":"delta","reasoning":"想了一半"}', '{"type":"error","code":"evicted","message":"LLM 已被媒体任务驱逐"}']);
+      streamCalls += 1;
+      streamBodies.push(JSON.parse(options.body).messages);
+      if (streamCalls === 1) return stream(['{"type":"delta","reasoning":"想了一半"}', '{"type":"error","code":"evicted","message":"内存让给了媒体作业，回答被中断"}']);
+      return stream(['{"type":"delta","text":"好的"}', '{"type":"done","finish_reason":"stop"}']);
     }
+    if (path === "/api/sessions/s1") { patches.push(JSON.parse(options.body)); return json({ id: "s1", title: "t", updated: `2026-01-0${patches.length + 1}`, ...patches.at(-1) }); }
     throw new Error(`unexpected request ${path} ${options.method ?? "GET"}`);
   };
   try {
@@ -408,17 +413,72 @@ test("an interrupted answer is labelled, not left mid-thought", async () => {
     await pane.init();
     controls.get("[data-chat-input]").value = "你好";
     await controls.get("[data-send]").click();
-    const assistant = controls.get("[data-messages]").children[1];
-    const details = assistant.children[1];
-    const summary = details.children[0];
-    const body = assistant.children[2];
-    assert.ok(summary.textContent.includes("已中断"), summary.textContent);
-    assert.notEqual(summary.textContent, "思考中…");
-    assert.equal(body.children[0].className, "empty-answer");
+
+    const messagesEl = controls.get("[data-messages]");
+    const assistant = messagesEl.children[1];
+    assert.ok(assistant.children[1].children[0].textContent.includes("已中断"));
+    assert.equal(assistant.children[2].children[0].className, "empty-answer");
     assert.equal(controls.get("[data-send]").disabled, false);
-    // The interrupted turn must not be persisted.
-    assert.ok(!calls.includes("/api/sessions/s1"), "半成品消息被写回了会话历史");
+    assert.deepEqual(patches[0].messages, [
+      { role: "user", content: "你好" },
+      { role: "assistant", content: "", reasoning: "想了一半", thinking_s: patches[0].messages[1].thinking_s,
+        interrupted: { code: "evicted", message: "内存让给了媒体作业，回答被中断" } },
+    ]);
+
+    const retryRow = messagesEl.children.at(-1);
+    const retry = retryRow.children[0];
+    assert.equal(retry.dataset.retry, "1");
+    assert.equal(retry.textContent, "重试");
+    await retry.click();
+
+    assert.deepEqual(streamBodies[1], [{ role: "user", content: "你好" }]);
+    assert.deepEqual(patches.at(-1).messages, [
+      { role: "user", content: "你好" },
+      { role: "assistant", content: "好的" },
+    ]);
   } finally { globalThis.fetch = oldFetch; }
+});
+
+test("推理用完预算只剩思考时：摘要给出时长，正文说明没有回答并提示截断", async () => {
+  const oldFetch = globalThis.fetch;
+  const patches = [];
+  globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/resources/catalog") return json([]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    if (path === "/api/sessions") return json([{ id: "s1", title: "t", messages: [], updated: "2026-01-01" }]);
+    if (path === "/api/llm/chat/stream") return stream(['{"type":"delta","reasoning":"一直在想"}', '{"type":"done","finish_reason":"length"}']);
+    if (path === "/api/sessions/s1") { patches.push(JSON.parse(options.body)); return json({ id: "s1", title: "t", updated: "2026-01-02", ...patches.at(-1) }); }
+    throw new Error(`unexpected request ${path}`);
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { root, controls } = makePane();
+    const pane = createChatPane(root);
+    await pane.init();
+    controls.get("[data-chat-input]").value = "你好";
+    await controls.get("[data-send]").click();
+
+    const assistant = controls.get("[data-messages]").children[1];
+    assert.match(assistant.children[1].children[0].textContent, /^已思考 \d+ 秒$/);
+    assert.equal(assistant.children[2].children[0].textContent, "模型只输出了思考，没有给出回答。");
+    assert.equal(assistant.children[3].textContent, "已达到长度上限，回答被截断。");
+    assert.equal(patches[0].messages[1].truncated, true);
+  } finally { globalThis.fetch = oldFetch; }
+});
+
+test("从会话历史打开时，最后一条中断回答显示原因与重试按钮", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const pane = createChatPane(root);
+  pane.showMessages([
+    { role: "user", content: "你好" },
+    { role: "assistant", content: "半句", interrupted: { code: "upstream_error", message: "上游断流" } },
+  ]);
+  const messagesEl = controls.get("[data-messages]");
+  const assistant = messagesEl.children[1];
+  assert.equal(assistant.children[3].textContent, "回答没有生成完：上游断流");
+  assert.equal(messagesEl.children.at(-1).children[0].textContent, "重试");
 });
 
 test("历史消息用会话模型名，空回答有占位（F8/F9）", async () => {
@@ -442,4 +502,78 @@ test("加载中卸载按钮可用并显示『取消加载』，其余状态显�
   assert.equal(controls.get("[data-unload]").textContent, "取消加载");
   pane.applyLlmStatus({ state: { status: "loaded", model_key: "glm" }, loaded_model: { name: "GLM" } });
   assert.equal(controls.get("[data-unload]").textContent, "卸载");
+});
+
+test("媒体作业已结束时，被驱逐状态显示中性徽章和可重新加载", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const pane = createChatPane(root);
+  const evicted = { state: { status: "error", model_key: "glm", error: { code: "evicted", message: "让出内存" } } };
+  pane.applyLlmStatus(evicted, { holder: { kind: "media", label: "h3" }, media_busy: true });
+  assert.ok(controls.get("[data-model-state]").className.includes("badge-busy"));
+  pane.applyLlmStatus(evicted, { holder: null, media_busy: false });
+  assert.ok(controls.get("[data-model-state]").className.includes("badge-none"));
+  assert.equal(controls.get("[data-model-state]").textContent, "媒体任务已结束，可重新加载");
+});
+
+test("没有下载好的聊天模型时加载按钮禁用并指向资源页", async () => {
+  const oldFetch = globalThis.fetch;
+  globalThis.fetch = async (path) => {
+    if (path === "/api/resources/catalog") return json([{ key: "glm", group: "chat", name: "GLM", gb: 60 }]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [{ key: "glm", state: "missing" }] });
+    if (path === "/api/resources/download") return json({});
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    throw new Error(`unexpected request ${path}`);
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { root, controls } = makePane();
+    const pane = createChatPane(root);
+    await pane.refreshModels();
+    pane.setHeavyAllowed(true, "");
+    assert.equal(controls.get("[data-load]").disabled, true);
+    assert.equal(controls.get("[data-load-hint]").textContent, "还没有下载好的聊天模型，去「资源」页下载");
+    pane.setHeavyAllowed(false, "媒体作业进行中");
+    assert.equal(controls.get("[data-load-hint]").textContent, "媒体作业进行中");
+  } finally { globalThis.fetch = oldFetch; }
+});
+
+test("流式中页面关闭：把问句和已出的半句带 keepalive 写回会话（P3 路径 6）", async () => {
+  const oldFetch = globalThis.fetch;
+  const saved = [];
+  let releaseStream;
+  globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/resources/catalog") return json([]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    if (path === "/api/sessions") return json([{ id: "s1", title: "t", messages: [], updated: "2026-01-01" }]);
+    if (path === "/api/llm/chat/stream") {
+      return new Response(new ReadableStream({ start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"type":"delta","text":"半句"}\n\n'));
+        releaseStream = () => controller.close();
+      } }), { status: 200 });
+    }
+    if (path === "/api/sessions/s1") { saved.push([JSON.parse(options.body), options.keepalive]); return json({ id: "s1", title: "t", updated: "2026-01-02" }); }
+    throw new Error(`unexpected request ${path}`);
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { root, controls } = makePane();
+    const listeners = {};
+    const pane = createChatPane(root, { window: { addEventListener: (type, fn) => { listeners[type] = fn; } } });
+    await pane.init();
+    controls.get("[data-chat-input]").value = "你好";
+    const sending = controls.get("[data-send]").click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    listeners.pagehide();
+
+    assert.equal(saved[0][1], true);
+    assert.deepEqual(saved[0][0].messages, [
+      { role: "user", content: "你好" },
+      { role: "assistant", content: "半句", interrupted: { code: "page_closed", message: "页面关闭时回答还没生成完" } },
+    ]);
+    releaseStream();
+    await sending;
+  } finally { globalThis.fetch = oldFetch; }
 });
