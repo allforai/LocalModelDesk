@@ -7,6 +7,10 @@ from typing import Any
 
 DEFAULT_LLM_PORT = 8767
 
+# mlx_lm.server falls back to 512 tokens, which a reasoning model can spend
+# entirely on thinking and return an empty answer (cross-exam 2026-09-13 J1).
+DEFAULT_CHAT_MAX_TOKENS = 8192
+
 STATUS_IDLE = "idle"
 STATUS_LOADING = "loading"
 STATUS_LOADED = "loaded"

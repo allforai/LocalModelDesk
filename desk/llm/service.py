@@ -8,6 +8,7 @@ from typing import Any
 
 from .backend import BackendHttpError
 from .state import (
+    DEFAULT_CHAT_MAX_TOKENS,
     DEFAULT_LLM_PORT,
     ERR_BACKEND_EXITED,
     ERR_EVICTED,
@@ -379,6 +380,7 @@ class LlmService:
         for key in ("temperature", "top_p", "max_tokens"):
             if request.get(key) is not None:
                 payload[key] = request[key]
+        payload.setdefault("max_tokens", DEFAULT_CHAT_MAX_TOKENS)
         return payload
 
     def chat_completion(self, request: dict[str, Any]) -> dict[str, Any]:
