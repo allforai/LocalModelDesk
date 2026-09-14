@@ -105,6 +105,10 @@ async function tick() {
     const download = await panes.resources.refresh();
     failures = 0; statusbar.offline(false); statusbar.update(deskState, memory, download, modelNames); applyHeavyAvailability(deskState); store.set({ deskState, memory });
     panes.chat.applyLlmStatus(llm, deskState);
+    const assistReason = llm.state?.status !== "loaded" ? "先在「聊天」页加载一个模型"
+      : deskState.media_busy ? "媒体作业进行中，暂时不能调用模型" : "";
+    panes.video.setAssistAvailable(!assistReason, assistReason);
+    panes.music.setAssistAvailable(!assistReason, assistReason);
     await panes.chat.refreshSessionsIfStale();
     if (deskState.media_busy) jobActive = true;
     if (jobActive) await tickJob();

@@ -1,6 +1,7 @@
 import * as api from "../api.js";
 import { createJobView } from "../widgets/jobview.js";
 import { confirmDialog } from "../widgets/confirm.js";
+import { createPromptAssist } from "../widgets/prompt_assist.js";
 
 const SIZES = [["512x288", "草稿 512×288"], ["768x448", "标准 768×448"], ["1024x576", "清晰 1024×576"]];
 const DURATIONS = [[49, "约 2 秒（快速）"], [73, "约 3 秒"], [124, "约 5 秒（常用）"], [192, "约 8 秒"], [243, "约 10 秒"], [362, "约 15 秒（最长）"]];
@@ -63,6 +64,14 @@ export function createVideoPane(root, ctx = {}) {
     els.error.textContent = "";
   }
   mode?.addEventListener("change", updateMode);
+  const assistRoot = root.querySelector("[data-video-assist]");
+  const assist = assistRoot ? createPromptAssist(root.ownerDocument, assistRoot, {
+    task: "video",
+    read: () => ({ text: els.prompt.value }),
+    write: ({ text }) => { els.prompt.value = text; },
+    mode: () => mode?.value || "text",
+    confirm: ctx.confirm ? (options) => ctx.confirm(root.ownerDocument, options) : undefined,
+  }) : null;
   root.querySelector("[data-video-clear-last]")?.addEventListener("click", () => {
     if (submitting) return;
     inputs.last_frame.value = "";
@@ -142,5 +151,5 @@ export function createVideoPane(root, ctx = {}) {
     if (!allowed) { blockedReason = reason; if (els.hint) els.hint.textContent = reason; els.startBtn.title = reason; }
     else { blockedReason = ""; if (els.hint) els.hint.textContent = ""; els.startBtn.title = ""; }
   }
-  return { fill, jobView, setHeavyAllowed };
+  return { fill, jobView, setHeavyAllowed, setAssistAvailable: (allowed, reason) => assist?.setAvailable(allowed, reason) };
 }

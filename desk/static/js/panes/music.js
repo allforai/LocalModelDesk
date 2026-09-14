@@ -1,6 +1,7 @@
 import * as api from "../api.js";
 import { createJobView } from "../widgets/jobview.js";
 import { confirmDialog } from "../widgets/confirm.js";
+import { createPromptAssist } from "../widgets/prompt_assist.js";
 
 export function createMusicPane(root, ctx = {}) {
   const els = {
@@ -9,6 +10,13 @@ export function createMusicPane(root, ctx = {}) {
     error: root.querySelector("[data-music-error]"), hint: root.querySelector("[data-music-hint]"),
   };
   const jobView = createJobView(root, { mediaTag: "audio", kind: "music" });
+  const assistRoot = root.querySelector("[data-music-assist]");
+  const assist = assistRoot ? createPromptAssist(root.ownerDocument, assistRoot, {
+    task: "music",
+    read: () => ({ text: els.caption.value, lyrics: els.lyrics.value }),
+    write: ({ text, lyrics }) => { els.caption.value = text; if (lyrics !== undefined) els.lyrics.value = lyrics; },
+    confirm: ctx.confirm ? (options) => ctx.confirm(root.ownerDocument, options) : undefined,
+  }) : null;
   async function submit(params) {
     try { return await api.startMusicJob(params); }
     catch (error) {
@@ -38,5 +46,5 @@ export function createMusicPane(root, ctx = {}) {
     if (!allowed) { if (els.hint) els.hint.textContent = reason; els.startBtn.title = reason; }
     else { if (els.hint) els.hint.textContent = ""; els.startBtn.title = ""; }
   }
-  return { fill, jobView, setHeavyAllowed };
+  return { fill, jobView, setHeavyAllowed, setAssistAvailable: (allowed, reason) => assist?.setAvailable(allowed, reason) };
 }
