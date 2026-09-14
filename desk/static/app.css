@@ -78,6 +78,7 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .session-meta{font-size:13px;color:var(--muted);margin-top:4px}
 .session-actions{grid-column:2;grid-row:1/-1;display:flex;gap:6px;visibility:hidden}
 .session:hover .session-actions,.session:focus-within .session-actions{visibility:visible}
+.session:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* 6b. cards: resources + library rows — actions form their own right-hand
    column spanning the full card height, instead of a third row on the left
    with the right two-thirds of a wide card sitting empty (F11/W8). */

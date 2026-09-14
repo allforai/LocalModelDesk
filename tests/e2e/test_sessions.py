@@ -60,3 +60,21 @@ def test_clicking_a_card_switches_instead_of_renaming(page, tmp_path):
         target.click()
         expect(target.locator("input")).to_have_count(0)
         expect(target).to_have_class(re.compile(r"\bactive\b"))
+
+
+def test_sessions_are_reachable_by_keyboard(page, tmp_path, audit_violations):
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url)
+        pane = page.locator("#pane-chat")
+        pane.get_by_role("button", name="新会话").click()
+        cards = pane.locator("li.session")
+        expect(cards).to_have_count(2)
+
+        target_id = cards.nth(1).get_attribute("data-session-id")
+        cards.nth(1).focus()
+        page.keyboard.press("Enter")
+        expect(pane.locator(f'li.session.active[data-session-id="{target_id}"]')).to_have_count(1)
+
+        page.keyboard.press("Tab")
+        expect(pane.get_by_role("button", name="改名").first).to_be_visible()
+    assert audit_violations == []
