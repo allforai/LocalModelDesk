@@ -6,7 +6,8 @@ set -uo pipefail
 BUNDLE_ID="com.aa.localmodeldesk"
 APP_PATH="/Applications/LocalModelDesk.app"
 DATA_ROOT="$HOME/Library/Application Support/LocalModelDesk"
-LA_DIR="$HOME/Library/LaunchAgents"
+DEFAULT_LA_DIR="$HOME/Library/LaunchAgents"
+LA_DIR="$DEFAULT_LA_DIR"
 PURGE=0
 DRY_RUN=0
 
@@ -126,12 +127,20 @@ PY
 }
 
 LA_PLIST="$LA_DIR/$BUNDLE_ID.plist"
-if [[ "$DRY_RUN" == 1 ]]; then
-  echo "[dry-run] launchctl bootout gui/$(id -u)/$BUNDLE_ID"
-  [[ -e "$LA_PLIST" || -L "$LA_PLIST" ]] && echo "[dry-run] rm '$LA_PLIST'"
-else
-  launchctl bootout "gui/$(id -u)/$BUNDLE_ID" 2>/dev/null || true
-  [[ -e "$LA_PLIST" || -L "$LA_PLIST" ]] && rm -f -- "$LA_PLIST" || true
+LA_TARGET="gui/$(id -u)/$BUNDLE_ID"
+if [[ "$LA_DIR" != "$DEFAULT_LA_DIR" ]]; then
+  echo "uninstall-app: skip: 自定义 LaunchAgents 目录，不对当前用户域执行 launchctl bootout"
+elif [[ "$DRY_RUN" == 1 ]]; then
+  echo "[dry-run] launchctl bootout ${LA_TARGET}（若已加载）"
+elif launchctl print "$LA_TARGET" >/dev/null 2>&1; then
+  launchctl bootout "$LA_TARGET" 2>/dev/null || fail "无法停止旧 LaunchAgent ${LA_TARGET}；请手动运行 launchctl bootout ${LA_TARGET} 后重试"
+fi
+if [[ -e "$LA_PLIST" || -L "$LA_PLIST" ]]; then
+  if [[ "$DRY_RUN" == 1 ]]; then
+    echo "[dry-run] rm '$LA_PLIST'"
+  else
+    rm -f -- "$LA_PLIST" || fail "failed to remove $LA_PLIST"
+  fi
 fi
 
 if [[ -e "$APP_PATH" || -L "$APP_PATH" ]]; then
