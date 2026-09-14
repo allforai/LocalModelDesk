@@ -190,6 +190,23 @@ class MediaService:
         if handle.poll() is None: handle.kill()
         return self.job_status()
 
+    def close(self) -> None:
+        """Cancel any running job on shutdown so its worker never outlives the service."""
+        with self._lock:
+            running = self._state["status"] == "running"
+        if not running:
+            return
+        try:
+            self.cancel_job()
+        except MediaError:
+            return  # finished between the check and the cancel
+        deadline = time.monotonic() + self._term_grace_s + 2.0
+        while time.monotonic() < deadline:
+            with self._lock:
+                if self._state["status"] != "running":
+                    return
+            time.sleep(0.02)
+
     def job_status(self, *, log_from: int = 0, job_id: int | None = None) -> dict:
         with self._lock:
             state = dict(self._state); state["params"] = dict(self._state["params"]) if self._state["params"] else None

@@ -188,7 +188,8 @@ class FakeArbiter:
     def __init__(self, *, calls: CallLedger | list | None = None, ledger: CallLedger | None = None,
                  acquire_results: Iterable[dict] | None = None, acquire_result: dict | None = None,
                  reap_results: Iterable[dict] | None = None, reap_result: dict | None = None,
-                 release_result: dict | None = None, desk_states: Iterable[dict] | None = None) -> None:
+                 release_result: dict | None = None, desk_states: Iterable[dict] | None = None,
+                 listeners: Iterable[dict] = ()) -> None:
         self.calls = calls if calls is not None else (ledger if ledger is not None else CallLedger())
         self.ledger = self.calls if isinstance(self.calls, CallLedger) else None
         self._acquire = list(acquire_results if acquire_results is not None else [acquire_result or {"ok": True, "token": "tok-1"}])
@@ -196,6 +197,7 @@ class FakeArbiter:
         self.release_result = release_result or {"ok": True}
         self._desk_states = list(desk_states or [{"holder": {"kind": "llm", "label": "glm", "phase": "held"}, "media_busy": False}])
         self._subscribers: list[Any] = []
+        self._listeners = list(listeners)
 
     def acquire_heavy(self, kind: str, label: str, display: str | None = None) -> dict:
         _record(self.calls, "acquire", kind, label)
@@ -208,6 +210,10 @@ class FakeArbiter:
     def reap_llm_port(self, port: int) -> dict:
         _record(self.calls, "reap", port)
         return _pop(self._reap)
+
+    def llm_port_listeners(self, port: int) -> list[dict]:
+        _record(self.calls, "listeners", port)
+        return list(self._listeners)
 
     def desk_state(self) -> dict:
         return _pop(self._desk_states)

@@ -85,7 +85,9 @@ final class ServerController {
       usleep(200_000)
     }
 
-    PortGuard.reap(pids: [process.processIdentifier], grace: 2.0)
+    let leader = process.processIdentifier
+    let group = PortGuard.processGroup(of: leader).map { PortGuard.familyByGroup(pgid: $0) } ?? []
+    PortGuard.reap(pids: Array(Set(group + [leader])), grace: 2.0)
     child = nil
     return fail(.healthTimeout(lastError: "\(Int(spec.spawnTimeout))s elapsed without 200 JSON from \(spec.healthPath)"))
   }

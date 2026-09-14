@@ -432,3 +432,14 @@ test("历史消息用会话模型名，空回答有占位（F8/F9）", async () 
   const body = rows[1].children[2];
   assert.equal(body.children[0].className, "empty-answer");
 });
+
+test("加载中卸载按钮可用并显示『取消加载』，其余状态显示『卸载』", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const pane = createChatPane(root);
+  pane.applyLlmStatus({ state: { status: "loading", model_key: "glm" }, loaded_model: null });
+  assert.equal(controls.get("[data-unload]").disabled, false);
+  assert.equal(controls.get("[data-unload]").textContent, "取消加载");
+  pane.applyLlmStatus({ state: { status: "loaded", model_key: "glm" }, loaded_model: { name: "GLM" } });
+  assert.equal(controls.get("[data-unload]").textContent, "卸载");
+});

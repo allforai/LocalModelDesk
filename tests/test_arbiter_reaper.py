@@ -86,3 +86,29 @@ def test_reap_port_kills_pid_in_owned_set():
         assert result.ok is True
         assert proc.pid in result.killed_pids
         assert _listening_pids(port) == []
+
+
+def test_port_listeners_reports_pid_and_command_of_a_real_listener():
+    import socket
+    import subprocess
+    import sys
+    import time
+
+    from desk.arbiter.reaper import port_listeners
+
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    server = subprocess.Popen([sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1"],
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        deadline = time.monotonic() + 5
+        found = []
+        while time.monotonic() < deadline and not found:
+            found = port_listeners(port)
+            time.sleep(0.1)
+        assert [item["pid"] for item in found] == [server.pid]
+        assert "http.server" in found[0]["command"]
+    finally:
+        server.terminate()
+        server.wait(5)

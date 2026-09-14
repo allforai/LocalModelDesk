@@ -18,6 +18,7 @@ from .state import (
     ERR_MODEL_DIR_MISSING,
     ERR_MODEL_NOT_FOUND,
     ERR_NO_MODEL_LOADED,
+    ERR_PORT_BUSY,
     ERR_PORT_NOT_RELEASED,
     ERR_UPSTREAM_ERROR,
     STATUS_ERROR,
@@ -169,6 +170,21 @@ class LlmService:
                     model_key=entry.key,
                     error=LlmError(ERR_PORT_NOT_RELEASED, reap.get("error") or "无法释放 LLM 端口"),
                 )
+            if token is not None:
+                self._arbiter.release_heavy(token)
+            return
+        strangers = self._arbiter.llm_port_listeners(self._port)
+        if strangers:
+            first = strangers[0]
+            message = (f"端口 {self._port} 被其他程序占用（pid {first['pid']}："
+                       f"{first['command'][:80]}），请先结束它再加载")
+            with self._lock:
+                if generation != self._load_generation:
+                    return
+                token = self._token
+                self._token = None
+                self._state = LlmState(status=STATUS_ERROR, model_key=entry.key,
+                                       error=LlmError(ERR_PORT_BUSY, message))
             if token is not None:
                 self._arbiter.release_heavy(token)
             return
@@ -326,18 +342,26 @@ class LlmService:
         return bool(self._arbiter.reap_llm_port(self._port).get("ok"))
 
     def unload(self) -> dict[str, Any]:
-        """Unload a settled model only after the LLM port is confirmed free."""
+        """Unload a settled model, or cancel a load that is still in progress."""
         token = None
+        proc = None
         with self._lock:
             if self._state.status == STATUS_LOADING:
-                raise LlmRejected(ERR_LOAD_IN_PROGRESS, "加载进行中，等状态落定后再卸载")
-            if self._state.status == STATUS_IDLE:
+                self._load_generation += 1
+                proc, token = self._proc, self._token
+                self._proc = None
+                self._token = None
+                self._entry = None
+                self._state = LlmState(status=STATUS_IDLE)
+                result = self._state.to_dict()
+            elif self._state.status == STATUS_IDLE:
                 return self._state.to_dict()
-            if self._teardown_proc_locked():
+            elif self._teardown_proc_locked():
                 token = self._token
                 self._token = None
                 self._entry = None
                 self._state = LlmState(status=STATUS_IDLE)
+                result = self._state.to_dict()
             else:
                 self._state = LlmState(
                     status=STATUS_ERROR,
@@ -347,7 +371,13 @@ class LlmService:
                         f"卸载后端口 {self._port} 仍被占用",
                     ),
                 )
-            result = self._state.to_dict()
+                result = self._state.to_dict()
+        if proc is not None:
+            proc.terminate()
+            try:
+                proc.wait(self._term_grace_s)
+            except Exception:
+                proc.kill()
         if token is not None:
             self._arbiter.release_heavy(token)
         return result
