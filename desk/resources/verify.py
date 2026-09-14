@@ -7,6 +7,7 @@ from pathlib import Path
 from .catalog import ModelEntry
 from .disk import dir_bytes
 from .manifest import Manifest
+from .parts import part_bytes
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,7 @@ class ModelStatus:
     reason: str | None = None
     bytes_in_flight: int = 0
     stale_bytes: int = 0
+    resumable_bytes: int = 0
 
     def to_json(self) -> dict:
         payload = asdict(self)
@@ -89,8 +91,9 @@ def verify_tree(entry: ModelEntry, manifest: Manifest, models_root: Path, *,
             gaps.append(FileGap(file.path, file.size, local_size))
 
     fresh, stale = _incomplete_bytes(model_dir, active_since)
-    in_flight = 0 if not gaps else min(fresh, max(expected_total - local_total, 0))
-    counted = local_total + in_flight
+    resumable = 0 if not gaps else part_bytes(model_dir, manifest.files)
+    in_flight = 0 if not gaps else min(fresh, max(expected_total - local_total - resumable, 0))
+    counted = local_total + resumable + in_flight
     state = "present" if not gaps else "missing" if counted == 0 else "partial"
     percent = round(min(counted / expected_total, 1.0) * 100.0, 2) if expected_total else 0.0
     return ModelStatus(
@@ -105,6 +108,7 @@ def verify_tree(entry: ModelEntry, manifest: Manifest, models_root: Path, *,
         manifest_fetched_at=manifest.fetched_at,
         bytes_in_flight=in_flight,
         stale_bytes=stale,
+        resumable_bytes=resumable,
     )
 
 

@@ -160,3 +160,22 @@ def test_stale_incomplete_from_a_previous_attempt_is_excluded_while_new_attempt_
     status = verify_tree(GLM, MANIFEST, tmp_path, active_since=active_since)
     assert status.bytes_in_flight == 15
     assert status.stale_bytes == 40
+
+
+def test_part_bytes_keep_percent_after_cancel(tmp_path):
+    """取消后面板不能从 21% 掉到 0%（cross-exam 2026-09-13 G4）。"""
+    from desk.resources.parts import part_path
+
+    directory = model_dir(tmp_path)
+    (directory / "tokenizer.json").write_bytes(b"x" * 60)
+    part = part_path(directory, "model.safetensors")
+    part.parent.mkdir(parents=True)
+    part.write_bytes(b"x" * 50)
+
+    status = verify_tree(GLM, MANIFEST, tmp_path)
+
+    assert status.state == "partial"
+    assert status.bytes_local == 60
+    assert status.resumable_bytes == 50
+    assert status.percent == 55.0
+    assert status.to_json()["resumable_bytes"] == 50
