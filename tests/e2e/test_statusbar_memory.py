@@ -9,16 +9,21 @@ from desk.testing.scripts import MemoryScript
 
 
 def _rendered_numbers(snapshot):
-    """Accept either documented GB convention while proving the input is rendered."""
+    """Accept either documented GB convention while proving the input is rendered.
+
+    The bar rounds to whole GiB so the window and the menu bar can never disagree on
+    the same reading (N3), so accept the rounded form as well as the old one-decimal one.
+    """
     divisors = (10**9, 1024**3)
     return {
-        f"{value / divisor:.1f}"
+        text
         for divisor in divisors
         for value in (
             snapshot.used_bytes,
             snapshot.total_bytes,
             snapshot.available_bytes,
         )
+        for text in (f"{value / divisor:.1f}", str(round(value / divisor)))
     }
 
 
