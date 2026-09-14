@@ -19,7 +19,7 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
     let config = WKWebViewConfiguration()
     // Register before creating the web view: WKWebView retains its configuration at init.
     config.userContentController.add(self, name: "shellRetry")
-    webView = WKWebView(frame: .zero, configuration: config)
+    webView = DeskWebView(frame: .zero, configuration: config)
     window.title = "LocalModelDesk"
     window.tabbingMode = .disallowed
     window.center()
@@ -75,5 +75,15 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
                withError error: Error) {
     showErrorPage(reason: "页面加载失败：\(error.localizedDescription)",
                   logPath: DeskPaths.serverStdoutLogURL.path)
+  }
+}
+
+/// The default WKWebView context menu is not localized ("Reload"); name it in Chinese.
+final class DeskWebView: WKWebView {
+  override func willOpenMenu(_ menu: NSMenu, with event: NSEvent) {
+    super.willOpenMenu(menu, with: event)
+    for item in menu.items where item.identifier?.rawValue == "WKMenuItemIdentifierReload" {
+      item.title = "重新载入"
+    }
   }
 }

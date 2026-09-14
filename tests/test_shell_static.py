@@ -100,7 +100,7 @@ def test_main_window_registers_retry_bridge_before_webview_creation():
     text = _read("MainWindowController.swift")
     bridge = 'config.userContentController.add(self, name: "shellRetry")'
     assert bridge in text
-    assert text.index(bridge) < text.index("WKWebView(frame:"), (
+    assert text.index(bridge) < text.index("DeskWebView(frame:"), (
         "shellRetry must be registered before WKWebView initializes its configuration"
     )
 
@@ -179,6 +179,20 @@ def test_signal_paths_reap():
     assert "terminateEmbeddedServer" in app_text
     assert "applicationShouldHandleReopen" in app_text
     assert "performClose" in app_text
+
+
+def test_settings_shortcut_is_caught_before_the_web_view():
+    """WKWebView 先吞掉 ⌘,，主菜单的快捷键收不到（cross-exam 2026-09-13 G8）。"""
+    text = (MACOS / "AppDelegate.swift").read_text(encoding="utf-8")
+    assert "NSEvent.addLocalMonitorForEvents(matching: .keyDown)" in text
+    assert "isSettingsShortcut(" in text
+
+
+def test_web_view_context_menu_is_localized():
+    text = (MACOS / "MainWindowController.swift").read_text(encoding="utf-8")
+    assert "final class DeskWebView: WKWebView" in text
+    assert "WKMenuItemIdentifierReload" in text
+    assert "重新载入" in text
 
 
 def test_swiftc_typecheck_app():

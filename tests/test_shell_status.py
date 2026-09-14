@@ -90,3 +90,17 @@ def test_memory_menu_title_matches_web_wording(used, total, available, expected)
                           capture_output=True, text=True, timeout=30)
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.strip() == expected
+
+
+@pytest.mark.parametrize("mods,chars,expected", [
+    ("cmd", ",", "true"),
+    ("cmd+shift", ",", "false"),
+    ("cmd+opt", ",", "false"),
+    ("", ",", "false"),
+    ("cmd", "h", "false"),
+])
+def test_settings_shortcut(mods, chars, expected):
+    proc = subprocess.run([harness_path(), "settings-shortcut", mods, chars],
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == expected

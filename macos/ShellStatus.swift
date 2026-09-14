@@ -121,3 +121,8 @@ func pollFailureAction(consecutiveFailures: Int, childRunning: Bool, threshold: 
   if consecutiveFailures < threshold { return .keepWaiting }
   return childRunning ? .serviceUnresponsive : .serviceExited
 }
+
+/// ⌘, with no other modifier opens settings (G8). Pure so the headless harness can test it.
+func isSettingsShortcut(command: Bool, option: Bool, control: Bool, shift: Bool, characters: String?) -> Bool {
+  command && !option && !control && !shift && characters == ","
+}

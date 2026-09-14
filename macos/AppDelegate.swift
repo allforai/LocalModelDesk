@@ -9,11 +9,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var poller: StatusPoller!
   private var status = ShellStatus(server: .stopped, desk: nil, needsSetup: false,
                                    lastPollError: nil)
+  private var settingsKeyMonitor: Any?
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.appearance = NSAppearance(named: .darkAqua)   // D1 single dark theme: native chrome follows the web content
     NSApp.setActivationPolicy(.regular)
     buildMainMenu()
+    installSettingsShortcut()
     api = DeskAPI(baseURL: DeskPaths.baseURL)
     server = ServerController(spec: DeskPaths.makeLaunchSpec())
     windowController = MainWindowController(baseURL: DeskPaths.baseURL)
@@ -212,6 +214,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   @objc private func openSettings() {
     windowController?.showSettings()
+  }
+
+  /// WKWebView consumes ⌘, before the main menu sees its key equivalent (G8).
+  private func installSettingsShortcut() {
+    settingsKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+      let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+      guard isSettingsShortcut(command: flags.contains(.command), option: flags.contains(.option),
+                               control: flags.contains(.control), shift: flags.contains(.shift),
+                               characters: event.charactersIgnoringModifiers) else { return event }
+      self?.openSettings()
+      return nil
+    }
   }
 
   private static func describe(_ failure: ServerFailure) -> String {

@@ -47,6 +47,12 @@ struct ShellHarness {
       case .serviceExited: print("serviceExited")
       case .serviceUnresponsive: print("serviceUnresponsive")
       }
+    case "settings-shortcut":
+      guard args.count >= 3 else { exit(64) }
+      let mods = Set(args[1].split(separator: "+").map(String.init))
+      print(isSettingsShortcut(command: mods.contains("cmd"), option: mods.contains("opt"),
+                               control: mods.contains("ctrl"), shift: mods.contains("shift"),
+                               characters: args[2]))
     default:
       FileHandle.standardError.write(Data("unknown subcommand \(command)\n".utf8))
       exit(64)

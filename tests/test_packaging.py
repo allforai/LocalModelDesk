@@ -532,3 +532,11 @@ def test_build_script_strips_build_paths_from_bytecode():
     assert "export PYTHONDONTWRITEBYTECODE=1" in text
     assert '-s "$RES" -p "LocalModelDesk.app/Contents/Resources" "$RES/desk"' in text
     assert 'find "$RES/python" "$RES/pylibs" "$RES/desk" -type d -name __pycache__ -prune -exec rm -rf {} +' in text
+
+
+def test_bundle_declares_chinese_development_region():
+    template = (REPO / "packaging" / "Info.plist.template").read_text(encoding="utf-8")
+    assert "<key>CFBundleDevelopmentRegion</key>\n\t<string>zh_CN</string>" in template
+    assert "<key>CFBundleLocalizations</key>" in template
+    build = (REPO / "scripts" / "build-app.sh").read_text(encoding="utf-8")
+    assert 'mkdir -p "$RES/zh-Hans.lproj"' in build

@@ -107,6 +107,11 @@ echo "==> [5/9] Render Info.plist"
 sed "s/@VERSION@/$VERSION/g" "$REPO/packaging/Info.plist.template" > "$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist"
 
+# System-injected menu items (Writing Tools, AutoFill, Dictation…) follow the bundle's
+# declared localizations; without an lproj they fall back to English.
+mkdir -p "$RES/zh-Hans.lproj"
+printf '"CFBundleName" = "LocalModelDesk";\n' > "$RES/zh-Hans.lproj/InfoPlist.strings"
+
 echo "==> [6/9] Build icon"
 ICONSET="$STAGING/AppIcon.iconset"
 mkdir -p "$ICONSET"
