@@ -95,3 +95,17 @@ def test_stream_keeps_caller_max_tokens(tmp_path):
     list(testbed.service.chat_stream({"messages": [], "max_tokens": 64}))
     _, _, payload = next(call for call in testbed.calls if call[0] == "chat_stream")
     assert payload["max_tokens"] == 64
+
+
+def test_stream_cut_by_eviction_reports_evicted_not_upstream_error(tmp_path):
+    testbed = make_loaded(
+        tmp_path, backend_kw={"chunks": CONTENT_CHUNKS[:2], "stream_error_after": 1}
+    )
+    events = testbed.service.chat_stream({"messages": []})
+    first = next(events)
+    testbed.arbiter.emit({"holder": {"kind": "media", "label": "h3"}, "media_busy": True})
+
+    rest = list(events)
+
+    assert first["type"] == "delta"
+    assert rest[-1] == {"type": "error", "code": "evicted", "message": "内存让给了媒体作业，回答被中断"}
