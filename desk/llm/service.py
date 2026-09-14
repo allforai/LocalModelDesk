@@ -282,26 +282,41 @@ class LlmService:
         if proc is not None:
             proc.terminate()
 
+    def _memory_taken_by(self, desk_state: dict[str, Any] | None, model_key: str | None) -> bool:
+        """True when heavy-work ownership has moved away from this model.
+
+        The arbiter marks a media job as holder *before* it reaps mlx-lm and only notifies
+        subscribers afterwards, so a dying backend or a broken stream must consult the
+        holder directly to tell an eviction from a crash.
+        """
+        holder = (desk_state or {}).get("holder")
+        if not isinstance(holder, dict):
+            return False
+        return holder.get("kind") != "llm" or holder.get("label") != model_key
+
     def status(self) -> dict[str, Any]:
         """Return the current public state and loaded model, when one is resident."""
         token = None
+        desk_state = self._arbiter.desk_state()  # read before our lock: the arbiter has its own
         with self._lock:
             if self._state.status == STATUS_LOADED and self._proc is not None:
                 return_code = self._proc.poll()
                 if return_code is not None:
-                    log_path = self._log_path(self._paths.resolve_paths())
                     token = self._token
                     self._proc = None
                     self._token = None
                     self._entry = None
-                    self._state = LlmState(
-                        status=STATUS_ERROR,
-                        model_key=self._state.model_key,
-                        error=LlmError(
+                    if self._memory_taken_by(desk_state, self._state.model_key):
+                        error = LlmError(ERR_EVICTED, "LLM 已被媒体任务驱逐")
+                    else:
+                        log_path = self._log_path(self._paths.resolve_paths())
+                        error = LlmError(
                             ERR_BACKEND_EXITED,
                             f"mlx-lm 进程已退出，退出码 {return_code}",
                             self._backend.log_tail(log_path),
-                        ),
+                        )
+                    self._state = LlmState(
+                        status=STATUS_ERROR, model_key=self._state.model_key, error=error,
                     )
             loaded = None
             if self._state.status == STATUS_LOADED and self._entry is not None:
@@ -433,9 +448,10 @@ class LlmService:
 
     def _interruption_event(self, fallback_message: str) -> dict[str, Any]:
         """Name the real cause when the resident model was taken away mid-stream."""
+        desk_state = self._arbiter.desk_state()
         with self._lock:
-            error = self._state.error
-        if error is not None and error.code == ERR_EVICTED:
+            error, model_key = self._state.error, self._state.model_key
+        if (error is not None and error.code == ERR_EVICTED) or self._memory_taken_by(desk_state, model_key):
             return error_event(ERR_EVICTED, "内存让给了媒体作业，回答被中断")
         return error_event(ERR_UPSTREAM_ERROR, fallback_message)
 

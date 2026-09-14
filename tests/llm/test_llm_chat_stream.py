@@ -109,3 +109,16 @@ def test_stream_cut_by_eviction_reports_evicted_not_upstream_error(tmp_path):
 
     assert first["type"] == "delta"
     assert rest[-1] == {"type": "error", "code": "evicted", "message": "内存让给了媒体作业，回答被中断"}
+
+
+def test_stream_cut_while_media_is_taking_the_memory_reports_evicted(tmp_path):
+    """真机：仲裁先杀 mlx-lm、后通知订阅者，断流时服务状态还没变成 evicted（2026-09-15 真机复核）。"""
+    testbed = make_loaded(
+        tmp_path, backend_kw={"chunks": CONTENT_CHUNKS[:2], "stream_error_after": 1}
+    )
+    testbed.arbiter.set_desk_state({"holder": {"kind": "video", "label": "job-1", "phase": "acquiring"},
+                                    "media_busy": False})
+
+    events = list(testbed.service.chat_stream({"messages": []}))
+
+    assert events[-1] == {"type": "error", "code": "evicted", "message": "内存让给了媒体作业，回答被中断"}

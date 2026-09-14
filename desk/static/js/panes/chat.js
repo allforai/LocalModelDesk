@@ -104,9 +104,10 @@ export function createChatPane(root, ctx = {}) {
       // in the list, so "加载" reloads the model that was actually kicked out.
       if (state.model_key && !els.modelSelect.dataset.userPicked) els.modelSelect.value = state.model_key;
     } else {
-      const tail = state.error?.log_tail ? `\n${state.error.log_tail}` : "";
-      els.modelState.textContent = `加载失败（${state.error?.code ?? "?"}）：${state.error?.message ?? ""}${tail}`;
+      els.modelState.textContent = `加载失败（${state.error?.code ?? "?"}）：${state.error?.message ?? ""}`;
     }
+    // A full mlx-lm log inside the badge floods the page; keep it one hover away.
+    els.modelState.title = state.status === "error" ? (state.error?.log_tail ?? "") : "";
     const badgeKind = state.error?.code === "evicted"
       ? (mediaStillHolds(deskState) ? "busy" : "none")
       : (BADGE_KIND[state.status] ?? "unknown");

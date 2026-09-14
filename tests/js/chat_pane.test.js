@@ -606,3 +606,16 @@ test("会话卡片可 Tab 聚焦，Enter/Space 切换（P2，cross-exam 2026-09-
     list.children[1].listeners.keydown({ key: "a", preventDefault() { throw new Error("不应拦截普通按键"); } });
   } finally { globalThis.fetch = previous; }
 });
+
+test("加载失败时徽章只写原因，日志尾部放进悬停提示，不塞满页面", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const pane = createChatPane(root);
+  pane.applyLlmStatus({ state: { status: "error", model_key: "glm",
+    error: { code: "backend_exited", message: "mlx-lm 进程已退出，退出码 1", log_tail: "Traceback\nboom" } } });
+  const badge = controls.get("[data-model-state]");
+  assert.equal(badge.textContent, "加载失败（backend_exited）：mlx-lm 进程已退出，退出码 1");
+  assert.equal(badge.title, "Traceback\nboom");
+  pane.applyLlmStatus({ state: { status: "idle" } });
+  assert.equal(badge.title, "");
+});

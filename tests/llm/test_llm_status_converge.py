@@ -43,3 +43,18 @@ def test_holder_change_when_not_loaded_is_noop(tmp_path):
 
     assert testbed.service.status()["state"]["status"] == "idle"
     assert testbed.calls == []
+
+
+def test_backend_killed_by_media_eviction_is_evicted_not_backend_exited(tmp_path):
+    """仲裁收割端口时 mlx-lm 先退出；状态自检不能把驱逐误报成 backend_exited 并附整段日志。"""
+    testbed = make_loaded(tmp_path)
+    testbed.arbiter.set_desk_state({"holder": {"kind": "video", "label": "job-1", "phase": "acquiring"},
+                                    "media_busy": False})
+    testbed.backend.process.set_exit(-15)
+
+    got = testbed.service.status()
+
+    assert got["state"]["status"] == "error"
+    assert got["state"]["error"]["code"] == "evicted"
+    assert got["state"]["error"]["log_tail"] is None
+    assert ("release", "tok-1") in testbed.calls
