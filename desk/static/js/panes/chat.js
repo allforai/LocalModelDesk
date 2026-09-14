@@ -101,7 +101,8 @@ export function createChatPane(root, ctx = {}) {
     const badgeKind = state.error?.code === "evicted" ? "busy" : (BADGE_KIND[state.status] ?? "unknown");
     els.modelState.className = `badge badge-${badgeKind}`;
     if (state.status !== "loaded") lastLoadedKey = state.status === "loading" ? lastLoadedKey : null;
-    els.unloadBtn.disabled = state.status === "idle" || state.status === "loading";
+    els.unloadBtn.disabled = state.status === "idle";
+    setButtonLabel(els.unloadBtn, state.status === "loading" ? "取消加载" : "卸载");
     modelName = payload.loaded_model?.name ?? state.model_key ?? modelName;
   }
 

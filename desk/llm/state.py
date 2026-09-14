@@ -20,6 +20,7 @@ ERR_BACKEND_EXITED = "backend_exited"
 ERR_LOAD_TIMEOUT = "load_timeout"
 ERR_PORT_NOT_RELEASED = "port_not_released"
 ERR_PORT_BUSY = "port_busy"
+ERR_LOAD_CANCELLED = "load_cancelled"  # reserved for log/status messaging; never surfaced as an error state
 ERR_EVICTED = "evicted"
 ERR_NO_MODEL_LOADED = "no_model_loaded"
 ERR_MODEL_MISMATCH = "model_mismatch"

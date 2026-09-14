@@ -150,13 +150,12 @@ def test_stream_precheck_rejection_is_plain_json_503(idle_server):
     assert json.load(exc.value)["error"]["code"] == "no_model_loaded"
 
 
-def test_unload_while_loading_409(idle_server):
+def test_unload_while_loading_cancels_the_load(idle_server):
     testbed, base = idle_server
     testbed.backend.hold_health = True
     _post(base, "/api/llm/load", {"key": "glm"})
-    with pytest.raises(HTTPError) as exc:
-        _post(base, "/api/llm/unload", {})
-    assert exc.value.code == 409
-    assert json.load(exc.value)["error"]["code"] == "load_in_progress"
+    response = _post(base, "/api/llm/unload", {})
+    assert response.status == 200
+    assert json.load(response)["state"]["status"] == "idle"
     testbed.backend.health_release.set()
     testbed.service.wait_settled()
