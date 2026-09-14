@@ -91,8 +91,12 @@ final class ServerController {
       usleep(200_000)
     }
 
+    // Reap the whole group only when the child already leads its own group (the service calls
+    // setpgrp at startup). A child that hung before that still shares our group, and reaping
+    // that group would signal unrelated processes.
     let leader = process.processIdentifier
-    let group = PortGuard.processGroup(of: leader).map { PortGuard.familyByGroup(pgid: $0) } ?? []
+    let ownsGroup = PortGuard.processGroup(of: leader) == leader
+    let group = ownsGroup ? PortGuard.familyByGroup(pgid: leader) : []
     PortGuard.reap(pids: Array(Set(group + [leader])), grace: 2.0)
     child = nil
     return fail(.healthTimeout(lastError: "\(Int(spec.spawnTimeout))s elapsed without 200 JSON from \(spec.healthPath)"))
