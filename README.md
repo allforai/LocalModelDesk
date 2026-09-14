@@ -90,6 +90,7 @@ xcrun notarytool store-credentials LocalModelDesk \
 ### 构建与签名
 
 - `scripts/build-app.sh` 默认要求 Developer ID Application 证书；用 `security find-identity -v -p codesigning` 查看本机可用身份，再用 `--identity "Developer ID Application: ..."` 传给构建脚本。
+- 默认输出 `dist/LocalModelDesk.app`；`--output <目录>` 可放到任意位置（仓库内外都行，包内不会留下构建机路径）。
 - 仅本机调试可用 adhoc 签名：设置环境变量 `LMD_ALLOW_ADHOC=1` 并传 `--adhoc`；adhoc 签名的应用在其他机器上会被 Gatekeeper 拒绝打开，因此构建脚本在缺少该环境变量时拒绝静默降级为 adhoc。
 - `scripts/verify-app.sh` 会额外用 `spctl --assess --type execute` 校验 Gatekeeper 是否接受该包；未设置 `LMD_ALLOW_ADHOC=1` 时若被拒绝，验证失败。
 

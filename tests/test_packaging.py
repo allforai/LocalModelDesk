@@ -249,7 +249,7 @@ def test_build_precompiles_desk_bytecode_before_signing():
     build = (REPO / "scripts" / "build-app.sh").read_text()
     precompile_at = build.index("compileall -q -f")
     sign_at = build.index('SIGN=("$REPO/scripts/sign-app.sh"')
-    assert "compileall -q -f \"$RES/desk\"" in build
+    assert '-s "$RES" -p "LocalModelDesk.app/Contents/Resources" "$RES/desk"' in build
     assert precompile_at < sign_at
 
 
@@ -479,3 +479,29 @@ def test_readme_states_real_behavior():
         "无鉴权",
     ):
         assert statement in text
+
+
+def test_precompiled_bytecode_never_embeds_the_build_directory(tmp_path):
+    """dist/ 在仓库里时，pyc 的 co_filename 会带仓库路径，V3 拒绝整个包（cross-exam 2026-09-13 G1）。"""
+    import marshal
+    import sys
+
+    res = tmp_path / "repo-marker" / "dist" / "LocalModelDesk.app" / "Contents" / "Resources"
+    (res / "desk").mkdir(parents=True)
+    (res / "desk" / "mod.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+
+    subprocess.run([sys.executable, "-s", "-m", "compileall", "-q", "-f",
+                    "-s", str(res), "-p", "LocalModelDesk.app/Contents/Resources", str(res / "desk")],
+                   check=True, env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"})
+
+    pyc = next((res / "desk" / "__pycache__").glob("mod.*.pyc"))
+    assert b"repo-marker" not in pyc.read_bytes()
+    code = marshal.loads(pyc.read_bytes()[16:])
+    assert code.co_filename == "LocalModelDesk.app/Contents/Resources/desk/mod.py"
+
+
+def test_build_script_strips_build_paths_from_bytecode():
+    text = (REPO / "scripts" / "build-app.sh").read_text(encoding="utf-8")
+    assert "export PYTHONDONTWRITEBYTECODE=1" in text
+    assert '-s "$RES" -p "LocalModelDesk.app/Contents/Resources" "$RES/desk"' in text
+    assert 'find "$RES/python" "$RES/pylibs" "$RES/desk" -type d -name __pycache__ -prune -exec rm -rf {} +' in text
