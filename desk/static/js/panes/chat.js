@@ -35,6 +35,9 @@ export function createChatPane(root, ctx = {}) {
   let lastLoadedKey = null;
   let llmStatus = "idle";
   let liveTurn = null; // { session, state } while a reply is streaming — read by the pagehide saver
+  let readyModels = null; // null until the catalog has been read once
+  let heavyAllowed = true;
+  let heavyReason = "";
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
   const current = () => sessions.find((s) => s.id === currentId) ?? null;
@@ -73,6 +76,8 @@ export function createChatPane(root, ctx = {}) {
       els.modelSelect.append(option);
     }
     if (selected) els.modelSelect.value = selected;
+    readyModels = catalog.filter((entry) => byKey.get(entry.key)?.state === "present").length;
+    syncLoadButton();
     renderLlm(status);
   }
 
@@ -80,7 +85,10 @@ export function createChatPane(root, ctx = {}) {
   // bare colored text (F15).
   const BADGE_KIND = { idle: "none", loading: "busy", loaded: "ok", error: "unknown" };
 
-  function renderLlm(payload) {
+  // Without a desk snapshot (older callers) assume the media job still holds memory.
+  const mediaStillHolds = (deskState) => !deskState || Boolean(deskState.media_busy || (deskState.holder && deskState.holder.kind !== "llm"));
+
+  function renderLlm(payload, deskState) {
     const state = payload.state;
     llmStatus = state.status;
     els.modelState.dataset.status = state.status;
@@ -91,7 +99,7 @@ export function createChatPane(root, ctx = {}) {
       if (state.model_key && state.model_key !== lastLoadedKey) { els.modelSelect.value = state.model_key; lastLoadedKey = state.model_key; }
       delete els.modelSelect.dataset.userPicked;
     } else if (state.error?.code === "evicted") {
-      els.modelState.textContent = "已被媒体任务让出内存，可重新加载";
+      els.modelState.textContent = mediaStillHolds(deskState) ? "已被媒体任务让出内存，可重新加载" : "媒体任务已结束，可重新加载";
       // Keep the dropdown pointed at the evicted model, not whatever sat first
       // in the list, so "加载" reloads the model that was actually kicked out.
       if (state.model_key && !els.modelSelect.dataset.userPicked) els.modelSelect.value = state.model_key;
@@ -99,7 +107,9 @@ export function createChatPane(root, ctx = {}) {
       const tail = state.error?.log_tail ? `\n${state.error.log_tail}` : "";
       els.modelState.textContent = `加载失败（${state.error?.code ?? "?"}）：${state.error?.message ?? ""}${tail}`;
     }
-    const badgeKind = state.error?.code === "evicted" ? "busy" : (BADGE_KIND[state.status] ?? "unknown");
+    const badgeKind = state.error?.code === "evicted"
+      ? (mediaStillHolds(deskState) ? "busy" : "none")
+      : (BADGE_KIND[state.status] ?? "unknown");
     els.modelState.className = `badge badge-${badgeKind}`;
     if (state.status !== "loaded") lastLoadedKey = state.status === "loading" ? lastLoadedKey : null;
     els.unloadBtn.disabled = state.status === "idle" || state.status === "loading";
@@ -436,10 +446,18 @@ export function createChatPane(root, ctx = {}) {
     try { await refreshSessions(); } catch (error) { setError(error.message); }
   }
 
+  function syncLoadButton() {
+    const noModels = readyModels === 0;
+    els.loadBtn.disabled = !heavyAllowed || noModels;
+    const hint = !heavyAllowed ? heavyReason : noModels ? "还没有下载好的聊天模型，去「资源」页下载" : "";
+    els.loadBtn.title = hint;
+    if (els.loadHint) els.loadHint.textContent = hint;
+  }
+
   function setHeavyAllowed(allowed, reason = "") {
-    els.loadBtn.disabled = !allowed;
-    els.loadBtn.title = allowed ? "" : reason;
-    if (els.loadHint) els.loadHint.textContent = allowed ? "" : reason;
+    heavyAllowed = allowed;
+    heavyReason = reason;
+    syncLoadButton();
   }
 
   async function refreshSessionsIfStale() {

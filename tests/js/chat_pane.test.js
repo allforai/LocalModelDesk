@@ -493,6 +493,40 @@ test("历史消息用会话模型名，空回答有占位（F8/F9）", async () 
   assert.equal(body.children[0].className, "empty-answer");
 });
 
+test("媒体作业已结束时，被驱逐状态显示中性徽章和可重新加载", async () => {
+  const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+  const { root, controls } = makePane();
+  const pane = createChatPane(root);
+  const evicted = { state: { status: "error", model_key: "glm", error: { code: "evicted", message: "让出内存" } } };
+  pane.applyLlmStatus(evicted, { holder: { kind: "media", label: "h3" }, media_busy: true });
+  assert.ok(controls.get("[data-model-state]").className.includes("badge-busy"));
+  pane.applyLlmStatus(evicted, { holder: null, media_busy: false });
+  assert.ok(controls.get("[data-model-state]").className.includes("badge-none"));
+  assert.equal(controls.get("[data-model-state]").textContent, "媒体任务已结束，可重新加载");
+});
+
+test("没有下载好的聊天模型时加载按钮禁用并指向资源页", async () => {
+  const oldFetch = globalThis.fetch;
+  globalThis.fetch = async (path) => {
+    if (path === "/api/resources/catalog") return json([{ key: "glm", group: "chat", name: "GLM", gb: 60 }]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [{ key: "glm", state: "missing" }] });
+    if (path === "/api/resources/download") return json({});
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    throw new Error(`unexpected request ${path}`);
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { root, controls } = makePane();
+    const pane = createChatPane(root);
+    await pane.refreshModels();
+    pane.setHeavyAllowed(true, "");
+    assert.equal(controls.get("[data-load]").disabled, true);
+    assert.equal(controls.get("[data-load-hint]").textContent, "还没有下载好的聊天模型，去「资源」页下载");
+    pane.setHeavyAllowed(false, "媒体作业进行中");
+    assert.equal(controls.get("[data-load-hint]").textContent, "媒体作业进行中");
+  } finally { globalThis.fetch = oldFetch; }
+});
+
 test("流式中页面关闭：把问句和已出的半句带 keepalive 写回会话（P3 路径 6）", async () => {
   const oldFetch = globalThis.fetch;
   const saved = [];
