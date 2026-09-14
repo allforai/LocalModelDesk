@@ -59,7 +59,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
   const names = [
     "readConfig", "writeConfig", "completeFirstRun", "adoptLegacyModels", "discoverModels", "listCatalog", "verifyAllModels",
     "startDownload", "cancelDownload", "deleteModel", "diskUsage", "memorySnapshot", "deskState", "loadLlm", "unloadLlm",
-    "llmStatus", "chatStream", "startVideoJob", "startMusicJob", "cancelJob", "jobStatus", "listOutputs",
+    "llmStatus", "chatStream", "promptAssist", "startVideoJob", "startMusicJob", "cancelJob", "jobStatus", "listOutputs",
     "serveOutput", "revealOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
   ];
   assert.deepEqual(Object.keys(api).sort(), [...names, "uploadMediaInput", "DeskApiError"].sort());
@@ -156,4 +156,18 @@ test("updateChatSession 可带 keepalive，页面关闭时请求不被浏览器�
     assert.equal(seen[0][1].method, "PATCH");
     assert.equal(seen[0][1].keepalive, true);
   } finally { globalThis.fetch = oldFetch; }
+});
+
+test("promptAssist 以 POST 发往 prompt-assist，且不受 8 秒默认超时限制", async () => {
+  const oldFetch = globalThis.fetch;
+  const oldSetTimeout = globalThis.setTimeout;
+  const delays = [];
+  globalThis.setTimeout = (fn, ms) => { delays.push(ms); return oldSetTimeout(() => {}, 0); };
+  globalThis.fetch = async (path, options) => new Response(JSON.stringify({ path, method: options.method }), { status: 200 });
+  try {
+    const api = await import("../../desk/static/js/api.js");
+    const result = await api.promptAssist({ task: "video", action: "lucky" });
+    assert.deepEqual(result, { path: "/api/llm/prompt-assist", method: "POST" });
+    assert.deepEqual(delays, [180000]);
+  } finally { globalThis.fetch = oldFetch; globalThis.setTimeout = oldSetTimeout; }
 });

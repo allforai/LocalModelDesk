@@ -5,7 +5,8 @@ const ROUTES = {
   download: "/api/resources/download", cancelDownload: "/api/resources/download/cancel",
   deleteModel: "/api/resources/delete", disk: "/api/resources/disk", memory: "/api/memory", deskState: "/api/state",
   llmLoad: "/api/llm/load", llmUnload: "/api/llm/unload", llmStatus: "/api/llm/status",
-  chatStream: "/api/llm/chat/stream", video: "/api/media/video", music: "/api/media/music",
+  chatStream: "/api/llm/chat/stream", promptAssist: "/api/llm/prompt-assist",
+  video: "/api/media/video", music: "/api/media/music",
   cancelJob: "/api/media/cancel", job: "/api/media/job", outputs: "/api/outputs",
   history: "/api/history", sessions: "/api/sessions", gatewayConfig: "/api/gateway/config",
 };
@@ -39,7 +40,7 @@ async function toError(response) {
 // setRequestTimeout 已删（零调用点，F13 census 2026-09-08）。
 const REQUEST_TIMEOUT_MS = 8000;
 
-async function request(path, { method = "GET", body, stream = false, keepalive = false } = {}) {
+async function request(path, { method = "GET", body, stream = false, keepalive = false, timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
   const options = { method };
   if (keepalive) options.keepalive = true;
   if (body !== undefined) {
@@ -50,13 +51,13 @@ async function request(path, { method = "GET", body, stream = false, keepalive =
   if (!stream && typeof AbortController === "function") {
     const controller = new AbortController();
     options.signal = controller.signal;
-    timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    timer = setTimeout(() => controller.abort(), timeoutMs);
   }
   let response;
   try {
     response = await globalThis.fetch(path, options);
   } catch (error) {
-    if (error?.name === "AbortError") throw new DeskApiError(0, "timeout", `请求超时（${REQUEST_TIMEOUT_MS / 1000} 秒无响应）`);
+    if (error?.name === "AbortError") throw new DeskApiError(0, "timeout", `请求超时（${timeoutMs / 1000} 秒无响应）`);
     throw error;
   } finally { if (timer) clearTimeout(timer); }
   if (!response.ok) throw await toError(response);
@@ -95,6 +96,8 @@ export const llmStatus = () => request(ROUTES.llmStatus);
 export const chatStream = (messages) => request(ROUTES.chatStream, {
   method: "POST", body: { messages }, stream: true,
 });
+// A reasoning model may think for a while before it writes the prompt.
+export const promptAssist = (body) => request(ROUTES.promptAssist, { method: "POST", body, timeoutMs: 180_000 });
 
 export const startVideoJob = (params) => json(ROUTES.video, "POST", params);
 export async function uploadMediaInput(file) {
