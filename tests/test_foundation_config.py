@@ -202,3 +202,19 @@ def test_read_config_reports_wrong_type_on_disk_as_corrupt(tmp_path):
     with pytest.raises(ConfigCorruptError) as exc:
         config_mod.read_config(roots)
     assert "gateway.port" in exc.value.payload["parse_error"]
+
+
+def test_reset_refuses_a_healthy_config_unless_forced(tmp_path):
+    """误调不能把好配置改名、把网关回落到 0.0.0.0（cross-exam 2026-09-13 G2）。"""
+    from desk.foundation.errors import ConfigNotCorruptError
+
+    roots = make_roots(tmp_path)
+    config_mod.update_config(roots, first_run_done=True)
+    before = roots.config_path.read_bytes()
+
+    with pytest.raises(ConfigNotCorruptError):
+        config_mod.reset_config(roots)
+    assert roots.config_path.read_bytes() == before
+
+    result = config_mod.reset_config(roots, force=True)
+    assert Path(result["backup"]).read_bytes() == before

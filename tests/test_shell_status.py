@@ -90,3 +90,43 @@ def test_memory_menu_title_matches_web_wording(used, total, available, expected)
                           capture_output=True, text=True, timeout=30)
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.strip() == expected
+
+
+@pytest.mark.parametrize("mods,chars,expected", [
+    ("cmd", ",", "true"),
+    ("cmd+shift", ",", "false"),
+    ("cmd+opt", ",", "false"),
+    ("", ",", "false"),
+    ("cmd", "h", "false"),
+])
+def test_settings_shortcut(mods, chars, expected):
+    proc = subprocess.run([harness_path(), "settings-shortcut", mods, chars],
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == expected
+
+
+@pytest.mark.parametrize("status,signaled,expected", [
+    ("3", "false", "退出码 3"),
+    ("9", "true", "被信号 9（SIGKILL）结束"),
+    ("15", "true", "被信号 15（SIGTERM）结束"),
+    ("6", "true", "被信号 6 结束"),
+])
+def test_service_exit_description(status, signaled, expected):
+    proc = subprocess.run([harness_path(), "exit-description", status, signaled],
+                          capture_output=True, text=True, timeout=30)
+    assert proc.stdout.strip() == expected
+
+
+def test_log_tail_keeps_last_lines():
+    text = "".join(f"line {i}\n" for i in range(50))
+    proc = subprocess.run([harness_path(), "log-tail", "3"], input=text,
+                          capture_output=True, text=True, timeout=30)
+    assert proc.stdout == "line 47\nline 48\nline 49\n"
+
+
+def test_error_page_shows_escaped_log_tail():
+    proc = subprocess.run([harness_path(), "error-page", "台面服务意外退出（被信号 9（SIGKILL）结束）", "/tmp/x.log",
+                           "Traceback <boom>"], capture_output=True, text=True, timeout=30)
+    assert "<pre>Traceback &lt;boom&gt;</pre>" in proc.stdout
+    assert "被信号 9（SIGKILL）结束" in proc.stdout

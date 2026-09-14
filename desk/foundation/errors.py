@@ -23,6 +23,11 @@ class ConfigInvalidError(FoundationError):
     http_status = 400
 
 
+class ConfigNotCorruptError(FoundationError):
+    code = "config_not_corrupt"
+    http_status = 409
+
+
 class NotWritableError(FoundationError):
     code = "not_writable"
     http_status = 400

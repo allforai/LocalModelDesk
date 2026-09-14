@@ -22,26 +22,6 @@ def _guarded(fn: Handler) -> Handler:
     return wrapper
 
 
-def match_route(routes: list[Route], method: str, path: str):
-    """Return the first matching handler and its path parameters, if any."""
-    parts = [part for part in path.split("?", 1)[0].split("/") if part]
-    for route_method, pattern, handler in routes:
-        if route_method != method:
-            continue
-        pattern_parts = [part for part in pattern.split("/") if part]
-        if len(pattern_parts) != len(parts):
-            continue
-        params: dict[str, str] = {}
-        for pattern_part, actual in zip(pattern_parts, parts):
-            if pattern_part.startswith("{") and pattern_part.endswith("}"):
-                params[pattern_part[1:-1]] = actual
-            elif pattern_part != actual:
-                break
-        else:
-            return handler, params
-    return None
-
-
 def _truthy(value) -> bool:
     return str(value).lower() in ("1", "true", "yes")
 
@@ -88,6 +68,7 @@ def build_routes(service) -> list[Route]:
     return [
         ("GET", "/api/resources/catalog", get_catalog),
         ("GET", "/api/resources/status", get_status),
+        # Single-model verify for scripts; the UI refreshes all models at once.
         ("GET", "/api/resources/status/{key}", get_status_one),
         ("GET", "/api/resources/download", get_download),
         ("POST", "/api/resources/download", post_download),

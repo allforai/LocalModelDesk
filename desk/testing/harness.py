@@ -205,7 +205,7 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
             "needs_setup": config.read_config(roots).needs_setup,
         }),
         ("PUT", "/api/config", lambda req: config.update_config(roots, **req.body).to_json()),
-        ("POST", "/api/config/reset", lambda _req: config.reset_config(roots)),
+        ("POST", "/api/config/reset", lambda req: config.reset_config(roots, force=bool((req.body or {}).get("force")))),
         ("GET", "/api/paths", get_paths),
         ("POST", "/api/first-run", lambda req: firstrun.complete_first_run(
             roots, normalize_user_path(req.body["models_root"])
@@ -300,7 +300,6 @@ def launch_test_harness(
         executor=FakeMediaExecutor(media_script),
         clock=clock,
     )
-    unsubscribe = arbiter.subscribe(llm.on_heavy_state_changed)
     app = DeskApp("127.0.0.1", 0)
     static_assets = StaticAssets(roots.static_dir)
     handler_type = app._server.RequestHandlerClass
@@ -351,5 +350,5 @@ def launch_test_harness(
         chat_script, media_script, download_control, clock,
         f"http://127.0.0.1:{app.port}", roots.data_root, roots.models_root,
         roots.outputs_root, gateway_port, seeded, route_specs, reveal_calls,
-        _unsubscribe=unsubscribe,
+        _unsubscribe=llm.close,
     )

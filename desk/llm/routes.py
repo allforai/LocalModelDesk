@@ -1,7 +1,6 @@
 """Thin HTTP adapter from the LLM UI routes to ``LlmService``."""
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from typing import Any, Callable, Iterator
 
@@ -42,16 +41,12 @@ class Route:
     handler: Callable[[dict], RouteResult]
 
 
-def encode_sse(event: dict) -> bytes:
-    """Encode one chat event as a complete SSE data frame."""
-    return b"data: " + json.dumps(event, ensure_ascii=False).encode("utf-8") + b"\n\n"
-
-
 def build_routes(service) -> list[Route]:
     return [
         Route("POST", "/api/llm/load", lambda body: _load(service, body)),
         Route("POST", "/api/llm/unload", lambda body: _unload(service)),
         Route("GET", "/api/llm/status", lambda _body: RouteResult(200, service.status())),
+        # Non-streaming chat for scripts and the gateway contract; the UI streams instead.
         Route("POST", "/api/llm/chat", lambda body: _chat(service, body)),
         Route("POST", "/api/llm/chat/stream", lambda body: _chat_stream(service, body)),
     ]

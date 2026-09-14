@@ -18,35 +18,28 @@ def test_status_self_check_detects_dead_process(tmp_path):
     assert ("release", "tok-1") in testbed.calls
 
 
-def test_heavy_state_changed_holder_lost_converges(tmp_path):
+def test_holder_moving_to_media_marks_the_model_evicted(tmp_path):
     testbed = make_loaded(tmp_path)
 
-    testbed.service.on_heavy_state_changed({
-        "holder": {"kind": "video", "label": "job-1", "phase": "held"},
-        "media_busy": True,
-    })
+    testbed.arbiter.emit({"holder": {"kind": "video", "label": "job-1", "phase": "held"}, "media_busy": True})
 
     got = testbed.service.status()
     assert got["state"]["status"] == "error"
-    assert got["state"]["error"]["code"] == "backend_exited"
-    assert ("release", "tok-1") in testbed.calls
+    assert got["state"]["error"]["code"] == "evicted"
 
 
-def test_heavy_state_changed_still_llm_holder_is_noop(tmp_path):
+def test_holder_still_this_model_is_noop(tmp_path):
     testbed = make_loaded(tmp_path)
 
-    testbed.service.on_heavy_state_changed({
-        "holder": {"kind": "llm", "label": "glm", "phase": "held"},
-        "media_busy": False,
-    })
+    testbed.arbiter.emit({"holder": {"kind": "llm", "label": "glm", "phase": "held"}, "media_busy": False})
 
     assert testbed.service.status()["state"]["status"] == "loaded"
 
 
-def test_heavy_state_changed_when_not_loaded_is_noop(tmp_path):
+def test_holder_change_when_not_loaded_is_noop(tmp_path):
     testbed = make_service(tmp_path)
 
-    testbed.service.on_heavy_state_changed({"holder": None, "media_busy": False})
+    testbed.arbiter.emit({"holder": None, "media_busy": False})
 
     assert testbed.service.status()["state"]["status"] == "idle"
     assert testbed.calls == []

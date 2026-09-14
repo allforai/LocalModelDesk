@@ -3,6 +3,10 @@
 # A failed build removes its staging directory; an existing published bundle is untouched.
 set -euo pipefail
 
+# Any python run during the build (uv probing the embedded interpreter, pip, compileall)
+# would otherwise leave __pycache__ files that record this machine's paths (G1).
+export PYTHONDONTWRITEBYTECODE=1
+
 usage() {
   echo 'Usage: build-app.sh [--output dist] [--identity "…"] [--adhoc] [--python-version cpython-X.Y.Z]' >&2
   exit 2
@@ -103,6 +107,11 @@ echo "==> [5/9] Render Info.plist"
 sed "s/@VERSION@/$VERSION/g" "$REPO/packaging/Info.plist.template" > "$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist"
 
+# System-injected menu items (Writing Tools, AutoFill, Dictation…) follow the bundle's
+# declared localizations; without an lproj they fall back to English.
+mkdir -p "$RES/zh-Hans.lproj"
+printf '"CFBundleName" = "LocalModelDesk";\n' > "$RES/zh-Hans.lproj/InfoPlist.strings"
+
 echo "==> [6/9] Build icon"
 ICONSET="$STAGING/AppIcon.iconset"
 mkdir -p "$ICONSET"
@@ -120,7 +129,9 @@ printf '{"app": "LocalModelDesk", "bundle_version": "%s", "python": "python/bin/
 
 echo "==> [8/9] Sign"
 echo "    precompiling bytecode so a later run cannot write into the signed bundle"
-"$RES/python/bin/python3.13" -s -m compileall -q -f "$RES/desk" >/dev/null
+find "$RES/python" "$RES/pylibs" "$RES/desk" -type d -name __pycache__ -prune -exec rm -rf {} +
+PYTHONDONTWRITEBYTECODE= "$RES/python/bin/python3.13" -s -m compileall -q -f \
+  -s "$RES" -p "LocalModelDesk.app/Contents/Resources" "$RES/desk" >/dev/null
 SIGN=("$REPO/scripts/sign-app.sh" "$APP")
 if [[ "$ADHOC" == 1 ]]; then
   if [[ "${LMD_ALLOW_ADHOC:-0}" != "1" ]]; then

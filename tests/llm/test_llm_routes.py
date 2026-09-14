@@ -7,7 +7,7 @@ from urllib.request import Request, urlopen
 
 import pytest
 
-from desk.llm.routes import build_routes, encode_sse
+from desk.llm.routes import build_routes
 from tests.llm.llm_fakes import make_loaded, make_service
 
 
@@ -38,7 +38,7 @@ def serve(routes):
                 self.send_header("Content-Type", "text/event-stream")
                 self.end_headers()
                 for event in result.sse:
-                    self.wfile.write(encode_sse(event))
+                    self.wfile.write(b"data: " + json.dumps(event, ensure_ascii=False).encode("utf-8") + b"\n\n")
                 return
             payload = json.dumps(result.body).encode()
             self.send_response(result.status)

@@ -41,14 +41,7 @@ class Arbiter:
 
     @staticmethod
     def _public_holder(holder: Holder | None) -> dict | None:
-        if holder is None:
-            return None
-        return {
-            "kind": holder.kind,
-            "label": holder.label,
-            "since": holder.since,
-            "phase": holder.phase,
-        }
+        return None if holder is None else holder.public_view()
 
     def _state_for(self, holder: Holder | None) -> dict:
         def can_start(kind: str) -> dict:
@@ -100,9 +93,6 @@ class Arbiter:
                     pass
 
         return unsubscribe
-
-    def current_holder(self) -> dict | None:
-        return self._public_holder(self._read_holder())
 
     def memory_snapshot(self) -> dict:
         """Return the current memory probe as a public dictionary."""

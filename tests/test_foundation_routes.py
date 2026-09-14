@@ -154,3 +154,10 @@ def test_sse_client_disconnect_closes_the_event_generator():
         assert closed.wait(5.0)
     finally:
         app.shutdown()
+
+
+def test_config_reset_endpoint_refuses_healthy_config(server, tmp_path):
+    http_call(server, "PUT", "/api/config", {"first_run_done": True})
+    status, payload = http_call(server, "POST", "/api/config/reset", {})
+    assert status == 409
+    assert payload["error"]["code"] == "config_not_corrupt"

@@ -83,25 +83,27 @@ class GatewayService:
         """Re-read configuration and replace the listener when it has changed.
 
         A bind failure never leaves the gateway parked on the bad config: it rolls back
-        to the last address that actually bound and persists that rollback (F12), while
-        keeping the plain-Chinese failure reason visible in `last_error`.
+        to the last address that actually bound and persists that rollback (F12). The
+        plain-Chinese reason for *this* save travels as `apply_error`; `status()` alone
+        never repeats it once the gateway is listening again (G7).
         """
         cfg = self._gateway_config()
         wanted = (bool(cfg["enabled"]), cfg["host"], cfg["port"])
         listening = self._server is not None
         if wanted == self._applied and listening == wanted[0]:
-            return self.status()
+            return {**self.status(), "apply_error": None}
         self.stop()
         self._start(cfg)
+        failure = self._last_error if self._server is None and wanted[0] else None
         if self._server is None and wanted[0] and self._last_good is not None and self._last_good != wanted:
-            failure = self._last_error
             enabled, host, port = self._last_good
             restored = {"enabled": enabled, "host": host, "port": port}
             if self.on_rollback is not None:
                 self.on_rollback(restored)
             self._start(restored)
-            self._last_error = failure
-        return self.status()
+            if self._server is None:
+                self._last_error = failure
+        return {**self.status(), "apply_error": failure}
 
     def stop(self) -> None:
         """Close the listener and wait briefly for its serving thread to exit."""
@@ -135,7 +137,7 @@ class GatewayService:
             "openai_base_url": f"http://{lan_host}:{port}/v1",
             "anthropic_base_url": f"http://{lan_host}:{port}",
             "auth": "none",
-            "last_error": self._last_error,
+            "last_error": None if listening else self._last_error,
         }
 
     def handle_config_request(self, method: str, body=None):

@@ -9,11 +9,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var poller: StatusPoller!
   private var status = ShellStatus(server: .stopped, desk: nil, needsSetup: false,
                                    lastPollError: nil)
+  private var settingsKeyMonitor: Any?
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.appearance = NSAppearance(named: .darkAqua)   // D1 single dark theme: native chrome follows the web content
     NSApp.setActivationPolicy(.regular)
     buildMainMenu()
+    installSettingsShortcut()
     api = DeskAPI(baseURL: DeskPaths.baseURL)
     server = ServerController(spec: DeskPaths.makeLaunchSpec())
     windowController = MainWindowController(baseURL: DeskPaths.baseURL)
@@ -102,9 +104,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         break
       case .serviceExited:
         status.server = .failed(.spawnFailed("服务已退出"))
+        let cause = server.lastExit.map { "（\(serviceExitDescription(status: $0.status, signaled: $0.signaled))）" } ?? ""
+        let text = (try? String(contentsOf: DeskPaths.serverStdoutLogURL, encoding: .utf8)) ?? ""
         windowController.showErrorPage(
-          reason: "台面服务意外退出（连续 \(poller.consecutiveFailures) 次状态拉取失败）。",
-          logPath: DeskPaths.serverStdoutLogURL.path)
+          reason: "台面服务意外退出\(cause)。",
+          logPath: DeskPaths.serverStdoutLogURL.path,
+          logTail: logTail(text, maxLines: 20))
         poller.stop()
       case .serviceUnresponsive:
         status.server = .failed(.spawnFailed("服务无响应"))
@@ -212,6 +217,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   @objc private func openSettings() {
     windowController?.showSettings()
+  }
+
+  /// WKWebView consumes ⌘, before the main menu sees its key equivalent (G8).
+  private func installSettingsShortcut() {
+    settingsKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+      let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+      guard isSettingsShortcut(command: flags.contains(.command), option: flags.contains(.option),
+                               control: flags.contains(.control), shift: flags.contains(.shift),
+                               characters: event.charactersIgnoringModifiers) else { return event }
+      self?.openSettings()
+      return nil
+    }
   }
 
   private static func describe(_ failure: ServerFailure) -> String {

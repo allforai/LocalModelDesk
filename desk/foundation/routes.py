@@ -32,11 +32,11 @@ def put_config(req) -> dict:
     return _config_json(config_mod.update_config(_roots(), **req.body))
 
 
-def post_config_reset(_req) -> dict:
+def post_config_reset(req) -> dict:
     # Corrupt config must not block recovery: resolve roots with defaults
     # instead of re-raising the same ConfigCorruptError we're here to fix.
     roots = paths_mod.resolve_paths(default_config_on_corrupt=True)
-    return config_mod.reset_config(roots)
+    return config_mod.reset_config(roots, force=bool((req.body or {}).get("force")))
 
 
 def get_paths(_req) -> dict:
@@ -97,6 +97,7 @@ def build_routes() -> list:
         ("GET", "/api/config", get_config),
         ("PUT", "/api/config", put_config),
         ("POST", "/api/config/reset", post_config_reset),
+        # Diagnostic endpoint for support/scripts; the UI deliberately does not call it.
         ("GET", "/api/paths", get_paths),
         ("POST", "/api/first-run", post_first_run),
         ("POST", "/api/adopt", post_adopt),
