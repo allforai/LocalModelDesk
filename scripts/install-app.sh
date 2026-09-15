@@ -30,8 +30,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -d "$APP" ]] || die "应用包不存在：$APP"
 [[ -d "$DEST" ]] || die "目标目录不存在：${DEST}（请先创建，或用 --dest 指定已存在的目录）"
+[[ -d "$APP" ]] || die "应用包不存在：$APP"
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 VERIFY=("$REPO/scripts/verify-app.sh" "$APP")
 if [[ -n "$SOURCE_ROOT" ]]; then

@@ -366,6 +366,15 @@ def test_install_names_the_missing_dest(tmp_path):
     assert str(missing) in out.stderr
 
 
+def test_install_reports_the_missing_dest_before_the_missing_app(tmp_path):
+    """两个参数都错时先说目标目录——原顺序让没构建过 dist/ 的检出里 test_install_names_the_missing_dest 失败。"""
+    out = run([REPO / "scripts" / "install-app.sh",
+               "--app", tmp_path / "nope.app", "--dest", tmp_path / "nope"])
+    assert out.returncode == 2
+    assert "目标目录不存在" in out.stderr
+    assert "应用包不存在" not in out.stderr
+
+
 def uninstall(app, launch_agents, data_root, env, *extra, custom_la_dir=True):
     argv = [str(REPO / "scripts" / "uninstall-app.sh"), "--app-path", app, "--data-root", data_root]
     if custom_la_dir:
