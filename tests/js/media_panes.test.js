@@ -282,3 +282,16 @@ test("running 且日志无 step 行时进度条为不定态（F7/N3）", () => {
   assert.equal(music.parts["job-progress"].indeterminate, false);
   assert.equal(music.parts["job-progress"].value, 25);
 });
+
+test("清晰画幅加 10 秒以上时视频面板提示很慢，改小后提示消失", () => {
+  const video = pane({ "video-prompt": "", "video-size": "768x448", "video-frames": "49", "video-steps": "16", "video-start": "", "video-cost-note": "" });
+  const videoPane = createVideoPane(video);
+  assert.equal(video.parts["video-cost-note"].textContent, "");
+
+  videoPane.fill({ width: 1024, height: 576, frames: 362 });
+  assert.match(video.parts["video-cost-note"].textContent, /20 分钟只走完 2\/16 步/);
+
+  video.parts["video-size"].value = "512x288";
+  video.parts["video-size"].listeners.change();
+  assert.equal(video.parts["video-cost-note"].textContent, "");
+});
