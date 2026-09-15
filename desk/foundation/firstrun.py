@@ -15,7 +15,7 @@ from .errors import (
     LegacyRootError,
     NotWritableError,
 )
-from .paths import home_model_root_candidates, normalize_user_path
+from .paths import default_data_root, home_model_root_candidates, normalize_user_path
 from ..resources.catalog import list_catalog
 
 
@@ -41,20 +41,28 @@ def _nonempty_directory(path: Path) -> bool:
 
 
 def _candidate_roots(roots) -> list[Path]:
-    """Return a bounded set of likely roots; never crawl the user's whole disk."""
+    """Return a bounded set of likely roots; never crawl the user's whole disk.
+
+    An explicit LOCALMODELDESK_MODEL_SCAN_ROOTS replaces the guesses, and an instance on a
+    non-default data root (a test copy or the e2e harness) never looks at the real home or
+    the checkout around it: it must not offer, or adopt, the user's real model tree.
+    """
     raw = os.environ.get("LOCALMODELDESK_MODEL_SCAN_ROOTS", "")
-    candidates = [Path(item) for item in raw.split(os.pathsep) if item]
-    candidates.extend([
+    explicit = [Path(item) for item in raw.split(os.pathsep) if item]
+    candidates = [
+        *explicit,
         getattr(roots, "models_root", roots.data_root / "models"),
         roots.data_root / "models",
-    ])
-    resources = Path(getattr(roots, "resources_root", ""))
-    is_real_app_bundle = any(parent.suffix == ".app" for parent in resources.parents)
-    if is_real_app_bundle:
-        candidates.extend(home_model_root_candidates())
+    ]
+    isolated = normalize_user_path(roots.data_root) != normalize_user_path(default_data_root())
+    if explicit or isolated:
+        return candidates
     resources_root = getattr(roots, "resources_root", None)
     if resources_root:
-        candidates.extend(Path(resources_root).parents)
+        resources = Path(resources_root)
+        if any(parent.suffix == ".app" for parent in resources.parents):
+            candidates.extend(home_model_root_candidates())
+        candidates.extend(resources.parents)
     return candidates
 
 

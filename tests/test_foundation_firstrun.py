@@ -1,5 +1,6 @@
 import errno
 import os
+from types import SimpleNamespace
 
 import pytest
 
@@ -99,3 +100,45 @@ def test_explicit_empty_models_root_survives_discovery(roots, tmp_path, monkeypa
     monkeypatch.setenv("LOCALMODELDESK_MODEL_SCAN_ROOTS", str(complete))
     assert firstrun.discover_model_roots(roots)[0]["path"] == str(complete)
     assert config_mod.read_config(roots).models_root == chosen.resolve()
+
+
+def _tree(path, subtree="minimax-h3"):
+    (path / subtree).mkdir(parents=True)
+    (path / subtree / "w.bin").write_bytes(b"x")
+    return path
+
+
+def test_scan_roots_env_replaces_every_guess(tmp_path, monkeypatch):
+    """显式扫描目录时不许再把检出目录的上级带进来（嵌套 worktree 里发现了真实检出）。"""
+    outer = _tree(tmp_path / "outer")
+    repo = outer / "repo"
+    repo.mkdir()
+    chosen = _tree(tmp_path / "chosen", "minimax-music3")
+    home = tmp_path / "home"
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("LOCALMODELDESK_MODEL_SCAN_ROOTS", str(chosen))
+    data_root = home / "Library" / "Application Support" / "LocalModelDesk"
+    roots = SimpleNamespace(data_root=data_root, models_root=data_root / "models", resources_root=repo)
+
+    assert [item["path"] for item in firstrun.discover_model_roots(roots)] == [str(chosen)]
+
+
+def test_isolated_data_root_never_offers_the_real_home_or_checkout_tree(tmp_path, monkeypatch):
+    """测试副本与 harness 不许把用户真实的模型树列成候选（2026-09-13 未拉的线）。"""
+    home = tmp_path / "home"
+    real_tree = _tree(home / "LocalModelDesk")
+    checkout = _tree(tmp_path / "checkout", "llms")
+    bundle = checkout / "LocalModelDesk.app" / "Contents" / "Resources"
+    bundle.mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.delenv("LOCALMODELDESK_MODEL_SCAN_ROOTS", raising=False)
+
+    isolated_data = tmp_path / "isolated-data"
+    isolated = SimpleNamespace(data_root=isolated_data, models_root=isolated_data / "models", resources_root=bundle)
+    assert firstrun.discover_model_roots(isolated) == []
+
+    default_data = home / "Library" / "Application Support" / "LocalModelDesk"
+    real = SimpleNamespace(data_root=default_data, models_root=default_data / "models", resources_root=bundle)
+    found = {item["path"] for item in firstrun.discover_model_roots(real)}
+    assert str(real_tree) in found
+    assert str(checkout) in found

@@ -22,6 +22,11 @@ def normalize_user_path(value) -> Path:
     return Path(value).expanduser().resolve()
 
 
+def default_data_root() -> Path:
+    """Where a real install keeps its data; any other data root is an isolated instance."""
+    return Path.home() / "Library" / "Application Support" / "LocalModelDesk"
+
+
 def home_model_root_candidates() -> tuple[Path, ...]:
     """Return the small set of conventional model roots under the user home."""
     home = Path.home()
@@ -66,7 +71,7 @@ def _static_roots(data_root=None, resources_root=None) -> _StaticRoots:
     resources_root = normalize_user_path(resources_root)
     if data_root is None:
         env_root = os.environ.get("LOCALMODELDESK_DATA_ROOT")
-        data_root = Path(env_root) if env_root else Path.home() / "Library" / "Application Support" / "LocalModelDesk"
+        data_root = Path(env_root) if env_root else default_data_root()
     data_root = normalize_user_path(data_root)
     return _StaticRoots(
         mode="bundle" if (resources_root / "bundle.json").exists() else "dev",

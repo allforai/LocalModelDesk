@@ -100,12 +100,7 @@ def test_get_config_lists_discovered_roots_only_while_setup_is_needed(server, tm
     status, payload = http_call(server, "GET", "/api/config")
     assert status == 200
     assert payload["needs_setup"] is True
-    # Membership rather than equality: this test's own execution environment
-    # (a worktree nested under a real checkout that itself contains model
-    # directories) can add unrelated candidates to the scan roots — see
-    # test_discover_endpoint_selects_best_local_tree for the same pre-existing
-    # environmental hazard, unrelated to this task's discovered/apply split.
-    assert str(tree) in payload["discovered"]
+    assert payload["discovered"] == [str(tree)]
     status, _ = http_call(server, "POST", "/api/first-run", {"models_root": str(tmp_path / "chosen")})
     assert status == 200
     status, payload = http_call(server, "GET", "/api/config")
