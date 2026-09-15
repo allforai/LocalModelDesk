@@ -52,7 +52,9 @@ def browser():
     with sync_playwright() as playwright:
         cdp_url = os.environ.get("MEGASTORM_CDP_URL")
         instance = (playwright.chromium.connect_over_cdp(cdp_url)
-                    if cdp_url else playwright.chromium.launch())
+                    # Headless Chromium hides scrollbars; the app's WKWebView shows them whenever a
+                    # mouse is attached, so render them here or their look is never tested (2026-09-16).
+                    if cdp_url else playwright.chromium.launch(ignore_default_args=["--hide-scrollbars"]))
         yield instance
         if not cdp_url:
             instance.close()

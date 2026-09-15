@@ -160,4 +160,9 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
 .retry-row{display:flex;justify-content:flex-start;padding-block:4px}
 .assist-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.assist-row .hint{flex:1 1 12em;min-width:0}
+.assist-row .hint{flex:1 1 12em;min-width:0}/* Scrollbars: with a mouse attached macOS draws them permanently in the web view; keep them
+   thin and in the dark palette instead of wide light-grey bars (user screenshot 2026-09-16). */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted)}

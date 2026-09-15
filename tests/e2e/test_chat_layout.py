@@ -72,3 +72,25 @@ def test_no_horizontal_overflow_at_the_extremes(page, tmp_path, width):
         page.goto(harness.base_url)
         page.wait_for_selector(".messages")
         assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+
+
+def test_scrollbars_are_thin_in_the_session_list_and_messages(page, tmp_path):
+    """用户 2026-09-16 截图：会话列和消息列的系统滚动条又宽又亮，和深色界面格格不入。"""
+    page.set_viewport_size({"width": 1440, "height": 600})
+    with launch_test_harness(tmp_path) as harness:
+        for n in range(12):
+            page.request.post(f"{harness.base_url}/api/sessions", data={"title": f"会话 {n}"})
+        page.goto(harness.base_url)
+        page.wait_for_selector("#pane-chat li.session")
+        widths = page.evaluate(
+            "() => { const box = (sel) => { const el = document.querySelector(sel);"
+            " const cs = getComputedStyle(el);"
+            " const borders = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);"
+            " return {overflows: el.scrollHeight > el.clientHeight, bar: el.offsetWidth - el.clientWidth - borders}; };"
+            " const m = document.querySelector('#pane-chat .messages');"
+            " for (let i = 0; i < 60; i++) { const p = document.createElement('p'); p.textContent = '填充'; m.append(p); }"
+            " return {sessions: box('#pane-chat .sessions'), messages: box('#pane-chat .messages')}; }"
+        )
+        assert widths["sessions"]["overflows"] and widths["messages"]["overflows"], widths
+        assert widths["sessions"]["bar"] <= 8, widths
+        assert widths["messages"]["bar"] <= 8, widths
