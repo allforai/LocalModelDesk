@@ -112,3 +112,37 @@ def test_default_fetcher_is_manifest_store_default():
 
     sig = inspect.signature(ManifestStore.__init__)
     assert sig.parameters["fetcher"].default is default_fetcher
+
+
+def test_cache_for_a_different_repo_is_ignored_and_refetched(tmp_path):
+    """The glm catalog key moved from the 4-bit to the 8-bit repo (2026-09-16); the cached
+    4-bit file list made the downloaded 8-bit model show as partial."""
+    import dataclasses
+
+    calls = []
+
+    def fetcher(repo):
+        calls.append(repo)
+        return [ManifestFile("model-new.safetensors", 7)]
+
+    old_entry = dataclasses.replace(GLM, hf_repo="someone/old-4bit-repo")
+    make_store(tmp_path, lambda repo: [ManifestFile("model-old.safetensors", 3)]).get(old_entry)
+
+    manifest = make_store(tmp_path, fetcher).get(GLM)
+
+    assert calls == [GLM.hf_repo]
+    assert manifest.repo == GLM.hf_repo
+    assert [f.path for f in manifest.files] == ["model-new.safetensors"]
+
+
+def test_fetch_failure_does_not_fall_back_to_another_repos_cache(tmp_path):
+    import dataclasses
+
+    old_entry = dataclasses.replace(GLM, hf_repo="someone/old-4bit-repo")
+    make_store(tmp_path, lambda repo: [ManifestFile("model-old.safetensors", 3)]).get(old_entry)
+
+    def offline(repo):
+        raise OSError("offline")
+
+    with pytest.raises(ManifestUnavailableError):
+        make_store(tmp_path, offline).get(GLM)

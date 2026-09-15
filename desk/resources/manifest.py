@@ -79,6 +79,8 @@ class ManifestStore:
     def get(self, entry: ModelEntry, refresh: bool = False) -> Manifest:
         cache_path = Path(self._cache_dir_provider()) / f"{entry.key}.json"
         cached = self._load_cache(cache_path)
+        if cached is not None and cached.repo != entry.hf_repo:
+            cached = None  # the catalog key now names another repo; its old file list is wrong
         if cached is not None and not refresh:
             return cached
         try:
