@@ -15,10 +15,13 @@ def test_uses_the_models_recommended_sampling(tmp_path):
     assert model_sampling_defaults(model) == {"temperature": 1.0, "top_p": 0.95, "top_k": 20}
 
 
-def test_keeps_only_the_keys_the_model_sets(tmp_path):
-    """GLM 4.7 Flash only sets temperature; do not invent a top_p for it."""
+def test_fills_keys_the_model_leaves_out_from_the_fallback(tmp_path):
+    """GLM 4.7 Flash only sets temperature 1.0. Measured on the real app 2026-09-15 with the
+    same prompt: temperature alone ran to the token limit without an answer in 2 of 3 runs;
+    adding top_p 0.95 answered in 3 of 3."""
     model = _config(tmp_path, {"temperature": 1.0})
-    assert model_sampling_defaults(model) == {"temperature": 1.0}
+    assert model_sampling_defaults(model) == {"temperature": 1.0, "top_p": 0.95}
+    assert model_sampling_defaults(_config(tmp_path, {"temperature": 0.6, "top_p": 0.9})) == {"temperature": 0.6, "top_p": 0.9}
 
 
 def test_falls_back_when_the_model_says_nothing_usable(tmp_path):
