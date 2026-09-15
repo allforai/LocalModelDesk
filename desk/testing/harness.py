@@ -12,6 +12,7 @@ from desk.app import DeskApp, Response
 from desk.arbiter.core import Arbiter
 from desk.foundation import capabilities, config, firstrun, paths
 from desk.foundation.paths import normalize_user_path
+from desk.foundation.routes import config_payload
 from desk.gateway.service import GatewayService
 from desk.library import LibraryService
 from desk.library import http as library_http
@@ -200,10 +201,7 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
         return Response(result.status, result.body, result.headers)
 
     table = [
-        ("GET", "/api/config", lambda _req: {
-            **config.read_config(roots).to_json(),
-            "needs_setup": config.read_config(roots).needs_setup,
-        }),
+        ("GET", "/api/config", lambda _req: config_payload(roots)),
         ("PUT", "/api/config", lambda req: config.update_config(roots, **req.body).to_json()),
         ("POST", "/api/config/reset", lambda req: config.reset_config(roots, force=bool((req.body or {}).get("force")))),
         ("GET", "/api/paths", get_paths),

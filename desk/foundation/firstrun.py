@@ -40,6 +40,12 @@ def _nonempty_directory(path: Path) -> bool:
         return False
 
 
+def recognized_model_keys(path) -> list[str]:
+    """Catalog models that already have files under ``path``."""
+    root = normalize_user_path(path)
+    return [model.key for model in list_catalog() if _nonempty_directory(root / model.relpath)]
+
+
 def _candidate_roots(roots) -> list[Path]:
     """Return a bounded set of likely roots; never crawl the user's whole disk.
 
@@ -81,10 +87,7 @@ def discover_model_roots(roots) -> list[dict]:
             continue
         seen.add(identity)
         subtrees = [name for name in LEGACY_SUBTREES if _nonempty_directory(path / name)]
-        model_keys = [
-            model.key for model in list_catalog()
-            if _nonempty_directory(path / model.relpath)
-        ]
+        model_keys = recognized_model_keys(path)
         if not subtrees and not model_keys:
             continue
         found.append({

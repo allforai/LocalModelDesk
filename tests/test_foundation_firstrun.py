@@ -142,3 +142,10 @@ def test_isolated_data_root_never_offers_the_real_home_or_checkout_tree(tmp_path
     found = {item["path"] for item in firstrun.discover_model_roots(real)}
     assert str(real_tree) in found
     assert str(checkout) in found
+
+
+def test_recognized_model_keys_lists_catalog_models_with_files(tmp_path):
+    root = _tree(tmp_path / "models", "minimax-music3")
+    (root / "minimax-h3").mkdir()  # empty directory does not count
+    assert firstrun.recognized_model_keys(root) == ["music3"]
+    assert firstrun.recognized_model_keys(tmp_path / "missing") == []

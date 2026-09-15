@@ -19,13 +19,18 @@ def _config_json(cfg: config_mod.DeskConfig) -> dict:
     return result
 
 
-def get_config(_req) -> dict:
-    roots = _roots()
+def config_payload(roots) -> dict:
+    """GET /api/config body, shared by the production route and the e2e harness."""
     cfg = config_mod.read_config(roots)
     result = _config_json(cfg)
     if cfg.needs_setup:
         result["discovered"] = [item["path"] for item in firstrun.discover_model_roots(roots)]
+        result["models_root_models"] = firstrun.recognized_model_keys(cfg.models_root)
     return result
+
+
+def get_config(_req) -> dict:
+    return config_payload(_roots())
 
 
 def put_config(req) -> dict:

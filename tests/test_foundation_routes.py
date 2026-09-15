@@ -156,3 +156,20 @@ def test_config_reset_endpoint_refuses_healthy_config(server, tmp_path):
     status, payload = http_call(server, "POST", "/api/config/reset", {})
     assert status == 409
     assert payload["error"]["code"] == "config_not_corrupt"
+
+
+def test_get_config_says_which_models_the_current_root_already_has(server, tmp_path):
+    kept = tmp_path / "kept"
+    (kept / "minimax-music3").mkdir(parents=True)
+    (kept / "minimax-music3" / "w.bin").write_bytes(b"x")
+    http_call(server, "PUT", "/api/config", {"models_root": str(kept), "first_run_done": False})
+
+    status, payload = http_call(server, "GET", "/api/config")
+
+    assert status == 200
+    assert payload["needs_setup"] is True
+    assert payload["models_root_models"] == ["music3"]
+
+    http_call(server, "PUT", "/api/config", {"first_run_done": True})
+    status, payload = http_call(server, "GET", "/api/config")
+    assert "models_root_models" not in payload
