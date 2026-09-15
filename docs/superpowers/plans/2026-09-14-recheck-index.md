@@ -89,15 +89,16 @@ A、B 互相独立，可并行；C、D、E、F 按表中依赖排队。
 | SIGTERM 时 `llmPortFree=false` 误报 | 不改代码：取证时 8767 被主实例 mlx_lm 占着，属双实例环境；A3 之后占用者会被点名 |
 | 被驱逐模型不是目录第一项时下拉框是否保持 | 不改：`renderLlm` 已按 `model_key` 回选（`chat.js` 驱逐分支），无反证 |
 | 两个会话首问相同标题相同 | 不改：卡片元信息行已显示「模型 · 时:分」 |
-| 首运页无「返回台面」、收编框预填扫描路径 | 2026-09-15 余项计划 Task 3–4：保留卡片「返回台面」；扫描结果改为「填入」建议。真机 2026-09-15：卡片「继续使用当前目录」显示「/Users/aa/LocalModelDesk 里已有 8 个模型」，收编框为空；「返回台面」按钮真机未测：完成首运会在模型根写入探针文件，按规则不写 `~/LocalModelDesk`，按钮由 `tests/e2e/test_firstrun.py` 覆盖 |
+| 首运页无「返回台面」、收编框预填扫描路径 | 2026-09-15 余项计划 Task 3–4：保留卡片「返回台面」；扫描结果改为「填入」建议。真机 2026-09-15：卡片「继续使用当前目录」显示「/Users/aa/LocalModelDesk 里已有 8 个模型」，收编框为空；「返回台面」按钮真机未测：两次真机检查（2026-09-15 Task 8、Task 10）进行中测试窗口被人操作，未能用键盘完成；由 `tests/e2e/test_firstrun.py::test_reset_models_root_can_return_to_the_desk_unchanged` 覆盖，列入用户试用清单 |
 | 隔离数据根时 `discovered` 仍扫真实 `$HOME` | 2026-09-15 余项计划 Task 2：非默认数据根只扫显式目录。真机 2026-09-15：数据根 `/tmp/lmd-g/data` 的副本 `discovered` 只含 `/Users/aa/LocalModelDesk` |
 | 视频长参数耗时预期 | 2026-09-15 余项计划 Task 5：1024×576 且 ≥10 秒时提醒，不给分钟数 |
 | VPN 隧道地址时 base URL 选哪个 | 不改：`lan.py` 跳过 `utun*` 与 100.64/10，单测覆盖；真机无隧道环境 |
 | 菜单栏图标辨识度、状态滞后约 2 秒 | 不改：视觉与轮询策略取舍 |
 | 作业列 2560 宽时视频预览贴左 | 不改：基线 L3 只约束两列之外的空区 |
 | 原生窗口内容区 832 与 WebView 696 | 真机 2026-09-15：网页铺满窗口，无空带，关闭（1920×1050 窗口底边像素均为页面底色；聊天列两侧空白合计约 24%。真机最大 1920 宽，2560 由 `tests/e2e/test_chat_layout.py` 覆盖） |
-| WKWebView 中 Tab 跳过按钮（真机 2026-09-15 新发现） | 待办：会话卡片焦点环可见、Enter 切到焦点卡片，均通过；但系统「键盘导航」关闭（默认）时 Tab 不停在「新会话」「发送」等 `<button>`，只停在输入框与卡片。首帧图片选择的键盘路径由 `tests/e2e/test_video_flow.py::test_first_frame_picker_is_reachable_by_keyboard` 覆盖，真机未测 |
+| WKWebView 中 Tab 跳过按钮（真机 2026-09-15 新发现） | 2026-09-15 余项计划 Task 7：WKWebView 配置 `tabFocusesLinks = true`，由 `tests/test_shell_static.py::test_web_view_tab_key_reaches_buttons_without_system_keyboard_navigation` 覆盖；真机未测（Task 10 进行中测试窗口被人操作），列入用户试用清单。会话卡片焦点环与 Enter 切换已于 Task 6 真机通过 |
 | cross-exam 视觉协议拒收 `width_range.min=null` / `reduced_motion` 轴 | 不属本仓库：是 superstorm 技能的校验器问题 |
+| 宽窗口聊天列两侧大块空白（用户 2026-09-15 反馈） | 2026-09-15 余项计划 Task 9：消息列宽 = min(聊天区宽 − 48px, 1400px)，两侧各 24px、最宽 1400px；真机 2026-09-15：1920 宽窗口列宽到 1400 上限，两侧各约 104pt（原约 222pt）；1440 宽窗口两侧各 24pt |
 
 余项计划：docs/superpowers/plans/2026-09-15-recheck-leftovers.md
 
