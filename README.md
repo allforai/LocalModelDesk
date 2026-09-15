@@ -99,3 +99,7 @@ xcrun notarytool store-credentials LocalModelDesk \
 - 不把请求发到云端，也不给多人共用
 - 不收录任意模型，只服务这张台上选定的聊天、视频、音乐能力
 - 不追求 70B 对话和视频生成同时驻留
+
+## 许可
+
+MIT License。见 [LICENSE](LICENSE)。
