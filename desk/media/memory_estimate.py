@@ -1,7 +1,6 @@
 """Estimate a media job's peak memory from its parameters, not from the model's disk size.
 
-Calibration (cross-exam 2026-09-08, worker logs in
-docs/cross-exam/2026-09-08-localmodeldesk/evidence/q20, q24, q12):
+Calibration (cross-exam 2026-09-08, worker logs for q20/q24/q12):
 
   h3 512x288x49 frames, 16 steps -> peak 27.0 GiB (text-encoder stage dominates)
   h3 1024x576x73 frames, 16 steps -> exceeded the worker's own budget while active 21.2 /

@@ -39,5 +39,7 @@ minimax-music3/
 *.onnx
 *.mlx
 
-# Megastorm run-local machine state (ledgers, locks)
-docs/superpowers/runs/*/decision-ledger.lock
+# Local review dumps — screenshots, MCP page YAML, agent run state
+docs/cross-exam/
+.playwright-mcp/
+docs/superpowers/runs/
