@@ -4,12 +4,13 @@ import assert from "node:assert/strict";
 class Element {
   constructor(tag = "div") {
     this.tagName = tag; this.value = ""; this.textContent = ""; this.listeners = {};
-    this.hidden = false; this.children = []; this.className = "";
+    this.hidden = false; this.children = []; this.className = ""; this.attrs = {};
   }
   addEventListener(type, listener) { this.listeners[type] = listener; }
   click() { return this.listeners.click?.(); }
   append(...nodes) { this.children.push(...nodes); }
   replaceChildren(...nodes) { this.children = nodes; }
+  setAttribute(name, value) { this.attrs[name] = value; }
 }
 
 function makePane(mode = "point") {
@@ -87,6 +88,7 @@ test("发现的目录列成可点的建议，不再悄悄填进收编框", async
   assert.equal(items.length, 1);
   assert.equal(items[0].children[0].textContent, "/Users/me/LocalModelDesk");
   assert.equal(items[0].children[1].textContent, "填入");
+  assert.equal(items[0].children[1].attrs["aria-label"], "填入 /Users/me/LocalModelDesk");
   items[0].children[1].click();
   assert.equal(legacy.value, "/Users/me/LocalModelDesk");
   assert.equal(controls.get("[data-fr-keep-card]").hidden, true);

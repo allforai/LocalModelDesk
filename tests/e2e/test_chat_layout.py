@@ -25,7 +25,7 @@ def test_message_column_keeps_whitespace_under_the_cap(page, tmp_path, width, he
 
 @pytest.mark.parametrize("width,height", [(1024, 768), (1440, 1000), (1920, 1080), (2560, 1440)])
 def test_message_column_fills_the_chat_area_up_to_1400px(page, tmp_path, width, height):
-    """用户 2026-09-15 选择：消息列跟着窗口变宽，两侧各留 24px，最宽 1400px。"""
+    """用户 2026-09-15 选择：消息列宽 = 聊天区宽 − 48px（两侧各留 24px），最宽 1400px；超过后两侧留白继续变宽。"""
     page.set_viewport_size({"width": width, "height": height})
     with launch_test_harness(tmp_path) as harness:
         page.goto(harness.base_url)

@@ -31,6 +31,7 @@ export function createFirstRunPane(root, ctx) {
       use.type = "button";
       use.className = "btn-sm";
       use.textContent = "填入";
+      use.setAttribute("aria-label", `填入 ${path}`);
       use.addEventListener("click", () => { els.legacyRoot.value = path; });
       li.append(text, use);
       return li;
