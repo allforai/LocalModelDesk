@@ -78,3 +78,20 @@ def test_sessions_are_reachable_by_keyboard(page, tmp_path, audit_violations):
         page.keyboard.press("Tab")
         expect(pane.get_by_role("button", name="改名").first).to_be_visible()
     assert audit_violations == []
+
+
+def test_sidebar_does_not_clip_the_focus_ring_of_its_edge_controls(page, tmp_path, audit_violations):
+    """真机 2026-09-15：会话栏的滚动裁切把「新会话」焦点框的上边和左边切掉了。
+    焦点框（卡片为 2px 线 + 2px 间距）需要控件与会话栏边缘至少留 4px。"""
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url)
+        page.wait_for_selector("#pane-chat li.session")
+        gaps = page.evaluate(
+            "() => { const s = document.querySelector('#pane-chat .sessions').getBoundingClientRect();"
+            " const b = document.querySelector('#pane-chat [data-session-new]').getBoundingClientRect();"
+            " const c = document.querySelector('#pane-chat li.session').getBoundingClientRect();"
+            " return {newTop: b.top - s.top, newLeft: b.left - s.left,"
+            " cardLeft: c.left - s.left, cardRight: s.right - c.right}; }"
+        )
+        assert min(gaps.values()) >= 4, gaps
+    assert audit_violations == []

@@ -48,7 +48,7 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 /* 5. chat (ChatGPT-style) */
 #pane-chat{display:flex;gap:var(--margin);height:calc(100vh - 94px);min-height:0;overflow:hidden}
 .sessions{overflow:auto;min-height:0}
-.sessions{width:240px;flex:none}
+.sessions{width:248px;flex:none;padding:4px;margin:-4px}/* 4px inside the scroll clip so focus rings on edge controls are not cut; the negative margin keeps the 240px column where it was */
 .chat-main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
 .model-row{display:flex;gap:var(--gap);align-items:center;flex-wrap:wrap}
 .messages{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:32px;max-width:var(--chat-col);width:calc(100% - 48px);margin:0 auto;padding:16px 4px 0}
