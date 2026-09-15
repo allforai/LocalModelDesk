@@ -43,3 +43,32 @@ def test_chat_stream_flushes_each_delta_and_persists_completed_exchange(
 
         wait_until(exchange_is_persisted)
     assert audit_violations == []
+
+
+def test_stop_button_ends_a_streaming_reply_and_saves_it_as_stopped(page, tmp_path, audit_violations, wait_until):
+    """真机 2026-09-15：模型复读到上限，界面没有办法停下来。"""
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url)
+        pane = page.locator("#pane-chat")
+        pane.locator("[data-model-select]").select_option("glm")
+        pane.get_by_role("button", name="加载").click()
+        expect(pane.locator("[data-model-state]")).to_contain_text("已加载")
+
+        pane.locator("[data-chat-input]").fill("你是谁")
+        pane.get_by_role("button", name="发送").click()
+        expect(pane.locator(".msg-assistant .thinking p").last).to_have_text("让我想想，")
+
+        pane.get_by_role("button", name="停止").click()
+
+        expect(pane.locator(".msg-assistant .inline-error").last).to_have_text("已停止生成")
+        expect(pane.get_by_role("button", name="发送")).to_be_enabled()
+        harness.chat_script.run_to_end()
+
+        def saved_as_stopped():
+            sessions = harness.library.list_chat_sessions()
+            messages = sessions[0]["messages"] if sessions else []
+            return (len(messages) == 2 and messages[1].get("interrupted", {}).get("code") == "stopped"
+                    and messages[1].get("reasoning") == "让我想想，")
+
+        wait_until(saved_as_stopped)
+    assert audit_violations == []

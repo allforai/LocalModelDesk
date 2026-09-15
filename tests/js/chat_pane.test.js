@@ -619,3 +619,50 @@ test("加载失败时徽章只写原因，日志尾部放进悬停提示，不�
   pane.applyLlmStatus({ state: { status: "idle" } });
   assert.equal(badge.title, "");
 });
+
+test("生成中「发送」变「停止」：点了中止请求，已出内容存为已停止（真机 2026-09-15 复读停不下来）", async () => {
+  const oldFetch = globalThis.fetch;
+  const patches = [];
+  let streamSignal;
+  globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/resources/catalog") return json([]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    if (path === "/api/sessions") return json([{ id: "s1", title: "t", messages: [], updated: "2026-01-01" }]);
+    if (path === "/api/llm/chat/stream") {
+      streamSignal = options.signal;
+      return new Response(new ReadableStream({ start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"type":"delta","reasoning":"重复重复"}\n\n'));
+        options.signal?.addEventListener("abort", () => controller.error(new DOMException("The operation was aborted.", "AbortError")));
+      } }), { status: 200 });
+    }
+    if (path === "/api/sessions/s1") { patches.push(JSON.parse(options.body)); return json({ id: "s1", title: "t", updated: "2026-01-02" }); }
+    throw new Error(`unexpected request ${path}`);
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { root, controls } = makePane();
+    const pane = createChatPane(root);
+    await pane.init();
+    const send = controls.get("[data-send]");
+    controls.get("[data-chat-input]").value = "你是谁";
+    const sending = send.click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    assert.equal(send.disabled, false);
+    assert.equal(send.textContent, "停止");
+    assert.ok(streamSignal, "流式请求没有带 AbortSignal");
+
+    await send.click();
+    await sending;
+
+    assert.equal(streamSignal.aborted, true);
+    assert.equal(send.textContent, "发送");
+    const assistant = controls.get("[data-messages]").children[1];
+    assert.equal(assistant.children[1].children[0].textContent, "已停止");
+    assert.equal(assistant.children[3].textContent, "已停止生成");
+    const saved = patches.at(-1).messages[1];
+    assert.deepEqual(saved.interrupted, { code: "stopped", message: "已停止生成" });
+    assert.equal(saved.reasoning, "重复重复");
+  } finally { globalThis.fetch = oldFetch; }
+});

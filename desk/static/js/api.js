@@ -40,8 +40,9 @@ async function toError(response) {
 // setRequestTimeout 已删（零调用点，F13 census 2026-09-08）。
 const REQUEST_TIMEOUT_MS = 8000;
 
-async function request(path, { method = "GET", body, stream = false, keepalive = false, timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
+async function request(path, { method = "GET", body, stream = false, keepalive = false, timeoutMs = REQUEST_TIMEOUT_MS, signal } = {}) {
   const options = { method };
+  if (signal) options.signal = signal;
   if (keepalive) options.keepalive = true;
   if (body !== undefined) {
     options.headers = { "Content-Type": "application/json" };
@@ -94,8 +95,8 @@ export const deskState = () => request(ROUTES.deskState);
 export const loadLlm = (key) => json(ROUTES.llmLoad, "POST", { key });
 export const unloadLlm = () => json(ROUTES.llmUnload, "POST");
 export const llmStatus = () => request(ROUTES.llmStatus);
-export const chatStream = (messages) => request(ROUTES.chatStream, {
-  method: "POST", body: { messages }, stream: true,
+export const chatStream = (messages, { signal } = {}) => request(ROUTES.chatStream, {
+  method: "POST", body: { messages }, stream: true, signal,
 });
 // A reasoning model may think for a while before it writes the prompt.
 export const promptAssist = (body) => request(ROUTES.promptAssist, { method: "POST", body, timeoutMs: 180_000 });

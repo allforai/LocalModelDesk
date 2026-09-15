@@ -171,3 +171,14 @@ test("promptAssist 以 POST 发往 prompt-assist，且不受 8 秒默认超时�
     assert.deepEqual(delays, [180000]);
   } finally { globalThis.fetch = oldFetch; globalThis.setTimeout = oldSetTimeout; }
 });
+
+test("chatStream 把调用方的 AbortSignal 交给 fetch，停止生成时能断开流", async () => {
+  const oldFetch = globalThis.fetch;
+  const seen = [];
+  globalThis.fetch = async (path, options) => { seen.push(options); return new Response("data: {}\n\n", { status: 200 }); };
+  try {
+    const controller = new AbortController();
+    await api.chatStream([{ role: "user", content: "hi" }], { signal: controller.signal });
+    assert.equal(seen[0].signal, controller.signal);
+  } finally { globalThis.fetch = oldFetch; }
+});

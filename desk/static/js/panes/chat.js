@@ -35,6 +35,7 @@ export function createChatPane(root, ctx = {}) {
   let lastLoadedKey = null;
   let llmStatus = "idle";
   let liveTurn = null; // { session, state } while a reply is streaming — read by the pagehide saver
+  let streamAbort = null; // aborts the streaming fetch when the user presses 停止
   let readyModels = null; // null until the catalog has been read once
   let heavyAllowed = true;
   let heavyReason = "";
@@ -356,8 +357,10 @@ export function createChatPane(root, ctx = {}) {
     setError("");
     const live = messageNode({ role: "assistant", content: "", reasoning: "" }, true);
     streaming = true;
-    els.sendBtn.disabled = true;
-    setButtonLabel(els.sendBtn, "生成中…");
+    streamAbort = new AbortController();
+    // A model can repeat itself until the token limit; the user must be able to stop it.
+    els.sendBtn.disabled = false;
+    setButtonLabel(els.sendBtn, "停止");
     els.messages.dataset.streaming = "1";
     const thinkStart = Date.now();
     const elapsed = () => Math.round((Date.now() - thinkStart) / 1000);
@@ -366,7 +369,7 @@ export function createChatPane(root, ctx = {}) {
     let state = initialStream();
     liveTurn = { session, state };
     try {
-      const body = await api.chatStream(wireMessages(session.messages));
+      const body = await api.chatStream(wireMessages(session.messages), { signal: streamAbort.signal });
       for await (const line of sseDataLines(body)) {
         state = reduceChunk(state, line);
         liveTurn.state = state;
@@ -383,9 +386,15 @@ export function createChatPane(root, ctx = {}) {
       }
       if (!state.done && !state.error) state = { ...state, error: { code: "stream_interrupted", message: "连接在回答完成前断开" } };
     } catch (error) {
-      state = { ...state, error: { code: error.code ?? "stream_error", message: error.message } };
+      state = {
+        ...state,
+        error: error?.name === "AbortError"
+          ? { code: "stopped", message: "已停止生成" }
+          : { code: error.code ?? "stream_error", message: error.message },
+      };
     } finally {
       liveTurn = null;
+      streamAbort = null;
       streaming = false;
       els.sendBtn.disabled = false;
       setButtonLabel(els.sendBtn, "发送");
@@ -397,7 +406,8 @@ export function createChatPane(root, ctx = {}) {
     if (state.error) {
       // Widewin gap #1 / P3: label it plainly, keep what was said, offer a retry.
       assistant.interrupted = { code: state.error.code, message: state.error.message };
-      live.summary.textContent = state.error.code === "evicted" ? "已中断：内存让给了媒体作业" : "已中断";
+      const stopped = state.error.code === "stopped";
+      live.summary.textContent = stopped ? "已停止" : state.error.code === "evicted" ? "已中断：内存让给了媒体作业" : "已中断";
       live.details.open = false;
       if (!state.content) {
         const note = doc.createElement("p");
@@ -405,7 +415,7 @@ export function createChatPane(root, ctx = {}) {
         note.textContent = "这条回答没有生成完，可点「重试」重新生成。";
         live.contentEl.replaceChildren(note);
       }
-      live.errorEl.textContent = `回答没有生成完：${state.error.message}`;
+      live.errorEl.textContent = stopped ? state.error.message : `回答没有生成完：${state.error.message}`;
     } else {
       if (state.reasoning && !firstContentSeen) live.summary.textContent = `已思考 ${Math.max(1, thinkingSeconds)} 秒`;
       if (!state.content) {
@@ -443,7 +453,7 @@ export function createChatPane(root, ctx = {}) {
   }
   (ctx.window ?? globalThis).addEventListener?.("pagehide", saveLiveTurnOnPageHide);
 
-  els.sendBtn.addEventListener("click", send);
+  els.sendBtn.addEventListener("click", () => (streaming ? streamAbort?.abort() : send()));
   els.input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) send();
   });
