@@ -149,6 +149,10 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .firstrun-wrap .card{display:grid;gap:10px}
 .firstrun-wrap label{display:grid;gap:6px}
 .firstrun-wrap input:not([type=radio]){width:100%}
+.fr-found{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.fr-found li{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fr-found code{overflow-wrap:anywhere;min-width:0}
+.fr-found:empty{display:none}
 
 /* 11. state colours + motion */
 .hint-busy{color:var(--busy)}.hint-busy:empty{display:none}

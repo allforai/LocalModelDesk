@@ -44,3 +44,20 @@ def test_firstrun_uses_the_window_and_inputs_show_full_paths(page, tmp_path):
         )
         assert (1920 - measured["wrap"]) / 1920 <= 0.40
         assert measured["input"] >= 400
+
+
+def test_reset_models_root_can_return_to_the_desk_unchanged(page, tmp_path, audit_violations):
+    with launch_test_harness(tmp_path) as harness:
+        page.request.put(f"{harness.base_url}/api/config", data={"first_run_done": False})
+        page.goto(harness.base_url)
+
+        expect(page.locator("#pane-firstrun [data-fr-keep-note]")).to_contain_text("个模型")
+        expect(page.locator("#pane-firstrun [data-fr-legacy]")).to_have_value("")
+        page.locator("#pane-firstrun").get_by_role("button", name="返回台面").click()
+
+        expect(page.locator("#pane-firstrun")).to_be_hidden()
+        expect(page.locator("main")).to_be_visible()
+        config = page.request.get(f"{harness.base_url}/api/config").json()
+        assert config["first_run_done"] is True
+        assert config["models_root"] == str(harness.models_root)
+    assert audit_violations == []

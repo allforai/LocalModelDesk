@@ -9,14 +9,52 @@ export function createFirstRunPane(root, ctx) {
     legacyRoot: root.querySelector("[data-fr-legacy]"),
     adoptBtn: root.querySelector("[data-fr-adopt]"),
     error: root.querySelector("[data-fr-error]"),
+    keepCard: root.querySelector("[data-fr-keep-card]"),
+    keepNote: root.querySelector("[data-fr-keep-note]"),
+    keepBtn: root.querySelector("[data-fr-keep]"),
+    found: root.querySelector("[data-fr-found]"),
   };
   const setError = (text) => { els.error.textContent = text ?? ""; };
 
-  function init(config) {
-    els.modelsRoot.value = config?.models_root ?? "";
-    const first = config?.discovered?.[0];
-    if (first && !els.legacyRoot.value) els.legacyRoot.value = first;
+  let currentRoot = null;
+
+  // Found trees are suggestions the user picks, never a silent prefill: a stray 收编
+  // must not move the models root onto whatever the scan happened to find.
+  function renderFound(paths) {
+    if (!els.found) return;
+    const doc = root.ownerDocument;
+    els.found.replaceChildren(...paths.map((path) => {
+      const li = doc.createElement("li");
+      const text = doc.createElement("code");
+      text.textContent = path;
+      const use = doc.createElement("button");
+      use.type = "button";
+      use.className = "btn-sm";
+      use.textContent = "填入";
+      use.addEventListener("click", () => { els.legacyRoot.value = path; });
+      li.append(text, use);
+      return li;
+    }));
   }
+
+  function init(config) {
+    currentRoot = config?.models_root ?? null;
+    els.modelsRoot.value = currentRoot ?? "";
+    const kept = config?.models_root_models ?? [];
+    if (els.keepCard) {
+      els.keepCard.hidden = kept.length === 0;
+      els.keepNote.textContent = kept.length ? `${currentRoot} 里已有 ${kept.length} 个模型，可以不改目录直接回去。` : "";
+    }
+    renderFound((config?.discovered ?? []).filter((path) => path !== currentRoot));
+  }
+
+  els.keepBtn?.addEventListener("click", async () => {
+    setError("");
+    try {
+      await api.completeFirstRun(currentRoot);
+      ctx.onDone();
+    } catch (error) { setError(error.message); }
+  });
 
   els.completeBtn.addEventListener("click", async () => {
     setError("");
