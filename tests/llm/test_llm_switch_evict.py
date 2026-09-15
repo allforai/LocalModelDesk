@@ -17,18 +17,28 @@ from tests.llm.llm_fakes import (
 )
 
 
+def _free_port() -> int:
+    import socket
+
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        return probe.getsockname()[1]
+
+
 def test_initial_load_does_not_deadlock_real_arbiter_subscription(tmp_path):
     entry = make_entry()
     paths = FakePaths(tmp_path)
     (paths.models_root / entry.relpath).mkdir(parents=True)
+    port = _free_port()  # never the real 8767: a running app's mlx-lm there reads as a stranger
     service = LlmService(
         backend=FakeBackend(),
         arbiter=Arbiter(
-            llm_port=8767,
+            llm_port=port,
             reaper=lambda port: ReapResult(ok=True, port=port, killed_pids=[]),
         ),
         catalog=FakeCatalog([entry]),
         paths=paths,
+        port=port,
         poll_interval_s=0.001,
     )
     result = []
@@ -88,14 +98,16 @@ def test_unload_does_not_deadlock_when_releasing_llm_notifies_subscribers(tmp_pa
     entry = make_entry()
     paths = FakePaths(tmp_path)
     (paths.models_root / entry.relpath).mkdir(parents=True)
+    port = _free_port()  # never the real 8767: a running app's mlx-lm there reads as a stranger
     service = LlmService(
         backend=FakeBackend(),
         arbiter=Arbiter(
-            llm_port=8767,
+            llm_port=port,
             reaper=lambda port: ReapResult(ok=True, port=port, killed_pids=[]),
         ),
         catalog=FakeCatalog([entry]),
         paths=paths,
+        port=port,
         poll_interval_s=0.001,
     )
     assert service.load("glm")["status"] == "loading"
