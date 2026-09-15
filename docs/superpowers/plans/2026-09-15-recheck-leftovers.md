@@ -844,3 +844,143 @@ Expected: `stopped`、`ports free`。**不删除** `~/LocalModelDesk`。
 git add docs/superpowers/plans/2026-09-14-recheck-index.md
 git commit -m "docs: record the leftover recheck results in the plan index"
 ```
+
+---
+
+## 追加任务（2026-09-15 真机复核后）
+
+Task 6 在真实 app 里发现：系统「键盘导航」关闭（macOS 默认）时，WKWebView 的 Tab 跳过 `<button>`（「新会话」「发送」），只停在输入框和 `tabindex=0` 的卡片；`tests/e2e` 用的 Chromium 测不出。另「返回台面」按钮因会在 `~/LocalModelDesk` 顶层写探针文件而未在真机点击。
+
+WebKit 在 macOS 上按 `KeyboardAccessTabsToLinks` 决定 Tab 是否经过全部表单控件（与 Safari「按下 Tab 键以高亮显示网页上的每个项目」同源）；`WKPreferences.tabFocusesLinks = true` 打开它，不改用户的系统设置。
+
+### Task 7: 真实 app 里 Tab 能停在按钮上
+
+**Files:**
+- Modify: `macos/MainWindowController.swift:19-22`
+- Test: `tests/test_shell_static.py`
+
+**Interfaces:**
+- Produces: 主窗口 WKWebView 配置 `config.preferences.tabFocusesLinks = true`，在创建 `DeskWebView` 之前设置。
+
+- [ ] **Step 1: Write the failing test**
+
+在 `tests/test_shell_static.py` 的 `test_web_view_context_menu_is_localized` 之后插入：
+
+```python
+def test_web_view_tab_key_reaches_buttons_without_system_keyboard_navigation():
+    """macOS 默认关闭「键盘导航」时，WebKit 的 Tab 跳过按钮，只停在文本框与 tabindex 元素（2026-09-15 真机复核）。"""
+    text = (MACOS / "MainWindowController.swift").read_text(encoding="utf-8")
+    line = "config.preferences.tabFocusesLinks = true"
+    assert line in text
+    assert text.index(line) < text.index("DeskWebView(frame:")
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `python3 -m pytest tests/test_shell_static.py -k tab_key -q`
+Expected: FAIL（`assert line in text`）
+
+- [ ] **Step 3: Write the implementation**
+
+`macos/MainWindowController.swift` 中，在 `config.userContentController.add(self, name: "shellRetry")` 之后、`webView = DeskWebView(frame: .zero, configuration: config)` 之前插入：
+
+```swift
+    // With macOS keyboard navigation off (the default) WebKit's Tab skips buttons. Tab-to-links
+    // makes Tab visit every control, like Safari's "Press Tab to highlight each item", without
+    // touching the user's system setting.
+    config.preferences.tabFocusesLinks = true
+```
+
+- [ ] **Step 4: Run tests**
+
+Run: `python3 -m pytest tests/test_shell_*.py -q`
+Expected: PASS（含 `test_swiftc_parse`）
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add macos/MainWindowController.swift tests/test_shell_static.py
+git commit -m "fix(shell): Tab reaches buttons in the web view with system keyboard navigation off"
+```
+
+---
+
+### Task 8: 真实 app 复核 Tab 到按钮与「返回台面」，写回索引
+
+**Files:**
+- Modify: `docs/superpowers/plans/2026-09-14-recheck-index.md`（「未拉的线 → 处理」表中「首运页无「返回台面」…」与「WKWebView 中 Tab 跳过按钮…」两行）
+
+本任务不写产品代码。模型根用 `/tmp/lmd-h/mroot`：其中 `llms`、`minimax-h3`、`minimax-music3` 是指向 `~/LocalModelDesk` 同名子树的符号链接，完成首运时的探针文件只写在 `/tmp/lmd-h/mroot` 顶层。**不向 `~/LocalModelDesk` 写任何东西**；不加载模型、不下载、不删除。观察记在 `/tmp/lmd-h/notes.md`，截图只存 `/tmp/lmd-h/`。
+
+- [ ] **Step 1: 构建并以待设置状态起隔离副本**
+
+```bash
+pgrep -fl 'LocalModelDesk.app/Contents/MacOS/LocalModelDesk' && echo "先退出其它 LocalModelDesk 实例再继续" && exit 1
+./scripts/build-app.sh
+mkdir -p /tmp/lmd-h/data /tmp/lmd-h/app /tmp/lmd-h/mroot
+for d in llms minimax-h3 minimax-music3; do ln -sfn "$HOME/LocalModelDesk/$d" "/tmp/lmd-h/mroot/$d"; done
+printf '{"config_version":1,"first_run_done":false,"models_root":"/tmp/lmd-h/mroot","gateway":{"enabled":false,"host":"127.0.0.1","port":8845}}' > /tmp/lmd-h/data/config.json
+ditto dist/LocalModelDesk.app /tmp/lmd-h/app/LocalModelDesk.app
+touch /tmp/lmd-h/started
+(LOCALMODELDESK_DATA_ROOT=/tmp/lmd-h/data LMD_SHELL_PORT=8839 nohup /tmp/lmd-h/app/LocalModelDesk.app/Contents/MacOS/LocalModelDesk > /tmp/lmd-h/shell.log 2>&1 &)
+for i in $(seq 1 40); do curl -sf 127.0.0.1:8839/api/state >/dev/null && break; sleep 1; done
+SH=$(pgrep -f '^/tmp/lmd-h/app/LocalModelDesk.app/Contents/MacOS/LocalModelDesk'); echo "shell=$SH"
+curl -s 127.0.0.1:8839/api/config | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["needs_setup"], d["models_root_models"])'
+```
+
+Expected: `built:`；`shell=` 一个 pid；`True` 与非空模型 key 列表。
+
+- [ ] **Step 2: 只用键盘点「返回台面」**
+
+```bash
+WID=$(osascript -l JavaScript -e "ObjC.import('CoreGraphics'); var l = ObjC.castRefToObject(\$.CGWindowListCopyWindowInfo(1,0)); var r=''; for (var i=0;i<l.count;i++){var w=l.objectAtIndex(i); if (w.objectForKey('kCGWindowOwnerPID').intValue==$SH && w.objectForKey('kCGWindowLayer').intValue==0){r=w.objectForKey('kCGWindowNumber').intValue; break;}} r")
+osascript -l JavaScript -e "ObjC.import('AppKit'); \$.NSRunningApplication.runningApplicationWithProcessIdentifier($SH).activateWithOptions(3); 'ok'"
+sleep 8; lsappinfo info -only pid "$(lsappinfo front)"
+screencapture -x -o -l "$WID" /tmp/lmd-h/firstrun.png
+osascript -e 'tell application "System Events" to key code 48'; sleep 0.5
+screencapture -x -o -l "$WID" /tmp/lmd-h/firstrun-tab1.png
+```
+
+Expected: 前台 pid 等于 `$SH`；读 `firstrun-tab1.png`：焦点环在「返回台面」按钮上（它是页面第一个控件）。若焦点不在该按钮，继续按 Tab（每次截图 `firstrun-tabN.png`）直到焦点落在它上面，最多 6 次；仍到不了则记「Tab 到不了按钮：不通过」并跳到 Step 4。
+
+焦点在「返回台面」上时：
+
+```bash
+osascript -e 'tell application "System Events" to key code 49'; sleep 3
+screencapture -x -o -l "$WID" /tmp/lmd-h/after-keep.png
+curl -s 127.0.0.1:8839/api/config | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["first_run_done"], d["models_root"])'
+find "$HOME/LocalModelDesk" -maxdepth 1 -newer /tmp/lmd-h/started -print
+```
+
+Expected: `after-keep.png` 为聊天台面；输出 `True /tmp/lmd-h/mroot`（或其规范化形式）；`find` 无输出（`~/LocalModelDesk` 顶层无新文件）。
+
+- [ ] **Step 3: 台面里 Tab 经过「新会话」与「发送」**
+
+```bash
+for n in 1 2 3 4 5 6 7 8; do osascript -e 'tell application "System Events" to key code 48'; sleep 0.4; screencapture -x -o -l "$WID" "/tmp/lmd-h/desk-tab-$n.png"; osascript -l JavaScript -e "var p = Application('System Events').processes.whose({unixId: $SH})[0]; var f = p.attributes.byName('AXFocusedUIElement').value(); [f.role(), f.description ? f.description() : '', f.title ? f.title() : ''].join(' | ')" 2>/dev/null | sed "s/^/tab $n: /"; done
+```
+
+Expected: 读截图，至少一张焦点环在「新会话」按钮上、至少一张在「发送」按钮上；对应行的 AX 角色为 `AXButton`。
+
+- [ ] **Step 4: 清理副本**
+
+```bash
+kill -TERM "$SH"; for i in $(seq 1 20); do pgrep -f 'lmd-h/app' >/dev/null || break; sleep 1; done
+pgrep -fl 'lmd-h/app' || echo stopped
+lsof -nP -iTCP -sTCP:LISTEN | grep -E ':(8839|8767)\b' || echo "ports free"
+rm -f /tmp/lmd-h/mroot/llms /tmp/lmd-h/mroot/minimax-h3 /tmp/lmd-h/mroot/minimax-music3
+rm -rf /tmp/lmd-h/app /tmp/lmd-h/data
+```
+
+Expected: `stopped`、`ports free`。删除符号链接用 `rm -f <链接>`（不带尾部斜杠，不带 `-r`），不会影响链接指向的真实目录。
+
+- [ ] **Step 5: 写回索引并提交**
+
+在 `docs/superpowers/plans/2026-09-14-recheck-index.md` 中：
+- 「首运页无「返回台面」、收编框预填扫描路径」一行：把「「返回台面」按钮真机未测：…覆盖」改为 Step 2 的实际结论（例如「真机 2026-09-15：Tab 到「返回台面」按 Space 回到台面，models_root 不变，`~/LocalModelDesk` 无新文件」）。
+- 「WKWebView 中 Tab 跳过按钮」一行：处理列改为「2026-09-15 余项计划 Task 7：`tabFocusesLinks`；真机：<Step 3 实际结论>」。
+
+```bash
+git add docs/superpowers/plans/2026-09-14-recheck-index.md
+git commit -m "docs: record Tab-to-button and return-to-desk results from the real app"
+```
