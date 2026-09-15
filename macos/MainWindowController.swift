@@ -19,6 +19,10 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
     let config = WKWebViewConfiguration()
     // Register before creating the web view: WKWebView retains its configuration at init.
     config.userContentController.add(self, name: "shellRetry")
+    // With macOS keyboard navigation off (the default) WebKit's Tab skips buttons. Tab-to-links
+    // makes Tab visit every control, like Safari's "Press Tab to highlight each item", without
+    // touching the user's system setting.
+    config.preferences.tabFocusesLinks = true
     webView = DeskWebView(frame: .zero, configuration: config)
     window.title = "LocalModelDesk"
     window.tabbingMode = .disallowed

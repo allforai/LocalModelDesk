@@ -195,6 +195,14 @@ def test_web_view_context_menu_is_localized():
     assert "重新载入" in text
 
 
+def test_web_view_tab_key_reaches_buttons_without_system_keyboard_navigation():
+    """macOS 默认关闭「键盘导航」时，WebKit 的 Tab 跳过按钮，只停在文本框与 tabindex 元素（2026-09-15 真机复核）。"""
+    text = (MACOS / "MainWindowController.swift").read_text(encoding="utf-8")
+    line = "config.preferences.tabFocusesLinks = true"
+    assert line in text
+    assert text.index(line) < text.index("DeskWebView(frame:")
+
+
 def test_swiftc_typecheck_app():
     environment = os.environ.copy()
     environment["CLANG_MODULE_CACHE_PATH"] = "/private/tmp/lmd-swift-module-cache"
