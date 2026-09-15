@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .backend import BackendHttpError
+from .sampling import model_sampling_defaults
 from .state import (
     DEFAULT_CHAT_MAX_TOKENS,
     DEFAULT_LLM_PORT,
@@ -396,17 +397,19 @@ class LlmService:
             )
         return entry
 
-    @staticmethod
-    def _upstream_payload(request: dict[str, Any], entry: Any) -> dict[str, Any]:
+    def _upstream_payload(self, request: dict[str, Any], entry: Any) -> dict[str, Any]:
         # mlx_lm.server maps this stable alias to the model supplied on its
         # command line. Sending the public HF repository id makes it resolve
         # and download a second model from the Hub instead of using the
         # already resident local path.
         payload: dict[str, Any] = {"model": "default_model", "messages": request["messages"]}
-        for key in ("temperature", "top_p", "max_tokens"):
+        for key in ("temperature", "top_p", "top_k", "max_tokens"):
             if request.get(key) is not None:
                 payload[key] = request[key]
         payload.setdefault("max_tokens", DEFAULT_CHAT_MAX_TOKENS)
+        model_dir = Path(self._paths.resolve_paths().models_root) / entry.relpath
+        for key, value in model_sampling_defaults(model_dir).items():
+            payload.setdefault(key, value)
         return payload
 
     def chat_completion(self, request: dict[str, Any]) -> dict[str, Any]:

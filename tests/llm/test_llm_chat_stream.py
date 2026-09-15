@@ -122,3 +122,19 @@ def test_stream_cut_while_media_is_taking_the_memory_reports_evicted(tmp_path):
     events = list(testbed.service.chat_stream({"messages": []}))
 
     assert events[-1] == {"type": "error", "code": "evicted", "message": "内存让给了媒体作业，回答被中断"}
+
+
+def test_stream_uses_the_models_recommended_sampling_unless_the_request_sets_it(tmp_path):
+    """mlx_lm defaults to temperature 0 (greedy); GLM then repeated one sentence for 8192 tokens."""
+    import json
+
+    testbed = make_loaded(tmp_path, backend_kw={"chunks": CONTENT_CHUNKS})
+    model_dir = testbed.paths.models_root / testbed.entries[0].relpath
+    (model_dir / "generation_config.json").write_text(json.dumps({"temperature": 1.0, "top_k": 20}))
+
+    list(testbed.service.chat_stream({"messages": []}))
+    list(testbed.service.chat_stream({"messages": [], "temperature": 0.2}))
+
+    first, second = [call[2] for call in testbed.calls if call[0] == "chat_stream"]
+    assert (first["temperature"], first["top_k"]) == (1.0, 20)
+    assert (second["temperature"], second["top_k"]) == (0.2, 20)
