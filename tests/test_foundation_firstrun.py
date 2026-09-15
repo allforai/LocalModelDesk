@@ -8,6 +8,7 @@ from desk.foundation import config as config_mod
 from desk.foundation import firstrun
 from desk.foundation import paths as paths_mod
 from desk.foundation.errors import NotWritableError
+from desk.resources.catalog import entry
 
 
 @pytest.fixture()
@@ -66,8 +67,7 @@ def _seed_trees(tmp_path):
     complete = tmp_path / "complete"
     (partial / "minimax-h3").mkdir(parents=True)
     (partial / "minimax-h3" / "weight.safetensors").write_bytes(b"x")
-    for relpath in ("minimax-h3", "minimax-music3",
-                    "llms/huihui-ai/Huihui-GLM-4.7-Flash-abliterated-mlx-4bit"):
+    for relpath in ("minimax-h3", "minimax-music3", entry("glm").relpath):
         directory = complete / relpath
         directory.mkdir(parents=True)
         (directory / "weight.safetensors").write_bytes(b"x")

@@ -32,13 +32,10 @@ CATALOG: tuple[ModelEntry, ...] = (
                "appautomaton/minimax-h3-base-8bit-mlx", "minimax-h3", 103.0),
     ModelEntry("music3", "MiniMax Music 3", GROUP_MUSIC,
                "appautomaton/MiniMax-Music3-MLX", "minimax-music3", 27.0),
-    ModelEntry("glm", "GLM 4.7 Flash 越狱 4bit", GROUP_CHAT,
-               "huihui-ai/Huihui-GLM-4.7-Flash-abliterated-mlx-4bit",
-               "llms/huihui-ai/Huihui-GLM-4.7-Flash-abliterated-mlx-4bit",
-               16.9, quant="4bit", params="30B-A3B"),
-    # Same Huihui abliterated GLM 4.7 Flash at 8 bits: the 4-bit build fell into repetition
-    # loops on the real app (2026-09-15); 8 bits loses far less to quantization.
-    ModelEntry("glm8", "GLM 4.7 Flash 越狱 8bit", GROUP_CHAT,
+    # The 8-bit conversion of the Huihui abliterated GLM 4.7 Flash replaces the 4-bit build,
+    # which fell into repetition loops on the real app (2026-09-15: 1 loop in 5 runs vs 0 in 5).
+    # The key stays "glm" so existing sessions keep their model.
+    ModelEntry("glm", "GLM 4.7 Flash 越狱 8bit", GROUP_CHAT,
                "mlx-community/glm-4.7-flash-abliterated-8bit",
                "llms/mlx-community/glm-4.7-flash-abliterated-8bit",
                29.7, quant="8bit", params="30B-A3B"),
