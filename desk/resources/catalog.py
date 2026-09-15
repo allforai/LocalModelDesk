@@ -36,6 +36,12 @@ CATALOG: tuple[ModelEntry, ...] = (
                "huihui-ai/Huihui-GLM-4.7-Flash-abliterated-mlx-4bit",
                "llms/huihui-ai/Huihui-GLM-4.7-Flash-abliterated-mlx-4bit",
                16.9, quant="4bit", params="30B-A3B"),
+    # Same Huihui abliterated GLM 4.7 Flash at 8 bits: the 4-bit build fell into repetition
+    # loops on the real app (2026-09-15); 8 bits loses far less to quantization.
+    ModelEntry("glm8", "GLM 4.7 Flash 越狱 8bit", GROUP_CHAT,
+               "mlx-community/glm-4.7-flash-abliterated-8bit",
+               "llms/mlx-community/glm-4.7-flash-abliterated-8bit",
+               29.7, quant="8bit", params="30B-A3B"),
     ModelEntry("superqwen", "SuperQwen3.8 27B 越狱 4bit", GROUP_CHAT,
                "Jiunsong/SuperQwen3.8-27b-abliterated-MLX-4bit",
                "llms/Jiunsong/SuperQwen3.8-27b-abliterated-MLX-4bit",
