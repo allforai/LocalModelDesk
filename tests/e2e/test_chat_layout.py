@@ -23,6 +23,24 @@ def test_message_column_keeps_whitespace_under_the_cap(page, tmp_path, width, he
             f"{width} 宽下消息列两侧留白 {whitespace:.0f}px = {whitespace / width:.1%}")
 
 
+@pytest.mark.parametrize("width,height", [(1024, 768), (1440, 1000), (1920, 1080), (2560, 1440)])
+def test_message_column_fills_the_chat_area_up_to_1400px(page, tmp_path, width, height):
+    """用户 2026-09-15 选择：消息列跟着窗口变宽，两侧各留 24px，最宽 1400px。"""
+    page.set_viewport_size({"width": width, "height": height})
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url)
+        page.wait_for_selector(".messages")
+        box = page.evaluate(
+            "() => { const m = document.querySelector('.messages').getBoundingClientRect();"
+            " const c = document.querySelector('.composer').getBoundingClientRect();"
+            " const host = document.querySelector('.chat-main').getBoundingClientRect();"
+            " return {col: m.width, composer: c.width, host: host.width}; }"
+        )
+        expected = min(box["host"] - 48, 1400)
+        assert abs(box["col"] - expected) <= 2, f"{width} 宽：消息列 {box['col']:.0f}px，应为 {expected:.0f}px"
+        assert abs(box["composer"] - expected) <= 2, f"{width} 宽：输入区 {box['composer']:.0f}px，应为 {expected:.0f}px"
+
+
 def test_composer_tracks_the_message_column(page, tmp_path):
     page.set_viewport_size({"width": 1920, "height": 1200})
     with launch_test_harness(tmp_path) as harness:
