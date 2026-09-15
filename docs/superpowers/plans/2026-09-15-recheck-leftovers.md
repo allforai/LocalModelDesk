@@ -984,3 +984,173 @@ Expected: `stopped`、`ports free`。删除符号链接用 `rm -f <链接>`（�
 git add docs/superpowers/plans/2026-09-14-recheck-index.md
 git commit -m "docs: record Tab-to-button and return-to-desk results from the real app"
 ```
+
+---
+
+## 追加任务（2026-09-15 用户试用反馈后）
+
+Task 8 未完成：检查进行时用户在测试窗口里操作，且待设置状态启动时原生首运对话框（`macos/FirstRunFlow.swift`）先于网页出现。用户看到宽窗口里聊天列右侧大块空白，选择「消息列跟着窗口变宽：两侧各留 24px，最宽 1400px」（替代原居中阅读列 `clamp(680px,62vw,1400px)`；1920 宽窗口两侧空白合计约 11%）。
+
+### Task 9: 消息列跟着窗口变宽
+
+**Files:**
+- Modify: `desk/static/app.css:2`（`--chat-col`）、`desk/static/app.css:54`（`.messages`）、`desk/static/app.css:63`（`.composer`）
+- Test: `tests/e2e/test_chat_layout.py`
+
+**Interfaces:**
+- Produces: `--chat-col: 1400px`；`.messages` 与 `.composer` 宽度 `calc(100% - 48px)`、`max-width: var(--chat-col)`、水平居中。消息列宽 = `min(聊天区宽 - 48px, 1400px)`。
+
+- [ ] **Step 1: Write the failing test**
+
+在 `tests/e2e/test_chat_layout.py` 的 `test_message_column_keeps_whitespace_under_the_cap` 之后插入：
+
+```python
+@pytest.mark.parametrize("width,height", [(1024, 768), (1440, 1000), (1920, 1080), (2560, 1440)])
+def test_message_column_fills_the_chat_area_up_to_1400px(page, tmp_path, width, height):
+    """用户 2026-09-15 选择：消息列跟着窗口变宽，两侧各留 24px，最宽 1400px。"""
+    page.set_viewport_size({"width": width, "height": height})
+    with launch_test_harness(tmp_path) as harness:
+        page.goto(harness.base_url)
+        page.wait_for_selector(".messages")
+        box = page.evaluate(
+            "() => { const m = document.querySelector('.messages').getBoundingClientRect();"
+            " const c = document.querySelector('.composer').getBoundingClientRect();"
+            " const host = document.querySelector('.chat-main').getBoundingClientRect();"
+            " return {col: m.width, composer: c.width, host: host.width}; }"
+        )
+        expected = min(box["host"] - 48, 1400)
+        assert abs(box["col"] - expected) <= 2, f"{width} 宽：消息列 {box['col']:.0f}px，应为 {expected:.0f}px"
+        assert abs(box["composer"] - expected) <= 2, f"{width} 宽：输入区 {box['composer']:.0f}px，应为 {expected:.0f}px"
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `python3 -m pytest tests/e2e/test_chat_layout.py -k fills_the_chat_area -q`
+Expected: 至少 1024、1440、1920 三档 FAIL（旧规则按 62vw 或 680px 下限取宽）
+
+- [ ] **Step 3: Write the implementation**
+
+`desk/static/app.css:2` 中 `--chat-col:clamp(680px,62vw,1400px)` 改为 `--chat-col:1400px`。
+
+`desk/static/app.css:54` 的 `.messages{...}` 中 `width:100%` 改为 `width:calc(100% - 48px)`（其余声明不变）。
+
+`desk/static/app.css:63` 的 `.composer{...}` 中 `width:100%` 改为 `width:calc(100% - 48px)`（其余声明不变）。
+
+- [ ] **Step 4: Run tests**
+
+Run: `python3 -m pytest tests/e2e/test_chat_layout.py -q && python3 -m pytest tests/e2e -q && node --test "tests/js/*.test.js"`
+Expected: PASS（`test_message_column_keeps_whitespace_under_the_cap` 各档仍 ≤ 40%；2560 档约 33%）
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add desk/static/app.css tests/e2e/test_chat_layout.py
+git commit -m "fix(ui): the message column follows the window width, 24px margins, up to 1400px"
+```
+
+---
+
+### Task 10: 真实 app 复核（Task 8 重做）：Tab 到按钮、「返回台面」、新列宽
+
+**Files:**
+- Modify: `docs/superpowers/plans/2026-09-14-recheck-index.md`（「首运页无「返回台面」…」「WKWebView 中 Tab 跳过按钮…」两行；在表末追加一行「宽窗口聊天列右侧大块空白（用户 2026-09-15 反馈）」）
+
+与 Task 8 的区别：以**已完成首运**的配置启动，原生首运对话框不会出现；「返回台面」通过运行中改配置后用网页右键菜单「重新载入」进入首运页来测。开始前主会话已请用户在检查期间不要操作测试窗口。本任务不写产品代码；**不向 `~/LocalModelDesk` 写任何东西**；不加载模型、不下载、不删除。观察记在 `/tmp/lmd-h/notes.md`。截图一律只截测试窗口（`screencapture -l <WID>`），不截整屏。
+
+- [ ] **Step 1: 构建并以已完成首运的配置起隔离副本**
+
+```bash
+pgrep -fl 'LocalModelDesk.app/Contents/MacOS/LocalModelDesk' && echo "先退出其它 LocalModelDesk 实例再继续" && exit 1
+./scripts/build-app.sh
+rm -rf /tmp/lmd-h && mkdir -p /tmp/lmd-h/data /tmp/lmd-h/app /tmp/lmd-h/mroot
+for d in llms minimax-h3 minimax-music3; do ln -sfn "$HOME/LocalModelDesk/$d" "/tmp/lmd-h/mroot/$d"; done
+printf '{"config_version":1,"first_run_done":true,"models_root":"/tmp/lmd-h/mroot","gateway":{"enabled":false,"host":"127.0.0.1","port":8845}}' > /tmp/lmd-h/data/config.json
+ditto dist/LocalModelDesk.app /tmp/lmd-h/app/LocalModelDesk.app
+touch /tmp/lmd-h/started
+(LOCALMODELDESK_DATA_ROOT=/tmp/lmd-h/data LMD_SHELL_PORT=8839 nohup /tmp/lmd-h/app/LocalModelDesk.app/Contents/MacOS/LocalModelDesk > /tmp/lmd-h/shell.log 2>&1 &)
+for i in $(seq 1 40); do curl -sf 127.0.0.1:8839/api/state >/dev/null && break; sleep 1; done
+SH=$(pgrep -f '^/tmp/lmd-h/app/LocalModelDesk.app/Contents/MacOS/LocalModelDesk'); echo "shell=$SH"
+WID=$(osascript -l JavaScript -e "ObjC.import('CoreGraphics'); var l = ObjC.castRefToObject(\$.CGWindowListCopyWindowInfo(1,0)); var r=''; for (var i=0;i<l.count;i++){var w=l.objectAtIndex(i); if (w.objectForKey('kCGWindowOwnerPID').intValue==$SH && w.objectForKey('kCGWindowLayer').intValue==0){r=w.objectForKey('kCGWindowNumber').intValue; break;}} r")
+cat > /tmp/lmd-h/rightclick.js <<'EOF'
+ObjC.import('CoreGraphics');
+function run(argv) {
+  var pt = {x: parseFloat(argv[0]), y: parseFloat(argv[1])};
+  $.CGEventPost(0, $.CGEventCreateMouseEvent(null, 5, pt, 0));
+  delay(0.1);
+  $.CGEventPost(0, $.CGEventCreateMouseEvent(null, 3, pt, 1));
+  delay(0.05);
+  $.CGEventPost(0, $.CGEventCreateMouseEvent(null, 4, pt, 1));
+  return 'ok';
+}
+EOF
+```
+
+Expected: `built:`；`shell=` 一个 pid；`WID` 非空。
+
+- [ ] **Step 2: 1920 宽窗口下的新列宽**
+
+```bash
+osascript -l JavaScript -e "ObjC.import('AppKit'); \$.NSRunningApplication.runningApplicationWithProcessIdentifier($SH).activateWithOptions(3); 'ok'"
+osascript -l JavaScript -e "var w = Application('System Events').processes.whose({unixId: $SH})[0].windows[0]; w.position = [0, 25]; w.size = [1920, 1050]; 'ok'"
+sleep 3; lsappinfo info -only pid "$(lsappinfo front)"
+screencapture -x -o -l "$WID" /tmp/lmd-h/wide.png
+```
+
+Expected: 读 `wide.png`：空会话提示框与输入区左右边缘距聊天区两侧各约 24pt（截图为 2 倍像素，约 48px），不再是两侧各约 222pt 的空白。
+
+- [ ] **Step 3: 台面里 Tab 经过「新会话」与「发送」**
+
+```bash
+lsappinfo info -only pid "$(lsappinfo front)"
+for n in 1 2 3 4 5 6 7 8; do osascript -e 'tell application "System Events" to key code 48'; sleep 0.4; screencapture -x -o -l "$WID" "/tmp/lmd-h/desk-tab-$n.png"; osascript -l JavaScript -e "var p = Application('System Events').processes.whose({unixId: $SH})[0]; var f = p.attributes.byName('AXFocusedUIElement').value(); [f.role(), f.description ? f.description() : '', f.title ? f.title() : ''].join(' | ')" 2>/dev/null | sed "s/^/tab $n: /"; done
+```
+
+Expected: 前台 pid 等于 `$SH`；读截图，至少一张焦点环在「新会话」上、至少一张在「发送」上（发送在输入框为空时可能禁用而被跳过——若如此，先在输入框里键入一个字再重跑本步并记录）；对应行 AX 角色为 `AXButton`。
+
+- [ ] **Step 4: 进入首运页，用键盘按「返回台面」**
+
+```bash
+curl -s -X PUT 127.0.0.1:8839/api/config -H 'Content-Type: application/json' -d '{"first_run_done": false}' >/dev/null
+lsappinfo info -only pid "$(lsappinfo front)"
+osascript -l JavaScript /tmp/lmd-h/rightclick.js 960 600
+sleep 1; screencapture -x -o -l "$WID" /tmp/lmd-h/contextmenu.png
+osascript -e 'tell application "System Events" to key code 125'; osascript -e 'tell application "System Events" to key code 36'
+sleep 4; screencapture -x -o -l "$WID" /tmp/lmd-h/firstrun.png
+osascript -e 'tell application "System Events" to key code 48'; sleep 0.5
+screencapture -x -o -l "$WID" /tmp/lmd-h/firstrun-tab1.png
+```
+
+Expected: `contextmenu.png` 显示「重新载入」；`firstrun.png` 显示「继续使用当前目录」卡片；`firstrun-tab1.png` 焦点在「返回台面」。若焦点不在该按钮，继续 Tab（每次截图）最多 6 次。焦点在它上面时：
+
+```bash
+osascript -e 'tell application "System Events" to key code 49'; sleep 3
+screencapture -x -o -l "$WID" /tmp/lmd-h/after-keep.png
+curl -s 127.0.0.1:8839/api/config | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["first_run_done"], d["models_root"])'
+find "$HOME/LocalModelDesk" -maxdepth 1 -newer /tmp/lmd-h/started -print
+```
+
+Expected: `after-keep.png` 为聊天台面；输出 `True` 与 `/tmp/lmd-h/mroot`（或其规范化形式 `/private/tmp/lmd-h/mroot`）；`find` 无输出。
+
+- [ ] **Step 5: 清理副本**
+
+```bash
+kill -TERM "$SH"; for i in $(seq 1 20); do pgrep -f 'lmd-h/app' >/dev/null || break; sleep 1; done
+pgrep -fl 'lmd-h/app' || echo stopped
+lsof -nP -iTCP -sTCP:LISTEN | grep -E ':(8839|8767)\b' || echo "ports free"
+rm -f /tmp/lmd-h/mroot/llms /tmp/lmd-h/mroot/minimax-h3 /tmp/lmd-h/mroot/minimax-music3
+rm -rf /tmp/lmd-h/app /tmp/lmd-h/data
+```
+
+Expected: `stopped`、`ports free`。删除符号链接用 `rm -f <链接>`（不带尾部斜杠、不带 `-r`）。
+
+- [ ] **Step 6: 写回索引并提交**
+
+在 `docs/superpowers/plans/2026-09-14-recheck-index.md` 的「未拉的线 → 处理」表中：
+- 「首运页无「返回台面」…」行：把「「返回台面」按钮真机未测：…覆盖」改为 Step 4 的实际结论。
+- 「WKWebView 中 Tab 跳过按钮…」行：处理列改为「2026-09-15 余项计划 Task 7：`tabFocusesLinks`；真机：<Step 3 实际结论>」。
+- 表末追加一行：`| 宽窗口聊天列右侧大块空白（用户 2026-09-15 反馈） | 2026-09-15 余项计划 Task 9：消息列跟随窗口宽度，两侧各 24px，最宽 1400px；真机：<Step 2 实际结论> |`
+
+```bash
+git add docs/superpowers/plans/2026-09-14-recheck-index.md
+git commit -m "docs: record Tab-to-button, return-to-desk and chat width results from the real app"
+```
