@@ -1,0 +1,7 @@
+HTTP/1.0 200 OK
+Server: BaseHTTP/0.6 Python/3.14.7
+Date: Wed, 16 Sep 2026 13:46:19 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 499
+
+{"config": {"enabled": true, "host": "0.0.0.0", "port": 8770}, "status": {"enabled": true, "listening": false, "host": "0.0.0.0", "port": 8770, "lan_host": "192.168.68.53", "lan_candidates": ["192.168.68.53", "192.168.139.3", "192.168.117.0"], "openai_base_url": "http://192.168.68.53:8770/v1", "anthropic_base_url": "http://192.168.68.53:8770", "auth": "none", "last_error": "无法绑定 0.0.0.0:8770——该端口已被占用，换一个端口再试（系统报告：Address already in use）"}}

@@ -1,0 +1,5 @@
+=== config.json content before PUT ===
+{ this is not valid json 
+=== PUT /api/config  body={"gateway": {"port": "not-a-number"}} ===
+{"error": {"code": "config_corrupt", "message": "配置文件无法读取（内容不是合法 JSON）；可以点「重新设置」重建一份，坏文件会自动备份。", "path": "/private/tmp/lmd-q07-ysp3TE/config.json", "parse_error": "Expecting property name enclosed in double quotes: line 1 column 3 (char 2)", "recoverable": true}}
+HTTP_STATUS:500

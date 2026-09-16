@@ -1,0 +1,7 @@
+=== GET /api/state ===
+{"holder": null, "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}}
+HTTP_STATUS:200
+
+=== GET /api/llm/status ===
+{"state": {"status": "idle", "model_key": null, "error": null, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200

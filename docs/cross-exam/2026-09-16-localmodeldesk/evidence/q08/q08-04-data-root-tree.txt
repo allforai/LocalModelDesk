@@ -1,0 +1,2 @@
+/tmp/lmd-q08-gAGO8e/service.log
+/tmp/lmd-q08-gAGO8e/logs/desk.log

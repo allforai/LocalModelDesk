@@ -1,0 +1,3 @@
+COMMAND     PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+Python    63653   aa    4u  IPv4 0xcd8cfc3e6850b19f      0t0  TCP 127.0.0.1:18821 (LISTEN)
+Python    63653   aa    5u  IPv4 0x5a8d960093bfa8c3      0t0  TCP *:18812 (LISTEN)

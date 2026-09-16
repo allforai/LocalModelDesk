@@ -1,0 +1,3 @@
+=== POST /api/resources/download  body={"key": "no-such-model"} ===
+{"error": {"code": "unknown_model", "message": "unknown model key: 'no-such-model'"}}
+HTTP_STATUS:404

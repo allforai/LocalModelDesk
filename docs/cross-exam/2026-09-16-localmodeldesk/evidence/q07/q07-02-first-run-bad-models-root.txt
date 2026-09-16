@@ -1,0 +1,7 @@
+=== POST /api/first-run  body={"models_root": 12345} ===
+{"error": {"code": "internal", "message": "argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'int'"}}
+HTTP_STATUS:500
+
+=== POST /api/first-run  body={"models_root": {"a": 1}} ===
+{"error": {"code": "internal", "message": "argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'dict'"}}
+HTTP_STATUS:500

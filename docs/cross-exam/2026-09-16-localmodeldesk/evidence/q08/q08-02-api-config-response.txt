@@ -1,0 +1,7 @@
+HTTP/1.0 200 OK
+Server: BaseHTTP/0.6 Python/3.14.7
+Date: Wed, 16 Sep 2026 13:46:19 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 282
+
+{"config_version": 1, "first_run_done": false, "models_root": "/private/tmp/lmd-q08-gAGO8e/models", "outputs_root": "/private/tmp/lmd-q08-gAGO8e/outputs", "gateway": {"enabled": true, "host": "0.0.0.0", "port": 8770}, "needs_setup": true, "discovered": [], "models_root_models": []}

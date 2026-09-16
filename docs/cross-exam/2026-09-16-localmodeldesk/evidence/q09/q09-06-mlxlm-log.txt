@@ -1,0 +1,2 @@
+=== mlx-lm.log (backend subprocess stdout+stderr) ===
+/opt/homebrew/opt/python@3.14/bin/python3.14: No module named mlx_lm

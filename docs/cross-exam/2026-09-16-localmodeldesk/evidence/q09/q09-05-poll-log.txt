@@ -1,0 +1,72 @@
+=== t=5s GET /api/llm/status ===
+{"state": {"status": "error", "model_key": "glm", "error": {"code": "backend_exited", "message": "mlx-lm 进程退出，退出码 1", "log_tail": "/opt/homebrew/opt/python@3.14/bin/python3.14: No module named mlx_lm"}, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200
+=== t=5s GET /api/state ===
+{"holder": null, "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}}
+HTTP_STATUS:200
+=== t=10s GET /api/llm/status ===
+{"state": {"status": "error", "model_key": "glm", "error": {"code": "backend_exited", "message": "mlx-lm 进程退出，退出码 1", "log_tail": "/opt/homebrew/opt/python@3.14/bin/python3.14: No module named mlx_lm"}, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200
+=== t=10s GET /api/state ===
+{"holder": null, "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}}
+HTTP_STATUS:200
+=== t=15s GET /api/llm/status ===
+{"state": {"status": "error", "model_key": "glm", "error": {"code": "backend_exited", "message": "mlx-lm 进程退出，退出码 1", "log_tail": "/opt/homebrew/opt/python@3.14/bin/python3.14: No module named mlx_lm"}, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200
+=== t=15s GET /api/state ===
+{"holder": null, "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}}
+HTTP_STATUS:200
+=== t=20s GET /api/llm/status ===
+{"state": {"status": "error", "model_key": "glm", "error": {"code": "backend_exited", "message": "mlx-lm 进程退出，退出码 1", "log_tail": "/opt/homebrew/opt/python@3.14/bin/python3.14: No module named mlx_lm"}, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200
+=== t=20s GET /api/state ===
+{"holder": null, "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}}
+HTTP_STATUS:200
+=== t=25s GET /api/llm/status ===
+{"state": {"status": "error", "model_key": "glm", "error": {"code": "backend_exited", "message": "mlx-lm 进程退出，退出码 1", "log_tail": "/opt/homebrew/opt/python@3.14/bin/python3.14: No module named mlx_lm"}, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200
+=== t=25s GET /api/state ===
+{"holder": null, "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}}
+HTTP_STATUS:200
+=== t=30s GET /api/llm/status ===
+{"state": {"status": "error", "model_key": "glm", "error": {"code": "backend_exited", "message": "mlx-lm 进程退出，退出码 1", "log_tail": "/opt/homebrew/opt/python@3.14/bin/python3.14: No module named mlx_lm"}, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200
+=== t=30s GET /api/state ===
+{"holder": null, "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}}
+HTTP_STATUS:200
+=== t=35s GET /api/llm/status ===
+{"state": {"status": "error", "model_key": "glm", "error": {"code": "backend_exited", "message": "mlx-lm 进程退出，退出码 1", "log_tail": "/opt/homebrew/opt/python@3.14/bin/python3.14: No module named mlx_lm"}, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200
+=== t=35s GET /api/state ===
+{"holder": null, "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}}
+HTTP_STATUS:200
+=== t=40s GET /api/llm/status ===
+{"state": {"status": "error", "model_key": "glm", "error": {"code": "backend_exited", "message": "mlx-lm 进程退出，退出码 1", "log_tail": "/opt/homebrew/opt/python@3.14/bin/python3.14: No module named mlx_lm"}, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200
+=== t=40s GET /api/state ===
+{"holder": null, "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}}
+HTTP_STATUS:200
+=== t=45s GET /api/llm/status ===
+{"state": {"status": "error", "model_key": "glm", "error": {"code": "backend_exited", "message": "mlx-lm 进程退出，退出码 1", "log_tail": "/opt/homebrew/opt/python@3.14/bin/python3.14: No module named mlx_lm"}, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200
+=== t=45s GET /api/state ===
+{"holder": null, "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}}
+HTTP_STATUS:200
+=== t=50s GET /api/llm/status ===
+{"state": {"status": "error", "model_key": "glm", "error": {"code": "backend_exited", "message": "mlx-lm 进程退出，退出码 1", "log_tail": "/opt/homebrew/opt/python@3.14/bin/python3.14: No module named mlx_lm"}, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200
+=== t=50s GET /api/state ===
+{"holder": null, "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}}
+HTTP_STATUS:200
+=== t=55s GET /api/llm/status ===
+{"state": {"status": "error", "model_key": "glm", "error": {"code": "backend_exited", "message": "mlx-lm 进程退出，退出码 1", "log_tail": "/opt/homebrew/opt/python@3.14/bin/python3.14: No module named mlx_lm"}, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200
+=== t=55s GET /api/state ===
+{"holder": null, "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}}
+HTTP_STATUS:200
+=== t=60s GET /api/llm/status ===
+{"state": {"status": "error", "model_key": "glm", "error": {"code": "backend_exited", "message": "mlx-lm 进程退出，退出码 1", "log_tail": "/opt/homebrew/opt/python@3.14/bin/python3.14: No module named mlx_lm"}, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200
+=== t=60s GET /api/state ===
+{"holder": null, "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}}
+HTTP_STATUS:200

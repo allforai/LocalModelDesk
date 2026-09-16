@@ -1,0 +1,3 @@
+--- ls -la on venv_python path ---
+lrwxr-xr-x@ 1 aa  admin  59 Aug  5 19:29 /opt/homebrew/opt/python@3.14/bin/python3.14 -> ../Frameworks/Python.framework/Versions/3.14/bin/python3.14
+/opt/homebrew/opt/python@3.14/bin/python3.14: Mach-O 64-bit executable arm64

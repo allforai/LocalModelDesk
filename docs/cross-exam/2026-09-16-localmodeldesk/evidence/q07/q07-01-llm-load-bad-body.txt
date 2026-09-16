@@ -1,0 +1,7 @@
+=== POST /api/llm/load  body={} ===
+{"error": {"code": "model_not_found", "message": "未找到模型: "}}
+HTTP_STATUS:404
+
+=== POST /api/llm/load  body={"key": 123} ===
+{"error": {"code": "model_not_found", "message": "未找到模型: 123"}}
+HTTP_STATUS:404

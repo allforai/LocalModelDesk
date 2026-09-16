@@ -1,0 +1,3 @@
+=== GET /api/llm/status (start) ===
+{"state": {"status": "idle", "model_key": null, "error": null, "loaded_at": null}, "loaded_model": null}
+HTTP_STATUS:200

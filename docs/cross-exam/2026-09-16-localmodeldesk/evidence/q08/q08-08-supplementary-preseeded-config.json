@@ -1,0 +1,7 @@
+{
+  "config_version": 1,
+  "first_run_done": true,
+  "models_root": "/tmp/lmd-q08b-fnuJLW/models",
+  "outputs_root": "/tmp/lmd-q08b-fnuJLW/outputs",
+  "gateway": {"enabled": true, "host": "0.0.0.0", "port": 18812}
+}

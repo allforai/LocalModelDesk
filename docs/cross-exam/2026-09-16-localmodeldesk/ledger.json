@@ -1272,11 +1272,12 @@
     "台面标签栏出现"
    ],
    "step_budget": 12,
-   "status": "not_examined",
+   "status": "examined",
    "risk": {
     "level": "high",
     "why": "R-foundation-03/05 的首运语义是所有人的第一分钟；走不通等于产品不可用"
-   }
+   },
+   "entry_q": "J1 走得通吗？"
   },
   {
    "id": "J2",
@@ -1333,11 +1334,12 @@
     "「打开成品目录」被点到"
    ],
    "step_budget": 8,
-   "status": "not_examined",
+   "status": "examined",
    "risk": {
     "level": "medium",
     "why": "R-shell-06/07 的常驻入口；坏了只是绕路，不是断路"
-   }
+   },
+   "entry_q": "J3 走得通吗？"
   },
   {
    "id": "J4",
@@ -1367,11 +1369,12 @@
     "最窄端 900 与最宽端 1920 各一次"
    ],
    "step_budget": 15,
-   "status": "not_examined",
+   "status": "examined",
    "risk": {
     "level": "high",
     "why": "R-ui-06/07 的响应式；上一轮零视觉裁决，这条正是当时没人验的那类"
-   }
+   },
+   "entry_q": "J4 走得通吗？"
   }
  ],
  "entries": [
@@ -1767,6 +1770,448 @@
     "日志路径或日志尾可见"
    ],
    "note": "bias-guard：盘问官即作者。done_looks_like 的「给得出日志路径」未被证到（详情没展开），必经点也因此未经过，故判 drift 而非 done——终态达成不等于我点名的每一步都走到了。"
+  },
+  {
+   "q": "这四个端点在「请求体有问题」时，客户端拿到的是参数错误，还是状态错误 / 未捕获异常？POST /api/llm/load（缺 key）、POST /api/first-run（models_root 传非字符串）、PUT /api/config（配置损坏时传一个非法字段）、POST /api/resources/download（key 不在目录表里）",
+   "facet": "F1",
+   "surfaces": [
+    "S2",
+    "S5",
+    "S12",
+    "S16"
+   ],
+   "requirement_refs": [
+    "R-foundation-02",
+    "R-foundation-03",
+    "R-llm-01",
+    "R-resources-05"
+   ],
+   "leak_point": "P2 枚举官读码指出 15 个端点里 7 个是运行时状态检查排在入参校验之前；这一问把其中四个真跑一遍",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/5e08a2b8-d647-4897-b317-535244843a56/tasks/ac5d71f2077992e46.output"
+   },
+   "probed_at": "2026-09-16T22:34:27+09:00",
+   "states_to_capture": [
+    "服务起来后 GET /api/state 与 GET /api/llm/status 的返回",
+    "POST /api/llm/load 传 {} 与 {\"key\": 123}",
+    "POST /api/first-run 传 {\"models_root\": 12345} 与 {\"models_root\": {\"a\": 1}}",
+    "config.json 写坏之后 PUT /api/config 传非法字段",
+    "POST /api/resources/download 传未知 key"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8783",
+    "process": "python3 -m desk (pid 48328，返回前已 kill)",
+    "mock_layers": [],
+    "checked_absent": [
+     "环境里无 MOCK/USE_MOCK/STUB",
+     "仓库无 msw/json-server/miragejs/nock",
+     "直连真服务单跳"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q07/",
+    "files": [
+     "q07-00-start-state.txt",
+     "q07-01-llm-load-bad-body.txt",
+     "q07-02-first-run-bad-models-root.txt",
+     "q07-03-put-config-corrupt-file.txt",
+     "q07-04-download-unknown-key.txt",
+     "q07-served-by.md"
+    ],
+    "key_observation": "first-run 传非字符串 models_root → 500 {\"code\":\"internal\"} 且把 Python 原始异常消息（含类型名）透传给客户端；config 损坏时 PUT /api/config → 500 config_corrupt，对请求体里的非法字段只字不提；llm/load 缺 key → 404「未找到模型: 」（空串）"
+   },
+   "verdict": "gap",
+   "severity": "medium",
+   "note": "bias-guard：盘问官即作者。四个位点里三个坐实 P2，第四个（download 未知 key → 404 unknown_model）结果合理，按反例记。最锋利的是 first-run 那条：它不只是错误码不对，还把内部异常文本泄给客户端——错误码误导是体验问题，异常透传是信息暴露，两件事。"
+  },
+  {
+   "q": "J1 走得通吗？",
+   "facet": "F1",
+   "surfaces": [
+    "S1",
+    "S2",
+    "S5",
+    "S6",
+    "S7",
+    "S8",
+    "S59"
+   ],
+   "requirement_refs": [
+    "R-foundation-03",
+    "R-foundation-04",
+    "R-resources-01",
+    "R-resources-03"
+   ],
+   "leak_point": "旅程轮：全新数据根的第一分钟，一个机器上已有模型的人能不能走到「台面可用且目录指向自己的目录」",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/5e08a2b8-d647-4897-b317-535244843a56/tasks/a3179ee14093f2643.output"
+   },
+   "probed_at": "2026-09-16T22:34:25+09:00",
+   "states_to_capture": [
+    "起点（app 刚起来时的窗口）",
+    "终态（你走到哪算哪，截图）"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:60485 / 60486（实测官自起的实例）",
+    "process": "LocalModelDesk.app pid 44345 → 内嵌 python3.13 -s -m desk pid 44351",
+    "mock_layers": [],
+    "checked_absent": [
+     "原生 app，无 service worker",
+     "页面环境未见 MOCK/USE_MOCK/STUB"
+    ]
+   },
+   "journey": "J1",
+   "steps": [
+    {
+     "n": 1,
+     "action": "在「收编既有目录树」填入 /Users/aa/LocalModelDesk/llms，保持默认「指向」不选「移动」",
+     "observed": "输入框显示新值，「指向」仍选中",
+     "status": "done",
+     "evidence": "q04-01-fill-existing-root.png"
+    },
+    {
+     "n": 2,
+     "action": "点击「收编」",
+     "observed": "未跳转，下方出现红色英文：no known model subtrees (llms, minimax-h3, minimax-music3) under /Users/aa/LocalModelDesk/llms",
+     "status": "stuck",
+     "evidence": "q04-02-after-adopt-click.png"
+    },
+    {
+     "n": 3,
+     "action": "改走另一条路：在「选择 models 目录」填入同一路径",
+     "observed": "输入框显示新值",
+     "status": "done",
+     "evidence": "q04-03-fill-top-dir.png"
+    },
+    {
+     "n": 4,
+     "action": "点击「使用该目录」",
+     "observed": "首运页消失、标签栏出现、会话已建；模型下拉列出 6 个模型，但每一项文案末尾都带「（未下载/不完整）」",
+     "status": "done",
+     "evidence": "q04-04-after-use-dir-click.png"
+    },
+    {
+     "n": 5,
+     "action": "打开设置核对模型目录",
+     "observed": "「模型目录 > 当前目录」= /Users/aa/LocalModelDesk/llms",
+     "status": "done",
+     "evidence": "q04-05-settings.png"
+    }
+   ],
+   "terminal_state": {
+    "snapshot": "q04-05-settings-snapshot.png",
+    "readback": "q04-05-readback-settings.json"
+   },
+   "evidence": {
+    "dir": "evidence/q04/",
+    "files": [
+     "q04-00-start.png",
+     "q04-00-start-snapshot.png",
+     "q04-01-fill-existing-root.png",
+     "q04-02-after-adopt-click.png",
+     "q04-03-fill-top-dir.png",
+     "q04-04-after-use-dir-click.png",
+     "q04-05-settings.png",
+     "q04-05-settings-snapshot.png",
+     "q04-05-readback-settings.json",
+     "q04-served-by.md"
+    ],
+    "key_observation": "收编路径被拒并停在首运页（红色英文错误）；换一条路进得了台面，但 6 个模型全部显示「未下载/不完整」，而那个目录里确实有它们"
+   },
+   "verdict": "gap",
+   "severity": "medium",
+   "stuck_kind": "misleading",
+   "note": "bias-guard：盘问官即作者。oracle 的「资源页列得出模型且不是全部未知」没达成——实测官看到的是聊天页下拉里6 个全标「未下载/不完整」（它没去资源页，资源页本身仍未验，已作牌候选）。收编那条路的失败信息是英文，而且首运页那个输入框的占位符写着 /path/to/existing/models，正把人往「指到 models 目录本身」引，而产品要的是它的父目录——误导，故 stuck_kind 记 misleading。"
+  },
+  {
+   "q": "J3 走得通吗？",
+   "facet": "F9",
+   "surfaces": [
+    "S27",
+    "S56",
+    "S58"
+   ],
+   "requirement_refs": [
+    "R-shell-06",
+    "R-shell-07",
+    "R-library-01"
+   ],
+   "leak_point": "旅程轮：主窗口关着时，菜单栏这条常驻入口到底能不能把人送到成品目录",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/5e08a2b8-d647-4897-b317-535244843a56/tasks/adae5bdb97e6d58f5.output"
+   },
+   "probed_at": "2026-09-16T22:36:03+09:00",
+   "states_to_capture": [
+    "起点（主窗口关掉之后的屏幕，菜单栏可见）",
+    "终态（你走到哪算哪，截图）"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8781（自起实例）",
+    "process": "LocalModelDesk pid 45162 → python3.13 -s -m desk pid 45168",
+    "mock_layers": [],
+    "checked_absent": [
+     "原生 app 自带本地后端，无 service worker/MSW",
+     "未见 MOCK/USE_MOCK/STUB"
+    ]
+   },
+   "journey": "J3",
+   "steps": [
+    {
+     "n": 1,
+     "action": "点击菜单栏的 LocalModelDesk 状态图标",
+     "observed": "菜单展开：状态：空闲 / 内存 已用 41 / 总 128 GiB（可用 87 GiB）/ 打开窗口 / 打开成品目录 / 设置… / 退出",
+     "status": "done",
+     "evidence": "q05-01-menu-opened.png"
+    },
+    {
+     "n": 2,
+     "action": "点击菜单项「打开成品目录」",
+     "observed": "菜单收起；desk.log 记 POST /api/outputs/reveal 200；点击后与显式 activate Finder 后各查一次，Finder count windows 都是 0，全屏截图也没有新窗口；config.json 里 outputs_root=/private/tmp/…/outputs，find 遍历确认该目录不存在",
+     "status": "stuck",
+     "evidence": "q05-02-after-click-open-output-dir.png"
+    },
+    {
+     "n": 3,
+     "action": "点击后与显式 activate Finder 后各查一次 Finder 窗口数，并全屏截图",
+     "observed": "两次 count windows 都是 0，全屏截图里没有任何新窗口；config.json 的 outputs_root 目录经 find 确认不存在",
+     "status": "stuck",
+     "evidence": "q05-03-terminal-no-finder-window.png"
+    }
+   ],
+   "terminal_state": {
+    "snapshot": "q05-03-terminal-no-finder-window.png"
+   },
+   "evidence": {
+    "dir": "evidence/q05/",
+    "files": [
+     "q05-00-start.png",
+     "q05-01-menu-opened.png",
+     "q05-02-after-click-open-output-dir.png",
+     "q05-03-terminal-no-finder-window.png",
+     "q05-served-by.md",
+     "（另有 8 张调试截图）"
+    ],
+    "key_observation": "接口回 200，访达什么都没打开——outputs_root 指向的目录在磁盘上不存在，而 reveal 不核实这一点"
+   },
+   "verdict": "gap",
+   "severity": "medium",
+   "stuck_kind": "no_feedback",
+   "note": "bias-guard：盘问官即作者。这是典型的假成功：服务端 200、用户侧零反馈、也没人告诉他为什么。R-shell-07 的常驻入口在「还没生成过任何东西」的新装机上就是断的，而那恰恰是新用户最可能点它的时刻。"
+  },
+  {
+   "q": "一个全新安装（全新数据根、用户什么都没点过）的 LocalModelDesk，对外接口是开着还是关着？服务起来后它有没有真的在某个地址上监听？监听在哪个地址？",
+   "facet": "F5",
+   "surfaces": [
+    "S38",
+    "S39",
+    "S46",
+    "S71"
+   ],
+   "requirement_refs": [
+    "R-gateway-07",
+    "R-foundation-02",
+    "R-foundation-03"
+   ],
+   "leak_point": "J1 实测官顺带看到：设置面板还没点「保存并应用」就已显示「无法绑定 0.0.0.0:8770」，说明它自己试过了",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/5e08a2b8-d647-4897-b317-535244843a56/tasks/ad52ff98033473579.output"
+   },
+   "probed_at": "2026-09-16T22:42:57+09:00",
+   "states_to_capture": [
+    "全新数据根、服务刚起来时 GET /api/gateway/config 的完整返回",
+    "此刻属于该服务进程的所有监听行（地址与端口）",
+    "落盘的 config.json 内容（对外接口那几个字段的默认值）",
+    "完整 app 的设置面板「对外 API」一段的截图"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:18811（自起实例的 shell 端口）；对外网关 0.0.0.0:8770 绑定失败 / 补充实验 0.0.0.0:18812 绑定成功",
+    "process": "python3 -m desk pid 61489 与 63653（均自起，已收干净）",
+    "mock_layers": [],
+    "checked_absent": [
+     "无 MOCK/USE_MOCK/STUB",
+     "desk/gateway 是被测本体，非经 mock 层"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q08/",
+    "files": [
+     "q08-01-gateway-config-response.txt",
+     "q08-02-api-config-response.txt",
+     "q08-03-lsof-listen-pid61489.txt",
+     "q08-04-data-root-tree.txt",
+     "q08-05-no-config-json-note.txt",
+     "q08-06-supplementary-freeport-gateway-config-response.txt",
+     "q08-07-supplementary-lsof-listen-pid63653.txt",
+     "q08-08-supplementary-preseeded-config.json",
+     "q08-09-supplementary-note.md",
+     "q08-10-code-excerpts.md",
+     "q08-11-could-not-app-screenshot.md"
+    ],
+    "key_observation": "全新安装、磁盘上还没有 config.json 时，enabled 就是 true、host 就是 0.0.0.0、auth 是 none；换成空闲端口复跑，lsof 实测 `TCP *:18812 (LISTEN)`、listening:true——真的听在所有网卡上"
+   },
+   "verdict": "gap",
+   "severity": "high",
+   "note": "bias-guard：盘问官即作者，这条从严判 high。R-gateway-07 写的是「开关关闭时不监听」，没说开关默认开；而 desk/gateway/service.py:9 与 desk/foundation/config.py:59 两处默认值都是 enabled=True + host=0.0.0.0，服务一起来就尝试绑定，用户从未参与。roadmap 明确把「令牌鉴权与 TLS」排除在本轮之外——没有鉴权是已知取舍，而「默认对全网开着」不是同一件事：它把一个已知取舍变成了默认暴露。本机没听上只是因为 8770 被用户自己那个实例占着。"
+  },
+  {
+   "q": "J4 走得通吗？",
+   "facet": "F9",
+   "surfaces": [
+    "S58",
+    "S40",
+    "S65"
+   ],
+   "requirement_refs": [
+    "R-shell-01",
+    "R-ui-02",
+    "R-ui-07"
+   ],
+   "leak_point": "旅程轮：窗口从最窄拉到最宽，每档是否都可读可操作",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/5e08a2b8-d647-4897-b317-535244843a56/tasks/a2250c64b6d1e7c71.output"
+   },
+   "probed_at": "2026-09-16T22:40:01+09:00",
+   "states_to_capture": [
+    "起点（app 刚起来时的窗口）",
+    "终态（你走到哪算哪，截图）"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:19101 / 19102（自起实例）",
+    "process": "LocalModelDesk pid 45655 → python3.13 -s -m desk pid 45661（已按 pid 收干净）",
+    "mock_layers": [],
+    "checked_absent": [
+     "只传了三个 LMD_/LOCALMODELDESK_ 环境变量，无 MOCK/USE_MOCK/STUB",
+     "读回值来自真实 WKWebView 渲染"
+    ]
+   },
+   "journey": "J4",
+   "steps": [
+    {
+     "n": 1,
+     "action": "逐档设宽 200 / 100",
+     "observed": "/window 原样接受、无下限拦截；#pane-chat client_width=0；侧栏把窗口挤满或溢出，顶部大半控件不在画面内",
+     "status": "done",
+     "evidence": "q06-01-w200-floor-probe.png"
+    },
+    {
+     "n": 2,
+     "action": "设宽 320",
+     "observed": "「加载/卸载」只剩图标无文字，提示句逐字竖排换行，模型名截成「GL」",
+     "status": "done",
+     "evidence": "q06-03-w320-char-wrap-broken.png"
+    },
+    {
+     "n": 3,
+     "action": "设宽 480",
+     "observed": "readback scroll_width=763 > client_width=480（元素级横向溢出）；顶部右侧控件被裁出窗口，输入框占位符逐字竖排",
+     "status": "done",
+     "evidence": "q06-04-w480-narrow-input.png"
+    },
+    {
+     "n": 4,
+     "action": "设宽 640（确认范围之内）",
+     "observed": "readback scroll_width=763 > client_width=640，仍横向溢出；模型行右侧状态文字与下拉箭头被裁在窗口外",
+     "status": "stuck",
+     "evidence": "q06-05-w640-row-overflow.png"
+    },
+    {
+     "n": 5,
+     "action": "设宽 768 / 900 / 1280 / 1600 / 1920",
+     "observed": "五档 scroll_width 与 client_width 始终相等，不再横向溢出；1920 档布局干净、无裁切",
+     "status": "done",
+     "evidence": "q06-06-w768-clean.png"
+    },
+    {
+     "n": 6,
+     "action": "设宽 3840（超出逻辑屏宽两倍）",
+     "observed": "原样接受，WKWebView 真按 3840 CSS px 渲染（snapshot 物理 7680×1800）；布局不裂，但侧栏仍固定 248px，右侧大片空白",
+     "status": "done",
+     "evidence": "q06-11-w3840-beyond-screen-bounds.png"
+    }
+   ],
+   "terminal_state": {
+    "snapshot": "q06-11-w3840-beyond-screen-bounds.png"
+   },
+   "evidence": {
+    "dir": "evidence/q06/",
+    "files": [
+     "q06-00-start.png",
+     "q06-01…q06-11 共 12 张截图与同名 readback json",
+     "q06-served-by.md"
+    ],
+    "key_observation": "确认范围内的 640 档就已经元素级横向溢出（763 > 640）并裁掉模型行右侧；范围外继续恶化；两端都没有任何宽度拦截，100px 与 3840px 都照单全收"
+   },
+   "verdict": "gap",
+   "severity": "high",
+   "note": "bias-guard：盘问官即作者，从严判 high。判据只取确认范围（600–1920）之内的观察：640 档的横向溢出与控件裁切就足以成立，且与视觉验收 issue #1（模型下拉越界）指向同一处。600 以下的那些（480/320/200/100）超出本轮确认范围，作为「窗口没有最小宽度」的证据另记牌，不计进本条严重度。3840 端同理：那是屏幕物理像素宽、超出确认的 1920，只记现象。\n归面说明：这条旅程驱动的是原生窗口（macos/MainWindowController 的 setContentSize），观察的是窗口在各宽度下还可不可用，故归 F9；F8 的视觉验收按冻结矩阵单独走，两者在 640 档指向同一处缺陷（见 issue #1）。",
+   "stuck_kind": "broken"
+  },
+  {
+   "q": "当加载模型所需的解释器不存在时，POST /api/llm/load 之后会发生什么？状态会走到某个终态吗？GET /api/llm/status 会不会一直停在 loading？台面的重活令牌会不会被永久占住？",
+   "facet": "F4",
+   "surfaces": [
+    "S16",
+    "S18",
+    "S36",
+    "S50"
+   ],
+   "requirement_refs": [
+    "R-llm-01",
+    "R-llm-04",
+    "R-arbiter-06"
+   ],
+   "leak_point": "P3 枚举官读码指出：service.py:200 的 spawn 没包 try，跑在守护线程里，异常逸出则状态与令牌都不会被改写",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/5e08a2b8-d647-4897-b317-535244843a56/tasks/ac7d84622703288b9.output"
+   },
+   "probed_at": "2026-09-16T22:54:56+09:00",
+   "states_to_capture": [
+    "起点 GET /api/llm/status 与 /api/state",
+    "venv_python 指向的路径存不存在",
+    "POST /api/llm/load 的状态码与响应体",
+    "此后 60 秒每隔几秒的 /api/llm/status",
+    "同期 /api/state 的 can_start",
+    "日志里有没有 FileNotFoundError 痕迹"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:56255",
+    "process": "python3 -m desk (pid 95302，已收干净)",
+    "mock_layers": [],
+    "checked_absent": [
+     "未用 desk/testing 假后端，走的是 MlxLmBackend 真 subprocess",
+     "无 MOCK/USE_MOCK/STUB"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q09/",
+    "files": [
+     "q09-00-start-status.txt",
+     "q09-01-start-state.txt",
+     "q09-02-paths.txt",
+     "q09-03-venv-python-ls.txt",
+     "q09-04-post-load.txt",
+     "q09-05-poll-log.txt",
+     "q09-06-mlxlm-log.txt",
+     "q09-07-service-stderr.txt",
+     "q09-08-desk-log.txt",
+     "q09-09-code-excerpt-unhandled-spawn.md"
+    ],
+    "key_observation": "前提造不出来：dev 模式下 venv_python = Path(sys.executable)，即正在跑服务的解释器本身，必然存在。实测到的是相邻分支（解释器在、mlx_lm 模块没装），而那条分支产品处理得对：5 秒内进入 error/backend_exited 并带 log_tail，60 秒内状态稳定，can_start.llm 全程 ok（令牌已归还）"
+   },
+   "verdict": "unprovable",
+   "note": "实测官拒绝把「相邻分支正常」当成「假设的那条分支也正常」，也拒绝为了造前提去改源码或伪造 bundle.json——两者都越出它被允许的边界。所以这条按无法自证挂账，不是缺口，也不算实证完成。P3 里 llm/load 那个位点因此仍是未查：要证它得在打包模式下把 venv_python 指向一个不存在的路径。"
   }
  ],
  "patterns": [
@@ -1847,20 +2292,20 @@
     {
      "site": "POST /api/llm/load",
      "where": "desk/llm/routes.py:47 → service.py:112-114",
-     "note": "缺 key 被 str(...or '') 强转后由 model_not_found(404) 吸收，没有独立的参数错误",
-     "status": "not_examined"
+     "note": "缺 key 被 str(...or '') 强转后由 model_not_found(404) 吸收，没有独立的参数错误；实测：传 {} 与 {\"key\":123} 都得 404 model_not_found「未找到模型: 」，没有参数错误这一档",
+     "status": "examined"
     },
     {
      "site": "POST /api/first-run",
      "where": "desk/foundation/routes.py:73 → paths.py:22 Path(value)",
-     "note": "磁盘可写探测(400 not_writable) 在前；models_root 传非字符串时 TypeError 穿透 → 500 {'code':'internal'}",
-     "status": "not_examined"
+     "note": "磁盘可写探测(400 not_writable) 在前；models_root 传非字符串时 TypeError 穿透 → 500 {'code':'internal'}；实测：models_root 传 int 或 dict → 500 {\"code\":\"internal\"}，并透传 Python 异常原文",
+     "status": "examined"
     },
     {
      "site": "PUT /api/config",
      "where": "desk/foundation/config.py:198 _load_raw → :210 _validate",
-     "note": "配置损坏(500 config_corrupt) 排在字段校验(400 config_invalid) 之前",
-     "status": "not_examined"
+     "note": "配置损坏(500 config_corrupt) 排在字段校验(400 config_invalid) 之前；实测：config.json 损坏时 → 500 config_corrupt，请求体里的非法字段从未被校验",
+     "status": "examined"
     },
     {
      "site": "POST /api/config/reset",
@@ -1871,8 +2316,8 @@
     {
      "site": "POST /api/resources/download",
      "where": "desk/resources/downloader.py:61-77",
-     "note": "忙碌检查(409) → key 存在性(404) → 工具/清单就绪(503)，字段校验夹在两段运行时检查中间",
-     "status": "not_examined"
+     "note": "忙碌检查(409) → key 存在性(404) → 工具/清单就绪(503)，字段校验夹在两段运行时检查中间；实测：未知 key → 404 unknown_model，结果合理，按反例记",
+     "status": "counterexample"
     },
     {
      "site": "（反例）POST /api/adopt",
@@ -1908,6 +2353,83 @@
    "enumerator_task": {
     "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/5e08a2b8-d647-4897-b317-535244843a56/tasks/acca7d04bcd2d9d67.output"
    }
+  },
+  {
+   "id": "P3",
+   "hypothesis": "驱动系统/子进程去做一件事之后不核实它是否真的发生：返回值被丢掉、异常被吞、或状态无条件写成成功。11 个位点里 7 个如此、4 个写法正确——不是全局约定，是一半一半",
+   "enumerated": true,
+   "enumerator_model": "sonnet",
+   "sites": [
+    {
+     "site": "POST /api/outputs/reveal",
+     "where": "desk/library/outputs.py:70-77",
+     "note": "首例，已实测：不检查 outputs_root 是否存在；opener 用 check=False 且返回值被丢弃；恒 200 {\"revealed\": …}；前端只有 catch 分支，静默失败时界面零提示",
+     "status": "examined"
+    },
+    {
+     "site": "菜单栏「打开成品目录」（Swift 侧）",
+     "where": "macos/AppDelegate.swift:27 `api.revealOutputs { _ in }`",
+     "note": "已实测（J3）：Result 被整个丢弃，服务端就算报错客户端也不看；与上一条叠加，两层都无法让用户知道什么都没发生",
+     "status": "examined"
+    },
+    {
+     "site": "POST /api/llm/load",
+     "where": "desk/llm/service.py:200 `self._backend.spawn(...)` 未包 try；roots.venv_python 从不检查存在性",
+     "note": "读码：解释器缺失时 FileNotFoundError 从守护线程逸出，状态永远停在 loading、arbiter 令牌永不释放、前端 pollUntilSettled 永不退出。待实测；已试实测（q09）但前提造不出来：dev 模式下 venv_python 就是当前解释器，必然存在。相邻分支（解释器在、模块缺失）实测处理正确：error/backend_exited + 令牌归还",
+     "status": "not_examined"
+    },
+    {
+     "site": "POST /api/outputs/{name}/reveal",
+     "where": "desk/library/outputs.py:79-82",
+     "note": "半对：文件不存在会 404（有提示），但文件存在而 `open -R` 静默失败时仍恒 200，界面无提示",
+     "status": "not_examined"
+    },
+    {
+     "site": "POST /api/resources/download/cancel",
+     "where": "desk/resources/downloader.py:122-131 + desk/media/executor.py:45-49",
+     "note": "读码：killpg 的 ProcessLookupError 被吞，state 无条件写成 cancelled，这次响应里看不出「真杀掉了」与「进程本来就不在」的区别",
+     "status": "not_examined"
+    },
+    {
+     "site": "POST /api/media/cancel",
+     "where": "desk/media/service.py:187-195",
+     "note": "读码：同上形状；返回的是取消瞬间的快照（多半仍是 running），真正的 cancelled 是异步写的",
+     "status": "not_examined"
+    },
+    {
+     "site": "ServerController.terminateEmbeddedServer 的失败上报",
+     "where": "macos/AppDelegate.swift:158-163",
+     "note": "读码：portFree/llmPortFree 为假只写一行 stderr，此时 app 正在退出，没有任何界面能显示",
+     "status": "not_examined"
+    },
+    {
+     "site": "（反例）POST /api/llm/unload",
+     "where": "desk/llm/service.py:340,364-371",
+     "note": "核实端口确已释放，未释放则置 STATUS_ERROR 并回 500，前端有提示",
+     "status": "counterexample"
+    },
+    {
+     "site": "（反例）POST /api/resources/download",
+     "where": "desk/resources/downloader.py:72-73,91-95,213-223",
+     "note": "先检查 hf 工具存在、捕获 FileNotFoundError、采集退出码写进错误体",
+     "status": "counterexample"
+    },
+    {
+     "site": "（反例）POST /api/media/video 与 /music",
+     "where": "desk/media/service.py:138-143,150-166",
+     "note": "spawn 包在 try 里、失败置 spawn_failed 并释放令牌；worker 区分 no_output 与 exit_nonzero（带日志尾）",
+     "status": "counterexample"
+    },
+    {
+     "site": "（反例）ServerController.spawnEmbeddedServer",
+     "where": "macos/ServerController.swift:46-103",
+     "note": "接管检测、端口占用检测、run() 包 do/catch、提前退出与超时都显式失败并走错误页",
+     "status": "counterexample"
+    }
+   ],
+   "enumerator_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/5e08a2b8-d647-4897-b317-535244843a56/tasks/a6fb10e526282f059.output"
+   }
   }
  ],
  "open_threads": [
@@ -1930,11 +2452,6 @@
    "q": "服务对每个响应回 HTTP/1.0 且 Server 头暴露 Python 版本（BaseHTTP/0.6 Python/3.14.7），对外网关开着时算不算信息暴露？",
    "facet": "F5",
    "leak_point": "q01 实测官的 incidental_observations"
-  },
-  {
-   "q": "POST /api/first-run 的 models_root 传一个非字符串（如数字或对象），客户端拿到的是 400 参数错误还是 500 internal？",
-   "facet": "F1",
-   "leak_point": "P2 枚举官读码指出 paths.py:22 Path(value) 的 TypeError 无人捕获（未实测）"
   },
   {
    "q": "600×400 下视频页的「生成视频」按钮在视口之外，用户滚得到吗？该面到底能不能滚？",
@@ -1995,6 +2512,71 @@
    "q": "状态条左侧那组项与右侧设置按钮之间这么大一块空，本身是不是该重新设计（而不只是调一个上限数字）？",
    "facet": "F8",
    "leak_point": "A 组量出 1100/1300/1400/1920 四档分别 46.4%/45.2%/49.2%/63.2%，宽窗越拉越空"
+  },
+  {
+   "q": "还有多少条路径会把 Python 原始异常消息透传给客户端？app.py 的兜底 except 是不是该只回一句中性文案？",
+   "facet": "F1",
+   "leak_point": "q07 实测：first-run 把 \"argument should be a str or an os.PathLike object…\" 原样回给了客户端"
+  },
+  {
+   "q": "【安全】全新数据根首次启动时，「开启对外接口」为什么是默认勾上并已尝试监听 0.0.0.0:8770？用户一次都没点过。",
+   "facet": "F5",
+   "leak_point": "J1 实测官：进设置面板、未点「保存并应用」就已显示「无法绑定 0.0.0.0:8770——该端口已被占用」，说明它自动试过了"
+  },
+  {
+   "q": "指着一个确实装着模型的目录，为什么 6 个模型全是「未下载/不完整」？是缺 HF 文件清单缓存吗？联网后会自愈吗？",
+   "facet": "F2",
+   "leak_point": "J1 实测官：目录里确有 mlx-community/glm-4.7-flash-abliterated-8bit，界面仍标未下载"
+  },
+  {
+   "q": "首运页「收编既有目录树」的占位符写 /path/to/existing/models，而产品要的是它的父目录；失败信息还是英文。",
+   "facet": "F1",
+   "leak_point": "J1 实测官：填 llms 目录被拒，错误原文 no known model subtrees (llms, minimax-h3, minimax-music3) under …"
+  },
+  {
+   "q": "资源页在这种「指向了既有目录但清单缺失」的状态下长什么样？badge 是「没下」还是「未知」？",
+   "facet": "F2",
+   "leak_point": "J1 实测官没去资源页，oracle 里那一条只能从聊天页下拉间接看到"
+  },
+  {
+   "q": "全新数据根下，原生 NSAlert 首运对话框与网页首运页是两个入口——哪个先出现？会不会互相盖住？",
+   "facet": "F1",
+   "leak_point": "J3 实测官看到的是原生「首次设置：模型放在哪？」对话框，J1 实测官看到的是网页首运表单"
+  },
+  {
+   "q": "取证探针在多实例并存时会不会失应答？q08 实测官起的第三个实例，shell 端口正常但探针端口 30 秒无应答。",
+   "facet": "F11",
+   "leak_point": "q08 实测官的 could_not：/readback 与 /window 反复超时，只好放弃截图那一步"
+  },
+  {
+   "q": "【取证工具】app 刚起来时不激活到前台，WebContent 子进程就不生成，探针四个端点全超时——取证脚本要不要先激活窗口？",
+   "facet": "F11",
+   "leak_point": "J4 与 q08 两个互不相识的实测官都撞上：激活 pid 后探针立刻恢复应答"
+  },
+  {
+   "q": "【取证工具】读回的 orientation 按 width>=height 算，窗口拉窄到 640×768 就报 portrait，而矩阵那一轴只有 landscape——会让窄档截图被校验器判为轴值不符。",
+   "facet": "F11",
+   "leak_point": "J4 实测官：宽度≤640 时 readback.orientation 翻成 portrait"
+  },
+  {
+   "q": "窗口该不该有最小宽度？现在 100px 也照单全收，那时连会话侧栏都被裁掉大半。",
+   "facet": "F9",
+   "leak_point": "J4 实测官：/window?width=100 无任何拦截"
+  },
+  {
+   "q": "超宽屏（3840 CSS px）下侧栏仍固定 248px、右侧大片空白，宽端是不是也该有布局回应？",
+   "facet": "F8",
+   "leak_point": "J4 实测官：3840 档布局不裂但大片未使用空间"
+  },
+  {
+   "q": "打包模式下把 venv_python 指向一个不存在的路径，POST /api/llm/load 会不会永远停在 loading、令牌永不归还？",
+   "facet": "F4",
+   "leak_point": "q09 实测官：dev 模式造不出这个前提；代码走向已归档在 q09-09"
+  },
+  {
+   "q": "dev 模式下 capabilities.music_runtime.present=false（mlx_minimax_music3 not importable）——打包后的 app 里这一项是什么？能力探测对用户怎么呈现？",
+   "facet": "F6",
+   "leak_point": "q09 实测官读 /api/paths 时顺带看到"
   }
  ],
  "form_factor": {

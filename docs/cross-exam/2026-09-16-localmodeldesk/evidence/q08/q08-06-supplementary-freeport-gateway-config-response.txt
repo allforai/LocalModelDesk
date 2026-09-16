@@ -1,0 +1,7 @@
+HTTP/1.0 200 OK
+Server: BaseHTTP/0.6 Python/3.14.7
+Date: Wed, 16 Sep 2026 13:46:55 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 385
+
+{"config": {"enabled": true, "host": "0.0.0.0", "port": 18812}, "status": {"enabled": true, "listening": true, "host": "0.0.0.0", "port": 18812, "lan_host": "192.168.68.53", "lan_candidates": ["192.168.68.53", "192.168.139.3", "192.168.117.0"], "openai_base_url": "http://192.168.68.53:18812/v1", "anthropic_base_url": "http://192.168.68.53:18812", "auth": "none", "last_error": null}}
