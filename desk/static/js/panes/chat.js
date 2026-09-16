@@ -11,6 +11,7 @@ import { confirmDialog } from "../widgets/confirm.js";
 import { addIcon } from "../icons.js";
 import { renderMarkdown } from "../pure/markdown.js";
 import { formatTimestamp } from "../pure/format.js";
+import { shouldStickToBottom } from "../pure/scroll_follow.js";
 
 export function createChatPane(root, ctx = {}) {
   const doc = root.ownerDocument;
@@ -378,15 +379,20 @@ export function createChatPane(root, ctx = {}) {
       for await (const line of sseDataLines(body)) {
         state = reduceChunk(state, line);
         liveTurn.state = state;
+        const stickThinking = shouldStickToBottom(els.messages);
         live.reasoningEl.replaceChildren(renderMarkdown(doc, state.reasoning));
         live.details.hidden = !state.reasoning;
+        if (stickThinking) els.messages.scrollTop = els.messages.scrollHeight;
         if (state.content && !firstContentSeen) {
           firstContentSeen = true;
           thinkingSeconds = elapsed();
           live.summary.textContent = `已思考 ${thinkingSeconds} 秒`;
           live.details.open = false;
         }
+        // 每块之前先看用户是不是贴着底：更新之后 scrollHeight 已经变大，那时再判就永远是「翻上去了」。
+        const stick = shouldStickToBottom(els.messages);
         live.contentEl.replaceChildren(renderMarkdown(doc, state.content));
+        if (stick) els.messages.scrollTop = els.messages.scrollHeight;
         if (state.done || state.error) break;
       }
       if (!state.done && !state.error) state = { ...state, error: { code: "stream_interrupted", message: "连接在回答完成前断开" } };
