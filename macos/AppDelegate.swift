@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var status = ShellStatus(server: .stopped, desk: nil, needsSetup: false,
                                    lastPollError: nil)
   private var settingsKeyMonitor: Any?
+  private var visualProbe: VisualProbe?
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.appearance = NSAppearance(named: .darkAqua)   // D1 single dark theme: native chrome follows the web content
@@ -38,7 +39,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     status.server = .starting
     statusController.render(status)
     windowController.showWindow()
+    startProbeIfRequested()
     startServer()
+  }
+
+  /// Visual acceptance needs to drive the real window from outside: only with LMD_PROBE_PORT set, and
+  /// only on loopback. A normal launch never opens it.
+  private func startProbeIfRequested() {
+    guard let port = VisualProbe.configuredPort() else { return }
+    let probe = VisualProbe(port: port, target: windowController)
+    guard probe.start() else {
+      FileHandle.standardError.write(Data("visual probe could not listen on 127.0.0.1:\(port)\n".utf8))
+      return
+    }
+    visualProbe = probe
   }
 
   private func startServer() {
@@ -136,6 +150,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   func shutdownNow() {
+    visualProbe?.stop()
     reportTerminate(server?.terminateEmbeddedServer())
     exit(0)
   }

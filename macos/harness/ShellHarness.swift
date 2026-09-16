@@ -17,6 +17,12 @@ struct ShellHarness {
             let available = Int64(args[3]) else { exit(64) }
       print(memoryMenuTitle(used: used, total: total, available: available))
     case "spawn-probe": runSpawn(Array(args.dropFirst()))
+    case "probe-port":
+      // A normal launch has no LMD_PROBE_PORT, and then the app opens no probe at all.
+      print(VisualProbe.configuredPort().map(String.init) ?? "none")
+    case "visual-probe":
+      guard args.count >= 2, let port = UInt16(args[1]) else { exit(64) }
+      runVisualProbe(port: port)
     case "run": runServer(Array(args.dropFirst()))
     case "listeners":
       guard args.count >= 2, let port = Int(args[1]) else { exit(64) }
@@ -182,6 +188,17 @@ struct ShellHarness {
     waitForSignalThenTerminate(controller)
   }
 
+  /// Serves the probe surface with canned window answers, so its routes are testable without a GUI.
+  static func runVisualProbe(port: UInt16) -> Never {
+    let target = StubProbeTarget()
+    let probe = VisualProbe(port: port, target: target)
+    guard probe.start() else { exit(3) }
+    print("listening")
+    fflush(stdout)
+    RunLoop.main.run()
+    exit(0)
+  }
+
   static func waitForSignalThenTerminate(_ controller: ServerController) -> Never {
     signal(SIGTERM, SIG_IGN)
     signal(SIGINT, SIG_IGN)
@@ -205,5 +222,27 @@ struct ShellHarness {
     term.resume()
     interrupt.resume()
     dispatchMain()
+  }
+}
+
+
+/// The window the probe talks to in tests: fixed answers, no AppKit.
+final class StubProbeTarget: VisualProbeTarget {
+  // A 1x1 transparent PNG, so /snapshot returns real image bytes without a window.
+  static let pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+
+  func probeReadback(_ done: @escaping (Result<String, ProbeFailure>) -> Void) {
+    done(.success(#"{"appearance":"dark","locale":"zh-CN","width":1280,"pointer":"mouse","hover":true}"#))
+  }
+
+  func probeResize(width: Int, height: Int, _ done: @escaping (Result<String, ProbeFailure>) -> Void) {
+    done(.success("{\"width\":\(width),\"height\":\(height),\"window_number\":42,\"backing_scale\":2}"))
+  }
+
+  func probeSnapshot(_ done: @escaping (Result<Data, ProbeFailure>) -> Void) {
+    guard let png = Data(base64Encoded: StubProbeTarget.pngBase64) else {
+      return done(.failure(ProbeFailure("stub PNG did not decode")))
+    }
+    done(.success(png))
   }
 }
