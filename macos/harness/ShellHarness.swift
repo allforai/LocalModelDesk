@@ -239,6 +239,10 @@ final class StubProbeTarget: VisualProbeTarget {
     done(.success("{\"width\":\(width),\"height\":\(height),\"window_number\":42,\"backing_scale\":2}"))
   }
 
+  func probeEval(_ javaScript: String, _ done: @escaping (Result<String, ProbeFailure>) -> Void) {
+    done(.success("{\"value\":\"stub:\(javaScript)\"}"))
+  }
+
   func probeSnapshot(_ done: @escaping (Result<Data, ProbeFailure>) -> Void) {
     guard let png = Data(base64Encoded: StubProbeTarget.pngBase64) else {
       return done(.failure(ProbeFailure("stub PNG did not decode")))

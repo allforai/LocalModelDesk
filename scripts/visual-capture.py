@@ -18,16 +18,25 @@ import hashlib
 import json
 import subprocess
 import time
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
+from urllib.parse import quote
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 
 
-def probe(port, path, timeout=20):
-    with urllib.request.urlopen(f"http://127.0.0.1:{port}{path}", timeout=timeout) as response:
-        return response.read()
+def probe(port, path, timeout=20, attempts=3):
+    """One transient socket error must not cost a case: a lost capture reads as an untested state."""
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{port}{path}", timeout=timeout) as response:
+                return response.read()
+        except (OSError, urllib.error.URLError) as exc:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(0.5 * (attempt + 1))
 
 
 def build_id():
@@ -47,11 +56,21 @@ def build_id():
     return f"{commit}+{digest.hexdigest()[:12]}"
 
 
-def capture(port, out_dir, case_id, width, height, label=None, window_shot=False):
+AXES = ("state", "device", "os", "appearance", "dynamic_type", "locale", "orientation", "pointer")
+
+
+def capture(port, out_dir, case_id, width, height, label=None, window_shot=False, before=None,
+            case=None, bindings=None):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     window = json.loads(probe(port, f"/window?width={width}&height={height}"))
+    setup = None
+    if before:
+        # The state this case names often sits behind a click; run it after the resize so the page
+        # settles at the case's own width, and record what was run beside the picture.
+        setup = {"js": before, "result": json.loads(probe(port, "/eval?js=" + quote(before, safe="")))}
+        time.sleep(0.3)
     time.sleep(0.2)                                  # let the page settle after the resize
     readback = json.loads(probe(port, "/readback"))
 
@@ -71,6 +90,10 @@ def capture(port, out_dir, case_id, width, height, label=None, window_shot=False
 
     profile = readback.get("scroll_profile") or {}
     record = {
+        # The axes come from the frozen matrix row, not from this script's idea of them: a capture that
+        # cannot say which case it is cannot be bound to a verdict.
+        **{a: case[a] for a in AXES if case and a in case},
+        **(bindings or {}),
         "case_id": case_id,
         "label": label or case_id,
         "build": build_id(),
@@ -81,6 +104,7 @@ def capture(port, out_dir, case_id, width, height, label=None, window_shot=False
         "scrollbars": "native" if profile.get("gutter_px", 0) > 0 else "overlay",
         "scroll_profile": profile,
         "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+        "setup": setup,
         "window": window,
         "readback": readback,
         "images": images,
@@ -102,9 +126,10 @@ def main():
     parser.add_argument("--label", help="human-readable name for the shot")
     parser.add_argument("--window-shot", action="store_true",
                         help="also capture the whole window (native chrome) with screencapture")
+    parser.add_argument("--before", help="JS run in the page after the resize, to reach this case's state")
     args = parser.parse_args()
     record = capture(args.port, args.out, args.case, args.width, args.height,
-                     label=args.label, window_shot=args.window_shot)
+                     label=args.label, window_shot=args.window_shot, before=args.before)
     print(json.dumps(record, ensure_ascii=False, indent=2))
 
 

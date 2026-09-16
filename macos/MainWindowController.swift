@@ -110,9 +110,27 @@ extension MainWindowController: VisualProbeTarget {
     }
   }
 
+  func probeEval(_ javaScript: String, _ done: @escaping (Result<String, ProbeFailure>) -> Void) {
+    webView.evaluateJavaScript(javaScript) { value, error in
+      if let error { return done(.failure(ProbeFailure("eval failed: \(error.localizedDescription)"))) }
+      // Answer as one JSON object whatever the expression produced, including nothing at all.
+      let payload: Any = value ?? NSNull()
+      let wrapped: [String: Any] = JSONSerialization.isValidJSONObject(["value": payload])
+        ? ["value": payload] : ["value": String(describing: payload)]
+      guard let data = try? JSONSerialization.data(withJSONObject: wrapped),
+            let json = String(data: data, encoding: .utf8) else {
+        return done(.failure(ProbeFailure("eval result could not be described")))
+      }
+      done(.success(json))
+    }
+  }
+
   func probeSnapshot(_ done: @escaping (Result<Data, ProbeFailure>) -> Void) {
     let config = WKSnapshotConfiguration()
-    config.afterScreenUpdates = true
+    // Waiting for a screen update deadlocks whenever the window is occluded — which it is for most of a
+    // capture run, since the driver is a terminal in front of it. The caller already waits for the page
+    // to settle after the resize, so snapshot what is rendered now.
+    config.afterScreenUpdates = false
     webView.takeSnapshot(with: config) { image, error in
       if let error { return done(.failure(ProbeFailure("snapshot failed: \(error.localizedDescription)"))) }
       guard let image, let tiff = image.tiffRepresentation,

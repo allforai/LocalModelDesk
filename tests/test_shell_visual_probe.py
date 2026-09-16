@@ -66,6 +66,24 @@ def test_snapshot_returns_png_bytes(probe):
     assert body.startswith(b"\x89PNG\r\n\x1a\n")
 
 
+def test_eval_runs_an_expression_in_the_page(probe):
+    """A capture reaches a state only a click gets to — the drawer, another tab — through this route."""
+    status, content_type, body = get(probe, "/eval?js=document.title")
+    assert status == 200 and content_type == "application/json"
+    assert json.loads(body)["value"] == "stub:document.title"
+
+
+def test_eval_decodes_the_expression_it_was_given(probe):
+    status, _, body = get(probe, "/eval?js=location.hash%20%3D%20%27%23tab%3Dvideo%27")
+    assert json.loads(body)["value"] == "stub:location.hash = '#tab=video'"
+
+
+def test_eval_without_an_expression_is_refused(probe):
+    with pytest.raises(urllib.error.HTTPError) as caught:
+        get(probe, "/eval")
+    assert caught.value.code == 400
+
+
 def test_unknown_route_is_refused(probe):
     with pytest.raises(urllib.error.HTTPError) as caught:
         get(probe, "/whatever")

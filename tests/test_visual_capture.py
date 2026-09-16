@@ -53,6 +53,25 @@ def test_capture_records_the_readback_and_the_width_it_applied(tmp_path, probe_p
     assert record["capture_mode"] == "viewport" and record["headless"] is False
 
 
+def test_capture_records_the_state_it_set_up(tmp_path, probe_port):
+    """A case named 'settings drawer open' is only that case if the drawer was actually opened."""
+    record = visual_capture.capture(probe_port, tmp_path, "V-drawer", 1280, 800,
+                                    before="document.querySelector('[data-open-settings]').click()")
+    assert record["setup"]["js"] == "document.querySelector('[data-open-settings]').click()"
+    assert "stub:" in record["setup"]["result"]["value"]
+
+
+def test_capture_copies_the_frozen_case_axes_and_bindings(tmp_path, probe_port):
+    """The manifest check compares capture against case on every axis; the row is the only source."""
+    case = {"id": "V-x", "surface": "U4", "state": "默认", "device": "1400x900@2", "os": "macOS 26.0 WKWebView",
+            "appearance": "dark", "dynamic_type": "浏览器缩放 100%", "locale": "zh-CN",
+            "orientation": "landscape", "pointer": "mouse"}
+    record = visual_capture.capture(probe_port, tmp_path, "V-x", 1400, 900, case=case,
+                                    bindings={"baseline_digest": "abc", "matrix_digest": "def"})
+    assert all(record[a] == case[a] for a in visual_capture.AXES)
+    assert record["baseline_digest"] == "abc" and record["matrix_digest"] == "def"
+
+
 def test_the_build_id_changes_with_the_working_tree(tmp_path, probe_port, monkeypatch):
     """A capture taken on a dirty tree must not claim the commit's build: two edits, two builds."""
     first = visual_capture.build_id()

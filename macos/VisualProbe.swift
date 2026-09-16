@@ -47,6 +47,9 @@ protocol VisualProbeTarget: AnyObject {
   func probeResize(width: Int, height: Int, _ done: @escaping (Result<String, ProbeFailure>) -> Void)
   /// A PNG of the web view as WebKit painted it — scrollbars included.
   func probeSnapshot(_ done: @escaping (Result<Data, ProbeFailure>) -> Void)
+  /// Runs one expression in the page and answers with its value, so a capture can reach a state that
+  /// only a click gets to (open the drawer, switch tabs, focus a control).
+  func probeEval(_ javaScript: String, _ done: @escaping (Result<String, ProbeFailure>) -> Void)
 }
 
 /// A loopback-only HTTP surface for visual acceptance, started only when LMD_PROBE_PORT is set: a
@@ -116,6 +119,13 @@ final class VisualProbe {
         return
       }
       respond(client, awaitText { self.target.probeResize(width: width, height: height, $0) })
+    case "/eval":
+      guard let raw = query["js"], let js = VisualProbe.percentDecoded(raw), !js.isEmpty else {
+        write(client, status: "400 Bad Request", type: "application/json",
+              body: Data(#"{"error":"eval needs a js= expression"}"#.utf8))
+        return
+      }
+      respond(client, awaitText { self.target.probeEval(js, $0) })
     case "/snapshot":
       switch awaitValue({ self.target.probeSnapshot($0) }) {
       case .success(let png): write(client, status: "200 OK", type: "image/png", body: png)
@@ -153,17 +163,29 @@ final class VisualProbe {
     awaitValue(work)
   }
 
+  /// Reads the request line and then drains the headers. Closing a socket that still has unread bytes
+  /// in its receive buffer sends RST instead of FIN, and the client sees "connection reset" instead of
+  /// the answer we just wrote — which showed up as a third of a capture run failing at random.
   private func readRequestLine(_ client: Int32) -> String? {
-    var data = Data()
+    var first: String?
+    var line = Data()
     var byte: UInt8 = 0
-    while data.count < 4096 {
+    var total = 0
+    while total < 16384 {
       let got = read(client, &byte, 1)
       if got <= 0 { break }
-      if byte == 0x0A { break }                     // the request line is all this surface needs
-      if byte != 0x0D { data.append(byte) }
+      total += 1
+      if byte == 0x0A {
+        let text = String(data: line, encoding: .utf8) ?? ""
+        if first == nil { first = text }
+        else if text.isEmpty { break }              // blank line: end of headers
+        line.removeAll(keepingCapacity: true)
+        continue
+      }
+      if byte != 0x0D { line.append(byte) }
     }
-    guard let line = String(data: data, encoding: .utf8), !line.isEmpty else { return nil }
-    return line
+    guard let requestLine = first, !requestLine.isEmpty else { return nil }
+    return requestLine
   }
 
   /// "GET /window?width=1280&height=800 HTTP/1.1" -> ("/window", ["width": "1280", "height": "800"])
@@ -178,6 +200,11 @@ final class VisualProbe {
       if kv.count == 2 { query[String(kv[0])] = String(kv[1]) }
     }
     return (String(target[target.startIndex..<mark]), query)
+  }
+
+  /// Query values arrive percent-encoded ("+" is a space, as in a form-encoded query).
+  static func percentDecoded(_ raw: String) -> String? {
+    raw.replacingOccurrences(of: "+", with: " ").removingPercentEncoding
   }
 
   private func write(_ client: Int32, status: String, type: String, body: Data) {
