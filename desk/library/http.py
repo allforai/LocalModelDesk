@@ -3,7 +3,23 @@ from dataclasses import dataclass, field
 import json
 from pathlib import Path
 
-from .errors import NotFoundError, ValidationError
+from .errors import LibraryError, NotFoundError, ValidationError
+
+
+class OutputsRootMissingError(LibraryError):
+    """The outputs root does not exist yet — nothing has been generated (issue #12).
+
+    Defined here, not in errors.py: outputs.py already imports from this module, so this direction
+    keeps the dependency one-way (errors.py -> http.py -> outputs.py) with no import cycle.
+    """
+
+    code = "outputs_root_missing"
+
+
+class RevealFailedError(LibraryError):
+    """The OS opener (`open` / `open -R`) exited non-zero; the reveal did not actually happen."""
+
+    code = "reveal_failed"
 
 
 @dataclass(frozen=True)
@@ -118,6 +134,10 @@ def dispatch(service, handler, request: LibRequest) -> Response:
     """Map expected library errors; let unexpected failures reach the host."""
     try:
         return handler(service, request)
+    except OutputsRootMissingError as exc:
+        return _json_response(404, {"error": {"code": exc.code, "message": str(exc)}})
+    except RevealFailedError as exc:
+        return _json_response(500, {"error": {"code": exc.code, "message": str(exc)}})
     except NotFoundError as exc:
         return _json_response(404, {"error": str(exc)})
     except ValidationError as exc:

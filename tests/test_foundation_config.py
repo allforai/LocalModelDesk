@@ -204,6 +204,31 @@ def test_read_config_reports_wrong_type_on_disk_as_corrupt(tmp_path):
     assert "gateway.port" in exc.value.payload["parse_error"]
 
 
+def test_update_config_rejects_bad_field_before_reading_a_corrupt_file(tmp_path):
+    """入参校验先于状态检查（issue #5）：字段错永远是 400，不该被文件损坏的 500 抢先。"""
+    roots = make_roots(tmp_path)
+    roots.config_path.write_text("{ this is not valid json", encoding="utf-8")
+
+    with pytest.raises(ConfigInvalidError) as exc:
+        config_mod.update_config(roots, gateway={"port": "not-a-number"})
+
+    assert exc.value.code == "config_invalid"
+    assert exc.value.payload["field"] == "gateway.port"
+    # the corrupt file must still be untouched -- update_config never got to reading it
+    assert roots.config_path.read_text(encoding="utf-8") == "{ this is not valid json"
+
+
+def test_update_config_still_reports_corrupt_file_when_fields_are_valid(tmp_path):
+    """坏文件 + 合法字段：仍应是 config_corrupt（不能因为加了前置校验就破坏这个既有行为）。"""
+    roots = make_roots(tmp_path)
+    roots.config_path.write_text("{ this is not valid json", encoding="utf-8")
+
+    with pytest.raises(ConfigCorruptError) as exc:
+        config_mod.update_config(roots, gateway={"port": 9100})
+
+    assert exc.value.code == "config_corrupt"
+
+
 def test_reset_refuses_a_healthy_config_unless_forced(tmp_path):
     """误调不能把好配置改名、把网关回落到 0.0.0.0（cross-exam 2026-09-13 G2）。"""
     from desk.foundation.errors import ConfigNotCorruptError

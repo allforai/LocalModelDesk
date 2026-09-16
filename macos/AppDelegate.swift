@@ -24,7 +24,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     poller = StatusPoller(api: api)
     statusController.onOpenWindow = { [weak self] in self?.windowController.showWindow() }
     statusController.onOpenSettings = { [weak self] in self?.windowController.showSettings() }
-    statusController.onRevealOutputs = { [weak self] in self?.api.revealOutputs { _ in } }
+    statusController.onRevealOutputs = { [weak self] in
+      self?.api.revealOutputs { result in
+        guard case .failure(let error) = result else { return }
+        // revealOutputs's completion runs on URLSession's delegate queue, not main.
+        DispatchQueue.main.async { self?.presentRevealFailure(error) }
+      }
+    }
     statusController.onMenuOpened = { [weak self] in
       guard let self, self.status.needsSetup else { return }
       self.refreshConfig()
@@ -232,6 +238,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   @objc private func openSettings() {
     windowController?.showSettings()
+  }
+
+  /// issue #12: this entry point is the status-bar menu, which has no guaranteed window open (the
+  /// main window may be closed), so a transient in-window banner is not reliable. NSAlert.runModal()
+  /// is the simplest option that is certain to reach the user regardless of window state — it opens
+  /// its own window and does not depend on windowController's window being visible.
+  private func presentRevealFailure(_ error: DeskAPIError) {
+    let alert = NSAlert()
+    alert.alertStyle = .warning
+    alert.messageText = "无法打开成品目录"
+    alert.informativeText = error.message
+    NSApp.activate(ignoringOtherApps: true)
+    alert.runModal()
   }
 
   /// WKWebView consumes ⌘, before the main menu sees its key equivalent (G8).

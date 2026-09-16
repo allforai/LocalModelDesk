@@ -1925,7 +1925,7 @@
    "verdict": "gap",
    "severity": "medium",
    "stuck_kind": "misleading",
-   "note": "bias-guard：盘问官即作者。oracle 的「资源页列得出模型且不是全部未知」没达成——实测官看到的是聊天页下拉里6 个全标「未下载/不完整」（它没去资源页，资源页本身仍未验，已作牌候选）。收编那条路的失败信息是英文，而且首运页那个输入框的占位符写着 /path/to/existing/models，正把人往「指到 models 目录本身」引，而产品要的是它的父目录——误导，故 stuck_kind 记 misleading。"
+   "note": "bias-guard：盘问官即作者。oracle 的「资源页列得出模型且不是全部未知」没达成——实测官看到的是聊天页下拉里6 个全标「未下载/不完整」（它没去资源页，资源页本身仍未验，已作牌候选）。收编那条路的失败信息是英文，而且首运页那个输入框的占位符写着 /path/to/existing/models，正把人往「指到 models 目录本身」引，而产品要的是它的父目录——误导，故 stuck_kind 记 misleading。\n\n**2026-09-17 更正（据 issue #10 的只读调查）**：我原话说「指对了目录却全判未下载」——错了一个词。catalog.py 里每个 relpath 都硬编码 llms/ 前缀，所以「模型目录」要填的是 llms 的**父目录**；实测官填的是 llms 本身，代码于是去找 …/llms/llms/mlx-community/…，15 个清单文件全部 0 字节 → missing。产品并没有误判，是**入口静默收下了错目录**：「收编」会检查识别度，「选择 models 目录」只探测可写。裁决（gap/medium/misleading）与证据不变，指向的缺陷更清楚了：两个入口要的都是父目录，只有一个会说。"
   },
   {
    "q": "J3 走得通吗？",
@@ -3018,14 +3018,14 @@
   "census_ref": "visual/census.json",
   "census_digest": "5bca505092fa925acc8631d9ce74075eb1cda2ece823d720e6a365d5c905be19",
   "width_range_confirmed": {
-   "min": 600,
+   "min": 900,
    "max": 1920,
-   "confirmation": "min = 600（推荐）",
-   "confirmed_at": "2026-09-16",
-   "basis": "用户确认；探针实测窗口无最小宽限制（400px 也能应用），600 拿下 899 与 1100 两个阈值的下侧；宽端 1920 = 这台机器逻辑分辨率，也等于 matrix.py 的 DESKTOP_WIDTH_FLOOR"
+   "confirmation": "设最小窗口 900×600，不改布局（推荐）",
+   "confirmed_at": "2026-09-17",
+   "basis": "用户裁定；contentMinSize 900×600 使 600–899 不可达"
   },
   "baseline_ref": "visual/visual-baseline.json",
-  "baseline_digest": "66b2c5406b510b6812987de63197b66efb7c3781e8d980cd19cc8585512d66d7",
+  "baseline_digest": "b6f2f1907dfad3b0fa7fd4c716f233c173c3dde0fa9c0bde5631924753a04b22",
   "interaction_ref": "visual/interaction-baseline.json",
   "interaction_digest": "08a9a1b39c83beab05c4fd9480ee72902c987c2d702ec08eabd648d15494a9f7",
   "facet_ids": [
@@ -15219,6 +15219,50 @@
    "abstracted_by": [
     "device"
    ]
+  }
+ ],
+ "rulings": [
+  {
+   "id": "R1",
+   "at": "2026-09-17",
+   "topic": "对外接口默认值",
+   "ruling": "用户选择保持现状（enabled=true / host=0.0.0.0 / auth=none）",
+   "consequence": "台账里那条 gap/high 的裁决与证据不动（那是实测事实）；issue #11 按已知取舍关闭并标 wontfix。盘问官提请：对外发布前这条须写进 README 显著位置，否则拿到包的人不会知道装完就对全网开着。"
+  },
+  {
+   "id": "R2",
+   "at": "2026-09-17",
+   "topic": "窗口最小尺寸与窄档会话列",
+   "ruling": "设 contentMinSize 900×600，布局不改",
+   "consequence": "issue #1/#2/#3/#13 一并解决（那些缺陷只在 600/640 出现，899 实测干净）；基线 width_range 改 900–1920，「窄档会话列必须让位」一条移除；矩阵要按新范围重展开，已拍的 600/640 两档用例作废（它们落在不再支持的范围里）。"
+  },
+  {
+   "id": "R3",
+   "at": "2026-09-17",
+   "topic": "状态条空区上限",
+   "ruling": "改成流式规则，取消空区上限",
+   "consequence": "原 ends 的 40% 是盘问官拍的数，与用户确认的参考图（1400 档 47.3%）自相矛盾；两条据此判出的 finding 随之失效——它们指向的是规则不是实现。"
+  },
+  {
+   "id": "R4",
+   "at": "2026-09-17",
+   "topic": "视频/音乐页右列边界",
+   "ruling": "按盘问官建议改规则而非改界面：不再依赖不可见的列边界，改成「任务区占据剩余区域、内容左对齐于其左缘」",
+   "consequence": "issue #4 从产品缺陷改为基线修正；用户未就此单独表态，如有异议可推翻。"
+  },
+  {
+   "id": "R5",
+   "at": "2026-09-17",
+   "topic": "模型完整度误判",
+   "ruling": "先查清根因再定修法（已派只读调查）",
+   "consequence": "issue #10 暂不动代码，等调查结论。"
+  },
+  {
+   "id": "R6",
+   "at": "2026-09-17",
+   "topic": "模型完整度误判的根因",
+   "ruling": "调查推翻了盘问官的怀疑（缺清单缓存）：真因是「选择 models 目录」入口不校验识别度，静默接受了 llms 子树本身；清单在联网时首次查状态就会自动拉取，unknown 分支寿命极短",
+   "consequence": "issue #10 按真因重写：给该入口补 recognized_model_keys 校验并引导去父目录（复用「收编」已有的逻辑）；另立一条：聊天页下拉把 unknown/missing/partial 抹成同一句，资源页本来是区分的"
   }
  ]
 }

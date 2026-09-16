@@ -98,9 +98,11 @@ class DeskApp:
                     ))
                 except FoundationError as exc:
                     self._send(exc.http_status, {"error": {"code": exc.code, "message": exc.message, **exc.payload}})
-                except Exception as exc:
+                except Exception:
+                    # Log the full exception with traceback for diagnosis, but never hand
+                    # the client raw Python internals (type names, implementation details).
                     log.exception("unhandled error on %s %s", method, path)
-                    self._send(500, {"error": {"code": "internal", "message": str(exc)}})
+                    self._send(500, {"error": {"code": "internal", "message": "服务内部错误，详情见日志"}})
                 else:
                     if isinstance(result, Response):
                         self._send_response(result)

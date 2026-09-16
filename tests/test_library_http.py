@@ -1,6 +1,7 @@
 """library.http — transport-neutral handlers and error mapping tests."""
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from desk.library import LibraryService
 from desk.library.http import LibRequest, routes
@@ -105,6 +106,49 @@ def test_reveal_output_runs_open_minus_R_and_refuses_escape(tmp_path):
     result = reveal_folder(LibRequest())
     assert result.status == 200
     assert calls[-1] == ["open", str(roots.outputs_root.resolve())]
+
+
+def test_reveal_folder_route_reports_missing_root_not_a_fake_200(tmp_path):
+    """issue #12: a fresh install with no outputs dir must not get a 200 that opens nothing."""
+    svc, roots = make_service(tmp_path)
+    roots.outputs_root.rmdir()
+    calls = []
+    svc.outputs.set_opener(lambda argv, **kw: calls.append(argv))
+
+    result = route_map(svc)[("POST", "/api/outputs/reveal")](LibRequest())
+
+    assert result.status == 404
+    error = body_json(result)["error"]
+    assert error["code"] == "outputs_root_missing"
+    assert error["message"]
+    assert not calls
+
+
+def test_reveal_folder_route_reports_opener_failure_not_a_fake_200(tmp_path):
+    """issue #12: `open`'s exit code must actually be looked at, not dropped on the floor."""
+    svc, roots = make_service(tmp_path)
+    svc.outputs.set_opener(lambda argv, **kw: SimpleNamespace(returncode=1))
+
+    result = route_map(svc)[("POST", "/api/outputs/reveal")](LibRequest())
+
+    assert not (200 <= result.status < 300)
+    error = body_json(result)["error"]
+    assert error["code"] == "reveal_failed"
+    assert error["message"]
+
+
+def test_reveal_file_route_reports_opener_failure_not_a_fake_200(tmp_path):
+    svc, roots = make_service(tmp_path)
+    (roots.outputs_root / "h3-1.mp4").write_bytes(b"x")
+    svc.outputs.set_opener(lambda argv, **kw: SimpleNamespace(returncode=1))
+
+    result = route_map(svc)[("POST", "/api/outputs/{name}/reveal")](
+        LibRequest(path_params={"name": "h3-1.mp4"})
+    )
+
+    assert not (200 <= result.status < 300)
+    error = body_json(result)["error"]
+    assert error["code"] == "reveal_failed"
 
 
 def test_session_crud_over_http(tmp_path):

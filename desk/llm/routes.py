@@ -6,6 +6,7 @@ from typing import Any, Callable, Iterator
 
 from .prompts import PromptAssistError, assist
 from .state import (
+    ERR_KEY_REQUIRED,
     ERR_LOAD_IN_PROGRESS,
     ERR_MEDIA_BUSY,
     ERR_MODEL_DIR_MISSING,
@@ -19,6 +20,7 @@ from .state import (
 
 
 _REJECTION_STATUS = {
+    ERR_KEY_REQUIRED: 400,
     ERR_MODEL_NOT_FOUND: 404,
     ERR_MODEL_DIR_MISSING: 404,
     ERR_MEDIA_BUSY: 409,
@@ -60,7 +62,7 @@ def _rejected(exc: LlmRejected) -> RouteResult:
 
 def _load(service, body: dict) -> RouteResult:
     try:
-        state = service.load(str(body.get("key") or ""))
+        state = service.load(body.get("key"))
     except LlmRejected as exc:
         return _rejected(exc)
     if state["status"] == "error":

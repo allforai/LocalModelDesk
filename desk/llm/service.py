@@ -13,6 +13,7 @@ from .state import (
     DEFAULT_LLM_PORT,
     ERR_BACKEND_EXITED,
     ERR_EVICTED,
+    ERR_KEY_REQUIRED,
     ERR_LOAD_IN_PROGRESS,
     ERR_LOAD_TIMEOUT,
     ERR_MEDIA_BUSY,
@@ -104,8 +105,10 @@ class LlmService:
     def _log_path(roots: Any) -> Path:
         return Path(roots.logs_dir) / "mlx-lm.log"
 
-    def load(self, key: str) -> dict[str, Any]:
+    def load(self, key: Any) -> dict[str, Any]:
         """Start loading *key* and immediately return its loading state."""
+        if not isinstance(key, str) or not key.strip():
+            raise LlmRejected(ERR_KEY_REQUIRED, "缺少 key 参数")
         with self._lock:
             if self._state.status == STATUS_LOADING:
                 raise LlmRejected(ERR_LOAD_IN_PROGRESS, "已有模型正在加载")

@@ -26,6 +26,11 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
     webView = DeskWebView(frame: .zero, configuration: config)
     window.title = "LocalModelDesk"
     window.tabbingMode = .disallowed
+    // Content size, not frame size (issue #13): below 900×600 known controls break (model dropdown
+    // overflows, the status bar's 「设置」 button wraps). setContentSize (probeResize's /window route
+    // included) clamps to this floor, which is exactly the point.
+    window.contentMinSize = NSSize(width: CGFloat(MainWindowMinSize.width),
+                                   height: CGFloat(MainWindowMinSize.height))
     window.center()
     window.contentView = webView
     window.isReleasedWhenClosed = false
@@ -93,11 +98,15 @@ extension MainWindowController: VisualProbeTarget {
   }
 
   func probeResize(width: Int, height: Int, _ done: @escaping (Result<String, ProbeFailure>) -> Void) {
+    // setContentSize clamps to window.contentMinSize/contentMaxSize (issue #13): a request below the
+    // 900×600 floor is honored only up to that floor, which is the point of setting the floor at all.
     window.setContentSize(NSSize(width: width, height: height))
     showWindow()
     // The web view learns its new size on the next layout pass; answering earlier would hand the
     // capture a width the page has not applied yet.
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+      // webView.bounds, not the requested width/height: this reports what actually got applied
+      // (post-clamp), never the raw request — that is the readback a capture needs to be evidence.
       let size = self.webView.bounds.size
       let payload: [String: Any] = ["width": Int(size.width), "height": Int(size.height),
                                     "window_number": self.window.windowNumber,

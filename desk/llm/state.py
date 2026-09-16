@@ -16,6 +16,7 @@ STATUS_LOADING = "loading"
 STATUS_LOADED = "loaded"
 STATUS_ERROR = "error"
 
+ERR_KEY_REQUIRED = "key_required"
 ERR_MODEL_NOT_FOUND = "model_not_found"
 ERR_MODEL_DIR_MISSING = "model_dir_missing"
 ERR_MEDIA_BUSY = "media_busy"

@@ -5,7 +5,7 @@ from . import capabilities as caps_mod
 from . import config as config_mod
 from . import firstrun
 from . import paths as paths_mod
-from .errors import LegacyRootError
+from .errors import LegacyRootError, ModelsRootInvalidError
 from .paths import normalize_user_path
 
 
@@ -34,6 +34,10 @@ def get_config(_req) -> dict:
 
 
 def put_config(req) -> dict:
+    # Validate the request body's shape before resolving roots: resolving roots reads
+    # config.json itself and would raise ConfigCorruptError first, hiding a bad field
+    # behind a 500 that has nothing to do with what the client sent (issue #5, P2).
+    config_mod.validate_update_fields(req.body)
     return _config_json(config_mod.update_config(_roots(), **req.body))
 
 
@@ -72,6 +76,11 @@ def get_paths(_req) -> dict:
 
 def post_first_run(req) -> dict:
     raw = req.body.get("models_root")
+    if "models_root" in req.body and raw is not None:
+        if not isinstance(raw, str) or not raw.strip():
+            raise ModelsRootInvalidError(
+                "models_root must be a non-empty string", field="models_root",
+            )
     cfg = firstrun.complete_first_run(_roots(), normalize_user_path(raw) if raw else None)
     return _config_json(cfg)
 

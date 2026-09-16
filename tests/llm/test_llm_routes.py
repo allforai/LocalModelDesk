@@ -98,6 +98,23 @@ def test_load_unknown_key_404(idle_server):
     assert json.load(exc.value)["error"]["code"] == "model_not_found"
 
 
+def test_load_missing_key_400(idle_server):
+    """issue #5: 缺 key 必须是 400 key_required，不该被「目录里查不到」吸收成 404。"""
+    _, base = idle_server
+    with pytest.raises(HTTPError) as exc:
+        _post(base, "/api/llm/load", {})
+    assert exc.value.code == 400
+    assert json.load(exc.value)["error"]["code"] == "key_required"
+
+
+def test_load_non_string_key_400(idle_server):
+    _, base = idle_server
+    with pytest.raises(HTTPError) as exc:
+        _post(base, "/api/llm/load", {"key": 123})
+    assert exc.value.code == 400
+    assert json.load(exc.value)["error"]["code"] == "key_required"
+
+
 def test_unload_200_then_chat_503(loaded_server):
     _, base = loaded_server
     response = _post(base, "/api/llm/unload", {})

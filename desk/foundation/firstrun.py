@@ -13,6 +13,7 @@ from .errors import (
     ConfigCorruptError,
     InsufficientSpaceError,
     LegacyRootError,
+    ModelsRootUnrecognizedError,
     NotWritableError,
 )
 from .paths import default_data_root, home_model_root_candidates, normalize_user_path
@@ -38,6 +39,34 @@ def _nonempty_directory(path: Path) -> bool:
         return path.is_dir() and next(path.iterdir(), None) is not None
     except OSError:
         return False
+
+
+def _has_content_ignoring_dotfiles(path: Path) -> bool:
+    """True when ``path`` holds real entries, not just Finder/OS droppings.
+
+    Distinguishes "empty directory, model files land here later" (the normal
+    default-first-run path) from "wrong directory level" — a lone ``.DS_Store``
+    must not make an otherwise-empty folder look like a misdirected pick.
+    """
+    try:
+        return any(not entry.name.startswith(".") for entry in path.iterdir())
+    except OSError:
+        return False
+
+
+def _unrecognized_models_root_message(target: Path, candidates: list[str]) -> str:
+    subtree_list = "、".join(LEGACY_SUBTREES)
+    if target.name in LEGACY_SUBTREES:
+        hint = f"这看起来是 {target.name} 这一层子目录本身，请改填它的上一级目录「{target.parent}」。"
+    else:
+        hint = (
+            f"如果模型文件是放在 {subtree_list} 这类子目录里，请改填它们的上一级目录；"
+            "如果模型确实不在这个目录下，请确认选对了地方。"
+        )
+    message = f"「{target}」下面没有认出任何已知模型。{hint}"
+    if candidates:
+        message += "找到的候选目录：" + "、".join(candidates) + "。"
+    return message
 
 
 def recognized_model_keys(path) -> list[str]:
@@ -128,6 +157,20 @@ def complete_first_run(roots, models_root: Path | None = None) -> config_mod.Des
             path=str(target),
             os_error=str(exc),
         ) from exc
+    # Recognizing 0 models is fine for a fresh empty directory (the normal "use the
+    # default, download later" path) — it's only a red flag once the directory has
+    # content but none of it matches a known model layout (issue #10: the parent of
+    # llms/minimax-h3/minimax-music3 is required, and a user who points straight at
+    # one of those subtrees used to sail through here with every model then missing).
+    if not recognized_model_keys(target) and _has_content_ignoring_dotfiles(target):
+        candidates = [
+            item["path"] for item in discover_model_roots(roots) if item["path"] != str(target)
+        ]
+        raise ModelsRootUnrecognizedError(
+            _unrecognized_models_root_message(target, candidates),
+            path=str(target),
+            candidates=candidates,
+        )
     return config_mod.update_config(roots, models_root=target, first_run_done=True)
 
 
@@ -136,8 +179,11 @@ def adopt_legacy_models(roots, legacy_root, mode: str, target_root=None) -> Adop
     legacy = normalize_user_path(legacy_root)
     found = [name for name in LEGACY_SUBTREES if (legacy / name).is_dir()]
     if not found:
+        subtree_list = "、".join(LEGACY_SUBTREES)
         raise LegacyRootError(
-            f"no known model subtrees ({', '.join(LEGACY_SUBTREES)}) under {legacy}",
+            f"{legacy} 下面没有 {subtree_list} 中的任何一个子目录。"
+            "如果模型文件就直接放在这个目录里，请改用上方「选择 models 目录」；"
+            "如果这是旧版本的目录结构，请改填它的上一级目录。",
             path=str(legacy),
         )
     if mode == "point":

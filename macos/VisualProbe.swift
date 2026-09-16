@@ -1,5 +1,14 @@
 import Foundation
 
+/// The main window's content floor (issue #13): confirmed acceptance range is 600–1920, and 899×600
+/// already breaks known controls (model dropdown overflows the window, the status bar's 「设置」
+/// button wraps to two lines) while 900×600 is clean. Kept Foundation-only (no AppKit) so the headless
+/// harness — which never links AppKit — can assert the same constant MainWindowController.swift uses.
+enum MainWindowMinSize {
+  static let width: Double = 900
+  static let height: Double = 600
+}
+
 /// The values a visual-acceptance capture has to read back from inside the running app: setting an axis
 /// is not the same as the app rendering it, and a screenshot that cannot say what it is a screenshot of
 /// is not evidence. Kept as one expression so the caller gets a single JSON object back.

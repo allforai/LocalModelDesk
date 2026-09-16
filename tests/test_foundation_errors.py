@@ -10,6 +10,7 @@ CASES = [
     (errors.AdoptConflictError, "adopt_conflict", 409),
     (errors.InsufficientSpaceError, "insufficient_space", 409),
     (errors.AdoptError, "adopt_failed", 500),
+    (errors.ModelsRootInvalidError, "models_root_invalid", 400),
 ]
 
 

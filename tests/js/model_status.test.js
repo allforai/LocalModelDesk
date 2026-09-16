@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { rowView } from "../../desk/static/js/pure/model_status.js";
+import { rowView, statusBadge } from "../../desk/static/js/pure/model_status.js";
 
 const entry = { key: "glm", name: "GLM", gb: 68.4, vision: false };
 const base = {
@@ -55,6 +55,24 @@ test("别项下载中：下载/续传禁用并注明原因（R-resources-09 前�
   assert.deepEqual(v.actions, ["download"]);
   assert.equal(v.downloadDisabled, true);
   assert.ok(v.downloadDisabledReason.includes("一个下载"));
+});
+
+test("statusBadge：present/partial/missing/unknown 四态文案与种类，供聊天页下拉复用（不重新拼一套）", () => {
+  assert.deepEqual(statusBadge(base), { badge: "齐", badgeKind: "ok" });
+  assert.deepEqual(statusBadge({ ...base, state: "partial", percent: 41.7 }), { badge: "一半 42%", badgeKind: "busy" });
+  assert.deepEqual(statusBadge({ ...base, state: "missing", percent: 0 }), { badge: "没下", badgeKind: "none" });
+  assert.deepEqual(
+    statusBadge({ ...base, state: "unknown", percent: 0, reason: "manifest_unavailable" }),
+    { badge: "未知：拿不到文件清单", badgeKind: "unknown" },
+  );
+  assert.deepEqual(
+    statusBadge({ ...base, state: "unknown", percent: 0 }),
+    { badge: "未知：拿不到文件清单", badgeKind: "unknown" },
+  );
+  assert.deepEqual(
+    statusBadge({ ...base, state: "unknown", percent: 0, reason: "boom" }),
+    { badge: "未知：boom", badgeKind: "unknown" },
+  );
 });
 
 test("取消后的一半：说明已下多少可续传；旧残片单独说明", () => {

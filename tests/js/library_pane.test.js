@@ -126,6 +126,41 @@ test("每条成品有『在访达中显示』并调用 reveal 接口", async (t)
   assert.equal(elements.list.children[0].dataset.outputName, "h3-1.mp4");
 });
 
+test("issue #12：reveal 失败（成品目录不存在）时显示服务端的错误文案，不再静默", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async (path, options = {}) => {
+    if (path.endsWith("/reveal")) {
+      return {
+        ok: false, status: 404,
+        json: async () => ({ error: { code: "outputs_root_missing", message: "成品目录还不存在，生成第一个作品后会自动创建" } }),
+      };
+    }
+    return {
+      ok: true,
+      json: async () => path === "/api/outputs"
+        ? [{ name: "h3-1.mp4", kind: "video", bytes: 1, ts: "2026-09-07T01:00:00" }]
+        : [],
+    };
+  };
+
+  const doc = { createElement: (tag) => new FakeElement(tag) };
+  const elements = Object.fromEntries(["refresh", "player", "list", "error"]
+    .map((name) => [name, new FakeElement()]));
+  const root = new FakeElement();
+  root.ownerDocument = doc;
+  root.querySelector = (selector) => elements[selector.match(/data-lib-(.+)\]/)[1]];
+  const pane = createLibraryPane(root, { applyFill() {} });
+
+  await pane.refresh();
+  assert.equal(elements.error.textContent, "");
+  const buttons = elements.list.children[0].children[1].children;
+  buttons.find((b) => b.textContent === "在访达中显示").click();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(elements.error.textContent, "成品目录还不存在，生成第一个作品后会自动创建");
+});
+
 test("播放时播放器滚入视野且标注正在播放的记录", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });

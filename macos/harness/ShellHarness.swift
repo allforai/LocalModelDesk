@@ -20,6 +20,10 @@ struct ShellHarness {
     case "probe-port":
       // A normal launch has no LMD_PROBE_PORT, and then the app opens no probe at all.
       print(VisualProbe.configuredPort().map(String.init) ?? "none")
+    case "window-min-size":
+      // Foundation-only constant (macos/VisualProbe.swift), so this asserts the exact value
+      // MainWindowController.swift feeds to NSWindow.contentMinSize without linking AppKit.
+      print("\(Int(MainWindowMinSize.width))x\(Int(MainWindowMinSize.height))")
     case "visual-probe":
       guard args.count >= 2, let port = UInt16(args[1]) else { exit(64) }
       runVisualProbe(port: port)

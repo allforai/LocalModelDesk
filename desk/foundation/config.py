@@ -99,6 +99,46 @@ def _validate(merged: dict, gateway: dict) -> None:
         bad("gateway.port", "must be an integer between 1 and 65535")
 
 
+def validate_update_fields(fields: dict) -> None:
+    """Validate only the caller-provided fields of a partial update, before the config
+    file is even read (§ ordering: argument validation must precede state checks — a
+    malformed request body must always fail 400, never be pre-empted by a 500 from a
+    corrupt file that the request didn't even touch). Exposed so the HTTP adapter can
+    call it before it resolves roots (which itself reads the config file)."""
+    def bad(field: str, reason: str) -> None:
+        raise ConfigInvalidError(f"invalid {field}: {reason}", field=field, reason=reason)
+    if "config_version" in fields:
+        value = fields["config_version"]
+        if not isinstance(value, int) or isinstance(value, bool):
+            bad("config_version", "must be an integer")
+    if "first_run_done" in fields:
+        value = fields["first_run_done"]
+        if not isinstance(value, bool):
+            bad("first_run_done", "must be true or false")
+    for key in ("models_root", "outputs_root"):
+        if key not in fields:
+            continue
+        value = fields[key]
+        if isinstance(value, Path):
+            continue
+        if not isinstance(value, str) or not value:
+            bad(key, "must be a non-empty path string")
+    if "gateway" in fields:
+        gateway = fields["gateway"]
+        if not isinstance(gateway, dict):
+            bad("gateway", "must be an object")
+        if "enabled" in gateway and not isinstance(gateway["enabled"], bool):
+            bad("gateway.enabled", "must be true or false")
+        if "host" in gateway:
+            host = gateway["host"]
+            if not isinstance(host, str) or not host.strip():
+                bad("gateway.host", "must be a non-empty host string")
+        if "port" in gateway:
+            port = gateway["port"]
+            if isinstance(port, bool) or not isinstance(port, int) or not 1 <= port <= 65535:
+                bad("gateway.port", "must be an integer between 1 and 65535")
+
+
 def _from_raw(raw: dict | None, data_root: Path, *, source: str = "file") -> DeskConfig:
     defaults = _defaults(data_root)
     merged = dict(defaults)
@@ -193,7 +233,9 @@ def reset_config(roots, *, force: bool = False) -> dict:
 
 
 def update_config(roots, **fields) -> DeskConfig:
-    """Locked read-validate-write: nothing reaches disk unless it parses back."""
+    """Locked validate-read-merge-write: a malformed request body is rejected before
+    the config file is even opened, so a corrupt file never masks a bad field (P2)."""
+    validate_update_fields(fields)
     with _LOCK:
         raw = _load_raw(roots.config_path)
         current = _from_raw(raw, roots.data_root)

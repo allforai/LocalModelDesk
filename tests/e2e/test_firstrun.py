@@ -31,6 +31,32 @@ def test_first_run_hides_and_restores_desk_shell_with_selected_models_root(
     assert audit_violations == []
 
 
+def test_selecting_a_legacy_subtree_itself_warns_instead_of_silently_succeeding(
+    page, tmp_path, audit_violations,
+):
+    """issue #10: pointing 「选择 models 目录」straight at the llms/ subtree (instead
+    of its parent) used to sail through with every model then reported missing."""
+    parent = tmp_path / "external"
+    llms = parent / "llms"
+    (llms / "mlx-community" / "glm").mkdir(parents=True)
+    (llms / "mlx-community" / "glm" / "weight.safetensors").write_bytes(b"x")
+
+    with launch_test_harness(tmp_path, configured=False) as harness:
+        page.goto(harness.base_url)
+        expect(page.locator("#pane-firstrun")).to_be_visible()
+
+        page.locator("[data-fr-models-root]").fill(str(llms))
+        page.locator("[data-fr-complete]").click()
+
+        expect(page.locator("[data-fr-error]")).to_contain_text("没有认出任何已知模型")
+        expect(page.locator("[data-fr-error]")).to_contain_text(str(parent))
+        expect(page.locator("#pane-firstrun")).to_be_visible()
+        expect(page.locator("main")).to_be_hidden()
+        config = page.request.get(f"{harness.base_url}/api/config").json()
+        assert config["needs_setup"] is True
+    assert audit_violations == []
+
+
 def test_firstrun_uses_the_window_and_inputs_show_full_paths(page, tmp_path):
     """W2/F9: first-run must not sit in a 640px column, and path inputs must show their value."""
     page.set_viewport_size({"width": 1920, "height": 1200})

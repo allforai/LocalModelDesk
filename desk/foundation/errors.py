@@ -38,6 +38,16 @@ class LegacyRootError(FoundationError):
     http_status = 400
 
 
+class ModelsRootInvalidError(FoundationError):
+    code = "models_root_invalid"
+    http_status = 400
+
+
+class ModelsRootUnrecognizedError(FoundationError):
+    code = "models_root_unrecognized"
+    http_status = 400
+
+
 class AdoptConflictError(FoundationError):
     code = "adopt_conflict"
     http_status = 409

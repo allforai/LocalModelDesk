@@ -135,6 +135,20 @@ def test_main_window_disallows_tab_bar():
     assert "tabbingMode = .disallowed" in source
 
 
+def test_main_window_sets_a_900x600_content_floor():
+    """issue #13: 899×600 已知会裂（模型下拉越出窗口、状态条「设置」折成两行），900×600 是干净的下限。
+
+    不需要 GUI：走无 AppKit 的 headless harness，断言它打印的是 MainWindowController 实际引用的那个
+    常量（macos/VisualProbe.swift 里的 MainWindowMinSize），而不是测试自己重新声明一份数字。
+    """
+    proc = subprocess.run([harness_path(), "window-min-size"], capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == "900x600"
+
+    source = (ROOT / "macos" / "MainWindowController.swift").read_text()
+    assert "window.contentMinSize = NSSize(width: CGFloat(MainWindowMinSize.width)," in source
+
+
 def test_error_page_is_dark_themed_and_names_the_reason():
     proc = subprocess.run([harness_path(), "error-page", "服务无响应", "/tmp/x.log"],
                           capture_output=True, text=True, timeout=30)

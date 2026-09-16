@@ -94,6 +94,12 @@ def test_no_known_subtree_raises(roots, tmp_path):
 
     assert exc.value.code == "legacy_root_invalid"
     assert not roots.config_path.exists()
+    # Message is Chinese, names the expected subtrees, and tells the user what to do next.
+    message = str(exc.value)
+    assert "llms" in message and "minimax-h3" in message and "minimax-music3" in message
+    assert "选择 models 目录" in message
+    assert "上一级" in message
+    assert "no known model subtrees" not in message
 
 
 def test_unknown_mode_raises(roots, tmp_path):

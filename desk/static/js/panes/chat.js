@@ -5,6 +5,7 @@ import { sseDataLines } from "../stream.js";
 import { initialStream, reduceChunk, wireMessages } from "../pure/chat_stream.js";
 import { needsWarning } from "../pure/mem_warn.js";
 import { formatBytes } from "../pure/format.js";
+import { statusBadge } from "../pure/model_status.js";
 import { sortSessions, displayTitle } from "../pure/sessions.js";
 import { confirmDialog } from "../widgets/confirm.js";
 import { addIcon } from "../icons.js";
@@ -72,7 +73,11 @@ export function createChatPane(root, ctx = {}) {
       const option = doc.createElement("option");
       option.value = entry.key;
       const marks = [entry.params, entry.name?.includes(entry.quant ?? " ") ? null : entry.quant, entry.vision ? "视觉" : null].filter(Boolean).join(" · ");
-      option.textContent = `${entry.name} · ${sizeText}${marks ? ` · ${marks}` : ""}${ready ? "" : "（未下载/不完整）"}`;
+      // Reuse the resources pane's own vocabulary (statusBadge) instead of collapsing
+      // missing/partial/unknown into one made-up "未下载/不完整" suffix — an unknown
+      // status (manifest unreachable) is not the same claim as "definitely not downloaded".
+      const suffix = ready ? "" : ` （${statusBadge(modelStatus ?? { state: "unknown" }).badge}）`;
+      option.textContent = `${entry.name} · ${sizeText}${marks ? ` · ${marks}` : ""}${suffix}`;
       option.disabled = !ready;
       els.modelSelect.append(option);
     }

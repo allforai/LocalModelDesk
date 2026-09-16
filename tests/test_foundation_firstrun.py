@@ -7,7 +7,7 @@ import pytest
 from desk.foundation import config as config_mod
 from desk.foundation import firstrun
 from desk.foundation import paths as paths_mod
-from desk.foundation.errors import NotWritableError
+from desk.foundation.errors import ModelsRootUnrecognizedError, NotWritableError
 from desk.resources.catalog import entry
 
 
@@ -60,6 +60,82 @@ def test_complete_first_run_unwritable_target_does_not_persist(roots, tmp_path, 
         "os_error": "[Errno 13] Permission denied",
     }
     assert not roots.config_path.exists()
+
+
+def test_complete_first_run_rejects_pointing_at_the_llms_subtree_itself(roots, tmp_path):
+    """issue #10: models_root must be the PARENT of llms/minimax-h3/minimax-music3,
+    not one of those subtrees. Pointing straight at ``llms`` used to succeed silently
+    and leave every model reported as missing."""
+    parent = tmp_path / "external"
+    llms = parent / "llms"
+    (llms / "mlx-community" / "glm").mkdir(parents=True)
+    (llms / "mlx-community" / "glm" / "weight.safetensors").write_bytes(b"x")
+
+    with pytest.raises(ModelsRootUnrecognizedError) as exc:
+        firstrun.complete_first_run(roots, models_root=llms)
+
+    assert exc.value.code == "models_root_unrecognized"
+    assert exc.value.payload["path"] == str(llms)
+    assert str(llms) in exc.value.message
+    assert str(parent) in exc.value.message
+    assert not roots.config_path.exists()
+
+
+def test_complete_first_run_rejects_nonempty_root_with_no_recognized_models(roots, tmp_path):
+    target = tmp_path / "wrong-place"
+    (target / "vacation-photos").mkdir(parents=True)
+    (target / "vacation-photos" / "beach.jpg").write_bytes(b"x")
+
+    with pytest.raises(ModelsRootUnrecognizedError) as exc:
+        firstrun.complete_first_run(roots, models_root=target)
+
+    assert not config_mod.read_config(roots).first_run_done
+
+
+def test_complete_first_run_lists_discovered_candidates_when_rejecting(roots, tmp_path, monkeypatch):
+    candidate = tmp_path / "real-models"
+    (candidate / "minimax-h3").mkdir(parents=True)
+    (candidate / "minimax-h3" / "w.bin").write_bytes(b"x")
+    monkeypatch.setenv("LOCALMODELDESK_MODEL_SCAN_ROOTS", str(candidate))
+
+    target = tmp_path / "wrong-place"
+    (target / "junk").mkdir(parents=True)
+    (target / "junk" / "f.txt").write_bytes(b"x")
+
+    with pytest.raises(ModelsRootUnrecognizedError) as exc:
+        firstrun.complete_first_run(roots, models_root=target)
+
+    assert exc.value.payload["candidates"] == [str(candidate)]
+    assert str(candidate) in exc.value.message
+
+
+def test_complete_first_run_allows_fresh_empty_directory(roots, tmp_path):
+    """A brand-new empty directory (the normal 'start from scratch, download later'
+    path) must still succeed silently — this is not a hard rejection of 0 recognized
+    models, only of 0-recognized-but-non-empty."""
+    target = tmp_path / "fresh"
+    target.mkdir()
+    cfg = firstrun.complete_first_run(roots, models_root=target)
+    assert cfg.models_root == target.resolve()
+    assert cfg.first_run_done is True
+
+
+def test_complete_first_run_ignores_dotfiles_when_judging_emptiness(roots, tmp_path):
+    """A Finder-touched folder (only a .DS_Store) still reads as empty."""
+    target = tmp_path / "finder-empty"
+    target.mkdir()
+    (target / ".DS_Store").write_bytes(b"\x00")
+    cfg = firstrun.complete_first_run(roots, models_root=target)
+    assert cfg.models_root == target.resolve()
+    assert cfg.first_run_done is True
+
+
+def test_complete_first_run_allows_root_with_recognized_models(roots, tmp_path):
+    target = tmp_path / "already-has-models"
+    (target / "minimax-music3").mkdir(parents=True)
+    (target / "minimax-music3" / "w.bin").write_bytes(b"x")
+    cfg = firstrun.complete_first_run(roots, models_root=target)
+    assert cfg.models_root == target.resolve()
 
 
 def _seed_trees(tmp_path):

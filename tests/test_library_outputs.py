@@ -1,8 +1,11 @@
 """Range planning follows RFC 7233's single-range rules."""
 
+from types import SimpleNamespace
+
 import pytest
 
 from desk.library.history import HistoryStore
+from desk.library.http import OutputsRootMissingError, RevealFailedError
 from desk.library.outputs import OutputsStore
 from desk.library.outputs import parse_range
 
@@ -138,6 +141,56 @@ def test_serve_content_types(tmp_path):
                         ("a.webm", "video/webm")]:
         (root / name).write_bytes(b"x")
         assert outputs.serve(name, None).headers["Content-Type"] == ctype
+
+
+def test_reveal_folder_missing_root_raises_with_code(tmp_path):
+    """issue #12: a fresh install has no outputs dir yet; reveal must not claim success."""
+    history = HistoryStore(tmp_path / "history.jsonl")
+    outputs = OutputsStore(tmp_path / "nonexistent-outputs", history)
+    calls = []
+    outputs.set_opener(lambda argv, **kw: calls.append(argv))
+
+    with pytest.raises(OutputsRootMissingError) as caught:
+        outputs.reveal(None)
+
+    assert caught.value.code == "outputs_root_missing"
+    assert not calls, "the opener must never run when the root does not exist"
+
+
+def test_reveal_folder_opener_nonzero_raises_with_code(tmp_path):
+    """issue #12: `open` failing silently (check=False, return value dropped) must not be a 200."""
+    outputs, root, _ = make_stores(tmp_path)
+    outputs.set_opener(lambda argv, **kw: SimpleNamespace(returncode=1))
+
+    with pytest.raises(RevealFailedError) as caught:
+        outputs.reveal(None)
+
+    assert caught.value.code == "reveal_failed"
+
+
+def test_reveal_file_opener_nonzero_raises_with_code(tmp_path):
+    """The named-file reveal path (`open -R`) gets the same exit-code check as the folder path."""
+    outputs, root, _ = make_stores(tmp_path)
+    (root / "h3-a.mp4").write_bytes(b"x")
+    outputs.set_opener(lambda argv, **kw: SimpleNamespace(returncode=1))
+
+    with pytest.raises(RevealFailedError) as caught:
+        outputs.reveal("h3-a.mp4")
+
+    assert caught.value.code == "reveal_failed"
+
+
+def test_reveal_succeeds_when_opener_reports_zero_or_nothing(tmp_path):
+    """A real subprocess.run() result (returncode 0) and a bare test double (returns None) both pass."""
+    outputs, root, _ = make_stores(tmp_path)
+
+    outputs.set_opener(lambda argv, **kw: SimpleNamespace(returncode=0))
+    assert outputs.reveal(None) == root
+
+    calls = []
+    outputs.set_opener(lambda argv, **kw: calls.append(argv))
+    assert outputs.reveal(None) == root
+    assert calls == [["open", str(root)]]
 
 
 def test_serve_unsatisfiable_and_missing(tmp_path):

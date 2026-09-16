@@ -2,6 +2,7 @@
 import pytest
 
 from desk.llm.state import (
+    ERR_KEY_REQUIRED,
     ERR_LOAD_IN_PROGRESS,
     ERR_MEDIA_BUSY,
     ERR_MODEL_DIR_MISSING,
@@ -25,6 +26,15 @@ def test_load_rejects_missing_catalog_model_without_state_change(tmp_path):
     testbed = make_service(tmp_path)
 
     assert_rejected_without_state_change(testbed.service, "missing", ERR_MODEL_NOT_FOUND)
+    assert testbed.calls == []
+
+
+@pytest.mark.parametrize("bad_key", [None, "", "   ", 123, {"key": "glm"}, ["glm"]])
+def test_load_rejects_missing_or_non_string_key_before_any_lookup(tmp_path, bad_key):
+    """issue #5: 缺 key/非字符串 key 必须先被参数校验拦下，不能落到「目录里查不到」的 404。"""
+    testbed = make_service(tmp_path)
+
+    assert_rejected_without_state_change(testbed.service, bad_key, ERR_KEY_REQUIRED)
     assert testbed.calls == []
 
 

@@ -12,7 +12,7 @@ from urllib.parse import unquote
 
 from .errors import NotFoundError
 from .history import HistoryStore
-from .http import FileSlice, Response
+from .http import FileSlice, OutputsRootMissingError, RevealFailedError, Response
 
 
 @dataclass(frozen=True)
@@ -68,18 +68,34 @@ class OutputsStore:
         self._opener = opener
 
     def reveal(self, name: str | None = None) -> Path:
-        """Reveal a single output in Finder, or open the outputs folder."""
+        """Reveal a single output in Finder, or open the outputs folder.
+
+        Never a false success (issue #12): the root must exist before Finder is even asked to open
+        it — mirroring the existence check `resolve()` already does for a named file — and the
+        opener's exit code is checked, not discarded, in both the folder and the named-file case.
+        """
         opener = getattr(self, "_opener", None) or (
             lambda argv, **kw: subprocess.run(argv, check=False, timeout=10)
         )
         if name is None:
-            opener(["open", str(self._root)])
+            if not self._root.is_dir():
+                raise OutputsRootMissingError("成品目录还不存在，生成第一个作品后会自动创建")
+            self._run_opener(opener, ["open", str(self._root)])
             return self._root
         path = self.resolve(name)
         if path is None:
             raise NotFoundError("output not found")
-        opener(["open", "-R", str(path)])
+        self._run_opener(opener, ["open", "-R", str(path)])
         return path
+
+    @staticmethod
+    def _run_opener(opener, argv: list[str]) -> None:
+        """Run the opener and check its exit code. A test double that returns nothing (no
+        `.returncode`) is treated as success, so existing call-site fakes keep working."""
+        result = opener(argv)
+        returncode = getattr(result, "returncode", None)
+        if returncode not in (None, 0):
+            raise RevealFailedError(f"打开访达失败（{argv[0]} 退出码 {returncode}）")
 
     def list(self) -> list[dict]:
         """List media files, enriched with their matching history entries."""

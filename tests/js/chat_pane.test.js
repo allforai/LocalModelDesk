@@ -538,6 +538,46 @@ test("没有下载好的聊天模型时加载按钮禁用并指向资源页", as
   } finally { globalThis.fetch = oldFetch; }
 });
 
+test("下拉按状态分三档：present 无后缀，missing/partial 沿用资源页说法，unknown 说明拿不到清单而非「未下载」", async () => {
+  const oldFetch = globalThis.fetch;
+  globalThis.fetch = async (path) => {
+    if (path === "/api/resources/catalog") return json([
+      { key: "a", group: "chat", name: "模型 A", gb: 1 },
+      { key: "b", group: "chat", name: "模型 B", gb: 1 },
+      { key: "c", group: "chat", name: "模型 C", gb: 1 },
+      { key: "d", group: "chat", name: "模型 D", gb: 1 },
+    ]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [
+      { key: "a", state: "present" },
+      { key: "b", state: "missing", percent: 0 },
+      { key: "c", state: "partial", percent: 41.7 },
+      { key: "d", state: "unknown", percent: 0, reason: "manifest_unavailable" },
+    ] });
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    throw new Error(`unexpected request ${path}`);
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { root, controls } = makePane();
+    const pane = createChatPane(root);
+    await pane.refreshModels();
+    const [optA, optB, optC, optD] = controls.get("[data-model-select]").children;
+
+    assert.equal(optA.disabled, false);
+    assert.equal(optA.textContent, "模型 A · 1 GiB（目录）", "present 选项不该带状态后缀");
+
+    assert.equal(optB.disabled, true);
+    assert.ok(optB.textContent.includes("没下"), `missing 应沿用资源页说法「没下」：${optB.textContent}`);
+
+    assert.equal(optC.disabled, true);
+    assert.ok(optC.textContent.includes("一半 42%"), `partial 应沿用资源页说法「一半 N%」：${optC.textContent}`);
+
+    assert.equal(optD.disabled, true);
+    assert.ok(optD.textContent.includes("拿不到文件清单"), `unknown 应说明拿不到文件清单：${optD.textContent}`);
+    assert.ok(!optD.textContent.includes("未下载"), `unknown 不该被说成「未下载」：${optD.textContent}`);
+  } finally { globalThis.fetch = oldFetch; }
+});
+
 test("流式中页面关闭：把问句和已出的半句带 keepalive 写回会话（P3 路径 6）", async () => {
   const oldFetch = globalThis.fetch;
   const saved = [];

@@ -1,5 +1,7 @@
 import json
+import logging
 import os
+import traceback
 
 import pytest
 
@@ -64,6 +66,88 @@ def test_first_run_endpoint_happy_and_unwritable(server, tmp_path):
         assert payload["error"]["code"] == "not_writable"
     finally:
         os.chmod(fenced, 0o700)
+
+
+@pytest.mark.parametrize("bad_root", [12345, {"a": 1}, ["x"], ""])
+def test_first_run_rejects_non_string_models_root_with_400(server, bad_root):
+    """issue #8: 类型错误的 models_root 曾经 TypeError 穿透成 500 internal。"""
+    status, payload = http_call(server, "POST", "/api/first-run", {"models_root": bad_root})
+    assert status == 400
+    assert payload["error"]["code"] == "models_root_invalid"
+    assert "int" not in payload["error"]["message"]
+    assert "dict" not in payload["error"]["message"]
+
+
+def test_first_run_endpoint_rejects_pointing_at_a_subtree_itself(server, tmp_path):
+    """issue #10: the 'select models directory' entry must warn instead of silently
+    succeeding when it's handed the llms/ subtree itself rather than its parent."""
+    parent = tmp_path / "external"
+    llms = parent / "llms"
+    (llms / "mlx-community" / "glm").mkdir(parents=True)
+    (llms / "mlx-community" / "glm" / "weight.safetensors").write_bytes(b"x")
+
+    status, payload = http_call(server, "POST", "/api/first-run", {"models_root": str(llms)})
+
+    assert status == 400
+    assert payload["error"]["code"] == "models_root_unrecognized"
+    assert str(llms) in payload["error"]["message"]
+    assert str(parent) in payload["error"]["message"]
+
+    status, payload = http_call(server, "GET", "/api/config")
+    assert payload["needs_setup"] is True
+
+
+def test_first_run_missing_models_root_still_uses_default(server):
+    status, payload = http_call(server, "POST", "/api/first-run", {})
+    assert status == 200
+    assert payload["first_run_done"] is True
+
+
+def test_put_config_rejects_bad_field_before_500ing_on_a_corrupt_file(server, tmp_path):
+    """issue #5: 字段校验必须先于「配置文件损坏」的状态检查。"""
+    config_path = tmp_path / "data" / "config.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text("{ this is not valid json", encoding="utf-8")
+
+    status, payload = http_call(server, "PUT", "/api/config", {"gateway": {"port": "not-a-number"}})
+    assert status == 400
+    assert payload["error"]["code"] == "config_invalid"
+
+
+def test_put_config_still_500s_on_corrupt_file_when_fields_are_valid(server, tmp_path):
+    config_path = tmp_path / "data" / "config.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text("{ this is not valid json", encoding="utf-8")
+
+    status, payload = http_call(server, "PUT", "/api/config", {"gateway": {"port": 9100}})
+    assert status == 500
+    assert payload["error"]["code"] == "config_corrupt"
+
+
+def test_unhandled_exception_is_sanitized_and_the_original_is_logged(caplog):
+    """issue #8: 兜底不该外泄 Python 异常原文，但服务端日志要留住完整 traceback。"""
+    app = DeskApp("127.0.0.1", 0)
+
+    def boom(_req):
+        raise TypeError("argument should be a str or an os.PathLike object, not 'int'")
+
+    app.add_routes([("POST", "/boom", boom)])
+    app.start_background()
+    try:
+        with caplog.at_level(logging.ERROR):
+            status, payload = http_call(app, "POST", "/boom", {})
+        assert status == 500
+        assert payload["error"]["code"] == "internal"
+        assert "os.PathLike" not in payload["error"]["message"]
+        assert "int" not in payload["error"]["message"]
+
+        logged = [record for record in caplog.records if record.exc_info]
+        assert logged, "the exception must be logged with exc_info for a traceback"
+        formatted = "".join(traceback.format_exception(*logged[0].exc_info))
+        assert "TypeError" in formatted
+        assert "argument should be a str or an os.PathLike object" in formatted
+    finally:
+        app.shutdown()
 
 
 def test_adopt_endpoint_point_and_bad_body(server, tmp_path):
