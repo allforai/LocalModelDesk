@@ -7,22 +7,22 @@
   "locale": "zh-CN",
   "orientation": "landscape",
   "pointer": "mouse",
-  "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
-  "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+  "baseline_digest": "66b2c5406b510b6812987de63197b66efb7c3781e8d980cd19cc8585512d66d7",
+  "interaction_digest": "08a9a1b39c83beab05c4fd9480ee72902c987c2d702ec08eabd648d15494a9f7",
   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
   "case_id": "V-6f30160cd65a3cc811cd4efa206d573a8cc261afb0eb5d5f48845fb688fdb994",
   "label": "U6 文生视频 @600",
-  "build": "cda38b8+a00ccb56c765",
-  "captured_at": "2026-09-16T19:17:53+09:00",
+  "build": "ef80c0f+533efe7fea3d",
+  "captured_at": "2026-09-16T21:57:52+09:00",
   "capture_mode": "viewport",
   "headless": false,
   "scrollbars": "overlay",
   "scroll_profile": {
-    "scroll_width": 0,
-    "client_width": 0,
-    "scroll_height": 0,
-    "client_height": 0,
+    "scroll_width": 592,
+    "client_width": 592,
+    "scroll_height": 630,
+    "client_height": 400,
     "gutter_px": 0
   },
   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
@@ -33,9 +33,9 @@
     }
   },
   "window": {
-    "backing_scale": 2,
-    "window_number": 4672,
     "height": 400,
+    "backing_scale": 2,
+    "window_number": 4761,
     "width": 600
   },
   "readback": {
@@ -48,28 +48,26 @@
     "device_pixel_ratio": 2,
     "root_font_px": 16,
     "pointer": "mouse",
+    "dynamic_type": "浏览器缩放 100%",
+    "orientation": "landscape",
     "hover": true,
     "any_pointer_coarse": false,
     "scroll_profile": {
-      "scroll_width": 0,
-      "client_width": 0,
-      "scroll_height": 0,
-      "client_height": 0,
+      "scroll_width": 592,
+      "client_width": 592,
+      "scroll_height": 630,
+      "client_height": 400,
       "gutter_px": 0
     },
-    "session_list_profile": {
-      "scroll_width": 0,
-      "client_width": 0,
-      "scroll_height": 0,
-      "client_height": 0,
-      "gutter_px": 0
-    },
+    "scroll_source": "html",
+    "pane": "#pane-video",
+    "session_list_profile": null,
     "tab": "tab=video"
   },
   "images": [
     "V-6f30160cd65a3cc811cd4efa206d573a8cc261afb0eb5d5f48845fb688fdb994.png"
   ],
   "image_digests": {
-    "V-6f30160cd65a3cc811cd4efa206d573a8cc261afb0eb5d5f48845fb688fdb994.png": "90a1e57000168a19145d8f64cf0f3d3c5f0ac398b36f10063a0d4c00e125a397"
+    "V-6f30160cd65a3cc811cd4efa206d573a8cc261afb0eb5d5f48845fb688fdb994.png": "658afb19cff6ddaac0650f8fe4cfd920752f86cdf421b5adda0a151472dcf0ed"
   }
 }

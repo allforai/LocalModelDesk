@@ -15,7 +15,8 @@
    ],
    "confirmation": "四类原样确认",
    "confirmed_at": "2026-09-16",
-   "basis": "macos/MainWindowController.swift:25；macos/AppDelegate.swift installSettingsShortcut；desk/static/js/app.js hash 路由"
+   "basis": "macos/MainWindowController.swift:25；macos/AppDelegate.swift installSettingsShortcut；desk/static/js/app.js hash 路由",
+   "reference_images": {}
   },
   "feedback": {
    "rules": [
@@ -26,7 +27,8 @@
    ],
    "confirmation": "四类原样确认",
    "confirmed_at": "2026-09-16",
-   "basis": "desk/static/js/panes/chat.js streamAbort/停止分支；desk/static/js/widgets/confirm.js + panes/resources.js:127 确认框（默认焦点未经验证，属待验条款）"
+   "basis": "desk/static/js/panes/chat.js streamAbort/停止分支；desk/static/js/widgets/confirm.js + panes/resources.js:127 确认框（默认焦点未经验证，属待验条款）",
+   "reference_images": {}
   },
   "states": {
    "rules": [
@@ -36,7 +38,8 @@
    ],
    "confirmation": "四类原样确认",
    "confirmed_at": "2026-09-16",
-   "basis": "desk/static/js/widgets/statusbar.js；desk/llm/service.py status()"
+   "basis": "desk/static/js/widgets/statusbar.js；desk/llm/service.py status()",
+   "reference_images": {}
   },
   "layout": {
    "rules": [
@@ -45,7 +48,8 @@
    ],
    "confirmation": "再加一条：窄档会话列必须让位（推荐）",
    "confirmed_at": "2026-09-16",
-   "basis": "app.css:158 过渡；desk/static/js/panes/chat.js:171,211 无条件贴底"
+   "basis": "app.css:158 过渡；desk/static/js/panes/chat.js:171,211 无条件贴底",
+   "reference_images": {}
   },
   "motion": {
    "rules": [
@@ -54,7 +58,8 @@
    ],
    "confirmation": "四类原样确认",
    "confirmed_at": "2026-09-16",
-   "basis": "app.css:158-160"
+   "basis": "app.css:158-160",
+   "reference_images": {}
   }
  }
 }

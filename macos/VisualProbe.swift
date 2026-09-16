@@ -6,8 +6,14 @@ import Foundation
 let visualReadbackJS = """
 (() => {
   const css = getComputedStyle(document.documentElement);
-  const scroller = document.querySelector('.messages') || document.scrollingElement;
-  const list = document.querySelector('.sessions');
+  // Only the visible pane counts: a hidden pane is still in the DOM and measures 0 everywhere, which
+  // would report "no scrollbar" for every tab that is not the one the chat lives in.
+  const pane = document.querySelector('main > section:not([hidden])') || document.body;
+  const named = (el) => el ? (el.id ? '#' + el.id : el.className ? '.' + String(el.className).split(' ')[0] : el.tagName.toLowerCase()) : null;
+  const candidates = [pane.querySelector('.messages'), pane.querySelector('.sessions'), pane,
+                      document.scrollingElement].filter(Boolean);
+  const scroller = candidates.find((el) => el.clientHeight > 0 && el.scrollHeight > el.clientHeight) || pane;
+  const list = pane.querySelector('.sessions');
   const profile = (el) => el ? {
     scroll_width: el.scrollWidth, client_width: el.clientWidth,
     scroll_height: el.scrollHeight, client_height: el.clientHeight,
@@ -23,9 +29,15 @@ let visualReadbackJS = """
     device_pixel_ratio: window.devicePixelRatio,
     root_font_px: parseFloat(css.fontSize),
     pointer: window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'mouse',
+    // Every axis the code declares support on owes the capture a value read back inside the app;
+    // without these two a capture cannot prove it is the zoom level and orientation it claims.
+    dynamic_type: '浏览器缩放 ' + Math.round((window.visualViewport ? window.visualViewport.scale : 1) * 100) + '%',
+    orientation: window.innerWidth >= window.innerHeight ? 'landscape' : 'portrait',
     hover: window.matchMedia('(hover: hover)').matches,
     any_pointer_coarse: window.matchMedia('(any-pointer: coarse)').matches,
     scroll_profile: profile(scroller),
+    scroll_source: named(scroller),
+    pane: named(pane),
     session_list_profile: profile(list),
     tab: (location.hash || '#chat').slice(1)
   });

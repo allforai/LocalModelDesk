@@ -88,6 +88,18 @@ def test_the_build_id_changes_with_the_working_tree(tmp_path, probe_port, monkey
     assert visual_capture.build_id() == first
 
 
+def test_evidence_written_during_the_run_does_not_change_the_build(tmp_path, probe_port):
+    """一批截图必须共用一个 build：取证过程自己写进 run 目录的记录不能算进树的身份。"""
+    first = visual_capture.build_id()
+    evidence = ROOT / "docs" / "cross-exam" / "2026-09-16-localmodeldesk" / "evidence" / ".build-probe.tmp"
+    evidence.parent.mkdir(parents=True, exist_ok=True)
+    evidence.write_text("a capture record written mid-run", encoding="utf-8")
+    try:
+        assert visual_capture.build_id() == first
+    finally:
+        evidence.unlink(missing_ok=True)
+
+
 def test_overlay_scrollbars_are_recorded_as_overlay_not_native(tmp_path, probe_port, monkeypatch):
     """`scrollbars` says what WebKit drew: no reserved gutter means the bar floated over the content."""
     original = visual_capture.probe

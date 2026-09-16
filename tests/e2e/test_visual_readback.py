@@ -15,7 +15,8 @@ from desk.testing import launch_test_harness
 
 PROBE = Path(__file__).resolve().parents[2] / "macos" / "VisualProbe.swift"
 REQUIRED = {"appearance", "locale", "direction", "width", "height", "device_pixel_ratio",
-            "root_font_px", "pointer", "hover", "scroll_profile", "tab"}
+            "root_font_px", "pointer", "hover", "scroll_profile", "scroll_source", "pane", "tab",
+            "dynamic_type", "orientation"}
 
 
 def readback_js() -> str:
@@ -37,6 +38,9 @@ def test_the_readback_expression_reports_every_axis_the_matrix_binds(page, tmp_p
     assert value["appearance"] in ("dark", "light")
     assert value["pointer"] in ("mouse", "touch")
     assert value["locale"], "the locale axis needs a value, not an empty string"
+    # These two are axis values the matrix binds by name, so they must read back in the matrix's words.
+    assert value["dynamic_type"] == "浏览器缩放 100%"
+    assert value["orientation"] == "landscape"
 
 
 def test_the_readback_measures_the_scroll_gutter(page, tmp_path):
@@ -48,5 +52,9 @@ def test_the_readback_measures_the_scroll_gutter(page, tmp_path):
         value = json.loads(page.evaluate(readback_js()))
     profile = value["scroll_profile"]
     assert profile is not None
+    # The element it measured must be named, and must be one that is actually on screen: a hidden pane
+    # measures 0 everywhere and would claim "no scrollbar" for every tab the chat does not live in.
+    assert value["scroll_source"], "readback must say which element it measured"
+    assert profile["client_height"] > 0
     assert set(profile) == {"scroll_width", "client_width", "scroll_height", "client_height", "gutter_px"}
     assert profile["gutter_px"] >= 0

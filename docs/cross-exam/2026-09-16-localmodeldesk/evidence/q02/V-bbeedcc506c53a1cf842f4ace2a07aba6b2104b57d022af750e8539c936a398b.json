@@ -7,14 +7,14 @@
   "locale": "zh-CN",
   "orientation": "landscape",
   "pointer": "mouse",
-  "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
-  "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+  "baseline_digest": "66b2c5406b510b6812987de63197b66efb7c3781e8d980cd19cc8585512d66d7",
+  "interaction_digest": "08a9a1b39c83beab05c4fd9480ee72902c987c2d702ec08eabd648d15494a9f7",
   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
   "case_id": "V-bbeedcc506c53a1cf842f4ace2a07aba6b2104b57d022af750e8539c936a398b",
   "label": "U3 chat/video/music/resources/library 五选一 @1400",
-  "build": "cda38b8+a00ccb56c765",
-  "captured_at": "2026-09-16T19:17:39+09:00",
+  "build": "ef80c0f+533efe7fea3d",
+  "captured_at": "2026-09-16T21:57:38+09:00",
   "capture_mode": "viewport",
   "headless": false,
   "scrollbars": "native",
@@ -33,10 +33,10 @@
     }
   },
   "window": {
-    "width": 1400,
+    "height": 900,
     "backing_scale": 2,
-    "window_number": 4672,
-    "height": 900
+    "window_number": 4761,
+    "width": 1400
   },
   "readback": {
     "appearance": "dark",
@@ -48,6 +48,8 @@
     "device_pixel_ratio": 2,
     "root_font_px": 16,
     "pointer": "mouse",
+    "dynamic_type": "浏览器缩放 100%",
+    "orientation": "landscape",
     "hover": true,
     "any_pointer_coarse": false,
     "scroll_profile": {
@@ -57,6 +59,8 @@
       "client_height": 636,
       "gutter_px": 8
     },
+    "scroll_source": ".messages",
+    "pane": "#pane-chat",
     "session_list_profile": {
       "scroll_width": 240,
       "client_width": 240,
@@ -70,6 +74,6 @@
     "V-bbeedcc506c53a1cf842f4ace2a07aba6b2104b57d022af750e8539c936a398b.png"
   ],
   "image_digests": {
-    "V-bbeedcc506c53a1cf842f4ace2a07aba6b2104b57d022af750e8539c936a398b.png": "19003e358676490f8b31b8373fd6c8e99364a6e3e80969da07e2f010f02ed31c"
+    "V-bbeedcc506c53a1cf842f4ace2a07aba6b2104b57d022af750e8539c936a398b.png": "7281320974fbeb7d82af4fc6e42862f19a655f151f8299a231ffcaae6c55b824"
   }
 }

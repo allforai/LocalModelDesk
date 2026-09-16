@@ -39,6 +39,12 @@ def probe(port, path, timeout=20, attempts=3):
             time.sleep(0.5 * (attempt + 1))
 
 
+# The capture run writes its own records into the run directory, so hashing those back into the build
+# would give every shot in one batch a different build — and a batch whose shots disagree cannot be
+# bound to one verdict. Evidence is not product code: it stays out of the build identity.
+BUILD_EXCLUDES = ("docs/cross-exam/",)
+
+
 def build_id():
     """commit + a digest of everything uncommitted: two different dirty trees must not share a build."""
     def git(*args):
@@ -47,7 +53,7 @@ def build_id():
     commit = git("rev-parse", "--short", "HEAD").strip() or "unknown"
     digest = hashlib.sha256(git("diff", "HEAD").encode("utf-8"))
     for name in sorted(git("ls-files", "--others", "--exclude-standard").split("\n")):
-        if not name:
+        if not name or name.startswith(BUILD_EXCLUDES):
             continue
         path = REPO / name
         if path.is_file():
@@ -60,7 +66,7 @@ AXES = ("state", "device", "os", "appearance", "dynamic_type", "locale", "orient
 
 
 def capture(port, out_dir, case_id, width, height, label=None, window_shot=False, before=None,
-            case=None, bindings=None):
+            case=None, bindings=None, build=None):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -96,7 +102,7 @@ def capture(port, out_dir, case_id, width, height, label=None, window_shot=False
         **(bindings or {}),
         "case_id": case_id,
         "label": label or case_id,
-        "build": build_id(),
+        "build": build or build_id(),
         "captured_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
         "capture_mode": "viewport",
         "headless": False,
