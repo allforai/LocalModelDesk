@@ -2212,6 +2212,56 @@
    },
    "verdict": "unprovable",
    "note": "实测官拒绝把「相邻分支正常」当成「假设的那条分支也正常」，也拒绝为了造前提去改源码或伪造 bundle.json——两者都越出它被允许的边界。所以这条按无法自证挂账，不是缺口，也不算实证完成。P3 里 llm/load 那个位点因此仍是未查：要证它得在打包模式下把 venv_python 指向一个不存在的路径。"
+  },
+  {
+   "q": "台面服务意外退出后，外壳错误页上那个「▶ 详情」折叠展开后给的是什么？里面有没有日志路径？那个路径指向的文件真的存在、里面真的有这次崩溃的日志吗？",
+   "facet": "F9",
+   "surfaces": [
+    "S61",
+    "S64"
+   ],
+   "requirement_refs": [
+    "R-shell-04",
+    "R-shell-05"
+   ],
+   "leak_point": "J2 旅程里「日志路径或日志尾可见」这个必经点从未经过——探针没展开那个折叠",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/5e08a2b8-d647-4897-b317-535244843a56/tasks/a14edb8a541fcaa70.output"
+   },
+   "probed_at": "2026-09-17T00:29:12+09:00",
+   "states_to_capture": [
+    "错误页刚出现时的整窗截图（详情还折着）",
+    "展开「▶ 详情」之后的整窗截图",
+    "详情里的文字逐字",
+    "详情里给的日志路径在磁盘上存不存在、大小、尾部几行"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:19772（探针）；台面服务本应在 19771，已被实测官按 pid 杀掉",
+    "process": "外壳 pid 81079 / 台面服务 pid 81095（自起实例，已收干净）",
+    "mock_layers": [],
+    "checked_absent": [
+     "错误页在 about:blank 上下文，navigator.serviceWorker 为 undefined",
+     "无 MOCK/USE_MOCK/STUB"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q10/",
+    "files": [
+     "q10-00-baseline-running.png",
+     "q10-01-error-page-collapsed.png",
+     "q10-02-error-page-expanded.png",
+     "q10-03-details-text-verbatim.txt",
+     "q10-04-body-outerhtml-expanded.html",
+     "q10-05-server-stdout-log-copy.txt",
+     "q10-raw-outerhtml-collapsed.json",
+     "q10-served-by.md"
+    ],
+    "key_observation": "展开后给出 `日志：/tmp/…/logs/server-stdout.log` 并把尾部约 20 行内嵌在 <pre> 里；该文件真实存在（2354 字节），页面里那段与磁盘 tail -n 20 逐字符一致"
+   },
+   "verdict": "done",
+   "note": "J2 那条必经点确认可达（J2 的 drift 裁决不变——那一轮它确实没走到）。两点如实记下但不判为缺陷：①这份日志里只有 HTTP 访问日志、没有崩溃原因，但本次是 SIGTERM 优雅退出（错误页写的「退出码 0」准确），优雅退出本来就没有栈可写——硬崩溃下诊断信息会不会落到这里仍未验，已作牌候选；②同目录有更大的 desk.log（4216 字节）而错误页一次都没提，也作牌候选。"
   }
  ],
  "patterns": [
@@ -2577,6 +2627,16 @@
    "q": "dev 模式下 capabilities.music_runtime.present=false（mlx_minimax_music3 not importable）——打包后的 app 里这一项是什么？能力探测对用户怎么呈现？",
    "facet": "F6",
    "leak_point": "q09 实测官读 /api/paths 时顺带看到"
+  },
+  {
+   "q": "真正的硬崩溃（段错误/未捕获异常/OOM 被杀）之后，错误页详情里那份日志有没有诊断信息？",
+   "facet": "F9",
+   "leak_point": "q10 实测官：本次是 SIGTERM 优雅退出，日志里只有访问日志，这条分支没验到"
+  },
+  {
+   "q": "错误页为什么只指 server-stdout.log，不提同目录更大的 desk.log？出事时该看哪一个？",
+   "facet": "F9",
+   "leak_point": "q10 实测官：logs/ 下 desk.log 4216 字节，错误页一次都没提"
   }
  ],
  "form_factor": {
@@ -3018,14 +3078,14 @@
   "census_ref": "visual/census.json",
   "census_digest": "5bca505092fa925acc8631d9ce74075eb1cda2ece823d720e6a365d5c905be19",
   "width_range_confirmed": {
-   "min": 900,
+   "min": 600,
    "max": 1920,
-   "confirmation": "设最小窗口 900×600，不改布局（推荐）",
-   "confirmed_at": "2026-09-17",
-   "basis": "用户裁定；contentMinSize 900×600 使 600–899 不可达"
+   "confirmation": "min = 600（推荐）",
+   "confirmed_at": "2026-09-16",
+   "basis": "本轮取图与评审都在 600–1920 上做的，冻结不动；2026-09-17 用户改判 900 见 rulings R2，下一轮生效"
   },
   "baseline_ref": "visual/visual-baseline.json",
-  "baseline_digest": "b6f2f1907dfad3b0fa7fd4c716f233c173c3dde0fa9c0bde5631924753a04b22",
+  "baseline_digest": "66b2c5406b510b6812987de63197b66efb7c3781e8d980cd19cc8585512d66d7",
   "interaction_ref": "visual/interaction-baseline.json",
   "interaction_digest": "08a9a1b39c83beab05c4fd9480ee72902c987c2d702ec08eabd648d15494a9f7",
   "facet_ids": [
@@ -15264,5 +15324,9 @@
    "ruling": "调查推翻了盘问官的怀疑（缺清单缓存）：真因是「选择 models 目录」入口不校验识别度，静默接受了 llms 子树本身；清单在联网时首次查状态就会自动拉取，unknown 分支寿命极短",
    "consequence": "issue #10 按真因重写：给该入口补 recognized_model_keys 校验并引导去父目录（复用「收编」已有的逻辑）；另立一条：聊天页下拉把 unknown/missing/partial 抹成同一句，资源页本来是区分的"
   }
- ]
+ ],
+ "frozen": {
+  "at": "2026-09-17",
+  "why": "本 run 已收敛出报告。之后的基线修正（R2/R3/R4）属于 docs/visual/ 那份正本与下一轮，不回写这里——事后改判据就是改历史，校验器拦过一次，拦对了。"
+ }
 }

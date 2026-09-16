@@ -1,0 +1,23 @@
+详情
+日志：/tmp/lmd-q10-HoHqxR/logs/server-stdout.log
+
+http "GET /static/js/pure/model_status.js HTTP/1.1" 200 -
+http "GET /static/js/widgets/jobview.js HTTP/1.1" 200 -
+http "GET /static/js/widgets/prompt_assist.js HTTP/1.1" 200 -
+http "GET /static/js/pure/video_cost.js HTTP/1.1" 200 -
+http "GET /static/js/pure/history_fill.js HTTP/1.1" 200 -
+http "GET /static/js/widgets/error_block.js HTTP/1.1" 200 -
+http "GET /static/js/pure/base_url.js HTTP/1.1" 200 -
+http "GET /static/js/pure/job_progress.js HTTP/1.1" 200 -
+http "GET /static/js/pure/job_error.js HTTP/1.1" 200 -
+http "GET /api/config HTTP/1.1" 200 -
+http "GET /api/state HTTP/1.1" 200 -
+http "GET /api/memory HTTP/1.1" 200 -
+http "GET /api/state HTTP/1.1" 200 -
+http "GET /api/memory HTTP/1.1" 200 -
+http "GET /api/state HTTP/1.1" 200 -
+http "GET /api/memory HTTP/1.1" 200 -
+http "GET /api/state HTTP/1.1" 200 -
+http "GET /api/memory HTTP/1.1" 200 -
+http "GET /api/state HTTP/1.1" 200 -
+http "GET /api/memory HTTP/1.1" 200 -
