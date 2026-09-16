@@ -29,3 +29,42 @@
   仅触控板（悬浮滚动条），该类要多一个值，滚动条那条规则要分别给出两种指针下的样子。
 - 上一轮基线里 K2 / K4 附注 / K5 附注 / L2 / L6 的原文只从计划文档里抢救回残句（见各条 `basis`
   的 `recovered_from`），其余规则是从现在的代码重新读出来的，不是旧基线的原文。
+
+## 起一台带探针的 app
+
+探针只在 `LMD_PROBE_PORT` 存在时开，所以取证要专门起一次。**先退掉正在跑的那台**：同一个包的第二个
+实例会抢 8766，两个实例还会互相收割。
+
+```bash
+osascript -e 'quit app "LocalModelDesk"'        # 或在 app 里 ⌘Q
+
+scripts/build-app.sh --adhoc                    # 探针是 2026-09-16 之后才有的，旧包里没有
+
+open --env LMD_PROBE_PORT=8771 dist/LocalModelDesk.app
+# 想看日志就直接跑二进制：
+# LMD_PROBE_PORT=8771 dist/LocalModelDesk.app/Contents/MacOS/LocalModelDesk
+```
+
+确认探针活着，顺便看一眼这台机器此刻的指点设备与滚动条：
+
+```bash
+curl -s 127.0.0.1:8771/readback | python3 -m json.tool
+# pointer: mouse/touch，hover: true/false，scroll_profile.gutter_px > 0 说明滚动条占位（常显）
+```
+
+取一张证（`--case` 用冻结矩阵里的 id，`--out` 指向本轮 run 的证据目录）：
+
+```bash
+scripts/visual-capture.py --port 8771 \
+  --out docs/cross-exam/<run>/evidence/q1 \
+  --case V-abc123 --width 1280 --height 800 --label "chat 默认" --window-shot
+```
+
+几条规矩：
+
+- `--window-shot` 走 `screencapture`，需要「屏幕录制」权限；不给权限就只拍 web view（够用，但拍不到
+  标题栏这类原生外壳）。
+- 取证期间别动窗口、别切前台：改了窗口大小或盖住了它，拍到的就不是用例声称的那个宽度。
+- 探针只听 127.0.0.1，正常启动（没有这个环境变量）一律不开端口——`tests/test_shell_visual_probe.py`
+  里有一条测试盯着这件事。
+- 取完把 app 退掉，再按平常方式启动，别让带探针的实例长期留着。
