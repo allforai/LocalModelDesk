@@ -1,0 +1,79 @@
+{
+  "state": "当前会话高亮 aria-current",
+  "device": "900x600@2",
+  "os": "macOS 26.0 WKWebView",
+  "appearance": "dark",
+  "dynamic_type": "浏览器缩放 100%",
+  "locale": "zh-CN",
+  "orientation": "landscape",
+  "pointer": "mouse",
+  "baseline_digest": "a67149ce515333297d2e371fd32b00b90c6421392f6657340317fe0a26570367",
+  "interaction_digest": "08a9a1b39c83beab05c4fd9480ee72902c987c2d702ec08eabd648d15494a9f7",
+  "inventory_digest": "cbf91e5ea7bfe1b3e0329467b2ff9893e8549f6af17df7127f2d093352e1dce9",
+  "matrix_digest": "f9d989c0dfdffaaeb4c566036c62eecbb46a39ef3cd87ec0e0c3c24dd6f51df3",
+  "case_id": "V-687fc5064dc8775617a1b41562a1aff4b86864f0fcc7eee4fdf59797e6a6bff9",
+  "label": "U5 @900",
+  "build": "978bde4+2f07a8a61c48",
+  "captured_at": "2026-09-17T03:12:12+09:00",
+  "capture_mode": "viewport",
+  "headless": false,
+  "scrollbars": "native",
+  "scroll_profile": {
+    "scroll_width": 532,
+    "client_width": 532,
+    "scroll_height": 827,
+    "client_height": 305,
+    "gutter_px": 8
+  },
+  "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+  "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+      "value": "#tab=chat"
+    }
+  },
+  "window": {
+    "window_number": 5365,
+    "height": 600,
+    "width": 900,
+    "backing_scale": 2
+  },
+  "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 900,
+    "height": 600,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "dynamic_type": "浏览器缩放 100%",
+    "orientation": "landscape",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+      "scroll_width": 532,
+      "client_width": 532,
+      "scroll_height": 827,
+      "client_height": 305,
+      "gutter_px": 8
+    },
+    "scroll_source": ".messages",
+    "pane": "#pane-chat",
+    "session_list_profile": {
+      "scroll_width": 240,
+      "client_width": 240,
+      "scroll_height": 900,
+      "client_height": 466,
+      "gutter_px": 8
+    },
+    "tab": "tab=chat"
+  },
+  "images": [
+    "V-687fc5064dc8775617a1b41562a1aff4b86864f0fcc7eee4fdf59797e6a6bff9.png"
+  ],
+  "image_digests": {
+    "V-687fc5064dc8775617a1b41562a1aff4b86864f0fcc7eee4fdf59797e6a6bff9.png": "d01e76c5a8e6d11181d81bfafb7e9902f76149aaead239f1cf6084004545fe09"
+  }
+}

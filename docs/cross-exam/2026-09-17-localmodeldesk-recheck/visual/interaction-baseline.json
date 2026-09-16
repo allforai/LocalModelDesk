@@ -1,0 +1,65 @@
+{
+ "status": "confirmed",
+ "note": "候选交互规则：动作与反馈的约定，供 /superstorm:cross-exam 视觉验收逐类确认。layout 类写的是手势行程与抽屉行程，不是窗口宽度。",
+ "drafted_at": "2026-09-16",
+ "drafted_from": {
+  "code": "desk/static/js/panes/chat.js, desk/static/js/app.js, macos/MainWindowController.swift, macos/AppDelegate.swift"
+ },
+ "categories": {
+  "navigation": {
+   "rules": [
+    "Tab 遍历界面里每一个控件——包括按钮，而不只是链接与输入框（WebKit 默认跳过按钮，外壳用 tabFocusesLinks 打开）。",
+    "⌘, 打开设置抽屉，不论当前在哪个标签；再次触发或点关闭回到原标签。",
+    "点标签切换页面时地址栏 hash 同步改变，直接改 hash 也切换页面。",
+    "媒体库的「在访达中显示」打开文件夹，不自动播放也不自动打开文件。"
+   ],
+   "confirmation": "四类原样确认",
+   "confirmed_at": "2026-09-16",
+   "basis": "macos/MainWindowController.swift:25；macos/AppDelegate.swift installSettingsShortcut；desk/static/js/app.js hash 路由",
+   "reference_images": {}
+  },
+  "feedback": {
+   "rules": [
+    "发送后立刻出现助手占位并开始流式输出；期间发送按钮变「停止」，点它当场停下并保留已生成的内容。",
+    "停止或出错后，会话摘要写明「已停止」或错误原因，不留一条既无内容又无说明的回答。",
+    "长耗时动作（下载、生成）显示进度与可取消入口；取消后状态回到可再次开始，不需要刷新。",
+    "危险动作（删除会话、删除模型）先弹确认对话框，默认焦点不在危险按钮上。"
+   ],
+   "confirmation": "四类原样确认",
+   "confirmed_at": "2026-09-16",
+   "basis": "desk/static/js/panes/chat.js streamAbort/停止分支；desk/static/js/widgets/confirm.js + panes/resources.js:127 确认框（默认焦点未经验证，属待验条款）",
+   "reference_images": {}
+  },
+  "states": {
+   "rules": [
+    "同一时刻只有一个模型持有内存：切换模型时先驱逐再加载，界面显示谁被驱逐、为什么。",
+    "服务不可达时状态条转危险色并给出可操作的下一步（重试 / 看日志），不只是报错文本。",
+    "输入为空或模型未就绪时发送按钮禁用，且禁用原因写在旁边，不靠猜。"
+   ],
+   "confirmation": "四类原样确认",
+   "confirmed_at": "2026-09-16",
+   "basis": "desk/static/js/widgets/statusbar.js；desk/llm/service.py status()",
+   "reference_images": {}
+  },
+  "layout": {
+   "rules": [
+    "设置抽屉从右侧滑入，行程等于抽屉宽度，滑动期间背景遮罩同步淡入。",
+    "消息列表在流式输出时保持贴底。注意：现在的代码每次追加都无条件跳到底部（chat.js:171,211），用户上滚后仍会被拉回——「上滚后不再跟随」是候选规则里的提案，确认它等于接受一条已知缺口。"
+   ],
+   "confirmation": "再加一条：窄档会话列必须让位（推荐）",
+   "confirmed_at": "2026-09-16",
+   "basis": "app.css:158 过渡；desk/static/js/panes/chat.js:171,211 无条件贴底",
+   "reference_images": {}
+  },
+  "motion": {
+   "rules": [
+    "抽屉与遮罩 150ms；没有其它动效，也没有加载骨架屏动画。",
+    "系统开启「减弱动态效果」时上述过渡关闭，功能不受影响。"
+   ],
+   "confirmation": "四类原样确认",
+   "confirmed_at": "2026-09-16",
+   "basis": "app.css:158-160",
+   "reference_images": {}
+  }
+ }
+}

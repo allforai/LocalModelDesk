@@ -7,6 +7,13 @@ import Foundation
 enum MainWindowMinSize {
   static let width: Double = 900
   static let height: Double = 600
+
+  /// Clamp a requested content size up to the floor. The probe's /window route goes through this so it
+  /// cannot park the app at a size a user could never drag it to: `contentMinSize` constrains live
+  /// resizing only — `setContentSize:` is programmatic and walks straight past it (measured, 2026-09-17).
+  static func clamped(width: Int, height: Int) -> (width: Int, height: Int) {
+    (max(width, Int(Self.width)), max(height, Int(Self.height)))
+  }
 }
 
 /// The values a visual-acceptance capture has to read back from inside the running app: setting an axis

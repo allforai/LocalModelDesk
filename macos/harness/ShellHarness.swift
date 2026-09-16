@@ -24,6 +24,10 @@ struct ShellHarness {
       // Foundation-only constant (macos/VisualProbe.swift), so this asserts the exact value
       // MainWindowController.swift feeds to NSWindow.contentMinSize without linking AppKit.
       print("\(Int(MainWindowMinSize.width))x\(Int(MainWindowMinSize.height))")
+    case "clamp-size":
+      guard args.count >= 3, let w = Int(args[1]), let h = Int(args[2]) else { exit(64) }
+      let got = MainWindowMinSize.clamped(width: w, height: h)
+      print("\(got.width)x\(got.height)")
     case "visual-probe":
       guard args.count >= 2, let port = UInt16(args[1]) else { exit(64) }
       runVisualProbe(port: port)

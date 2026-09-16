@@ -158,3 +158,20 @@ def test_error_page_is_dark_themed_and_names_the_reason():
     assert "<h1 class=\"danger\">服务未响应</h1>" in html and "服务无响应" in html
     assert 'class="danger"' in html and "<details>" in html and "/tmp/x.log" in html
     assert 'onclick="window.webkit.messageHandlers.shellRetry.postMessage' in html
+
+
+def test_a_resize_request_below_the_floor_is_clamped_not_honored():
+    """contentMinSize 只约束用户拖拽；setContentSize 是程序化的，会直接越过它——实测过：修这条之前
+    /window?width=400 被原样应用了。探针因此必须自己夹，否则它能把窗口摆成用户拖不到的尺寸，
+    矩阵就会拍到不可达的宽度。"""
+    harness = harness_path()
+    assert _clamp(harness, 400, 500) == "900x600"
+    assert _clamp(harness, 900, 600) == "900x600"
+    assert _clamp(harness, 1200, 800) == "1200x800"
+    assert _clamp(harness, 1200, 400) == "1200x600"
+
+
+def _clamp(harness, width, height):
+    out = subprocess.run([harness, "clamp-size", str(width), str(height)],
+                         capture_output=True, text=True, check=True)
+    return out.stdout.strip()

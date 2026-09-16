@@ -1,0 +1,344 @@
+{
+ "platform": "web",
+ "form_factor": "desktop",
+ "width_range": {
+  "min": 900,
+  "max": 1920,
+  "basis": "2026-09-17 用户裁定：contentMinSize 900×600，实测 /window?width=400 被夹到 900"
+ },
+ "layout_thresholds": [
+  {
+   "width": 1400,
+   "unit": "px",
+   "basis": "desk/static/app.css:2（--chat-col，聊天主列 max-width；用于 app.css:54 与 app.css:63）"
+  },
+  {
+   "width": 1300,
+   "unit": "px",
+   "basis": "desk/static/app.css:148（.firstrun-wrap max-width:min(1300px,calc(100% - 48px))）"
+  },
+  {
+   "width": 1100,
+   "unit": "px",
+   "basis": "desk/static/app.css:38（@media (max-width:1100px) 状态栏改用窄版文案、gap 16→10）"
+  },
+  {
+   "width": 899,
+   "unit": "px",
+   "basis": "desk/static/app.css:108（@media (max-width:899px) 视频/音乐面由双列改单列）"
+  },
+  {
+   "width": 640,
+   "unit": "px",
+   "basis": "desk/static/app.css:43（.form max-width:640px）"
+  },
+  {
+   "width": 520,
+   "unit": "px",
+   "basis": "desk/static/app.css:107（#pane-video,#pane-music 表单列 minmax(0,520px)）"
+  },
+  {
+   "width": 480,
+   "unit": "px",
+   "basis": "desk/static/app.css:135（.dialog max-width:480px）"
+  },
+  {
+   "width": 420,
+   "unit": "px",
+   "basis": "desk/static/app.css:139（#pane-settings width:min(420px,100%)）"
+  },
+  {
+   "width": 320,
+   "unit": "px",
+   "basis": "desk/static/app.css:135（.dialog min-width:320px）"
+  },
+  {
+   "width": 248,
+   "unit": "px",
+   "basis": "desk/static/app.css:51（.sessions 固定列宽 248px，flex:none，不随视口变化）"
+  },
+  {
+   "width": 40,
+   "unit": "em",
+   "basis": "desk/static/app.css:44（#fatal [data-fatal-text] max-width:40em）"
+  },
+  {
+   "width": 36,
+   "unit": "em",
+   "basis": "macos/ShellStatus.swift:105（错误页 main max-width:36em）"
+  }
+ ],
+ "locales": {
+  "supported": [
+   "zh-CN"
+  ],
+  "default": "zh-CN",
+  "rtl": [],
+  "basis": "desk/static/index.html:2 <html lang=\"zh-CN\">；packaging/Info.plist.template:11-15 CFBundleDevelopmentRegion=zh_CN、CFBundleLocalizations=[zh-Hans]；全树无 i18n 框架、无 locales/ 目录、无 .xcstrings/.lproj 源文件（dist/LocalModelDesk.app/Contents/Resources/zh-Hans.lproj 是构建产物，不在源码树）",
+  "declined": []
+ },
+ "axis_support": {
+  "appearance": {
+   "supported": [
+    "dark"
+   ],
+   "basis": "desk/static/app.css:2 :root{color-scheme:dark} 单套深色令牌；全树无 prefers-color-scheme 媒体查询、无 data-theme 切换点、无 Tailwind；macos/AppDelegate.swift:16 NSApp.appearance = .darkAqua 把原生 chrome 也钉死在深色",
+   "declined": []
+  },
+  "dynamic_type": {
+   "supported": [
+    "浏览器缩放 100%"
+   ],
+   "basis": "desk/static/app.css:7 body{font:14px/1.5}，字号一律 px（13/14/16/20/12px），无 rem/em 字号、无 clamp()、无 .dynamicTypeSize；仅 app.css:44 的 40em 与 app.css:163 的 12em 是 em 长度。代码未声明任何字号缩放分支，缩放行为全靠宿主 WKWebView",
+   "declined": []
+  },
+  "orientation": {
+   "supported": [
+    "landscape"
+   ],
+   "basis": "macOS 桌面窗口本身（macos/MainWindowController.swift:15）；全树无 CSS orientation 媒体查询、无 UISupportedInterfaceOrientations、无 android:screenOrientation——代码没有任何按方向的分支",
+   "declined": []
+  },
+  "pointer": {
+   "supported": [
+    "mouse"
+   ],
+   "basis": "平台本身：macOS 应用包里的 WKWebView（macos/MainWindowController.swift:26）。app.css 无 (hover: hover)/(pointer: fine|coarse)/(any-pointer: coarse) 查询，也无 touch/pointer 事件监听；但存在只在指点设备悬停时才出现的控件——desk/static/app.css:79-80 .session-actions{visibility:hidden} + .session:hover/.session:focus-within 才可见，以及 desk/static/app.css:165-168 的常显滚动条样式（注释注明「接鼠标时 macOS 常显滚动条」，tests/e2e/conftest.py:59 也为此关掉 --hide-scrollbars）。macos/VisualProbe.swift:26-28 在运行时读回 pointer/hover/any_pointer_coarse，说明真实指点设备由环境决定而非代码",
+   "declined": []
+  }
+ },
+ "surfaces": [
+  {
+   "id": "U2",
+   "entry": "desk/static/index.html:#statusbar；desk/static/js/widgets/statusbar.js:createStatusBar",
+   "kind": "component",
+   "scrollable": false,
+   "axes": {
+    "state": [
+     "tone=ok",
+     "tone=busy",
+     "tone=error",
+     "offline=1 服务失联",
+     "holder badge: ok(llm)/busy(媒体)/none(无)",
+     "宽版文案 >1100px",
+     "窄版文案 ≤1100px",
+     "resize-drag"
+    ],
+    "device": [
+     "900x600@2",
+     "940x600@2",
+     "1099x700@2",
+     "1100x700@2",
+     "1300x800@2",
+     "1400x900@2",
+     "1920x1080@2"
+    ],
+    "os": [
+     "macOS 26.0 WKWebView"
+    ],
+    "appearance": [
+     "dark"
+    ],
+    "dynamic_type": [
+     "浏览器缩放 100%"
+    ],
+    "locale": [
+     "zh-CN"
+    ],
+    "orientation": [
+     "landscape"
+    ],
+    "pointer": [
+     "mouse"
+    ]
+   },
+   "motion_states": [
+    "resize-drag"
+   ],
+   "anchor": {
+    "state": "tone=ok",
+    "device": "1400x900@2"
+   },
+   "abstractions": [
+    {
+     "axis": "device",
+     "cross_with": [],
+     "basis": "这些面没有多列布局，也没有固定宽度元素",
+     "confirmation": "三条都对，开跑",
+     "confirmed_at": "2026-09-17"
+    }
+   ]
+  },
+  {
+   "id": "U4",
+   "entry": "desk/static/index.html:#pane-chat；desk/static/js/panes/chat.js:createChatPane",
+   "kind": "screen",
+   "scrollable": true,
+   "axes": {
+    "state": [
+     "模型下拉：未下载/不完整项 disabled",
+     "未加载",
+     "加载中（卸载按钮变「取消加载」）",
+     "已加载",
+     "被媒体让出内存（evicted，媒体在忙/已结束两种文案）",
+     "加载失败（log_tail 挂 title）",
+     "空会话空态",
+     "流式回答中（发送键变「停止」、composer 半透明）",
+     "思考折叠块 已思考 N 秒",
+     "流被中断/被停止/上游错误",
+     "重试行",
+     "内联错误",
+     "scroll-bottom",
+     "resize-drag"
+    ],
+    "device": [
+     "900x600@2",
+     "940x600@2",
+     "1099x700@2",
+     "1100x700@2",
+     "1300x800@2",
+     "1400x900@2",
+     "1920x1080@2"
+    ],
+    "os": [
+     "macOS 26.0 WKWebView"
+    ],
+    "appearance": [
+     "dark"
+    ],
+    "dynamic_type": [
+     "浏览器缩放 100%"
+    ],
+    "locale": [
+     "zh-CN"
+    ],
+    "orientation": [
+     "landscape"
+    ],
+    "pointer": [
+     "mouse"
+    ]
+   },
+   "motion_states": [
+    "resize-drag"
+   ],
+   "anchor": {
+    "state": "模型下拉：未下载/不完整项 disabled",
+    "device": "1400x900@2"
+   }
+  },
+  {
+   "id": "U5",
+   "entry": "desk/static/index.html:#pane-chat .sessions；desk/static/js/panes/chat.js:renderSessionList",
+   "kind": "component",
+   "scrollable": true,
+   "axes": {
+    "state": [
+     "当前会话高亮 aria-current",
+     "hover/focus-within 才露出改名与删除按钮",
+     "就地改名输入框",
+     "删除确认对话框",
+     "列表为空时自动建一个会话",
+     "scroll-bottom",
+     "resize-drag"
+    ],
+    "device": [
+     "900x600@2",
+     "940x600@2",
+     "1099x700@2",
+     "1100x700@2",
+     "1300x800@2",
+     "1400x900@2",
+     "1920x1080@2"
+    ],
+    "os": [
+     "macOS 26.0 WKWebView"
+    ],
+    "appearance": [
+     "dark"
+    ],
+    "dynamic_type": [
+     "浏览器缩放 100%"
+    ],
+    "locale": [
+     "zh-CN"
+    ],
+    "orientation": [
+     "landscape"
+    ],
+    "pointer": [
+     "mouse"
+    ]
+   },
+   "motion_states": [
+    "resize-drag"
+   ],
+   "anchor": {
+    "state": "当前会话高亮 aria-current",
+    "device": "1400x900@2"
+   },
+   "abstractions": [
+    {
+     "axis": "device",
+     "cross_with": [],
+     "basis": "这些面没有多列布局，也没有固定宽度元素",
+     "confirmation": "三条都对，开跑",
+     "confirmed_at": "2026-09-17"
+    }
+   ]
+  },
+  {
+   "id": "U6",
+   "entry": "desk/static/index.html:#pane-video；desk/static/js/panes/video.js:createVideoPane",
+   "kind": "screen",
+   "scrollable": false,
+   "axes": {
+    "state": [
+     "文生视频",
+     "图生视频（首帧/尾帧、预览、清除尾帧）",
+     "视频参考生成（参考视频、音轨复选）",
+     "上传中/上传失败",
+     "画幅与时长下拉、步数",
+     "成本提示",
+     "互斥不可开工提示",
+     "内联错误",
+     "resize-drag"
+    ],
+    "device": [
+     "900x600@2",
+     "940x600@2",
+     "1099x700@2",
+     "1100x700@2",
+     "1300x800@2",
+     "1400x900@2",
+     "1920x1080@2"
+    ],
+    "os": [
+     "macOS 26.0 WKWebView"
+    ],
+    "appearance": [
+     "dark"
+    ],
+    "dynamic_type": [
+     "浏览器缩放 100%"
+    ],
+    "locale": [
+     "zh-CN"
+    ],
+    "orientation": [
+     "landscape"
+    ],
+    "pointer": [
+     "mouse"
+    ]
+   },
+   "motion_states": [
+    "resize-drag"
+   ],
+   "anchor": {
+    "state": "文生视频",
+    "device": "1400x900@2"
+   }
+  }
+ ]
+}

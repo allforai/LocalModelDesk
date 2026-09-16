@@ -98,9 +98,11 @@ extension MainWindowController: VisualProbeTarget {
   }
 
   func probeResize(width: Int, height: Int, _ done: @escaping (Result<String, ProbeFailure>) -> Void) {
-    // setContentSize clamps to window.contentMinSize/contentMaxSize (issue #13): a request below the
-    // 900×600 floor is honored only up to that floor, which is the point of setting the floor at all.
-    window.setContentSize(NSSize(width: width, height: height))
+    // contentMinSize constrains live (user) resizing only; setContentSize walks past it, so the probe
+    // clamps explicitly — it must not park the window at a size no user could drag it to (issue #13,
+    // measured 2026-09-17: a /window?width=400 request was applied verbatim before this).
+    let floored = MainWindowMinSize.clamped(width: width, height: height)
+    window.setContentSize(NSSize(width: floored.width, height: floored.height))
     showWindow()
     // The web view learns its new size on the next layout pass; answering earlier would hand the
     // capture a width the page has not applied yet.

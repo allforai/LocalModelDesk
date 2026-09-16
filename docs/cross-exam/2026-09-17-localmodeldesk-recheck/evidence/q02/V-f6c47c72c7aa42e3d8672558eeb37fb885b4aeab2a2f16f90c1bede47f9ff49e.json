@@ -1,0 +1,73 @@
+{
+  "state": "文生视频",
+  "device": "1920x1080@2",
+  "os": "macOS 26.0 WKWebView",
+  "appearance": "dark",
+  "dynamic_type": "浏览器缩放 100%",
+  "locale": "zh-CN",
+  "orientation": "landscape",
+  "pointer": "mouse",
+  "baseline_digest": "a67149ce515333297d2e371fd32b00b90c6421392f6657340317fe0a26570367",
+  "interaction_digest": "08a9a1b39c83beab05c4fd9480ee72902c987c2d702ec08eabd648d15494a9f7",
+  "inventory_digest": "cbf91e5ea7bfe1b3e0329467b2ff9893e8549f6af17df7127f2d093352e1dce9",
+  "matrix_digest": "f9d989c0dfdffaaeb4c566036c62eecbb46a39ef3cd87ec0e0c3c24dd6f51df3",
+  "case_id": "V-f6c47c72c7aa42e3d8672558eeb37fb885b4aeab2a2f16f90c1bede47f9ff49e",
+  "label": "U6 @1920",
+  "build": "978bde4+2f07a8a61c48",
+  "captured_at": "2026-09-17T03:12:23+09:00",
+  "capture_mode": "viewport",
+  "headless": false,
+  "scrollbars": "overlay",
+  "scroll_profile": {
+    "scroll_width": 1920,
+    "client_width": 1920,
+    "scroll_height": 924,
+    "client_height": 924,
+    "gutter_px": 0
+  },
+  "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+  "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+      "value": "#tab=video"
+    }
+  },
+  "window": {
+    "window_number": 5365,
+    "height": 1018,
+    "width": 1920,
+    "backing_scale": 2
+  },
+  "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1920,
+    "height": 1018,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "dynamic_type": "浏览器缩放 100%",
+    "orientation": "landscape",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+      "scroll_width": 1920,
+      "client_width": 1920,
+      "scroll_height": 924,
+      "client_height": 924,
+      "gutter_px": 0
+    },
+    "scroll_source": "#pane-video",
+    "pane": "#pane-video",
+    "session_list_profile": null,
+    "tab": "tab=video"
+  },
+  "images": [
+    "V-f6c47c72c7aa42e3d8672558eeb37fb885b4aeab2a2f16f90c1bede47f9ff49e.png"
+  ],
+  "image_digests": {
+    "V-f6c47c72c7aa42e3d8672558eeb37fb885b4aeab2a2f16f90c1bede47f9ff49e.png": "85bc1d896d4faac4212222125743e61301b46b34e724dcdbf9496834c7056bbc"
+  }
+}
