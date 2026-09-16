@@ -1,0 +1,75 @@
+{
+  "state": "模型下拉：未下载/不完整项 disabled",
+  "device": "1920x1080@2",
+  "os": "macOS 26.0 WKWebView",
+  "appearance": "dark",
+  "dynamic_type": "浏览器缩放 100%",
+  "locale": "zh-CN",
+  "orientation": "landscape",
+  "pointer": "mouse",
+  "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+  "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+  "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+  "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+  "case_id": "V-97e5b1a42d26b88b5eb0c3f6f158337212ff1a380e0cb8f72667dcdd5bb75fa9",
+  "label": "U4 模型下拉：未下载/不完整项 disabled @1920",
+  "build": "cda38b8+a00ccb56c765",
+  "captured_at": "2026-09-16T19:17:46+09:00",
+  "capture_mode": "viewport",
+  "headless": false,
+  "scrollbars": "overlay",
+  "scroll_profile": {
+    "scroll_width": 1400,
+    "client_width": 1400,
+    "scroll_height": 754,
+    "client_height": 754,
+    "gutter_px": 0
+  },
+  "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+  "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+      "value": "#tab=chat"
+    }
+  },
+  "window": {
+    "width": 1920,
+    "backing_scale": 2,
+    "height": 1018,
+    "window_number": 4672
+  },
+  "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1920,
+    "height": 1018,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+      "scroll_width": 1400,
+      "client_width": 1400,
+      "scroll_height": 754,
+      "client_height": 754,
+      "gutter_px": 0
+    },
+    "session_list_profile": {
+      "scroll_width": 240,
+      "client_width": 240,
+      "scroll_height": 900,
+      "client_height": 884,
+      "gutter_px": 8
+    },
+    "tab": "tab=chat"
+  },
+  "images": [
+    "V-97e5b1a42d26b88b5eb0c3f6f158337212ff1a380e0cb8f72667dcdd5bb75fa9.png"
+  ],
+  "image_digests": {
+    "V-97e5b1a42d26b88b5eb0c3f6f158337212ff1a380e0cb8f72667dcdd5bb75fa9.png": "cd43ac6e632af274811da67a4dc5dc99007d2e59b41719e4333cdd01cebc1bb7"
+  }
+}

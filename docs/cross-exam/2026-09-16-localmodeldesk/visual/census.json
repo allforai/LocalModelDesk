@@ -1,0 +1,965 @@
+{
+ "surfaces": [
+  {
+   "id": "S1",
+   "name": "读配置",
+   "entry": "GET /api/config → desk/foundation/routes.py:get_config"
+  },
+  {
+   "id": "S2",
+   "name": "写配置",
+   "entry": "PUT /api/config → desk/foundation/routes.py:put_config"
+  },
+  {
+   "id": "S3",
+   "name": "重置损坏配置",
+   "entry": "POST /api/config/reset → desk/foundation/routes.py:post_config_reset"
+  },
+  {
+   "id": "S4",
+   "name": "路径与能力自检",
+   "entry": "GET /api/paths → desk/foundation/routes.py:get_paths"
+  },
+  {
+   "id": "S5",
+   "name": "完成首次运行",
+   "entry": "POST /api/first-run → desk/foundation/routes.py:post_first_run"
+  },
+  {
+   "id": "S6",
+   "name": "收编既有模型目录树（point/move）",
+   "entry": "POST /api/adopt → desk/foundation/routes.py:post_adopt"
+  },
+  {
+   "id": "S7",
+   "name": "自动扫描本机模型目录",
+   "entry": "POST /api/models/discover → desk/foundation/routes.py:post_discover"
+  },
+  {
+   "id": "S8",
+   "name": "模型目录（catalog）",
+   "entry": "GET /api/resources/catalog → desk/resources/http.py:get_catalog"
+  },
+  {
+   "id": "S9",
+   "name": "全量校验 + 磁盘",
+   "entry": "GET /api/resources/status → desk/resources/http.py:get_status"
+  },
+  {
+   "id": "S10",
+   "name": "单模型校验",
+   "entry": "GET /api/resources/status/{key} → desk/resources/http.py:get_status_one"
+  },
+  {
+   "id": "S11",
+   "name": "下载进度",
+   "entry": "GET /api/resources/download → desk/resources/http.py:get_download"
+  },
+  {
+   "id": "S12",
+   "name": "开始/续传下载",
+   "entry": "POST /api/resources/download → desk/resources/http.py:post_download"
+  },
+  {
+   "id": "S13",
+   "name": "取消下载",
+   "entry": "POST /api/resources/download/cancel → desk/resources/http.py:post_cancel"
+  },
+  {
+   "id": "S14",
+   "name": "删除模型（需 confirm=key）",
+   "entry": "POST /api/resources/delete → desk/resources/http.py:post_delete"
+  },
+  {
+   "id": "S15",
+   "name": "磁盘用量",
+   "entry": "GET /api/resources/disk → desk/resources/http.py:get_disk"
+  },
+  {
+   "id": "S16",
+   "name": "加载聊天模型",
+   "entry": "POST /api/llm/load → desk/llm/routes.py:_load"
+  },
+  {
+   "id": "S17",
+   "name": "卸载/取消加载",
+   "entry": "POST /api/llm/unload → desk/llm/routes.py:_unload"
+  },
+  {
+   "id": "S18",
+   "name": "LLM 状态",
+   "entry": "GET /api/llm/status → desk/llm/routes.py:build_routes"
+  },
+  {
+   "id": "S19",
+   "name": "非流式补全（脚本/网关契约）",
+   "entry": "POST /api/llm/chat → desk/llm/routes.py:_chat"
+  },
+  {
+   "id": "S20",
+   "name": "流式补全（SSE）",
+   "entry": "POST /api/llm/chat/stream → desk/llm/routes.py:_chat_stream"
+  },
+  {
+   "id": "S21",
+   "name": "提示词助手（看手气/优化）",
+   "entry": "POST /api/llm/prompt-assist → desk/llm/routes.py:_prompt_assist"
+  },
+  {
+   "id": "S22",
+   "name": "上传媒体素材（45MB 传输上限 / 32MB 文案）",
+   "entry": "POST /api/media/inputs → desk/media/routes.py:build_routes；上限判定 desk/app.py:73"
+  },
+  {
+   "id": "S23",
+   "name": "起视频作业（text/image/reference）",
+   "entry": "POST /api/media/video → desk/media/routes.py:start_video"
+  },
+  {
+   "id": "S24",
+   "name": "起音乐作业",
+   "entry": "POST /api/media/music → desk/media/routes.py:start_music"
+  },
+  {
+   "id": "S25",
+   "name": "取消媒体作业",
+   "entry": "POST /api/media/cancel → desk/media/routes.py:cancel"
+  },
+  {
+   "id": "S26",
+   "name": "媒体作业状态 + 增量日志",
+   "entry": "GET /api/media/job → desk/media/routes.py:status"
+  },
+  {
+   "id": "S27",
+   "name": "在访达打开成品目录",
+   "entry": "POST /api/outputs/reveal → desk/library/http.py:handle_reveal_folder"
+  },
+  {
+   "id": "S28",
+   "name": "在访达定位单个成品",
+   "entry": "POST /api/outputs/{name}/reveal → desk/library/http.py:handle_reveal_output"
+  },
+  {
+   "id": "S29",
+   "name": "成品字节流（支持 Range）",
+   "entry": "GET /api/outputs/{name} → desk/library/http.py:handle_serve_output"
+  },
+  {
+   "id": "S30",
+   "name": "成品列表",
+   "entry": "GET /api/outputs → desk/library/http.py:handle_list_outputs"
+  },
+  {
+   "id": "S31",
+   "name": "历史记录（limit）",
+   "entry": "GET /api/history → desk/library/http.py:handle_list_history"
+  },
+  {
+   "id": "S32",
+   "name": "会话列表",
+   "entry": "GET /api/sessions → desk/library/http.py:handle_list_sessions"
+  },
+  {
+   "id": "S33",
+   "name": "新建会话",
+   "entry": "POST /api/sessions → desk/library/http.py:handle_create_session"
+  },
+  {
+   "id": "S34",
+   "name": "更新会话（改名/存消息/换模型）",
+   "entry": "PATCH /api/sessions/{id} → desk/library/http.py:handle_update_session"
+  },
+  {
+   "id": "S35",
+   "name": "删除会话",
+   "entry": "DELETE /api/sessions/{id} → desk/library/http.py:handle_delete_session"
+  },
+  {
+   "id": "S36",
+   "name": "台面互斥状态",
+   "entry": "GET /api/state → desk/runtime.py:119"
+  },
+  {
+   "id": "S37",
+   "name": "内存快照",
+   "entry": "GET /api/memory → desk/runtime.py:120"
+  },
+  {
+   "id": "S38",
+   "name": "读对外网关配置与状态",
+   "entry": "GET /api/gateway/config → desk/runtime.py:121"
+  },
+  {
+   "id": "S39",
+   "name": "应用对外网关配置（含绑定失败回滚）",
+   "entry": "POST /api/gateway/config → desk/runtime.py:124；desk/gateway/service.py:apply_config"
+  },
+  {
+   "id": "S40",
+   "name": "首页 HTML（\"\"/\"/\"/\"/index.html\"）",
+   "entry": "GET / → desk/ui.py:StaticAssets.resolve"
+  },
+  {
+   "id": "S41",
+   "name": "静态资源（仅 .html/.css/.js，根目录逃逸被拒）",
+   "entry": "GET /static/* → desk/ui.py:StaticAssets.resolve"
+  },
+  {
+   "id": "S42",
+   "name": "网关：OpenAI 模型列表",
+   "entry": "GET /v1/models :8770 → desk/gateway/http_server.py:do_GET"
+  },
+  {
+   "id": "S43",
+   "name": "网关：OpenAI 对话（流式/非流式）",
+   "entry": "POST /v1/chat/completions :8770 → desk/gateway/http_server.py:_chat(openai_dialect)"
+  },
+  {
+   "id": "S44",
+   "name": "网关：Anthropic messages（流式/非流式）",
+   "entry": "POST /v1/messages :8770 → desk/gateway/http_server.py:_chat(anthropic_dialect)"
+  },
+  {
+   "id": "S45",
+   "name": "网关准入闸（媒体忙/未加载/模型不符 → 503 + Retry-After）",
+   "entry": "desk/gateway/guard.py:admit"
+  },
+  {
+   "id": "S46",
+   "name": "网关 LAN 地址枚举（跳过 utun/CGNAT）",
+   "entry": "desk/gateway/lan.py:lan_candidates / pick_lan_host"
+  },
+  {
+   "id": "S47",
+   "name": "视觉探针：读回渲染实值",
+   "entry": "GET /readback :$LMD_PROBE_PORT → macos/VisualProbe.swift:handle"
+  },
+  {
+   "id": "S48",
+   "name": "视觉探针：设置窗口内容尺寸",
+   "entry": "GET /window?width&height → macos/VisualProbe.swift:handle"
+  },
+  {
+   "id": "S49",
+   "name": "视觉探针：WKWebView PNG 截图",
+   "entry": "GET /snapshot → macos/VisualProbe.swift:handle"
+  },
+  {
+   "id": "S50",
+   "name": "mlx-lm 子进程后端契约（出站）",
+   "entry": "desk/llm/backend.py:MlxLmBackend spawn/health/chat/chat_stream → 127.0.0.1:8767 /v1/models, /v1/chat/completions"
+  },
+  {
+   "id": "S51",
+   "name": "应用主菜单（关于 / 设置…⌘, / 隐藏 ⌘H / 隐藏其他 ⌥⌘H / 全部显示 / 退出 ⌘Q）",
+   "entry": "macos/AppDelegate.swift:buildMainMenu"
+  },
+  {
+   "id": "S52",
+   "name": "文件菜单（关闭窗口 ⌘W）",
+   "entry": "macos/AppDelegate.swift:buildMainMenu"
+  },
+  {
+   "id": "S53",
+   "name": "编辑菜单（撤销/重做/剪切/复制/粘贴/粘贴并匹配样式/删除/全选）",
+   "entry": "macos/AppDelegate.swift:buildMainMenu"
+  },
+  {
+   "id": "S54",
+   "name": "窗口菜单（最小化 ⌘M / 进入全屏幕 ⌃⌘F）",
+   "entry": "macos/AppDelegate.swift:buildMainMenu"
+  },
+  {
+   "id": "S55",
+   "name": "⌘, 本地键盘监听（WKWebView 吞掉键等价物的补偿）",
+   "entry": "macos/AppDelegate.swift:installSettingsShortcut / macos/ShellStatus.swift:isSettingsShortcut"
+  },
+  {
+   "id": "S56",
+   "name": "菜单栏状态项与其菜单（状态行/内存行/打开窗口/打开成品目录/设置…/退出）",
+   "entry": "macos/StatusItemController.swift:init"
+  },
+  {
+   "id": "S57",
+   "name": "WKWebView 上下文菜单（重新载入本地化）",
+   "entry": "macos/MainWindowController.swift:DeskWebView.willOpenMenu"
+  },
+  {
+   "id": "S58",
+   "name": "主窗口生命周期（关闭即隐藏、Dock 重开、最后一窗关闭不退出）",
+   "entry": "macos/MainWindowController.swift:windowShouldClose；macos/AppDelegate.swift:applicationShouldTerminateAfterLastWindowClosed/applicationShouldHandleReopen"
+  },
+  {
+   "id": "S59",
+   "name": "原生首次运行流程（使用默认目录/选择其他目录…/收编既有目录树… → 指向|移动 → 失败后 重选|稍后再说）",
+   "entry": "macos/FirstRunFlow.swift:run"
+  },
+  {
+   "id": "S60",
+   "name": "模型目录选择面板 NSOpenPanel",
+   "entry": "macos/ModelsDirectoryChooser.swift:choose"
+  },
+  {
+   "id": "S61",
+   "name": "服务失败错误页 + 重试（shellRetry message handler）",
+   "entry": "macos/ShellStatus.swift:errorPageHTML；macos/MainWindowController.swift:userContentController"
+  },
+  {
+   "id": "S62",
+   "name": "服务启动：健康检查、端口占用判定、附着已有健康实例",
+   "entry": "macos/ServerController.swift:spawnEmbeddedServer"
+  },
+  {
+   "id": "S63",
+   "name": "退出时按进程组同步收割子进程并核验端口已释放",
+   "entry": "macos/ServerController.swift:terminateEmbeddedServer；macos/PortGuard.swift:reap/familyByGroup"
+  },
+  {
+   "id": "S64",
+   "name": "外壳 3 秒轮询 /api/state 与 /api/memory（连续失败 → 退出/无响应两种错误页）",
+   "entry": "macos/StatusPoller.swift:start；macos/ShellStatus.swift:pollFailureAction"
+  },
+  {
+   "id": "S65",
+   "name": "网页 2 秒 tick（状态栏/互斥/作业/会话/助手可用性）",
+   "entry": "desk/static/js/main.js:tick（setInterval 2000）"
+  },
+  {
+   "id": "S66",
+   "name": "父进程看门狗（LMD_PARENT_PID 消失即退出）",
+   "entry": "desk/__main__.py:watch_parent"
+  },
+  {
+   "id": "S67",
+   "name": "SIGTERM/SIGINT 优雅退出与自成进程组",
+   "entry": "desk/__main__.py:install_termination / ensure_own_process_group"
+  },
+  {
+   "id": "S68",
+   "name": "媒体作业 worker 线程 + 子进程执行器",
+   "entry": "desk/media/service.py:147；desk/media/executor.py:SubprocessExecutor"
+  },
+  {
+   "id": "S69",
+   "name": "下载线程 + fetch_cli 子进程（分片续传）",
+   "entry": "desk/resources/downloader.py:42；desk/resources/service.py:26"
+  },
+  {
+   "id": "S70",
+   "name": "内存采样线程（sample_interval 1.0s）",
+   "entry": "desk/resources/service.py:47"
+  },
+  {
+   "id": "S71",
+   "name": "网关监听线程",
+   "entry": "desk/gateway/service.py:72"
+  },
+  {
+   "id": "S72",
+   "name": "仲裁器端口收割（lsof → SIGTERM → SIGKILL）",
+   "entry": "desk/arbiter/reaper.py:reap_port / port_listeners"
+  },
+  {
+   "id": "S73",
+   "name": "CLI：台面服务",
+   "entry": "python3 -m desk → desk/__main__.py:main"
+  },
+  {
+   "id": "S74",
+   "name": "CLI：可续传模型抓取器",
+   "entry": "desk/resources/fetch_cli.py:main（download 子命令，--endpoint/HF_TOKEN）"
+  },
+  {
+   "id": "S75",
+   "name": "CLI：Music 3 生成子进程",
+   "entry": "desk/media/music3_cli.py:main"
+  },
+  {
+   "id": "S76",
+   "name": "CLI：构建 app 包",
+   "entry": "scripts/build-app.sh"
+  },
+  {
+   "id": "S77",
+   "name": "CLI：编译窗口级验收外壳二进制",
+   "entry": "scripts/build-shell-app.sh"
+  },
+  {
+   "id": "S78",
+   "name": "CLI：编译无 AppKit 的生命周期无头 harness",
+   "entry": "scripts/shell-lifecycle-test.sh；macos/harness/ShellHarness.swift"
+  },
+  {
+   "id": "S79",
+   "name": "CLI：签名 app 包",
+   "entry": "scripts/sign-app.sh"
+  },
+  {
+   "id": "S80",
+   "name": "CLI：只读验包 V1–V8",
+   "entry": "scripts/verify-app.sh"
+  },
+  {
+   "id": "S81",
+   "name": "CLI：安装 app",
+   "entry": "scripts/install-app.sh"
+  },
+  {
+   "id": "S82",
+   "name": "CLI：卸载 app 与遗留 LaunchAgent",
+   "entry": "scripts/uninstall-app.sh"
+  },
+  {
+   "id": "S83",
+   "name": "CLI：真实网络续传冒烟（人工）",
+   "entry": "scripts/resources_resume_smoke.sh"
+  },
+  {
+   "id": "S84",
+   "name": "CLI：真实模型树只读扫描（人工）",
+   "entry": "scripts/verify_real_models.py"
+  },
+  {
+   "id": "S85",
+   "name": "CLI：视觉取证（驱动探针写 png+json 记录）",
+   "entry": "scripts/visual-capture.py"
+  },
+  {
+   "id": "S86",
+   "name": "环境变量入口：LMD_SHELL_PORT / LMD_PARENT_PID / LMD_PROBE_PORT",
+   "entry": "desk/__main__.py:44,77；macos/DeskPaths.swift:5；macos/VisualProbe.swift:configuredPort"
+  },
+  {
+   "id": "S87",
+   "name": "环境变量入口：LOCALMODELDESK_DATA_ROOT / _MODEL_SCAN_ROOTS / _MLX_H3 / _HF / _<工具名>",
+   "entry": "desk/foundation/paths.py:73,85,93；desk/foundation/firstrun.py:56；desk/media/inputs.py:23"
+  },
+  {
+   "id": "S88",
+   "name": "环境变量入口：HF_TOKEN / HUGGING_FACE_HUB_TOKEN / HF_ENDPOINT",
+   "entry": "desk/resources/fetch_cli.py:81,94"
+  },
+  {
+   "id": "S89",
+   "name": "测试合成根（独立 composition root，非生产 runtime）",
+   "entry": "desk/testing/harness.py:launch_test_harness"
+  }
+ ],
+ "dead_contracts": [
+  {
+   "name": "ResourceEvents.subscribe_progress",
+   "entry": "desk/resources/events.py:subscribe_progress",
+   "defined_at": "desk/resources/events.py:20"
+  },
+  {
+   "name": "ResourceEvents.subscribe_finished",
+   "entry": "desk/resources/events.py:subscribe_finished",
+   "defined_at": "desk/resources/events.py:26"
+  },
+  {
+   "name": "MediaService.on_job_finished",
+   "entry": "desk/media/service.py:on_job_finished",
+   "defined_at": "desk/media/service.py:223"
+  },
+  {
+   "name": "PortGuard.family(matching:)",
+   "entry": "macos/PortGuard.swift:family(matching:pgrepTool:)",
+   "defined_at": "macos/PortGuard.swift:13"
+  },
+  {
+   "name": "GET /api/paths",
+   "entry": "GET /api/paths → desk/foundation/routes.py:get_paths",
+   "defined_at": "desk/foundation/routes.py:106"
+  },
+  {
+   "name": "GET /api/resources/status/{key}",
+   "entry": "GET /api/resources/status/{key} → desk/resources/http.py:get_status_one",
+   "defined_at": "desk/resources/http.py:72"
+  },
+  {
+   "name": "POST /api/llm/chat",
+   "entry": "POST /api/llm/chat → desk/llm/routes.py:_chat",
+   "defined_at": "desk/llm/routes.py:51"
+  },
+  {
+   "name": "POST /api/adopt 的 target_root 入参",
+   "entry": "desk/foundation/routes.py:post_adopt(target_root)",
+   "defined_at": "desk/foundation/routes.py:84"
+  }
+ ],
+ "ui_surfaces": [
+  {
+   "id": "U1",
+   "name": "首次运行页",
+   "entry": "desk/static/index.html:#pane-firstrun；desk/static/js/panes/firstrun.js:createFirstRunPane",
+   "kind": "screen",
+   "states": [
+    "needs_setup 进入",
+    "继续使用当前目录卡片（已有可识别模型时才显示）",
+    "选择 models 目录",
+    "扫描到的候选列表 / 空列表",
+    "收编：指向",
+    "收编：移动",
+    "提交失败内联错误"
+   ]
+  },
+  {
+   "id": "U2",
+   "name": "状态栏（内存/持有者/媒体/可否开工/设置入口）",
+   "entry": "desk/static/index.html:#statusbar；desk/static/js/widgets/statusbar.js:createStatusBar",
+   "kind": "component",
+   "states": [
+    "tone=ok",
+    "tone=busy",
+    "tone=error",
+    "offline=1 服务失联",
+    "holder badge: ok(llm)/busy(媒体)/none(无)",
+    "宽版文案 >1100px",
+    "窄版文案 ≤1100px"
+   ]
+  },
+  {
+   "id": "U3",
+   "name": "工作区标签条",
+   "entry": "desk/static/index.html:#tabs；desk/static/js/main.js:showTab",
+   "kind": "component",
+   "states": [
+    "chat/video/music/resources/library 五选一",
+    "active 下划线",
+    "hash #tab=… 同步",
+    "白名单外 hash 回落 chat"
+   ]
+  },
+  {
+   "id": "U4",
+   "name": "聊天页",
+   "entry": "desk/static/index.html:#pane-chat；desk/static/js/panes/chat.js:createChatPane",
+   "kind": "screen",
+   "states": [
+    "模型下拉：未下载/不完整项 disabled",
+    "未加载",
+    "加载中（卸载按钮变「取消加载」）",
+    "已加载",
+    "被媒体让出内存（evicted，媒体在忙/已结束两种文案）",
+    "加载失败（log_tail 挂 title）",
+    "空会话空态",
+    "流式回答中（发送键变「停止」、composer 半透明）",
+    "思考折叠块 已思考 N 秒",
+    "流被中断/被停止/上游错误",
+    "重试行",
+    "内联错误"
+   ]
+  },
+  {
+   "id": "U5",
+   "name": "会话侧栏",
+   "entry": "desk/static/index.html:#pane-chat .sessions；desk/static/js/panes/chat.js:renderSessionList",
+   "kind": "component",
+   "states": [
+    "当前会话高亮 aria-current",
+    "hover/focus-within 才露出改名与删除按钮",
+    "就地改名输入框",
+    "删除确认对话框",
+    "列表为空时自动建一个会话"
+   ]
+  },
+  {
+   "id": "U6",
+   "name": "视频页",
+   "entry": "desk/static/index.html:#pane-video；desk/static/js/panes/video.js:createVideoPane",
+   "kind": "screen",
+   "states": [
+    "文生视频",
+    "图生视频（首帧/尾帧、预览、清除尾帧）",
+    "视频参考生成（参考视频、音轨复选）",
+    "上传中/上传失败",
+    "画幅与时长下拉、步数",
+    "成本提示",
+    "互斥不可开工提示",
+    "内联错误"
+   ]
+  },
+  {
+   "id": "U7",
+   "name": "音乐页",
+   "entry": "desk/static/index.html:#pane-music；desk/static/js/panes/music.js:createMusicPane",
+   "kind": "screen",
+   "states": [
+    "风格描述必填",
+    "歌词必填",
+    "时长与实际时长说明",
+    "互斥不可开工提示",
+    "内联错误"
+   ]
+  },
+  {
+   "id": "U8",
+   "name": "媒体作业视图（视频/音乐共用）",
+   "entry": "desk/static/js/widgets/jobview.js:createJobView",
+   "kind": "component",
+   "states": [
+    "idle（空闲提示或互斥忙原因替换）",
+    "running（已用时长、进度条确定/不确定）",
+    "done（耗时 + 就地播放器）",
+    "error（错误卡 + 详情折叠）",
+    "cancelled",
+    "日志折叠区（增量追加/截断）"
+   ]
+  },
+  {
+   "id": "U9",
+   "name": "提示词助手行（看手气/优化提示词/恢复原文）",
+   "entry": "desk/static/js/widgets/prompt_assist.js:createPromptAssist",
+   "kind": "component",
+   "states": [
+    "不可用：先加载模型",
+    "不可用：媒体作业进行中",
+    "可用",
+    "模型正在写提示词…",
+    "覆盖前确认对话框",
+    "已优化 + 恢复原文可见"
+   ]
+  },
+  {
+   "id": "U10",
+   "name": "资源页",
+   "entry": "desk/static/index.html:#pane-resources；desk/static/js/panes/resources.js:createResourcesPane",
+   "kind": "screen",
+   "states": [
+    "badge 齐/一半 N%/没下/未知（含拿不到文件清单）",
+    "动作：下载/续传/取消/删除",
+    "已有下载在进行时其它行按钮 disabled + 原因",
+    "下载中：已下/总量、速率、剩余、当前文件",
+    "残片可续传与旧版残片提示",
+    "缺失文件折叠清单",
+    "磁盘剩余与模型目录行",
+    "删除确认对话框",
+    "内联错误"
+   ]
+  },
+  {
+   "id": "U11",
+   "name": "素材库页",
+   "entry": "desk/static/index.html:#pane-library；desk/static/js/panes/library.js:createLibraryPane",
+   "kind": "screen",
+   "states": [
+    "空态",
+    "成品+历史按时间倒序合并",
+    "完成/失败/已取消",
+    "就地播放（video/audio）",
+    "在访达显示",
+    "回填到视频/音乐表单",
+    "错误卡"
+   ]
+  },
+  {
+   "id": "U12",
+   "name": "设置抽屉",
+   "entry": "desk/static/index.html:#pane-settings；desk/static/js/panes/settings.js:createSettingsPane",
+   "kind": "overlay",
+   "states": [
+    "打开（body.drawer-open + 背景遮罩）",
+    "Esc 关闭",
+    "模型目录：使用此目录 / 自动扫描本机 / 重新设置模型目录…",
+    "对外 API 开关、主机、端口",
+    "listening 徽章",
+    "无鉴权告警",
+    "OpenAI / Anthropic base URL 与复制按钮（仅 listening 时显示）",
+    "LAN 候选地址说明",
+    "绑定失败 apply_error 与回滚",
+    "内联错误"
+   ]
+  },
+  {
+   "id": "U13",
+   "name": "确认对话框",
+   "entry": "desk/static/js/widgets/confirm.js:confirmDialog",
+   "kind": "overlay",
+   "states": [
+    "danger（删除模型/删除会话）",
+    "非 danger（换模型/内存警告/看手气替换）",
+    "点遮罩取消",
+    "Esc 取消",
+    "破坏性对话框不响应回车默认确认"
+   ]
+  },
+  {
+   "id": "U14",
+   "name": "致命错误覆盖层",
+   "entry": "desk/static/index.html:#fatal；desk/static/js/widgets/fatal.js:showFatal",
+   "kind": "overlay",
+   "states": [
+    "读配置失败",
+    "config_corrupt 时显示「重新设置」按钮"
+   ]
+  },
+  {
+   "id": "U15",
+   "name": "原生主窗口 chrome",
+   "entry": "macos/MainWindowController.swift:init",
+   "kind": "screen",
+   "states": [
+    "标题 LocalModelDesk",
+    "初始内容 1200×800、居中",
+    "可缩放/最小化/全屏",
+    "禁用窗口标签页",
+    "关闭即隐藏",
+    "darkAqua"
+   ]
+  },
+  {
+   "id": "U16",
+   "name": "外壳服务错误页",
+   "entry": "macos/ShellStatus.swift:errorPageHTML",
+   "kind": "screen",
+   "states": [
+    "未找到内嵌运行时",
+    "端口被占用（列 pid）",
+    "启动超时",
+    "启动失败",
+    "服务意外退出（含退出码/信号 + 日志尾 20 行）",
+    "服务无响应（连续 N 次轮询超时）",
+    "详情折叠：日志路径",
+    "重试按钮"
+   ]
+  },
+  {
+   "id": "U17",
+   "name": "菜单栏状态项与菜单",
+   "entry": "macos/StatusItemController.swift:init/render",
+   "kind": "overlay",
+   "states": [
+    "glyph: down/idle/loaded/busy",
+    "状态行文案：启动中…/服务未运行/待设置/状态不可读/空闲/已加载 X/视频生成中/音乐生成中",
+    "内存行（可读/不可读）",
+    "打开窗口 / 打开成品目录 / 设置… / 退出"
+   ]
+  },
+  {
+   "id": "U18",
+   "name": "原生首次运行 NSAlert",
+   "entry": "macos/FirstRunFlow.swift:run",
+   "kind": "overlay",
+   "states": [
+    "三选一：使用默认目录/选择其他目录…/收编既有目录树…",
+    "收编方式二选一：指向该目录/移动到默认目录",
+    "设置失败：重选/稍后再说",
+    "取消"
+   ]
+  },
+  {
+   "id": "U19",
+   "name": "模型目录选择面板",
+   "entry": "macos/ModelsDirectoryChooser.swift:choose",
+   "kind": "overlay",
+   "states": [
+    "仅目录、可新建目录、单选",
+    "确定/取消"
+   ]
+  },
+  {
+   "id": "U20",
+   "name": "WKWebView 上下文菜单",
+   "entry": "macos/MainWindowController.swift:DeskWebView.willOpenMenu",
+   "kind": "overlay",
+   "states": [
+    "「重新载入」已本地化",
+    "其余项沿用 WebKit 默认（未本地化）"
+   ]
+  }
+ ],
+ "layout_thresholds": [
+  {
+   "width": 1400,
+   "unit": "px",
+   "basis": "desk/static/app.css:2（--chat-col，聊天主列 max-width；用于 app.css:54 与 app.css:63）"
+  },
+  {
+   "width": 1300,
+   "unit": "px",
+   "basis": "desk/static/app.css:148（.firstrun-wrap max-width:min(1300px,calc(100% - 48px))）"
+  },
+  {
+   "width": 1100,
+   "unit": "px",
+   "basis": "desk/static/app.css:38（@media (max-width:1100px) 状态栏改用窄版文案、gap 16→10）"
+  },
+  {
+   "width": 899,
+   "unit": "px",
+   "basis": "desk/static/app.css:108（@media (max-width:899px) 视频/音乐面由双列改单列）"
+  },
+  {
+   "width": 640,
+   "unit": "px",
+   "basis": "desk/static/app.css:43（.form max-width:640px）"
+  },
+  {
+   "width": 520,
+   "unit": "px",
+   "basis": "desk/static/app.css:107（#pane-video,#pane-music 表单列 minmax(0,520px)）"
+  },
+  {
+   "width": 480,
+   "unit": "px",
+   "basis": "desk/static/app.css:135（.dialog max-width:480px）"
+  },
+  {
+   "width": 420,
+   "unit": "px",
+   "basis": "desk/static/app.css:139（#pane-settings width:min(420px,100%)）"
+  },
+  {
+   "width": 320,
+   "unit": "px",
+   "basis": "desk/static/app.css:135（.dialog min-width:320px）"
+  },
+  {
+   "width": 248,
+   "unit": "px",
+   "basis": "desk/static/app.css:51（.sessions 固定列宽 248px，flex:none，不随视口变化）"
+  },
+  {
+   "width": 40,
+   "unit": "em",
+   "basis": "desk/static/app.css:44（#fatal [data-fatal-text] max-width:40em）"
+  },
+  {
+   "width": 36,
+   "unit": "em",
+   "basis": "macos/ShellStatus.swift:105（错误页 main max-width:36em）"
+  }
+ ],
+ "form_factor": {
+  "value": "desktop",
+  "basis": "packaging/Info.plist.template:1-31（macOS APPL 包，LSMinimumSystemVersion 15.0，无 TARGETED_DEVICE_FAMILY）；macos/MainWindowController.swift:15（NSWindow 桌面窗口）"
+ },
+ "width_range": {
+  "min": 1200,
+  "max": 1200,
+  "basis": "macos/MainWindowController.swift:15 是代码里唯一设定过的窗口宽度（初始内容 1200×800，居中）；styleMask 含 .resizable 且全树无 contentMinSize/minSize/maxSize 设置，也无 TARGETED_DEVICE_FAMILY，因此代码没有声明可支持宽度的上下限——真实可达范围由 macOS 与显示器决定，不是代码事实。docs/visual/README.md:26-29 记有待用户确认的提案值 900 与 2560，属文档提案而非代码"
+ },
+ "locales": {
+  "supported": [
+   "zh-CN"
+  ],
+  "default": "zh-CN",
+  "fallback": [],
+  "rtl": [],
+  "basis": "desk/static/index.html:2 <html lang=\"zh-CN\">；packaging/Info.plist.template:11-15 CFBundleDevelopmentRegion=zh_CN、CFBundleLocalizations=[zh-Hans]；全树无 i18n 框架、无 locales/ 目录、无 .xcstrings/.lproj 源文件（dist/LocalModelDesk.app/Contents/Resources/zh-Hans.lproj 是构建产物，不在源码树）"
+ },
+ "translation_keys": {
+  "total": 0,
+  "basis": "没有任何翻译资源文件：界面字符串全部硬编码在 desk/static/index.html、desk/static/js/**、macos/*.swift 与 desk/**/*.py 的字面量里（如 desk/static/js/widgets/jobview.js:7 STATUS_LABEL、desk/static/js/panes/library.js:8-9、macos/ShellStatus.swift:60-81），没有 key 全集可点名",
+  "missing": {},
+  "extra": {}
+ },
+ "axis_support": {
+  "appearance": {
+   "supported": [
+    "dark"
+   ],
+   "basis": "desk/static/app.css:2 :root{color-scheme:dark} 单套深色令牌；全树无 prefers-color-scheme 媒体查询、无 data-theme 切换点、无 Tailwind；macos/AppDelegate.swift:16 NSApp.appearance = .darkAqua 把原生 chrome 也钉死在深色"
+  },
+  "dynamic_type": {
+   "supported": [
+    "浏览器缩放 100%"
+   ],
+   "basis": "desk/static/app.css:7 body{font:14px/1.5}，字号一律 px（13/14/16/20/12px），无 rem/em 字号、无 clamp()、无 .dynamicTypeSize；仅 app.css:44 的 40em 与 app.css:163 的 12em 是 em 长度。代码未声明任何字号缩放分支，缩放行为全靠宿主 WKWebView"
+  },
+  "orientation": {
+   "supported": [
+    "landscape"
+   ],
+   "basis": "macOS 桌面窗口本身（macos/MainWindowController.swift:15）；全树无 CSS orientation 媒体查询、无 UISupportedInterfaceOrientations、无 android:screenOrientation——代码没有任何按方向的分支"
+  },
+  "pointer": {
+   "supported": [
+    "mouse"
+   ],
+   "basis": "平台本身：macOS 应用包里的 WKWebView（macos/MainWindowController.swift:26）。app.css 无 (hover: hover)/(pointer: fine|coarse)/(any-pointer: coarse) 查询，也无 touch/pointer 事件监听；但存在只在指点设备悬停时才出现的控件——desk/static/app.css:79-80 .session-actions{visibility:hidden} + .session:hover/.session:focus-within 才可见，以及 desk/static/app.css:165-168 的常显滚动条样式（注释注明「接鼠标时 macOS 常显滚动条」，tests/e2e/conftest.py:59 也为此关掉 --hide-scrollbars）。macos/VisualProbe.swift:26-28 在运行时读回 pointer/hover/any_pointer_coarse，说明真实指点设备由环境决定而非代码"
+  }
+ },
+ "dark_variant_gaps": [
+  {
+   "asset": "按钮前景白",
+   "path": "desk/static/app.css:19,21（.btn-primary/.btn-danger color:#fff）",
+   "why": "字面量颜色，未走 --token"
+  },
+  {
+   "asset": "遮罩黑",
+   "path": "desk/static/app.css:46,134（body.drawer-open::before 与 .overlay background:#0009）",
+   "why": "字面量颜色，未走 --token"
+  },
+  {
+   "asset": "徽章底色",
+   "path": "desk/static/app.css:100-103（rgba(63,185,80,.15) / rgba(210,153,34,.15) / rgba(154,163,178,.15) / rgba(229,83,75,.15)）",
+   "why": "由令牌色手抄成 rgba 字面量，改令牌不会跟着变"
+  },
+  {
+   "asset": "错误卡底色",
+   "path": "desk/static/app.css:119（.job-error background:rgba(229,83,75,.08)）",
+   "why": "同上，字面量"
+  },
+  {
+   "asset": "外壳错误页全套配色",
+   "path": "macos/ShellStatus.swift:104-110（#14161a/#1d2026/#2c313a/#e7e9ee/#9aa3b2/#e5534b/#4f8cff/#fff）",
+   "why": "把 app.css 的深色令牌整套抄成字面量，另有一份，不随 app.css 变化"
+  },
+  {
+   "asset": "菜单栏状态行语义色",
+   "path": "macos/StatusItemController.swift:81-87（.secondaryLabelColor/.systemGreen/.systemOrange）与 :117（NSColor.black 模板图标）",
+   "why": "系统语义色，与网页 --ok/--busy 令牌各是一套，无共同出处"
+  },
+  {
+   "asset": "菜单栏图标",
+   "path": "macos/StatusItemController.swift:112-136（NSImage(size:flipped:) 现画的 18×18 模板图）",
+   "why": "无浅色/深色两份资源；靠 isTemplate=true 交给系统反色，不是显式深色变体"
+  },
+  {
+   "asset": "应用图标",
+   "path": "packaging/icon/icon-1024.png",
+   "why": "只有一份 1024 位图，无深色外观变体（非 Asset Catalog，无 appearance 分支）"
+  }
+ ],
+ "mock_layers": [
+  {
+   "name": "desk.testing（随 desk 包一起存在的第二个 composition root）",
+   "evidence": "desk/testing/harness.py:79 TestHarness、:235 launch_test_harness；desk/testing/__init__.py"
+  },
+  {
+   "name": "FakeLlmBackend / FakeMediaExecutor / FakeDownloadExecutor / FakeMemoryReader / FixedClock / fake_reaper",
+   "evidence": "desk/testing/fakes.py:66,194,227,241,251,256"
+  },
+  {
+   "name": "确定性脚本与闸（ChatScript / MediaScript / DownloadControl / MemoryScript / Gate）",
+   "evidence": "desk/testing/scripts.py:22 Gate；desk/testing/harness.py:37 引入"
+  },
+  {
+   "name": "种子数据与假 manifest",
+   "evidence": "desk/testing/seed.py；desk/testing/harness.py:123 _manifest_fetcher、:39 MANIFEST_FILES/seed_models"
+  },
+  {
+   "name": "pytest 层测试替身",
+   "evidence": "tests/gateway_fakes.py；tests/media_fakes.py；tests/llm/llm_fakes.py；tests/http_helpers.py；tests/gateway_client.py；tests/packaging_fixture.py；tests/shell_helpers.py"
+  },
+  {
+   "name": "e2e 浏览器接管开关 MEGASTORM_CDP_URL",
+   "evidence": "tests/e2e/conftest.py:57-63（设了就 connect_over_cdp 到外部浏览器，否则自起 chromium）"
+  },
+  {
+   "name": "无 msw / json-server / miragejs / nock",
+   "evidence": "package.json 仅 {name, private, type}，无任何依赖；tests/e2e/requirements.txt 只有 playwright==1.62.0 与 pytest"
+  }
+ ],
+ "could_not": [
+  "窗口宽度的上下限：macos/ 全树无 contentMinSize/minSize/maxSize，代码没有声明可支持宽度区间，只能给出唯一设定过的初始宽 1200（见 width_range.basis）",
+  "首次运行「自动扫描本机」列出的候选模型根：desk/foundation/firstrun.py:discover_model_roots 按真实磁盘与 LOCALMODELDESK_MODEL_SCAN_ROOTS 动态产生，不可静态枚举",
+  "媒体作业日志与进度文本：来自 h3/music3 子进程 stdout，desk/static/js/pure/job_progress.py 侧只做正则解析，具体行不可静态枚举",
+  "网关 LAN 候选地址：desk/gateway/lan.py 解析 /sbin/ifconfig 实时输出，不可静态枚举",
+  "dist/LocalModelDesk.app/Contents/Resources/zh-Hans.lproj 的内容未清点：属构建产物，不在源码树，且任务限定只读源码",
+  "mlx-lm 子进程自身的 HTTP 面（:8767）只按 desk/llm/backend.py 的出站调用列出；该服务由第三方 mlx-lm 提供，其完整路由表不在本仓库",
+  "WKWebView 默认上下文菜单除「重新载入」外的条目由 WebKit 提供，不在本仓库，无法逐项点名"
+ ]
+}

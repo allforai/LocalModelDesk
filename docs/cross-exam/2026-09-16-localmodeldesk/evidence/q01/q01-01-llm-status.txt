@@ -1,0 +1,7 @@
+HTTP/1.0 200 OK
+Server: BaseHTTP/0.6 Python/3.14.7
+Date: Wed, 16 Sep 2026 09:48:01 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 104
+
+{"state": {"status": "idle", "model_key": null, "error": null, "loaded_at": null}, "loaded_model": null}

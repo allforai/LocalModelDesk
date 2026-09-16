@@ -1,0 +1,75 @@
+{
+  "state": "打开（body.drawer-open + 背景遮罩）",
+  "device": "1400x900@2",
+  "os": "macOS 26.0 WKWebView",
+  "appearance": "dark",
+  "dynamic_type": "浏览器缩放 100%",
+  "locale": "zh-CN",
+  "orientation": "landscape",
+  "pointer": "mouse",
+  "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+  "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+  "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+  "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+  "case_id": "V-e5bbb093723c0811885082ad2a87d9966612bf18755917b9d1301879e23b9757",
+  "label": "U12 打开（body.drawer-open + 背景遮罩） @1400",
+  "build": "cda38b8+a00ccb56c765",
+  "captured_at": "2026-09-16T19:18:35+09:00",
+  "capture_mode": "viewport",
+  "headless": false,
+  "scrollbars": "overlay",
+  "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+  },
+  "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+  "setup": {
+    "js": "document.querySelector('[data-open-settings]').click()",
+    "result": {
+      "value": null
+    }
+  },
+  "window": {
+    "window_number": 4672,
+    "height": 900,
+    "backing_scale": 2,
+    "width": 1400
+  },
+  "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1400,
+    "height": 900,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+      "scroll_width": 0,
+      "client_width": 0,
+      "scroll_height": 0,
+      "client_height": 0,
+      "gutter_px": 0
+    },
+    "session_list_profile": {
+      "scroll_width": 0,
+      "client_width": 0,
+      "scroll_height": 0,
+      "client_height": 0,
+      "gutter_px": 0
+    },
+    "tab": "tab=library"
+  },
+  "images": [
+    "V-e5bbb093723c0811885082ad2a87d9966612bf18755917b9d1301879e23b9757.png"
+  ],
+  "image_digests": {
+    "V-e5bbb093723c0811885082ad2a87d9966612bf18755917b9d1301879e23b9757.png": "98e3eb74e7c12128bdc076f84dbc8b68b0e1975b3048a9300f39080004f263a3"
+  }
+}

@@ -1,0 +1,5780 @@
+{
+ "captures": [
+  {
+   "state": "tone=ok",
+   "device": "600x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-bf440d877b399cb06c241bfea170ec8b2ff03e2d9a34f474d6524dfe821a1410",
+   "label": "U2 tone=ok @600",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:28+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 232,
+    "client_width": 232,
+    "scroll_height": 1055,
+    "client_height": 106,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 400,
+    "width": 600
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 600,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 232,
+     "client_width": 232,
+     "scroll_height": 1055,
+     "client_height": 106,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 266,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-bf440d877b399cb06c241bfea170ec8b2ff03e2d9a34f474d6524dfe821a1410.png"
+   ],
+   "image_digests": {
+    "V-bf440d877b399cb06c241bfea170ec8b2ff03e2d9a34f474d6524dfe821a1410.png": "a8475832dc017f5e7432ebcfec7299532f39c9ee41df8b36c3ef601d122d00ab"
+   }
+  },
+  {
+   "state": "tone=ok",
+   "device": "640x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-a8ed870e59e2928876fe18f9a8b603b871fa6e86251f43b7eec16e9da5f79538",
+   "label": "U2 tone=ok @640",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:29+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 272,
+    "client_width": 272,
+    "scroll_height": 964,
+    "client_height": 106,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "backing_scale": 2,
+    "width": 640,
+    "height": 400
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 640,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 272,
+     "client_width": 272,
+     "scroll_height": 964,
+     "client_height": 106,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 266,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-a8ed870e59e2928876fe18f9a8b603b871fa6e86251f43b7eec16e9da5f79538.png"
+   ],
+   "image_digests": {
+    "V-a8ed870e59e2928876fe18f9a8b603b871fa6e86251f43b7eec16e9da5f79538.png": "fb98cb7adc97f0d326048eb36dfba2d2d0ce63832a4998a69f6d7b94236cde60"
+   }
+  },
+  {
+   "state": "tone=ok",
+   "device": "899x600@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-bdc1ff7710fdfe0a7c768c8bf936bf5f2637f4f4cbd321b84315e0c214ef8a91",
+   "label": "U2 tone=ok @899",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:30+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 531,
+    "client_width": 531,
+    "scroll_height": 827,
+    "client_height": 305,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "height": 600,
+    "window_number": 4672,
+    "width": 899,
+    "backing_scale": 2
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 899,
+    "height": 600,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 531,
+     "client_width": 531,
+     "scroll_height": 827,
+     "client_height": 305,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 466,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-bdc1ff7710fdfe0a7c768c8bf936bf5f2637f4f4cbd321b84315e0c214ef8a91.png"
+   ],
+   "image_digests": {
+    "V-bdc1ff7710fdfe0a7c768c8bf936bf5f2637f4f4cbd321b84315e0c214ef8a91.png": "c18a1d9bdc1d0330d6e9636d907f95e48cd43f18f2b7ba97b70dfae9f53a9992"
+   }
+  },
+  {
+   "state": "tone=ok",
+   "device": "1100x700@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-0c4f0259fd77b01b7e3beb1ab1d822007290340fa466c71032106c733703a7b1",
+   "label": "U2 tone=ok @1100",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:31+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 732,
+    "client_width": 732,
+    "scroll_height": 759,
+    "client_height": 436,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "height": 700,
+    "backing_scale": 2,
+    "width": 1100,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1100,
+    "height": 700,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 732,
+     "client_width": 732,
+     "scroll_height": 759,
+     "client_height": 436,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 566,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-0c4f0259fd77b01b7e3beb1ab1d822007290340fa466c71032106c733703a7b1.png"
+   ],
+   "image_digests": {
+    "V-0c4f0259fd77b01b7e3beb1ab1d822007290340fa466c71032106c733703a7b1.png": "6153541179895a08c7db1838c5bd8da933e1d7395da0183bc51a3f629540a98d"
+   }
+  },
+  {
+   "state": "tone=ok",
+   "device": "1300x800@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-695eaf0fefa9f15254c07667202090cd2534344ee1634f42a68de9012335d242",
+   "label": "U2 tone=ok @1300",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:31+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 932,
+    "client_width": 932,
+    "scroll_height": 759,
+    "client_height": 536,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "width": 1300,
+    "backing_scale": 2,
+    "height": 800
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1300,
+    "height": 800,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 932,
+     "client_width": 932,
+     "scroll_height": 759,
+     "client_height": 536,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 666,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-695eaf0fefa9f15254c07667202090cd2534344ee1634f42a68de9012335d242.png"
+   ],
+   "image_digests": {
+    "V-695eaf0fefa9f15254c07667202090cd2534344ee1634f42a68de9012335d242.png": "0c6cc5a5d2cec1e20eea9bad6b4a74caff6447c98972e5fa7738ebf1f6661f0f"
+   }
+  },
+  {
+   "state": "tone=ok",
+   "device": "1400x900@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-48276b92ffedaf204847db6ce0acd215a914db6ad7f628afd404e40f9dc249fc",
+   "label": "U2 tone=ok @1400",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:32+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 1032,
+    "client_width": 1032,
+    "scroll_height": 736,
+    "client_height": 636,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "width": 1400,
+    "height": 900,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1400,
+    "height": 900,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 1032,
+     "client_width": 1032,
+     "scroll_height": 736,
+     "client_height": 636,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 766,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-48276b92ffedaf204847db6ce0acd215a914db6ad7f628afd404e40f9dc249fc.png"
+   ],
+   "image_digests": {
+    "V-48276b92ffedaf204847db6ce0acd215a914db6ad7f628afd404e40f9dc249fc.png": "357451379e98ab903d44db2109592f30aa0852be02ba31fea7a0f3ce00898a13"
+   }
+  },
+  {
+   "state": "tone=ok",
+   "device": "1920x1080@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-6103ebbceb17ab57a33e34f3ba7a0300be32597c863904ef4c4f759dff7a8994",
+   "label": "U2 tone=ok @1920",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:33+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 1400,
+    "client_width": 1400,
+    "scroll_height": 754,
+    "client_height": 754,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 1018,
+    "width": 1920
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1920,
+    "height": 1018,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 1400,
+     "client_width": 1400,
+     "scroll_height": 754,
+     "client_height": 754,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 884,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-6103ebbceb17ab57a33e34f3ba7a0300be32597c863904ef4c4f759dff7a8994.png"
+   ],
+   "image_digests": {
+    "V-6103ebbceb17ab57a33e34f3ba7a0300be32597c863904ef4c4f759dff7a8994.png": "cd43ac6e632af274811da67a4dc5dc99007d2e59b41719e4333cdd01cebc1bb7"
+   }
+  },
+  {
+   "state": "chat/video/music/resources/library 五选一",
+   "device": "600x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-849163a61787a89c6224e6e2f5534f0a963b0579f85a34f743ed319f935fc6cf",
+   "label": "U3 chat/video/music/resources/library 五选一 @600",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:34+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 232,
+    "client_width": 232,
+    "scroll_height": 1055,
+    "client_height": 106,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "backing_scale": 2,
+    "width": 600,
+    "height": 400
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 600,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 232,
+     "client_width": 232,
+     "scroll_height": 1055,
+     "client_height": 106,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 266,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-849163a61787a89c6224e6e2f5534f0a963b0579f85a34f743ed319f935fc6cf.png"
+   ],
+   "image_digests": {
+    "V-849163a61787a89c6224e6e2f5534f0a963b0579f85a34f743ed319f935fc6cf.png": "9868a05b69fe7c421c090b6ac80dc5a14f7bf508de937a7841071bcf29431285"
+   }
+  },
+  {
+   "state": "chat/video/music/resources/library 五选一",
+   "device": "640x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-62ba8758c693f873b71a62d33dac18ff210fab10a77de771ea0d6b928a0e5d7b",
+   "label": "U3 chat/video/music/resources/library 五选一 @640",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:35+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 272,
+    "client_width": 272,
+    "scroll_height": 964,
+    "client_height": 106,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "height": 400,
+    "backing_scale": 2,
+    "width": 640
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 640,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 272,
+     "client_width": 272,
+     "scroll_height": 964,
+     "client_height": 106,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 266,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-62ba8758c693f873b71a62d33dac18ff210fab10a77de771ea0d6b928a0e5d7b.png"
+   ],
+   "image_digests": {
+    "V-62ba8758c693f873b71a62d33dac18ff210fab10a77de771ea0d6b928a0e5d7b.png": "1660a4d4e3dc2b1bac1c25451acbf426023414bbbb398d028d46af2b55ba593b"
+   }
+  },
+  {
+   "state": "chat/video/music/resources/library 五选一",
+   "device": "899x600@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-63ed87a72c68414c2381bef3b577b722980ab7ab7f7da0aee1782e5fdf6162a3",
+   "label": "U3 chat/video/music/resources/library 五选一 @899",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:36+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 531,
+    "client_width": 531,
+    "scroll_height": 827,
+    "client_height": 305,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "height": 600,
+    "window_number": 4672,
+    "width": 899
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 899,
+    "height": 600,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 531,
+     "client_width": 531,
+     "scroll_height": 827,
+     "client_height": 305,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 466,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-63ed87a72c68414c2381bef3b577b722980ab7ab7f7da0aee1782e5fdf6162a3.png"
+   ],
+   "image_digests": {
+    "V-63ed87a72c68414c2381bef3b577b722980ab7ab7f7da0aee1782e5fdf6162a3.png": "c938b80ce6cd275f342d3f3aac93bec36a2845d1a1524105554dbbac05f0f443"
+   }
+  },
+  {
+   "state": "chat/video/music/resources/library 五选一",
+   "device": "1100x700@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-7f6a0263e153e685752152688972b42037a7f3941926a3e3102e9915fae48d50",
+   "label": "U3 chat/video/music/resources/library 五选一 @1100",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:37+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 732,
+    "client_width": 732,
+    "scroll_height": 759,
+    "client_height": 436,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "width": 1100,
+    "backing_scale": 2,
+    "height": 700,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1100,
+    "height": 700,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 732,
+     "client_width": 732,
+     "scroll_height": 759,
+     "client_height": 436,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 566,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-7f6a0263e153e685752152688972b42037a7f3941926a3e3102e9915fae48d50.png"
+   ],
+   "image_digests": {
+    "V-7f6a0263e153e685752152688972b42037a7f3941926a3e3102e9915fae48d50.png": "2988073f12764559b26519ec6b38e27bbb21e2859c8de2813c6d41b4769d7ace"
+   }
+  },
+  {
+   "state": "chat/video/music/resources/library 五选一",
+   "device": "1300x800@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-99b5e086f2dedf85d4180dacd00bc427c229910b03b2b86fe65adfbe06273368",
+   "label": "U3 chat/video/music/resources/library 五选一 @1300",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:38+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 932,
+    "client_width": 932,
+    "scroll_height": 759,
+    "client_height": 536,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "width": 1300,
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 800
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1300,
+    "height": 800,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 932,
+     "client_width": 932,
+     "scroll_height": 759,
+     "client_height": 536,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 666,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-99b5e086f2dedf85d4180dacd00bc427c229910b03b2b86fe65adfbe06273368.png"
+   ],
+   "image_digests": {
+    "V-99b5e086f2dedf85d4180dacd00bc427c229910b03b2b86fe65adfbe06273368.png": "0c24cf2613d5ea8618e8ef3890b24f0b41e5a07b12de9baf7203cab0f63e9c2d"
+   }
+  },
+  {
+   "state": "chat/video/music/resources/library 五选一",
+   "device": "1400x900@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-bbeedcc506c53a1cf842f4ace2a07aba6b2104b57d022af750e8539c936a398b",
+   "label": "U3 chat/video/music/resources/library 五选一 @1400",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:39+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 1032,
+    "client_width": 1032,
+    "scroll_height": 736,
+    "client_height": 636,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "width": 1400,
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 900
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1400,
+    "height": 900,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 1032,
+     "client_width": 1032,
+     "scroll_height": 736,
+     "client_height": 636,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 766,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-bbeedcc506c53a1cf842f4ace2a07aba6b2104b57d022af750e8539c936a398b.png"
+   ],
+   "image_digests": {
+    "V-bbeedcc506c53a1cf842f4ace2a07aba6b2104b57d022af750e8539c936a398b.png": "19003e358676490f8b31b8373fd6c8e99364a6e3e80969da07e2f010f02ed31c"
+   }
+  },
+  {
+   "state": "chat/video/music/resources/library 五选一",
+   "device": "1920x1080@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-5c2e75ae4907de09e70470f742d54ec01fd41078f540a1d987d5253d83cc9641",
+   "label": "U3 chat/video/music/resources/library 五选一 @1920",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:40+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 1400,
+    "client_width": 1400,
+    "scroll_height": 754,
+    "client_height": 754,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "height": 1018,
+    "window_number": 4672,
+    "width": 1920
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1920,
+    "height": 1018,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 1400,
+     "client_width": 1400,
+     "scroll_height": 754,
+     "client_height": 754,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 884,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-5c2e75ae4907de09e70470f742d54ec01fd41078f540a1d987d5253d83cc9641.png"
+   ],
+   "image_digests": {
+    "V-5c2e75ae4907de09e70470f742d54ec01fd41078f540a1d987d5253d83cc9641.png": "cd43ac6e632af274811da67a4dc5dc99007d2e59b41719e4333cdd01cebc1bb7"
+   }
+  },
+  {
+   "state": "模型下拉：未下载/不完整项 disabled",
+   "device": "600x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-d81165c39503c245ac4fa278c07dc5deb184a283eb77e5ed27db7a7f251a58ef",
+   "label": "U4 模型下拉：未下载/不完整项 disabled @600",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:40+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 232,
+    "client_width": 232,
+    "scroll_height": 1055,
+    "client_height": 106,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "width": 600,
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 400
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 600,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 232,
+     "client_width": 232,
+     "scroll_height": 1055,
+     "client_height": 106,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 266,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-d81165c39503c245ac4fa278c07dc5deb184a283eb77e5ed27db7a7f251a58ef.png"
+   ],
+   "image_digests": {
+    "V-d81165c39503c245ac4fa278c07dc5deb184a283eb77e5ed27db7a7f251a58ef.png": "9868a05b69fe7c421c090b6ac80dc5a14f7bf508de937a7841071bcf29431285"
+   }
+  },
+  {
+   "state": "模型下拉：未下载/不完整项 disabled",
+   "device": "640x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-6a820624191768c6c54bb207f98f207e2a17ebce947124dc655dd46c63b21215",
+   "label": "U4 模型下拉：未下载/不完整项 disabled @640",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:41+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 272,
+    "client_width": 272,
+    "scroll_height": 964,
+    "client_height": 106,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "height": 400,
+    "window_number": 4672,
+    "width": 640,
+    "backing_scale": 2
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 640,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 272,
+     "client_width": 272,
+     "scroll_height": 964,
+     "client_height": 106,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 266,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-6a820624191768c6c54bb207f98f207e2a17ebce947124dc655dd46c63b21215.png"
+   ],
+   "image_digests": {
+    "V-6a820624191768c6c54bb207f98f207e2a17ebce947124dc655dd46c63b21215.png": "1660a4d4e3dc2b1bac1c25451acbf426023414bbbb398d028d46af2b55ba593b"
+   }
+  },
+  {
+   "state": "模型下拉：未下载/不完整项 disabled",
+   "device": "899x600@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-182ac2a81ce1bd44291392083b2931f85c7a7d8c6196c108142c0512905d2163",
+   "label": "U4 模型下拉：未下载/不完整项 disabled @899",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:42+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 531,
+    "client_width": 531,
+    "scroll_height": 827,
+    "client_height": 305,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "backing_scale": 2,
+    "width": 899,
+    "height": 600
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 899,
+    "height": 600,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 531,
+     "client_width": 531,
+     "scroll_height": 827,
+     "client_height": 305,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 466,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-182ac2a81ce1bd44291392083b2931f85c7a7d8c6196c108142c0512905d2163.png"
+   ],
+   "image_digests": {
+    "V-182ac2a81ce1bd44291392083b2931f85c7a7d8c6196c108142c0512905d2163.png": "c938b80ce6cd275f342d3f3aac93bec36a2845d1a1524105554dbbac05f0f443"
+   }
+  },
+  {
+   "state": "模型下拉：未下载/不完整项 disabled",
+   "device": "1100x700@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-a8358d5573dba07ad2acf3b915ed7aa73734db4961599286b1df046f64b9bf1a",
+   "label": "U4 模型下拉：未下载/不完整项 disabled @1100",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:43+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 732,
+    "client_width": 732,
+    "scroll_height": 759,
+    "client_height": 436,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "width": 1100,
+    "backing_scale": 2,
+    "height": 700,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1100,
+    "height": 700,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 732,
+     "client_width": 732,
+     "scroll_height": 759,
+     "client_height": 436,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 566,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-a8358d5573dba07ad2acf3b915ed7aa73734db4961599286b1df046f64b9bf1a.png"
+   ],
+   "image_digests": {
+    "V-a8358d5573dba07ad2acf3b915ed7aa73734db4961599286b1df046f64b9bf1a.png": "2988073f12764559b26519ec6b38e27bbb21e2859c8de2813c6d41b4769d7ace"
+   }
+  },
+  {
+   "state": "模型下拉：未下载/不完整项 disabled",
+   "device": "1300x800@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-d633e9a380b9c3da3a7b2694d0d9421d61144d2f171b2995bd1f067936afddd9",
+   "label": "U4 模型下拉：未下载/不完整项 disabled @1300",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:44+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 932,
+    "client_width": 932,
+    "scroll_height": 759,
+    "client_height": 536,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 800,
+    "width": 1300
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1300,
+    "height": 800,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 932,
+     "client_width": 932,
+     "scroll_height": 759,
+     "client_height": 536,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 666,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-d633e9a380b9c3da3a7b2694d0d9421d61144d2f171b2995bd1f067936afddd9.png"
+   ],
+   "image_digests": {
+    "V-d633e9a380b9c3da3a7b2694d0d9421d61144d2f171b2995bd1f067936afddd9.png": "0c24cf2613d5ea8618e8ef3890b24f0b41e5a07b12de9baf7203cab0f63e9c2d"
+   }
+  },
+  {
+   "state": "模型下拉：未下载/不完整项 disabled",
+   "device": "1400x900@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-13bf2a211e8a7965c9771334d2aad78e7a0a1b15b1548bd131ceb6997266ae7d",
+   "label": "U4 模型下拉：未下载/不完整项 disabled @1400",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:45+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 1032,
+    "client_width": 1032,
+    "scroll_height": 736,
+    "client_height": 636,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "width": 1400,
+    "height": 900,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1400,
+    "height": 900,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 1032,
+     "client_width": 1032,
+     "scroll_height": 736,
+     "client_height": 636,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 766,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-13bf2a211e8a7965c9771334d2aad78e7a0a1b15b1548bd131ceb6997266ae7d.png"
+   ],
+   "image_digests": {
+    "V-13bf2a211e8a7965c9771334d2aad78e7a0a1b15b1548bd131ceb6997266ae7d.png": "19003e358676490f8b31b8373fd6c8e99364a6e3e80969da07e2f010f02ed31c"
+   }
+  },
+  {
+   "state": "模型下拉：未下载/不完整项 disabled",
+   "device": "1920x1080@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-97e5b1a42d26b88b5eb0c3f6f158337212ff1a380e0cb8f72667dcdd5bb75fa9",
+   "label": "U4 模型下拉：未下载/不完整项 disabled @1920",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:46+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 1400,
+    "client_width": 1400,
+    "scroll_height": 754,
+    "client_height": 754,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "width": 1920,
+    "backing_scale": 2,
+    "height": 1018,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1920,
+    "height": 1018,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 1400,
+     "client_width": 1400,
+     "scroll_height": 754,
+     "client_height": 754,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 884,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-97e5b1a42d26b88b5eb0c3f6f158337212ff1a380e0cb8f72667dcdd5bb75fa9.png"
+   ],
+   "image_digests": {
+    "V-97e5b1a42d26b88b5eb0c3f6f158337212ff1a380e0cb8f72667dcdd5bb75fa9.png": "cd43ac6e632af274811da67a4dc5dc99007d2e59b41719e4333cdd01cebc1bb7"
+   }
+  },
+  {
+   "state": "当前会话高亮 aria-current",
+   "device": "600x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-6b9a200fbfdc15efc317659e5faa8314c85654b38af37b28f2c46f6320e21269",
+   "label": "U5 当前会话高亮 aria-current @600",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:47+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 232,
+    "client_width": 232,
+    "scroll_height": 1055,
+    "client_height": 106,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "height": 400,
+    "window_number": 4672,
+    "width": 600
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 600,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 232,
+     "client_width": 232,
+     "scroll_height": 1055,
+     "client_height": 106,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 266,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-6b9a200fbfdc15efc317659e5faa8314c85654b38af37b28f2c46f6320e21269.png"
+   ],
+   "image_digests": {
+    "V-6b9a200fbfdc15efc317659e5faa8314c85654b38af37b28f2c46f6320e21269.png": "9868a05b69fe7c421c090b6ac80dc5a14f7bf508de937a7841071bcf29431285"
+   }
+  },
+  {
+   "state": "当前会话高亮 aria-current",
+   "device": "640x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-807cdb44d2d1ee976a647958518794c5e088b878bf89d511e9ab315e561b3187",
+   "label": "U5 当前会话高亮 aria-current @640",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:48+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 272,
+    "client_width": 272,
+    "scroll_height": 964,
+    "client_height": 106,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "width": 640,
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 400
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 640,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 272,
+     "client_width": 272,
+     "scroll_height": 964,
+     "client_height": 106,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 266,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-807cdb44d2d1ee976a647958518794c5e088b878bf89d511e9ab315e561b3187.png"
+   ],
+   "image_digests": {
+    "V-807cdb44d2d1ee976a647958518794c5e088b878bf89d511e9ab315e561b3187.png": "1660a4d4e3dc2b1bac1c25451acbf426023414bbbb398d028d46af2b55ba593b"
+   }
+  },
+  {
+   "state": "当前会话高亮 aria-current",
+   "device": "899x600@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-e366d5842a639b60602163f5c828c60b8e96a11d96cdee6a2f23dd73be658c35",
+   "label": "U5 当前会话高亮 aria-current @899",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:48+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 531,
+    "client_width": 531,
+    "scroll_height": 827,
+    "client_height": 305,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "height": 600,
+    "backing_scale": 2,
+    "width": 899
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 899,
+    "height": 600,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 531,
+     "client_width": 531,
+     "scroll_height": 827,
+     "client_height": 305,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 466,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-e366d5842a639b60602163f5c828c60b8e96a11d96cdee6a2f23dd73be658c35.png"
+   ],
+   "image_digests": {
+    "V-e366d5842a639b60602163f5c828c60b8e96a11d96cdee6a2f23dd73be658c35.png": "c938b80ce6cd275f342d3f3aac93bec36a2845d1a1524105554dbbac05f0f443"
+   }
+  },
+  {
+   "state": "当前会话高亮 aria-current",
+   "device": "1100x700@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-901f8775e8dddbf8d2e41c2b8178d9d038f20cc34b2e7846d8e03e4a5538c9be",
+   "label": "U5 当前会话高亮 aria-current @1100",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:49+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 732,
+    "client_width": 732,
+    "scroll_height": 759,
+    "client_height": 436,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "backing_scale": 2,
+    "width": 1100,
+    "height": 700
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1100,
+    "height": 700,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 732,
+     "client_width": 732,
+     "scroll_height": 759,
+     "client_height": 436,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 566,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-901f8775e8dddbf8d2e41c2b8178d9d038f20cc34b2e7846d8e03e4a5538c9be.png"
+   ],
+   "image_digests": {
+    "V-901f8775e8dddbf8d2e41c2b8178d9d038f20cc34b2e7846d8e03e4a5538c9be.png": "2988073f12764559b26519ec6b38e27bbb21e2859c8de2813c6d41b4769d7ace"
+   }
+  },
+  {
+   "state": "当前会话高亮 aria-current",
+   "device": "1300x800@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-ba66962e322d96961fa2170aec53442c9063d87cc2e92e572a794765fe122939",
+   "label": "U5 当前会话高亮 aria-current @1300",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:50+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 932,
+    "client_width": 932,
+    "scroll_height": 759,
+    "client_height": 536,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "height": 800,
+    "window_number": 4672,
+    "width": 1300
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1300,
+    "height": 800,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 932,
+     "client_width": 932,
+     "scroll_height": 759,
+     "client_height": 536,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 666,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-ba66962e322d96961fa2170aec53442c9063d87cc2e92e572a794765fe122939.png"
+   ],
+   "image_digests": {
+    "V-ba66962e322d96961fa2170aec53442c9063d87cc2e92e572a794765fe122939.png": "0c24cf2613d5ea8618e8ef3890b24f0b41e5a07b12de9baf7203cab0f63e9c2d"
+   }
+  },
+  {
+   "state": "当前会话高亮 aria-current",
+   "device": "1400x900@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-26e6dec31295e2d044bff629ab429a1e7bbc7428cf692a23ce26d4a86a22f2dc",
+   "label": "U5 当前会话高亮 aria-current @1400",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:51+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "native",
+   "scroll_profile": {
+    "scroll_width": 1032,
+    "client_width": 1032,
+    "scroll_height": 736,
+    "client_height": 636,
+    "gutter_px": 8
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "height": 900,
+    "backing_scale": 2,
+    "width": 1400
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1400,
+    "height": 900,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 1032,
+     "client_width": 1032,
+     "scroll_height": 736,
+     "client_height": 636,
+     "gutter_px": 8
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 766,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-26e6dec31295e2d044bff629ab429a1e7bbc7428cf692a23ce26d4a86a22f2dc.png"
+   ],
+   "image_digests": {
+    "V-26e6dec31295e2d044bff629ab429a1e7bbc7428cf692a23ce26d4a86a22f2dc.png": "19003e358676490f8b31b8373fd6c8e99364a6e3e80969da07e2f010f02ed31c"
+   }
+  },
+  {
+   "state": "当前会话高亮 aria-current",
+   "device": "1920x1080@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-0e72db93d78a722a00dc3f420c19708960804837b3eb0965829fe9d209d60b29",
+   "label": "U5 当前会话高亮 aria-current @1920",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:52+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 1400,
+    "client_width": 1400,
+    "scroll_height": 754,
+    "client_height": 754,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=chat'",
+    "result": {
+     "value": "#tab=chat"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "width": 1920,
+    "height": 1018,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1920,
+    "height": 1018,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 1400,
+     "client_width": 1400,
+     "scroll_height": 754,
+     "client_height": 754,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 240,
+     "client_width": 240,
+     "scroll_height": 900,
+     "client_height": 884,
+     "gutter_px": 8
+    },
+    "tab": "tab=chat"
+   },
+   "images": [
+    "V-0e72db93d78a722a00dc3f420c19708960804837b3eb0965829fe9d209d60b29.png"
+   ],
+   "image_digests": {
+    "V-0e72db93d78a722a00dc3f420c19708960804837b3eb0965829fe9d209d60b29.png": "cd43ac6e632af274811da67a4dc5dc99007d2e59b41719e4333cdd01cebc1bb7"
+   }
+  },
+  {
+   "state": "文生视频",
+   "device": "600x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-6f30160cd65a3cc811cd4efa206d573a8cc261afb0eb5d5f48845fb688fdb994",
+   "label": "U6 文生视频 @600",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:53+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 400,
+    "width": 600
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 600,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-6f30160cd65a3cc811cd4efa206d573a8cc261afb0eb5d5f48845fb688fdb994.png"
+   ],
+   "image_digests": {
+    "V-6f30160cd65a3cc811cd4efa206d573a8cc261afb0eb5d5f48845fb688fdb994.png": "90a1e57000168a19145d8f64cf0f3d3c5f0ac398b36f10063a0d4c00e125a397"
+   }
+  },
+  {
+   "state": "文生视频",
+   "device": "640x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-879a7f78240cbb9b97767c4d75e9146bd847246a99520abeb1cd5810367c2413",
+   "label": "U6 文生视频 @640",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:54+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "width": 640,
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 400
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 640,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-879a7f78240cbb9b97767c4d75e9146bd847246a99520abeb1cd5810367c2413.png"
+   ],
+   "image_digests": {
+    "V-879a7f78240cbb9b97767c4d75e9146bd847246a99520abeb1cd5810367c2413.png": "0808c7a8e981ab67f65d8ff8ebf860ecf69886a994f7f8efae19a40993cd8507"
+   }
+  },
+  {
+   "state": "文生视频",
+   "device": "899x600@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-ce3cd5c353d2437fee288180e00df8dbbaa1904fba116db04da5c93ded542f46",
+   "label": "U6 文生视频 @899",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:55+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "backing_scale": 2,
+    "width": 899,
+    "height": 600
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 899,
+    "height": 600,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-ce3cd5c353d2437fee288180e00df8dbbaa1904fba116db04da5c93ded542f46.png"
+   ],
+   "image_digests": {
+    "V-ce3cd5c353d2437fee288180e00df8dbbaa1904fba116db04da5c93ded542f46.png": "0cae5770c8e7bcf991427145109d2603f24d354621cc64bed81d4e15f05b2622"
+   }
+  },
+  {
+   "state": "文生视频",
+   "device": "1100x700@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-095564bd113af44e77401d6e22509538430442093876f9ab35addc258f9a18ad",
+   "label": "U6 文生视频 @1100",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:56+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "height": 700,
+    "window_number": 4672,
+    "width": 1100,
+    "backing_scale": 2
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1100,
+    "height": 700,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-095564bd113af44e77401d6e22509538430442093876f9ab35addc258f9a18ad.png"
+   ],
+   "image_digests": {
+    "V-095564bd113af44e77401d6e22509538430442093876f9ab35addc258f9a18ad.png": "a273727d15888ebe61fac7931f2e2e930f5be480a6015a138260ac3793db967e"
+   }
+  },
+  {
+   "state": "文生视频",
+   "device": "1300x800@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-e327e755ba80c921a3c1e4e529c19869458e9ef9603ac697f6d21a065b7a3751",
+   "label": "U6 文生视频 @1300",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:57+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "width": 1300,
+    "backing_scale": 2,
+    "height": 800,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1300,
+    "height": 800,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-e327e755ba80c921a3c1e4e529c19869458e9ef9603ac697f6d21a065b7a3751.png"
+   ],
+   "image_digests": {
+    "V-e327e755ba80c921a3c1e4e529c19869458e9ef9603ac697f6d21a065b7a3751.png": "633966b37ae7305001149128c3f6efe534db9f4b07557a92f93ade9011841092"
+   }
+  },
+  {
+   "state": "文生视频",
+   "device": "1400x900@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-6f7e8d164f5642d59a7a0373a3fe1e8abd0ace696a974cd3831e8fe1c5d33de6",
+   "label": "U6 文生视频 @1400",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:57+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "height": 900,
+    "window_number": 4672,
+    "width": 1400
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1400,
+    "height": 900,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-6f7e8d164f5642d59a7a0373a3fe1e8abd0ace696a974cd3831e8fe1c5d33de6.png"
+   ],
+   "image_digests": {
+    "V-6f7e8d164f5642d59a7a0373a3fe1e8abd0ace696a974cd3831e8fe1c5d33de6.png": "07eeddb731bc1314063093ab54fc1669bf3c916e6034be3d27928087f8d2c4bc"
+   }
+  },
+  {
+   "state": "文生视频",
+   "device": "1920x1080@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-f6c47c72c7aa42e3d8672558eeb37fb885b4aeab2a2f16f90c1bede47f9ff49e",
+   "label": "U6 文生视频 @1920",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:58+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "width": 1920,
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 1018
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1920,
+    "height": 1018,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-f6c47c72c7aa42e3d8672558eeb37fb885b4aeab2a2f16f90c1bede47f9ff49e.png"
+   ],
+   "image_digests": {
+    "V-f6c47c72c7aa42e3d8672558eeb37fb885b4aeab2a2f16f90c1bede47f9ff49e.png": "226e12d503340dc2487eda3a578eebb1ebc1c21839c29363bd0fd41db8f98cc7"
+   }
+  },
+  {
+   "state": "风格描述必填",
+   "device": "600x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-877ecaa7c48666dfa9b3f5c55341e50bb177058fe8c2291354aea70b16c1c55c",
+   "label": "U7 风格描述必填 @600",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:17:59+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=music'",
+    "result": {
+     "value": "#tab=music"
+    }
+   },
+   "window": {
+    "width": 600,
+    "backing_scale": 2,
+    "height": 400,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 600,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=music"
+   },
+   "images": [
+    "V-877ecaa7c48666dfa9b3f5c55341e50bb177058fe8c2291354aea70b16c1c55c.png"
+   ],
+   "image_digests": {
+    "V-877ecaa7c48666dfa9b3f5c55341e50bb177058fe8c2291354aea70b16c1c55c.png": "b0ba86e3dc308cd5a7f3b1652b156ac10b0de63021e8f67e9b862e5fd306a32a"
+   }
+  },
+  {
+   "state": "风格描述必填",
+   "device": "640x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-4462dce70218103c9883ecf88a82ea03b0ff5072452d3949402489c00d5051dd",
+   "label": "U7 风格描述必填 @640",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:00+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=music'",
+    "result": {
+     "value": "#tab=music"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 400,
+    "width": 640
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 640,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=music"
+   },
+   "images": [
+    "V-4462dce70218103c9883ecf88a82ea03b0ff5072452d3949402489c00d5051dd.png"
+   ],
+   "image_digests": {
+    "V-4462dce70218103c9883ecf88a82ea03b0ff5072452d3949402489c00d5051dd.png": "2c3d0e1c47f81fdfdbfc6551af272e3bf6918da5aef8f63dc272f289d5b21518"
+   }
+  },
+  {
+   "state": "风格描述必填",
+   "device": "899x600@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-94e01de60fc7ee41a3736fd90538ee8a83eaa15fcf888d9149798bce9d4014b3",
+   "label": "U7 风格描述必填 @899",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:01+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=music'",
+    "result": {
+     "value": "#tab=music"
+    }
+   },
+   "window": {
+    "height": 600,
+    "window_number": 4672,
+    "width": 899,
+    "backing_scale": 2
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 899,
+    "height": 600,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=music"
+   },
+   "images": [
+    "V-94e01de60fc7ee41a3736fd90538ee8a83eaa15fcf888d9149798bce9d4014b3.png"
+   ],
+   "image_digests": {
+    "V-94e01de60fc7ee41a3736fd90538ee8a83eaa15fcf888d9149798bce9d4014b3.png": "6c39b8ab1ca30b63b1dcc4842de225c9f76c7be250c9254cb64c90ed225d2074"
+   }
+  },
+  {
+   "state": "风格描述必填",
+   "device": "1100x700@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-9f5733aa3cc5792a5fbec9f78a454f087cbfa71730bb734c37f7a6c8c1682fc7",
+   "label": "U7 风格描述必填 @1100",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:02+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=music'",
+    "result": {
+     "value": "#tab=music"
+    }
+   },
+   "window": {
+    "width": 1100,
+    "backing_scale": 2,
+    "height": 700,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1100,
+    "height": 700,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=music"
+   },
+   "images": [
+    "V-9f5733aa3cc5792a5fbec9f78a454f087cbfa71730bb734c37f7a6c8c1682fc7.png"
+   ],
+   "image_digests": {
+    "V-9f5733aa3cc5792a5fbec9f78a454f087cbfa71730bb734c37f7a6c8c1682fc7.png": "c1abac91855535e1e4443a0ef184e8dd5aa95f8785fe96ad7c9f127900e95106"
+   }
+  },
+  {
+   "state": "风格描述必填",
+   "device": "1300x800@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-0bfcd763ae7387f0ff78797b830d758e9825d295e9a41e1d7288cd4e16d6f8d3",
+   "label": "U7 风格描述必填 @1300",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:03+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=music'",
+    "result": {
+     "value": "#tab=music"
+    }
+   },
+   "window": {
+    "width": 1300,
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 800
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1300,
+    "height": 800,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=music"
+   },
+   "images": [
+    "V-0bfcd763ae7387f0ff78797b830d758e9825d295e9a41e1d7288cd4e16d6f8d3.png"
+   ],
+   "image_digests": {
+    "V-0bfcd763ae7387f0ff78797b830d758e9825d295e9a41e1d7288cd4e16d6f8d3.png": "a7ae8912f2f9d2e875094f689c3a5654b313ff69abecb390533201eb63567336"
+   }
+  },
+  {
+   "state": "风格描述必填",
+   "device": "1400x900@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-88e214cd1a4ba95f822496d30e38d27f9d568292fa487561ea1b9d01c7a44809",
+   "label": "U7 风格描述必填 @1400",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:04+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=music'",
+    "result": {
+     "value": "#tab=music"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 900,
+    "width": 1400
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1400,
+    "height": 900,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=music"
+   },
+   "images": [
+    "V-88e214cd1a4ba95f822496d30e38d27f9d568292fa487561ea1b9d01c7a44809.png"
+   ],
+   "image_digests": {
+    "V-88e214cd1a4ba95f822496d30e38d27f9d568292fa487561ea1b9d01c7a44809.png": "f8aefe418004150aca4fa1c750ba44d90d476598a896fa66cac8cd272d31937f"
+   }
+  },
+  {
+   "state": "风格描述必填",
+   "device": "1920x1080@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-cee41dd5163ce1c0a7588453503b7f130a92f8a9ae66dfa863321c258f373622",
+   "label": "U7 风格描述必填 @1920",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:05+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=music'",
+    "result": {
+     "value": "#tab=music"
+    }
+   },
+   "window": {
+    "width": 1920,
+    "backing_scale": 2,
+    "height": 1018,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1920,
+    "height": 1018,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=music"
+   },
+   "images": [
+    "V-cee41dd5163ce1c0a7588453503b7f130a92f8a9ae66dfa863321c258f373622.png"
+   ],
+   "image_digests": {
+    "V-cee41dd5163ce1c0a7588453503b7f130a92f8a9ae66dfa863321c258f373622.png": "78ebd53009c905f6b87304c637a16d3a8b13770439ac331de4b94af45fd9b6c8"
+   }
+  },
+  {
+   "state": "idle（空闲提示或互斥忙原因替换）",
+   "device": "600x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-4b00c177c3ec97bc63aa5145fc64bf922ff6123c231331610c677fcc549fdeec",
+   "label": "U8 idle（空闲提示或互斥忙原因替换） @600",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:06+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "height": 400,
+    "window_number": 4672,
+    "width": 600,
+    "backing_scale": 2
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 600,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-4b00c177c3ec97bc63aa5145fc64bf922ff6123c231331610c677fcc549fdeec.png"
+   ],
+   "image_digests": {
+    "V-4b00c177c3ec97bc63aa5145fc64bf922ff6123c231331610c677fcc549fdeec.png": "90a1e57000168a19145d8f64cf0f3d3c5f0ac398b36f10063a0d4c00e125a397"
+   }
+  },
+  {
+   "state": "idle（空闲提示或互斥忙原因替换）",
+   "device": "640x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-a7483c13da2ebeb59382ec8c557ff861133d254b0bc628f381ff41022e1afd35",
+   "label": "U8 idle（空闲提示或互斥忙原因替换） @640",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:06+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "height": 400,
+    "window_number": 4672,
+    "width": 640
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 640,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-a7483c13da2ebeb59382ec8c557ff861133d254b0bc628f381ff41022e1afd35.png"
+   ],
+   "image_digests": {
+    "V-a7483c13da2ebeb59382ec8c557ff861133d254b0bc628f381ff41022e1afd35.png": "0808c7a8e981ab67f65d8ff8ebf860ecf69886a994f7f8efae19a40993cd8507"
+   }
+  },
+  {
+   "state": "idle（空闲提示或互斥忙原因替换）",
+   "device": "899x600@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-8d328f54063214b41918d4ab4b3e64efd92e527c5dc796249e73e599e826da4d",
+   "label": "U8 idle（空闲提示或互斥忙原因替换） @899",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:07+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "width": 899,
+    "backing_scale": 2,
+    "height": 600,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 899,
+    "height": 600,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-8d328f54063214b41918d4ab4b3e64efd92e527c5dc796249e73e599e826da4d.png"
+   ],
+   "image_digests": {
+    "V-8d328f54063214b41918d4ab4b3e64efd92e527c5dc796249e73e599e826da4d.png": "0cae5770c8e7bcf991427145109d2603f24d354621cc64bed81d4e15f05b2622"
+   }
+  },
+  {
+   "state": "idle（空闲提示或互斥忙原因替换）",
+   "device": "1100x700@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-43905a857679e23e03d88a5b5a4e736cc4b684361d42895fbcd89e5619fa640e",
+   "label": "U8 idle（空闲提示或互斥忙原因替换） @1100",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:08+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 700,
+    "width": 1100
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1100,
+    "height": 700,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-43905a857679e23e03d88a5b5a4e736cc4b684361d42895fbcd89e5619fa640e.png"
+   ],
+   "image_digests": {
+    "V-43905a857679e23e03d88a5b5a4e736cc4b684361d42895fbcd89e5619fa640e.png": "1742981024147fc493444858628d2ed3caa47e670840e9a0a59f79556becd575"
+   }
+  },
+  {
+   "state": "idle（空闲提示或互斥忙原因替换）",
+   "device": "1300x800@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-daeb321a307de1179e1385abc3b8440f9a3e6446842f84f2fc12f7ac9ab3c159",
+   "label": "U8 idle（空闲提示或互斥忙原因替换） @1300",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:09+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "width": 1300,
+    "height": 800,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1300,
+    "height": 800,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-daeb321a307de1179e1385abc3b8440f9a3e6446842f84f2fc12f7ac9ab3c159.png"
+   ],
+   "image_digests": {
+    "V-daeb321a307de1179e1385abc3b8440f9a3e6446842f84f2fc12f7ac9ab3c159.png": "5c55b856ac377f21bad05fda11ce73cbfc498d5cb02f8644fff0933331730f6b"
+   }
+  },
+  {
+   "state": "idle（空闲提示或互斥忙原因替换）",
+   "device": "1400x900@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-b6c14823b2c4ed2627d354e30f1d9a12b9bf2be9710e0ca1277753a9727a02af",
+   "label": "U8 idle（空闲提示或互斥忙原因替换） @1400",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:10+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "width": 1400,
+    "backing_scale": 2,
+    "height": 900,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1400,
+    "height": 900,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-b6c14823b2c4ed2627d354e30f1d9a12b9bf2be9710e0ca1277753a9727a02af.png"
+   ],
+   "image_digests": {
+    "V-b6c14823b2c4ed2627d354e30f1d9a12b9bf2be9710e0ca1277753a9727a02af.png": "590a6bc0b4eff1ceffae75c03e882a7c266407480ec0bb02fd3f16c59571c903"
+   }
+  },
+  {
+   "state": "idle（空闲提示或互斥忙原因替换）",
+   "device": "1920x1080@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-3805f8fe9bdbd784f131f9dd518a7de7fd218335908e26e54380e299a1b6f0b9",
+   "label": "U8 idle（空闲提示或互斥忙原因替换） @1920",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:11+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "backing_scale": 2,
+    "width": 1920,
+    "height": 1018
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1920,
+    "height": 1018,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-3805f8fe9bdbd784f131f9dd518a7de7fd218335908e26e54380e299a1b6f0b9.png"
+   ],
+   "image_digests": {
+    "V-3805f8fe9bdbd784f131f9dd518a7de7fd218335908e26e54380e299a1b6f0b9.png": "226e12d503340dc2487eda3a578eebb1ebc1c21839c29363bd0fd41db8f98cc7"
+   }
+  },
+  {
+   "state": "不可用：先加载模型",
+   "device": "600x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-c6f93f48c43cb742120e39a9f97aa0f3664a6cf501c8bfc27ce126be1b98a021",
+   "label": "U9 不可用：先加载模型 @600",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:12+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "width": 600,
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 400
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 600,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-c6f93f48c43cb742120e39a9f97aa0f3664a6cf501c8bfc27ce126be1b98a021.png"
+   ],
+   "image_digests": {
+    "V-c6f93f48c43cb742120e39a9f97aa0f3664a6cf501c8bfc27ce126be1b98a021.png": "8cf4bb72770e5101d4fddd185236a973a54e26574728e19a518f30b266ec5b84"
+   }
+  },
+  {
+   "state": "不可用：先加载模型",
+   "device": "640x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-6a632785ef810be017fdc1b08a16432a785aae692e5579afbaf53ee7eba7e538",
+   "label": "U9 不可用：先加载模型 @640",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:13+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "height": 400,
+    "backing_scale": 2,
+    "width": 640
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 640,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-6a632785ef810be017fdc1b08a16432a785aae692e5579afbaf53ee7eba7e538.png"
+   ],
+   "image_digests": {
+    "V-6a632785ef810be017fdc1b08a16432a785aae692e5579afbaf53ee7eba7e538.png": "264d8ca9d77c1b75fc2ef30ff6a597784df2452c80902dbe32dc3f4b3b5c1470"
+   }
+  },
+  {
+   "state": "不可用：先加载模型",
+   "device": "899x600@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-c257bff9b0564c96fea90994fd80275da04c3ffcc2f3695fbb95dbbdda7778e0",
+   "label": "U9 不可用：先加载模型 @899",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:13+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "height": 600,
+    "window_number": 4672,
+    "width": 899
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 899,
+    "height": 600,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-c257bff9b0564c96fea90994fd80275da04c3ffcc2f3695fbb95dbbdda7778e0.png"
+   ],
+   "image_digests": {
+    "V-c257bff9b0564c96fea90994fd80275da04c3ffcc2f3695fbb95dbbdda7778e0.png": "b8a3f5c87456412702dbdea0544ea1c79add767a0f4a38034ba59b7882805e62"
+   }
+  },
+  {
+   "state": "不可用：先加载模型",
+   "device": "1100x700@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-031a7070f7b5973cde0df78fbbc5ec655137f47b78d6d6e692f683b078068332",
+   "label": "U9 不可用：先加载模型 @1100",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:14+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "backing_scale": 2,
+    "width": 1100,
+    "height": 700
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1100,
+    "height": 700,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-031a7070f7b5973cde0df78fbbc5ec655137f47b78d6d6e692f683b078068332.png"
+   ],
+   "image_digests": {
+    "V-031a7070f7b5973cde0df78fbbc5ec655137f47b78d6d6e692f683b078068332.png": "1742981024147fc493444858628d2ed3caa47e670840e9a0a59f79556becd575"
+   }
+  },
+  {
+   "state": "不可用：先加载模型",
+   "device": "1300x800@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-b427eb4b4506ecb473814c2c75d14bc2bd2bcce8f59836ca9450c756d4ad0cca",
+   "label": "U9 不可用：先加载模型 @1300",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:15+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "height": 800,
+    "backing_scale": 2,
+    "width": 1300
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1300,
+    "height": 800,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-b427eb4b4506ecb473814c2c75d14bc2bd2bcce8f59836ca9450c756d4ad0cca.png"
+   ],
+   "image_digests": {
+    "V-b427eb4b4506ecb473814c2c75d14bc2bd2bcce8f59836ca9450c756d4ad0cca.png": "5c55b856ac377f21bad05fda11ce73cbfc498d5cb02f8644fff0933331730f6b"
+   }
+  },
+  {
+   "state": "不可用：先加载模型",
+   "device": "1400x900@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-9fa7817509ae316c9228c0b20a0b3158a008e49a912c8a9ee772dddaa7eabfbb",
+   "label": "U9 不可用：先加载模型 @1400",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:16+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "width": 1400,
+    "height": 900,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1400,
+    "height": 900,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-9fa7817509ae316c9228c0b20a0b3158a008e49a912c8a9ee772dddaa7eabfbb.png"
+   ],
+   "image_digests": {
+    "V-9fa7817509ae316c9228c0b20a0b3158a008e49a912c8a9ee772dddaa7eabfbb.png": "590a6bc0b4eff1ceffae75c03e882a7c266407480ec0bb02fd3f16c59571c903"
+   }
+  },
+  {
+   "state": "不可用：先加载模型",
+   "device": "1920x1080@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-7f678dcc5eba6712ce9090b87ab52355b048793dce3f50592aa1f8e003c78509",
+   "label": "U9 不可用：先加载模型 @1920",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:17+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=video'",
+    "result": {
+     "value": "#tab=video"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 1018,
+    "width": 1920
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1920,
+    "height": 1018,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=video"
+   },
+   "images": [
+    "V-7f678dcc5eba6712ce9090b87ab52355b048793dce3f50592aa1f8e003c78509.png"
+   ],
+   "image_digests": {
+    "V-7f678dcc5eba6712ce9090b87ab52355b048793dce3f50592aa1f8e003c78509.png": "226e12d503340dc2487eda3a578eebb1ebc1c21839c29363bd0fd41db8f98cc7"
+   }
+  },
+  {
+   "state": "badge 齐/一半 N%/没下/未知（含拿不到文件清单）",
+   "device": "600x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-5160df5bb538843f840b521adad44ed9f9b71e4edf58caf0121e667bc86c844b",
+   "label": "U10 badge 齐/一半 N%/没下/未知（含拿不到文件清单） @600",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:18+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=resources'",
+    "result": {
+     "value": "#tab=resources"
+    }
+   },
+   "window": {
+    "width": 600,
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 400
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 600,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=resources"
+   },
+   "images": [
+    "V-5160df5bb538843f840b521adad44ed9f9b71e4edf58caf0121e667bc86c844b.png"
+   ],
+   "image_digests": {
+    "V-5160df5bb538843f840b521adad44ed9f9b71e4edf58caf0121e667bc86c844b.png": "ec53c83dc4afee6221a9d324b38a4aac297fa6af5f0f4adc1615d427a402f7bf"
+   }
+  },
+  {
+   "state": "badge 齐/一半 N%/没下/未知（含拿不到文件清单）",
+   "device": "640x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-a309470d8f657874b471f460d79587aa1efa0c5883c095fd704bcc6b846b62d8",
+   "label": "U10 badge 齐/一半 N%/没下/未知（含拿不到文件清单） @640",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:19+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=resources'",
+    "result": {
+     "value": "#tab=resources"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "height": 400,
+    "window_number": 4672,
+    "width": 640
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 640,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=resources"
+   },
+   "images": [
+    "V-a309470d8f657874b471f460d79587aa1efa0c5883c095fd704bcc6b846b62d8.png"
+   ],
+   "image_digests": {
+    "V-a309470d8f657874b471f460d79587aa1efa0c5883c095fd704bcc6b846b62d8.png": "a1ac632af3cbebebc808516d67f7566f24761e383b2f2258886eafe5dfa36f2d"
+   }
+  },
+  {
+   "state": "badge 齐/一半 N%/没下/未知（含拿不到文件清单）",
+   "device": "899x600@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-cd53853684bce2c657f919404a80223300050bbc10c6a89c4b3e7bc4741b3e3f",
+   "label": "U10 badge 齐/一半 N%/没下/未知（含拿不到文件清单） @899",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:20+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=resources'",
+    "result": {
+     "value": "#tab=resources"
+    }
+   },
+   "window": {
+    "height": 600,
+    "window_number": 4672,
+    "width": 899,
+    "backing_scale": 2
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 899,
+    "height": 600,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=resources"
+   },
+   "images": [
+    "V-cd53853684bce2c657f919404a80223300050bbc10c6a89c4b3e7bc4741b3e3f.png"
+   ],
+   "image_digests": {
+    "V-cd53853684bce2c657f919404a80223300050bbc10c6a89c4b3e7bc4741b3e3f.png": "ed5b980f7298faa84771147cdb3925e2f30de5a60e2055cb1391e5addd684732"
+   }
+  },
+  {
+   "state": "badge 齐/一半 N%/没下/未知（含拿不到文件清单）",
+   "device": "1100x700@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-ce522943e3ddda1a26efa0e3d8163ebdbd93ff9f04b457613aec2373d9aabae7",
+   "label": "U10 badge 齐/一半 N%/没下/未知（含拿不到文件清单） @1100",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:21+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=resources'",
+    "result": {
+     "value": "#tab=resources"
+    }
+   },
+   "window": {
+    "width": 1100,
+    "backing_scale": 2,
+    "height": 700,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1100,
+    "height": 700,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=resources"
+   },
+   "images": [
+    "V-ce522943e3ddda1a26efa0e3d8163ebdbd93ff9f04b457613aec2373d9aabae7.png"
+   ],
+   "image_digests": {
+    "V-ce522943e3ddda1a26efa0e3d8163ebdbd93ff9f04b457613aec2373d9aabae7.png": "ff4ab9d5e0eaa5eb0f6098fe55d00659f6a0d55f0ef3d7b57ac8a13f9f194544"
+   }
+  },
+  {
+   "state": "badge 齐/一半 N%/没下/未知（含拿不到文件清单）",
+   "device": "1300x800@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-c061a43fcb4c8a649a2166c0db5fc2a721835340e2e0a3d09893032c0e8ec28e",
+   "label": "U10 badge 齐/一半 N%/没下/未知（含拿不到文件清单） @1300",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:22+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=resources'",
+    "result": {
+     "value": "#tab=resources"
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "backing_scale": 2,
+    "width": 1300,
+    "height": 800
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1300,
+    "height": 800,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=resources"
+   },
+   "images": [
+    "V-c061a43fcb4c8a649a2166c0db5fc2a721835340e2e0a3d09893032c0e8ec28e.png"
+   ],
+   "image_digests": {
+    "V-c061a43fcb4c8a649a2166c0db5fc2a721835340e2e0a3d09893032c0e8ec28e.png": "4e0cf63dabaa085a6422efff92e958dc5133de86b1acda2517e31a471fd98cf2"
+   }
+  },
+  {
+   "state": "badge 齐/一半 N%/没下/未知（含拿不到文件清单）",
+   "device": "1400x900@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-e991e3ec1eb4e359fc8f0cdc36a52dd61086bdb612efab7036c470c22e7b5058",
+   "label": "U10 badge 齐/一半 N%/没下/未知（含拿不到文件清单） @1400",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:22+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=resources'",
+    "result": {
+     "value": "#tab=resources"
+    }
+   },
+   "window": {
+    "width": 1400,
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 900
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1400,
+    "height": 900,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=resources"
+   },
+   "images": [
+    "V-e991e3ec1eb4e359fc8f0cdc36a52dd61086bdb612efab7036c470c22e7b5058.png"
+   ],
+   "image_digests": {
+    "V-e991e3ec1eb4e359fc8f0cdc36a52dd61086bdb612efab7036c470c22e7b5058.png": "8d1b19ea1606172a04543f4abda43d2e646130516690471529025b76ff013d2e"
+   }
+  },
+  {
+   "state": "badge 齐/一半 N%/没下/未知（含拿不到文件清单）",
+   "device": "1920x1080@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-61d23f07ac2d2c7b226c5481123db821dc80c219a6e925fc7b0324362f3a6438",
+   "label": "U10 badge 齐/一半 N%/没下/未知（含拿不到文件清单） @1920",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:23+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=resources'",
+    "result": {
+     "value": "#tab=resources"
+    }
+   },
+   "window": {
+    "width": 1920,
+    "backing_scale": 2,
+    "height": 1018,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1920,
+    "height": 1018,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=resources"
+   },
+   "images": [
+    "V-61d23f07ac2d2c7b226c5481123db821dc80c219a6e925fc7b0324362f3a6438.png"
+   ],
+   "image_digests": {
+    "V-61d23f07ac2d2c7b226c5481123db821dc80c219a6e925fc7b0324362f3a6438.png": "45753ed982697a1efd338f79fe7c461456e7e04221f84486667a3d12d8f5a580"
+   }
+  },
+  {
+   "state": "空态",
+   "device": "600x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-b74d4cfa282bd4aa0cecec0357d8fb59228345d843c35c528b9952e45df3c6ac",
+   "label": "U11 空态 @600",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:24+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=library'",
+    "result": {
+     "value": "#tab=library"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 400,
+    "width": 600
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 600,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-b74d4cfa282bd4aa0cecec0357d8fb59228345d843c35c528b9952e45df3c6ac.png"
+   ],
+   "image_digests": {
+    "V-b74d4cfa282bd4aa0cecec0357d8fb59228345d843c35c528b9952e45df3c6ac.png": "a4130052eb662a2b5f30e3c2c4eb0f16dbd8d7a0b7e54e8f3b0e1df40f099600"
+   }
+  },
+  {
+   "state": "空态",
+   "device": "640x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-dd96993ec2b9374c1d205a26e6f715134f06c6b0e0b3680ca80a50507e3a508c",
+   "label": "U11 空态 @640",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:25+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=library'",
+    "result": {
+     "value": "#tab=library"
+    }
+   },
+   "window": {
+    "height": 400,
+    "window_number": 4672,
+    "width": 640,
+    "backing_scale": 2
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 640,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-dd96993ec2b9374c1d205a26e6f715134f06c6b0e0b3680ca80a50507e3a508c.png"
+   ],
+   "image_digests": {
+    "V-dd96993ec2b9374c1d205a26e6f715134f06c6b0e0b3680ca80a50507e3a508c.png": "d6c18fe7f966d42be4427b5aec3d228e65aa9de02d0b4ea0ac13a1ceed2e87c4"
+   }
+  },
+  {
+   "state": "空态",
+   "device": "899x600@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-8b0af805a8f36671943e4ace1b17b3a3e7dcd5d8a5cef11b7fe3c50185832b7b",
+   "label": "U11 空态 @899",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:26+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=library'",
+    "result": {
+     "value": "#tab=library"
+    }
+   },
+   "window": {
+    "width": 899,
+    "backing_scale": 2,
+    "height": 600,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 899,
+    "height": 600,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-8b0af805a8f36671943e4ace1b17b3a3e7dcd5d8a5cef11b7fe3c50185832b7b.png"
+   ],
+   "image_digests": {
+    "V-8b0af805a8f36671943e4ace1b17b3a3e7dcd5d8a5cef11b7fe3c50185832b7b.png": "25fa8ae35f5f95bf4f0fc4634cea4eb882d8ad026f4c58475488b43359203596"
+   }
+  },
+  {
+   "state": "空态",
+   "device": "1100x700@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-9b787f7ed94450f68fde0da9af5c49433ca0a2073d00ccbdd76b86384dbad3dd",
+   "label": "U11 空态 @1100",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:27+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=library'",
+    "result": {
+     "value": "#tab=library"
+    }
+   },
+   "window": {
+    "width": 1100,
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 700
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1100,
+    "height": 700,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-9b787f7ed94450f68fde0da9af5c49433ca0a2073d00ccbdd76b86384dbad3dd.png"
+   ],
+   "image_digests": {
+    "V-9b787f7ed94450f68fde0da9af5c49433ca0a2073d00ccbdd76b86384dbad3dd.png": "d204ebb1eb3351ce55a29ddaa714bf44c100d5dc9155f72bf031af84bf978803"
+   }
+  },
+  {
+   "state": "空态",
+   "device": "1300x800@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-2b642df190e00d877b220436edf1c282f0478d45357efd602710b3338499bc10",
+   "label": "U11 空态 @1300",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:28+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=library'",
+    "result": {
+     "value": "#tab=library"
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "height": 800,
+    "window_number": 4672,
+    "width": 1300
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1300,
+    "height": 800,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-2b642df190e00d877b220436edf1c282f0478d45357efd602710b3338499bc10.png"
+   ],
+   "image_digests": {
+    "V-2b642df190e00d877b220436edf1c282f0478d45357efd602710b3338499bc10.png": "bbd795f52599073b893498b67edacb09969cc367e9d4b838ea365d4d577be1af"
+   }
+  },
+  {
+   "state": "空态",
+   "device": "1400x900@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-b48600db8f49f068cb324e350bbe6a85ad696a9ad19d0f7d793731d30142e2bb",
+   "label": "U11 空态 @1400",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:29+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=library'",
+    "result": {
+     "value": "#tab=library"
+    }
+   },
+   "window": {
+    "width": 1400,
+    "backing_scale": 2,
+    "height": 900,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1400,
+    "height": 900,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-b48600db8f49f068cb324e350bbe6a85ad696a9ad19d0f7d793731d30142e2bb.png"
+   ],
+   "image_digests": {
+    "V-b48600db8f49f068cb324e350bbe6a85ad696a9ad19d0f7d793731d30142e2bb.png": "4fe5873adf6ca836a0bf16fd739b835037e74674205eff5ed426082062ddd048"
+   }
+  },
+  {
+   "state": "空态",
+   "device": "1920x1080@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-76ba35b179a56956c180b7accaeafba86413de34db0e942972f09f5f17f2dc0b",
+   "label": "U11 空态 @1920",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:30+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "location.hash = '#tab=library'",
+    "result": {
+     "value": "#tab=library"
+    }
+   },
+   "window": {
+    "height": 1018,
+    "window_number": 4672,
+    "width": 1920,
+    "backing_scale": 2
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1920,
+    "height": 1018,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-76ba35b179a56956c180b7accaeafba86413de34db0e942972f09f5f17f2dc0b.png"
+   ],
+   "image_digests": {
+    "V-76ba35b179a56956c180b7accaeafba86413de34db0e942972f09f5f17f2dc0b.png": "25963a92efc82a03c00908b02fe2e1c65f44b6c0341ec6a862893cac51ded7d6"
+   }
+  },
+  {
+   "state": "打开（body.drawer-open + 背景遮罩）",
+   "device": "600x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-9dc1c6518d6e6c952fc6ad4cb150e133921d5594624e81d31f674e6fb282127d",
+   "label": "U12 打开（body.drawer-open + 背景遮罩） @600",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:31+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "document.querySelector('[data-open-settings]').click()",
+    "result": {
+     "value": null
+    }
+   },
+   "window": {
+    "width": 600,
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 400
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 600,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-9dc1c6518d6e6c952fc6ad4cb150e133921d5594624e81d31f674e6fb282127d.png"
+   ],
+   "image_digests": {
+    "V-9dc1c6518d6e6c952fc6ad4cb150e133921d5594624e81d31f674e6fb282127d.png": "ca6acf03b0aa74f86c16e7c86c0e5f038eb132894cc377e204201c6cbbf3e832"
+   }
+  },
+  {
+   "state": "打开（body.drawer-open + 背景遮罩）",
+   "device": "640x400@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-a30c48b52abb66eaa9224a944a0123ae09d42ea0810b654c32db0c55ab41fea9",
+   "label": "U12 打开（body.drawer-open + 背景遮罩） @640",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:31+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "document.querySelector('[data-open-settings]').click()",
+    "result": {
+     "value": null
+    }
+   },
+   "window": {
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 400,
+    "width": 640
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 640,
+    "height": 400,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-a30c48b52abb66eaa9224a944a0123ae09d42ea0810b654c32db0c55ab41fea9.png"
+   ],
+   "image_digests": {
+    "V-a30c48b52abb66eaa9224a944a0123ae09d42ea0810b654c32db0c55ab41fea9.png": "afeef4604f1889ec46551a03d2430c39908906000854841af4a1f523cb89ae4e"
+   }
+  },
+  {
+   "state": "打开（body.drawer-open + 背景遮罩）",
+   "device": "899x600@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-7b7cde0f1d1a3cc763454de501edbda4fa10ab2bf6848009b75347b2927b234a",
+   "label": "U12 打开（body.drawer-open + 背景遮罩） @899",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:32+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "document.querySelector('[data-open-settings]').click()",
+    "result": {
+     "value": null
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "width": 899,
+    "backing_scale": 2,
+    "height": 600
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 899,
+    "height": 600,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-7b7cde0f1d1a3cc763454de501edbda4fa10ab2bf6848009b75347b2927b234a.png"
+   ],
+   "image_digests": {
+    "V-7b7cde0f1d1a3cc763454de501edbda4fa10ab2bf6848009b75347b2927b234a.png": "cb76163143e2f9da84994afa5bda61692055392a9cd74bb3746497b94fdab8d8"
+   }
+  },
+  {
+   "state": "打开（body.drawer-open + 背景遮罩）",
+   "device": "1100x700@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-05c8cda5be6a1ea0d3c397f12f58811a51696602a35ab95114372c0c5b0a657e",
+   "label": "U12 打开（body.drawer-open + 背景遮罩） @1100",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:33+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "document.querySelector('[data-open-settings]').click()",
+    "result": {
+     "value": null
+    }
+   },
+   "window": {
+    "width": 1100,
+    "backing_scale": 2,
+    "height": 700,
+    "window_number": 4672
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1100,
+    "height": 700,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-05c8cda5be6a1ea0d3c397f12f58811a51696602a35ab95114372c0c5b0a657e.png"
+   ],
+   "image_digests": {
+    "V-05c8cda5be6a1ea0d3c397f12f58811a51696602a35ab95114372c0c5b0a657e.png": "d1d2a8ea5840b445c4e4240846e0dcfa393cac35a9c06af1bd7167544d48e25e"
+   }
+  },
+  {
+   "state": "打开（body.drawer-open + 背景遮罩）",
+   "device": "1300x800@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-995b2830213ad19589cffc2314510c363dfecfe318c058eb47344941414594f5",
+   "label": "U12 打开（body.drawer-open + 背景遮罩） @1300",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:34+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "document.querySelector('[data-open-settings]').click()",
+    "result": {
+     "value": null
+    }
+   },
+   "window": {
+    "width": 1300,
+    "backing_scale": 2,
+    "window_number": 4672,
+    "height": 800
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1300,
+    "height": 800,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-995b2830213ad19589cffc2314510c363dfecfe318c058eb47344941414594f5.png"
+   ],
+   "image_digests": {
+    "V-995b2830213ad19589cffc2314510c363dfecfe318c058eb47344941414594f5.png": "9c2bf0d8ab313e17a50725d31a26ee2fbb419bba682248cd58605152eabd65ca"
+   }
+  },
+  {
+   "state": "打开（body.drawer-open + 背景遮罩）",
+   "device": "1400x900@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-e5bbb093723c0811885082ad2a87d9966612bf18755917b9d1301879e23b9757",
+   "label": "U12 打开（body.drawer-open + 背景遮罩） @1400",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:35+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "document.querySelector('[data-open-settings]').click()",
+    "result": {
+     "value": null
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "height": 900,
+    "backing_scale": 2,
+    "width": 1400
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1400,
+    "height": 900,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-e5bbb093723c0811885082ad2a87d9966612bf18755917b9d1301879e23b9757.png"
+   ],
+   "image_digests": {
+    "V-e5bbb093723c0811885082ad2a87d9966612bf18755917b9d1301879e23b9757.png": "98e3eb74e7c12128bdc076f84dbc8b68b0e1975b3048a9300f39080004f263a3"
+   }
+  },
+  {
+   "state": "打开（body.drawer-open + 背景遮罩）",
+   "device": "1920x1080@2",
+   "os": "macOS 26.0 WKWebView",
+   "appearance": "dark",
+   "dynamic_type": "浏览器缩放 100%",
+   "locale": "zh-CN",
+   "orientation": "landscape",
+   "pointer": "mouse",
+   "baseline_digest": "b9301e4f385920623ffab5a86b35605c90f079d16da8323fbacac1bb2c21c104",
+   "interaction_digest": "992bcfb341ab7b58dae92911f935f552fae8aec849c3ff8af0781106441003be",
+   "inventory_digest": "7cccb705d50bd0298532dcf6c7772a10167bae0ae4b0ee13914c5f2ccd0ebcc1",
+   "matrix_digest": "25f1292b3e330acfc94bd5cf5164d4c5e1fcba28d3a3d3409a81d1d4702de150",
+   "case_id": "V-15ea9f86a68bf700e2c10ce1f7371e390d684933513a347ee47f38cce5b41e52",
+   "label": "U12 打开（body.drawer-open + 背景遮罩） @1920",
+   "build": "cda38b8+a00ccb56c765",
+   "captured_at": "2026-09-16T19:18:36+09:00",
+   "capture_mode": "viewport",
+   "headless": false,
+   "scrollbars": "overlay",
+   "scroll_profile": {
+    "scroll_width": 0,
+    "client_width": 0,
+    "scroll_height": 0,
+    "client_height": 0,
+    "gutter_px": 0
+   },
+   "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+   "setup": {
+    "js": "document.querySelector('[data-open-settings]').click()",
+    "result": {
+     "value": null
+    }
+   },
+   "window": {
+    "window_number": 4672,
+    "backing_scale": 2,
+    "width": 1920,
+    "height": 1018
+   },
+   "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 1920,
+    "height": 1018,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "session_list_profile": {
+     "scroll_width": 0,
+     "client_width": 0,
+     "scroll_height": 0,
+     "client_height": 0,
+     "gutter_px": 0
+    },
+    "tab": "tab=library"
+   },
+   "images": [
+    "V-15ea9f86a68bf700e2c10ce1f7371e390d684933513a347ee47f38cce5b41e52.png"
+   ],
+   "image_digests": {
+    "V-15ea9f86a68bf700e2c10ce1f7371e390d684933513a347ee47f38cce5b41e52.png": "cd9de7b2f97777a8ebd56d4c8b32a0d8162c39fd846513999dc6162c8f920385"
+   }
+  }
+ ],
+ "skipped": []
+}

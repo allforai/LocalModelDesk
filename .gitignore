@@ -42,7 +42,8 @@ minimax-music3/
 # Local review dumps — screenshots and recordings only. The confirmed rules (visual-baseline.json,
 # interaction-baseline.json) and the reports ARE tracked: without them a later reviewer has no
 # sentence to cite, and re-freezing a baseline costs a whole confirmation session.
-docs/cross-exam/**/evidence/
+docs/cross-exam/**/*.png
+docs/cross-exam/**/*.jpg
 docs/cross-exam/**/*.mov
 docs/cross-exam/**/*.webm
 .playwright-mcp/
