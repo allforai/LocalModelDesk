@@ -2,9 +2,18 @@
 // 每个部件同时写长/短两套文案（wide-only/narrow-only），CSS 按宽度切换可见的一套，
 // 永不用 overflow:hidden 截断，也永不整块隐藏某个状态（F1/W4/W6）。
 import { renderState } from "../pure/desk_state.js";
+import { budgetLabel } from "../pure/budget_label.js";
 import { setIcon } from "../icons.js";
 
 const MEDIA_HOLDER_LABEL = { video: "视频生成中", music: "音乐生成中" };
+
+// data:budgetSnapshot 的 chat 字段 → 追加在内存行后面的文案（R-budget-01：
+// 来源必须一眼分得开，所以永远带 budgetLabel，从不只写数字）。
+function chatBudgetSuffix(budget) {
+  const chat = budget?.chat;
+  if (!chat || chat.source === "unavailable" || !Number.isFinite(chat.token_limit)) return "";
+  return ` · 对话额度 ${chat.token_limit} 字（${budgetLabel(chat.source)}）`;
+}
 
 // desk_state.js 的 holderText 对媒体持有者省去了「内存里：」前缀（与右侧媒体状态重复陈述，
 // W4）。这里直接从 deskState 派生，不依赖 pure/desk_state.js 的现成字符串。
@@ -38,11 +47,13 @@ export function createStatusBar(root) {
   let isOffline = false;
   let lastIcon = null;
   return {
-    update(deskState, snapshot, download = null, names = {}) {
+    update(deskState, snapshot, download = null, names = {}, budget = null) {
       const view = renderState(deskState, snapshot, download, names);
       const name = holderName(deskState, names);
       const nextNarrow = view.nextOk ? "可开工" : "忙";
-      setPart(doc, mem, view.memText, view.memText);
+      // 窄屏保持原有的短文案，「对话额度」只追加在宽屏那一套里（W4/W6：永不整块隐藏，
+      // 但也不能把窄屏挤爆）。
+      setPart(doc, mem, `${view.memText}${chatBudgetSuffix(budget)}`, view.memText);
       setPart(doc, holder, `内存里：${name}`, name);
       // Same badge family as the chat pane's model-state pill (F15): loaded llm
       // holds it (ok), a media job holds it (busy), nothing holds it (none).

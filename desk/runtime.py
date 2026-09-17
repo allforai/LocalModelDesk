@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 import logging
+from pathlib import Path
 import time
 
 from .app import DeskApp, Response
@@ -84,7 +86,29 @@ class ProductionRuntime:
         self.app.shutdown()
 
 
-def _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway) -> None:
+def _budget_payload(budget, llm, resources, roots) -> dict:
+    """`/api/budget`：额度快照 + 当前驻留模型的对话额度，每个数字带来源（R-budget-01）。
+
+    没有驻留模型时 Budget.snapshot_with_chat() 自己把 chat 记成「算不出」；
+    只读 config.json 取声明窗口，绝不写模型目录。
+    """
+    loaded = (llm.status() or {}).get("loaded_model")
+    if not loaded:
+        return budget.snapshot_with_chat()
+    entry = next((e for e in resources.list_catalog() if e.key == loaded["key"]), None)
+    config: dict = {}
+    if entry is not None:
+        config_path = Path(roots.models_root) / entry.relpath / "config.json"
+        try:
+            data = json.loads(config_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            data = {}
+        if isinstance(data, dict):
+            config = data
+    return budget.snapshot_with_chat(loaded["key"], config, loaded["gb"])
+
+
+def _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway, budget) -> None:
     app.add_routes(foundation_routes.build_routes())
 
     for method, pattern, handler in build_resource_routes(resources):
@@ -122,6 +146,9 @@ def _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway) 
     app.add_routes([
         ("GET", "/api/state", lambda _req: arbiter.desk_state()),
         ("GET", "/api/memory", lambda _req: arbiter.memory_snapshot()),
+        ("GET", "/api/budget", lambda _req: Response(
+            200, _budget_payload(budget, llm, resources, roots)
+        )),
         ("GET", "/api/gateway/config", lambda _req: Response(
             *gateway.handle_config_request("GET")
         )),
@@ -164,6 +191,6 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
     gateway = GatewayService(DeskGatewayBackend(llm, arbiter), _gateway_config_reader())
     gateway.on_rollback = lambda cfg: config.update_config(roots, gateway=cfg)
     app = DeskApp(host, port)
-    _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway)
+    _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway, budget)
     app.capabilities = capabilities.probe_capabilities(roots)
     return ProductionRuntime(app, gateway, llm, media, resources)

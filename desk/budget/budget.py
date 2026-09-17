@@ -187,3 +187,19 @@ class Budget:
                 "total_bytes": snap.total_bytes,
                 "pressure": snap.pressure,
                 "media": media}
+
+    def snapshot_with_chat(self, key=None, config=None, weights_gb=None) -> dict:
+        """台面状态 + 诊断都要看得出每个数字的来源（R-budget-01）。
+
+        没有驻留模型时 chat 就是「算不出」，不是猜一个：没有 key 就没有 for_chat
+        可用的输入，装作能算反而会把「没有模型」和「模型没量过」混为一谈。
+        """
+        snap = self.snapshot()
+        if key is None:
+            chat = {"source": "unavailable"}
+        else:
+            cb = self.for_chat(key, config or {}, weights_gb or 0.0)
+            chat = {"token_limit": cb.token_limit, "compact_at": cb.compact_at,
+                    "source": cb.source, "window": cb.window}
+        snap["chat"] = chat
+        return snap
