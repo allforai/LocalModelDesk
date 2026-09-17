@@ -73,6 +73,9 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .msg-summary .md{margin:10px 0 0;color:var(--text);font-size:14px}
 .summary-actions{display:flex;gap:8px;margin-top:12px}
 .summary-edit{width:100%;min-height:120px}
+/* 压缩进行中的提示条（R-context-04「对用户可见，不得静默阻塞」）：
+   它是 prepend 到消息区顶部的，位置与 .msg-summary 不同，所以不能共用上面那组规则。 */
+.compacting-banner{margin:0 0 12px;padding:8px 12px;color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:var(--radius-card);text-align:center}
 
 /* 6a. cards + session list */
 .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:16px}
