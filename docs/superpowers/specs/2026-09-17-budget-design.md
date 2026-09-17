@@ -2,7 +2,7 @@
 
 **日期** 2026-09-17
 **对应 spec** `2026-09-17-budget-spec.md`
-**覆盖需求** R-budget-01 … R-budget-09、R-context-01 … R-context-05，
+**覆盖需求** R-budget-01 … R-budget-10、R-context-01 … R-context-05，
 并改写 R-arbiter-01 / 04 / 05 / 07
 
 ---
@@ -88,12 +88,32 @@ budget.py     合成额度，给出执行参数与消费者要的答案
 ### 对外接口
 
 ```python
+@dataclass(frozen=True)
+class Workload:
+    kind: str            # "chat" | "video" | "music"
+    key: str | None      # 模型 key，chat 才有
+    bytes_needed: int    # 权重 + KV 额度，或作业峰值
+    source: str          # predicted | measured | unavailable
+
 class Budget:
-    def for_chat(self) -> ChatBudget         # token 上限、压缩触发点、依据来源
-    def can_run(self, kind, *, alongside) -> Verdict    # 取代 arbiter.can_start_heavy
-    def launch_args(self, model_dir) -> list[str]       # 起 mlx-lm 的限额参数
-    def snapshot(self) -> dict                          # 状态栏与诊断，每个数带来源
+    def cost(self, kind, key=None) -> Workload      # 单件重活要多少，带来源
+    def fits(self, workloads) -> Verdict            # 一组能否共存 —— 纯函数
+    def plan(self, wanted) -> Plan                  # 想跑这一组 ⇒ 该让出谁（最小让出）
+    def for_chat(self) -> ChatBudget                # token 上限、压缩触发点、来源
+    def launch_args(self, model_dir) -> list[str]   # 起 mlx-lm 的限额参数
+    def snapshot(self) -> dict                      # 状态栏与诊断，每个数带来源
 ```
+
+**核心是 `fits(workloads)` 而不是 `can_run(kind, alongside)`。** 共存是集合问题：
+三件重活能否同时跑，不等于三个两两判断的合取。而且 R-arbiter-05 的「最小让出」
+只有在集合上才算得出来——要腾出谁，取决于整组的组合。`plan()` 因此与 `fits()` 同层，
+不是它的调用方。
+
+`fits()` 是纯函数（一组 `Workload` 加一份内存快照进，`Verdict` 出），
+所以组合爆炸的情况可以在单测里毫秒级穷举，不需要真装模型。
+
+**整组来源取最弱的那个**：一组里只要有一件是 `unavailable`，整组按 `unavailable` 处理，
+即保守路径。不允许「两件实测 + 一件没量过」被当成实测依据放行。
 
 `snapshot()` 中每个数字必须带 `source` ∈ `predicted` / `measured` / `unavailable`。
 这不是装饰：本方案立身于「实测修正预测」，界面与日志若分不出哪个数是猜的，
@@ -167,7 +187,7 @@ done 事件     usage.prompt_tokens                     ⇒ 本轮 token 数
 | 现状 | 改为 |
 |---|---|
 | R-arbiter-01 三者互斥，持有者唯一 | 重活能否并存由预算判定；预算不足时结果即互斥。持有者从单个变为一组 |
-| R-arbiter-04 媒体在跑即拒绝加载 LLM | 拒绝条件改为预算装不下，理由码带数字（需要多少 / 现有多少 / 依据来源） |
+| R-arbiter-04 媒体在跑即拒绝加载 LLM | 拒绝条件改为 `fits()` 判否，理由码带数字（需要多少 / 现有多少 / 依据来源） |
 | R-arbiter-05 开媒体前自动卸 LLM | 仅在预算不足时让出，且最小让出（卸最省的那个，非全卸） |
 | R-arbiter-07 加载前比对一次体积 | 持续生效：会话中 KV 增长同样在预算内被监控 |
 | R-arbiter-02 / 03 / 06 | 不动 |
@@ -235,7 +255,8 @@ done 事件     usage.prompt_tokens                     ⇒ 本轮 token 数
   与 gemma 的双窗口陷阱
 - `observe.py` 解析：真实 mlx-lm 日志行做 fixture，含格式变化时的降级路径
 - `budget.py` 合成：注入假观察，验证 predicted / measured / unavailable 三种来源
-  下的额度与 `source` 标记
+  下的额度与 `source` 标记；**`fits()` 穷举一到三件重活的全部组合**，
+  含「两件实测加一件未测应整组保守」这条；`plan()` 验证让出的是最省的那组而非全部
 - 自校准回路：给定日志字节数与 `prompt_tokens`，验证得出的每 token 字节与档案写入
 - 压缩：e2e 验证触发点、尾部保留、原文不丢、`wireMessages` 只发摘要加尾部
 - **每条测试都须验证其在功能失效时会失败**——短接被测行为，确认变红
