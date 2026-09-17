@@ -3,6 +3,8 @@
 import * as api from "../api.js";
 import { sseDataLines } from "../stream.js";
 import { initialStream, reduceChunk, wireMessages } from "../pure/chat_stream.js";
+import { maybeCompact } from "../pure/compaction.js";
+import { buildSummaryRequest } from "../pure/summary_prompt.js";
 import { needsWarning } from "../pure/mem_warn.js";
 import { formatBytes } from "../pure/format.js";
 import { statusBadge } from "../pure/model_status.js";
@@ -41,6 +43,7 @@ export function createChatPane(root, ctx = {}) {
   let readyModels = null; // null until the catalog has been read once
   let heavyAllowed = true;
   let heavyReason = "";
+  let compactingBanner = null; // 「正在压缩较早的对话…」提示条，压缩期间显示（R-context-04）
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
   const current = () => sessions.find((s) => s.id === currentId) ?? null;
@@ -374,8 +377,12 @@ export function createChatPane(root, ctx = {}) {
     let thinkingSeconds = 0;
     let state = initialStream();
     liveTurn = { session, state };
+    // 记下这一轮实际发出去的字符数：压缩要靠它反推每 token 字符数（R-context-01 背景）。
+    let sentChars = 0;
     try {
-      const body = await api.chatStream(wireMessages(session.messages), { signal: streamAbort.signal });
+      const wired = wireMessages(session.messages);
+      sentChars = JSON.stringify(wired).length;
+      const body = await api.chatStream(wired, { signal: streamAbort.signal });
       for await (const line of sseDataLines(body)) {
         state = reduceChunk(state, line);
         liveTurn.state = state;
@@ -447,6 +454,60 @@ export function createChatPane(root, ctx = {}) {
       sessions = sortSessions(sessions.map((item) => item.id === updated.id ? updated : item));
       renderSessionList();
     } catch (error) { setError(`会话保存失败：${error.message}`); }
+    // 压缩发生在两轮之间，不打断正在生成的回答（R-context-04）。
+    await compactIfNeeded(session, state.usage?.prompt_tokens, sentChars);
+  }
+
+  // 一轮结束后判断是否要压缩较早的历史。summarise 走同一个驻留模型的一次
+  // chatStream 调用（R-context-04：不加载第二个模型）；纯判断/切分/写回逻辑
+  // 都在 maybeCompact 里，这里只负责取数、渲染进行中提示、落盘。
+  async function compactIfNeeded(session, promptTokens, sentChars) {
+    const budget = await api.budget().catch(() => null);
+    if (!budget) return; // 预算读不到就不压缩，不能替用户裁剪历史（同 R-budget-11 的保守纪律）
+    const showBanner = () => {
+      if (currentId !== session.id) return;
+      els.sendBtn.disabled = true; // 摘要占用同一个模型：发送按钮得置灰，否则像是卡住了
+      if (!compactingBanner) {
+        compactingBanner = doc.createElement("p");
+        compactingBanner.className = "compacting-banner";
+        compactingBanner.textContent = "正在压缩较早的对话…";
+        els.messages.prepend(compactingBanner);
+      }
+    };
+    const hideBanner = () => {
+      if (compactingBanner) { compactingBanner.remove(); compactingBanner = null; }
+      if (currentId === session.id) els.sendBtn.disabled = false;
+    };
+    const summarise = async (head) => {
+      showBanner();
+      try {
+        const body = await api.chatStream(buildSummaryRequest(head));
+        let s = initialStream();
+        for await (const line of sseDataLines(body)) {
+          s = reduceChunk(s, line);
+          if (s.done || s.error) break;
+        }
+        if (s.error) throw new Error(s.error.message);
+        return s.content;
+      } finally {
+        hideBanner();
+      }
+    };
+    const result = await maybeCompact(session.messages, {
+      promptTokens, sentChars,
+      compactAt: budget.chat?.compact_at,
+      pressure: budget.pressure,
+      summarise,
+    });
+    // 失败或没到触发点：maybeCompact 已经原样返回，什么都不用做，下一轮再判断。
+    if (!result.compacted) return;
+    session.messages = result.messages;
+    try {
+      const updated = await api.updateChatSession(session.id, { messages: session.messages, model: els.modelSelect.value || null });
+      sessions = sortSessions(sessions.map((item) => item.id === updated.id ? updated : item));
+      renderSessionList();
+    } catch (error) { setError(`会话保存失败：${error.message}`); }
+    if (currentId === session.id) renderMessages();
   }
 
   els.loadBtn.addEventListener("click", loadSelected);

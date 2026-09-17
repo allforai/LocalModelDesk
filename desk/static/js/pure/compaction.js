@@ -53,3 +53,40 @@ export function splitForCompaction(messages, { compactAt, charsPerToken: ratio }
   }
   return { head: list.slice(0, cut), tail: list.slice(cut) };
 }
+
+/** 一轮结束后的压缩编排：判断、切分、请模型填表、写回。
+ *
+ * `summarise` 由调用方注入（生产里是走 api.chatStream 的一次调用），
+ * 所以这一层可以在没有浏览器、没有模型的情况下被完整测试。
+ *
+ * 失败时一个字都不写：绝不能留下「老消息被标成已替代、摘要却没生成」的
+ * 中间态——那会静默丢掉上下文，而且用户看不出来。
+ */
+export async function maybeCompact(messages, { promptTokens, sentChars, compactAt, pressure, summarise } = {}) {
+  const list = [...(messages ?? [])];
+  const ratio = charsPerToken(sentChars, promptTokens);
+  if (!ratio || !needsCompaction({ promptTokens, compactAt, pressure })) {
+    return { compacted: false, messages: list };
+  }
+  const { head } = splitForCompaction(list, { compactAt, charsPerToken: ratio });
+  if (head.length === 0) return { compacted: false, messages: list };
+
+  let text;
+  try {
+    text = await summarise(head);
+  } catch (error) {
+    return { compacted: false, messages: list, error: error.message };
+  }
+  if (!(text ?? "").trim()) return { compacted: false, messages: list };
+
+  // replaced_through 是「新数组里被替代的最后一条」的下标，不是 head.length - 1：
+  // 摘要插在最前面，把原来的第 0…head.length-1 条顶到新数组的第 1…head.length 条。
+  // 这是本计划最容易差一位的地方，tests/js/chat_compaction_flow.test.js 专门验它。
+  const summary = {
+    role: "summary",
+    content: text.trim(),
+    replaced_through: head.length,
+    created_at: new Date().toISOString(),
+  };
+  return { compacted: true, messages: [summary, ...list] };
+}
