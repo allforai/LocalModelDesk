@@ -2,7 +2,7 @@
 
 **日期** 2026-09-17
 **对应 spec** `2026-09-17-budget-spec.md`
-**覆盖需求** R-budget-01 … R-budget-10、R-context-01 … R-context-05，
+**覆盖需求** R-budget-01 … R-budget-11、R-context-01 … R-context-05，
 并改写 R-arbiter-01 / 04 / 05 / 07
 
 ---
@@ -206,8 +206,19 @@ done 事件     usage.prompt_tokens                     ⇒ 本轮 token 数
 这与本仓库其它地方的证据纪律一致：没有证据的结论不算结论。
 
 **压力传感器作兜底**：`kern.memorystatus_vm_pressure_level`（R-arbiter-02 已在读）
-一旦升高，第一动作是令 mlx-lm trim 掉 KV 缓存——便宜且可逆，
-比卸模型或杀媒体作业温和得多。它不做决策，只当最后一道闸。
+一旦升高，按代价从轻到重处置：收紧对话额度并立即压缩 → 拒绝新的重活 →
+才是卸模型或杀作业。它不做决策，只当最后一道闸。
+
+**原设计里「令 mlx-lm trim」这一步做不到**，已核实：mlx-lm 只有
+`/v1/completions`、`/v1/chat/completions`、`/chat/completions`、`/v1/models`、`/health`
+五个路由，没有管理端点；`trim_to()` 只在它自己的请求循环里按 `--prompt-cache-bytes`
+调用。限额是命令行参数，运行时改不了，收紧只能在下次加载时生效。
+
+**per_token 公式只对标准 MHA/GQA 成立**（R-budget-11）：本机 glm-4.7-flash 是 MLA，
+每层每 token 存一个压缩潜向量而非 KV 头。对它套标准公式并用
+`hidden_size // num_attention_heads` 凑 `head_dim`，会得出约 375 KB/token，
+实际约 53 KB——高估 7 倍，而且那个数看起来完全合理。这是整份设计不信任纯预测
+公式的最好例证：错得离谱且无人察觉，只有实测能纠正。
 
 **失败要被记住**：预算判定「装得下」而实际触发内存压力，该次必须落盘，
 并永久收紧该组合的预算。只从成功里学习的系统会反复犯同一个错误。
