@@ -131,7 +131,13 @@ def _free_port() -> int:
         return listener.getsockname()[1]
 
 
-def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, gateway):
+DEFAULT_BUDGET_PAYLOAD = {
+    "available_bytes": 0, "total_bytes": 0, "pressure": "normal",
+    "chat": {"source": "unavailable"}, "media": {},
+}
+
+
+def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, gateway, budget_payload):
     """Mount the real service seams behind DeskApp's deliberately small codec.
 
     The production route modules use richer response carriers than ``DeskApp``.
@@ -226,10 +232,9 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
         ("GET", "/api/state", lambda _req: arbiter.desk_state()),
         ("GET", "/api/memory", lambda _req: arbiter.memory_snapshot()),
         # 台面前端每个 tick 都会取它；测试台面不挂的话，e2e 里状态栏会一直报离线。
-        ("GET", "/api/budget", lambda _req: {"available_bytes": 0, "total_bytes": 0,
-                                             "pressure": "normal",
-                                             "chat": {"source": "unavailable"},
-                                             "media": {}}),
+        # 缺省写死为「算不出」，与压缩测试前的既有行为一致；压缩 e2e 需要一个很小
+        # 的 compact_at 才能触发，靠 launch_test_harness(budget=...) 覆盖。
+        ("GET", "/api/budget", lambda _req: dict(budget_payload)),
         ("POST", "/api/gateway/config", lambda _req: gateway.handle_config_request("POST")[1]),
         ("GET", "/api/gateway/config", lambda _req: gateway.handle_config_request("GET")[1]),
     ]
@@ -247,6 +252,7 @@ def launch_test_harness(
     media_script: MediaScript | None = None,
     download_control: DownloadControl | None = None,
     memory_script: MemoryScript | None = None,
+    budget: dict | None = None,
 ) -> TestHarness:
     """Launch real desk services against seeded files and deterministic fakes.
 
@@ -344,7 +350,8 @@ def launch_test_harness(
         _GatewayBackend(llm, arbiter),
         lambda: config.read_config(roots).to_json(),
     )
-    route_specs = _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway)
+    budget_payload = budget if budget is not None else DEFAULT_BUDGET_PAYLOAD
+    route_specs = _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway, budget_payload)
     app.start_background()
     if configured and gateway_enabled:
         gateway.start_from_config()

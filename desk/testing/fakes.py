@@ -84,19 +84,33 @@ class FakeLlmBackend:
         return self.proc is not None and self.proc.poll() is None
 
     def _iter_steps(self, payload: dict, *, wait_gates: bool):
+        # 一次调用只推进到下一个 Done/Break 就停——这样一个 ChatScript 能依次扮演
+        # 多个真实请求：主回合结束后，压缩会在两轮之间自动发起第二次 chat_stream
+        # 调用（同一个假后端，同一个脚本，从上次停下的地方继续）。脚本用完了
+        # （下标走到末尾）才算真正 consumed；提前发起第二次请求本身不算超支。
         script = self.script
         if script.consumed:
             raise ScriptExhausted("chat script already consumed")
-        script.consumed = True
         script.requests.append(payload)
-        for step in script.steps:
+        start = script._pos
+        if start >= len(script.steps):
+            raise ScriptExhausted("chat script already consumed")
+        for index in range(start, len(script.steps)):
+            step = script.steps[index]
+            script._pos = index + 1
             if isinstance(step, Gate):
                 if wait_gates:
                     step.wait()
-            elif isinstance(step, (Delta, Done, Break)):
+                continue
+            if isinstance(step, (Delta, Done, Break)):
                 yield step
+                if isinstance(step, (Done, Break)):
+                    if script._pos >= len(script.steps):
+                        script.consumed = True
+                    return
             else:
                 raise ScriptExhausted(f"unexpected chat step: {step!r}")
+        script.consumed = True
 
     def chat_stream(self, port: int, payload: dict):
         for step in self._iter_steps(payload, wait_gates=True):

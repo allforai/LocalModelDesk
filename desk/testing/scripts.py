@@ -91,6 +91,10 @@ class ChatScript:
     def __init__(self, steps: list | None = None):
         self.steps = steps if steps is not None else default_chat_steps()
         self._opened = 0
+        # 消费到 self.steps 的哪个下标了。一个 Done/Break 结束一个"回合"：一次
+        # chat_stream()/chat() 调用只推进到下一个 Done/Break 为止就停，好让同一个
+        # 脚本依次扮演多个真实请求（例如：主回合 + 两轮之间自动触发的压缩摘要回合）。
+        self._pos = 0
         self.consumed = False
         self.requests: list[dict] = []
 
