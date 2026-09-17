@@ -27,10 +27,10 @@ class FakeArbiter:
         self.acquired: list[tuple] = []
         self.released: list[str] = []
 
-    def can_start_heavy(self, kind, estimated_bytes=None):
+    def can_start_heavy(self, kind, params=None, key=None, estimated_bytes=None):
         return {"ok": True, "reason": None}
 
-    def acquire_heavy(self, kind, label, display=None):
+    def acquire_heavy(self, kind, label, display=None, *, params=None, key=None):
         token = f"permit-{len(self.acquired) + 1}"
         self.acquired.append((kind, label, token))
         return {"ok": True, "token": token}
@@ -150,7 +150,7 @@ def test_insufficient_memory_warning_still_names_a_gib_number_and_now_the_source
     from desk.media.service import MediaError
 
     class WarningArbiter(FakeArbiter):
-        def can_start_heavy(self, kind, estimated_bytes=None):
+        def can_start_heavy(self, kind, params=None, key=None, estimated_bytes=None):
             return {"ok": True, "reason": None, "memory_warning": {
                 "code": "insufficient_memory", "required_bytes": estimated_bytes,
                 "available_bytes": 1 * GIB,

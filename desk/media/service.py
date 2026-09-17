@@ -148,7 +148,11 @@ class MediaService:
             catalog = list(self._list_catalog())
             model_root = Path(roots.models_root) / {e.key: e.relpath for e in catalog}[catalog_key]
             estimated, source = self._estimate(kind, params)
-            pre = self._arbiter.can_start_heavy(kind, estimated_bytes=estimated)
+            # 预算按作业参数算峰值（memory_estimate 就是这么设计的：分辨率×帧数决定体积项）。
+            # 只从 legacy 的 estimated_bytes 通道递过去，预算路径读不到，会退回草稿档默认值——
+            # 和 llm 侧「不传 config 就把聊天算成 0 字节」是同一类漏。
+            pre = self._arbiter.can_start_heavy(kind, params=params, key=catalog_key,
+                                                estimated_bytes=estimated)
             if not pre.get("ok"):
                 reason = pre.get("reason") or {}
                 raise MediaError(reason.get("code", "refused"), reason.get("message", "arbiter refused"), 409, reason)
@@ -162,7 +166,8 @@ class MediaService:
                                   409, {**warning, "source": source})
             job_id = self._state["job_id"] + 1
             display = "视频生成中" if kind == "video" else "音乐生成中"
-            grant = self._arbiter.acquire_heavy(kind, f"job-{job_id}", display)
+            grant = self._arbiter.acquire_heavy(kind, f"job-{job_id}", display,
+                                                params=params, key=catalog_key)
             if not grant.get("ok"):
                 reason = grant.get("reason") or {}
                 raise MediaError(reason.get("code", "acquire_refused"), reason.get("message", "arbiter refused"), 409, reason)

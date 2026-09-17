@@ -381,21 +381,71 @@ def test_can_start_heavy_names_the_source_when_it_cannot_tell():
     assert "unavailable" in result["reason"]["message"]
 
 
-def test_acquire_heavy_in_budget_mode_never_evicts_it_only_refuses():
-    """budget 模式下 acquire_heavy 不再自动让出——那是调用方按 release 建议做的事。"""
+def test_acquire_heavy_in_budget_mode_evicts_the_llm_per_the_minimal_plan():
+    """R-arbiter-05 改写后是「仅在预算不足时**让出**，且最小让出」，不是「不足就拒绝」。
+
+    这条测试原先断言的是相反的行为（budget 模式从不自动让出，由调用方按 release
+    建议自己执行）。那个设计偏离了 spec，而且它承诺的「调用方执行」这一半
+    从来没有人实现——release 被算出来又被丢掉，于是「加载着聊天模型时开视频作业」
+    在 budget 模式下直接失败，比 legacy 还差。按 spec 翻回来。
+
+    只有「卸聊天模型」这一种让出是自动的；要腾掉正在跑的媒体作业时仍然拒绝
+    （见 test_budget_mode_refuses_rather_than_killing_a_running_media_job）。
+    """
     memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=50_000_000_000))
     budget = FakeBudget({
         "llm": Workload("llm", "model-a", 40_000_000_000, "measured"),
         "video": Workload("video", None, 40_000_000_000, "measured"),
     })
+    reaped = []
+    arbiter = Arbiter(llm_port=43123, memory=memory, budget=budget,
+                      reaper=lambda port: (reaped.append(port) or
+                                           SimpleNamespace(ok=True, port=port, killed_pids=[], error=None)))
+    assert arbiter.acquire_heavy("llm", "model-a", params={}, key="model-a")["ok"] is True
+
+    granted = arbiter.acquire_heavy("video", "job-a", params={}, key=None)
+
+    assert granted["ok"] is True
+    assert reaped == [43123]
+    assert arbiter.desk_state()["holder"]["kind"] == "video"   # 聊天模型已被让出
+
+
+def test_budget_mode_evicts_the_llm_to_make_room_for_media(tmp_path):
+    """R-arbiter-05 改写后仍要求「预算不足时让出，且最小让出」——不是「预算不足就拒绝」。
+
+    上线时这里是个回归：预算模式下 plan_acquire 从不返回 evict_then_grant，
+    算出来的 release 也没有任何调用方消费，于是「加载着聊天模型时开视频作业」
+    会直接失败，而 legacy 模式下它会先卸模型再跑。
+    """
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=80_000_000_000))
+    budget = FakeBudget({
+        "llm": Workload("llm", "model-a", 70_000_000_000, "measured"),
+        "video": Workload("video", None, 27_000_000_000, "measured"),
+    })
+    reaped = []
+    arbiter = Arbiter(llm_port=43123, memory=memory, budget=budget,
+                      reaper=lambda port: (reaped.append(port) or
+                                           SimpleNamespace(ok=True, port=port, killed_pids=[], error=None)))
+    arbiter.acquire_heavy("llm", "model-a", params={}, key="model-a")
+
+    grant = arbiter.acquire_heavy("video", "job-1", params={}, key=None)
+
+    assert grant["ok"] is True, "预算不足时应让出聊天模型再授予，而不是拒绝"
+    assert reaped == [43123], "没有真的去收割 LLM 端口"
+
+
+def test_budget_mode_refuses_rather_than_killing_a_running_media_job():
+    """让出只对聊天模型自动进行。杀掉用户正在跑的生成作业不是能静默做的事。"""
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=50_000_000_000))
+    budget = FakeBudget({
+        "video": Workload("video", None, 40_000_000_000, "measured"),
+        "music": Workload("music", None, 40_000_000_000, "measured"),
+        "llm": Workload("llm", None, 1, "measured"),
+    })
     arbiter = Arbiter(llm_port=43123, memory=memory, budget=budget)
-    llm = arbiter.acquire_heavy("llm", "model-a", params={}, key="model-a")
-    assert llm["ok"] is True
+    arbiter.acquire_heavy("video", "job-1", params={}, key=None)
 
-    refused = arbiter.acquire_heavy("video", "job-a", params={}, key=None)
+    grant = arbiter.acquire_heavy("music", "job-2", params={}, key=None)
 
-    assert refused == {"ok": False, "reason": {
-        "code": "insufficient_budget",
-        "message": "需要 80000000000 字节，可用 50000000000 字节（依据：measured）",
-    }}
-    assert arbiter.desk_state()["holder"]["kind"] == "llm"   # 没有被让出
+    assert grant["ok"] is False
+    assert grant["reason"]["code"] == "insufficient_budget"

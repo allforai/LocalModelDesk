@@ -286,6 +286,17 @@ class Arbiter:
             }
         return {"ok": True, "reason": None, "memory_warning": warning, "release": []}
 
+    def _should_evict_llm(self, decision, workload, resident, available_bytes) -> bool:
+        """最小让出方案是否「只需卸掉聊天模型」。
+
+        只有这一种让出是自动的。方案若要求腾掉正在跑的媒体作业，一律拒绝——
+        为了开另一件重活而静默杀掉用户正在跑的生成，不是台面该替他做的决定。
+        """
+        if self._budget is None or decision.reason_code != "insufficient_budget":
+            return False
+        outcome = plan([workload], list(resident), available_bytes)
+        return outcome.ok and bool(outcome.release) and all(w.kind == "llm" for w in outcome.release)
+
     def acquire_heavy(self, kind: str, label: str, display: str | None = None,
                        *, params: dict | None = None, key: str | None = None) -> dict:
         """Acquire a token. In legacy mode, evicts the active LLM first for media
@@ -298,9 +309,15 @@ class Arbiter:
 
         states: list[dict] = []
         with self._transition_lock:
-            decision, workload, _resident, _available, holder = self._decide(kind, params, key)
+            decision, workload, resident, available_bytes, holder = self._decide(kind, params, key)
             if decision.action == "refuse":
-                return {"ok": False, "reason": self._reason(decision.reason_code, decision.reason_message)}
+                # 预算不足时不是直接拒绝：R-arbiter-05 要求「让出，且最小让出」。
+                # plan() 早就算好了该腾谁，之前没有任何调用方消费它，于是
+                # 「加载着聊天模型时开视频作业」会失败，而 legacy 模式下会先卸再跑。
+                if self._should_evict_llm(decision, workload, resident, available_bytes):
+                    decision = Decision("evict_then_grant")
+                else:
+                    return {"ok": False, "reason": self._reason(decision.reason_code, decision.reason_message)}
 
             token = uuid.uuid4().hex
             if decision.action == "grant":

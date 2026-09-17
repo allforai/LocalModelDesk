@@ -241,7 +241,7 @@ class TestStartDiscipline:
     def test_can_start_refusal_passes_code_and_holder_through(self, tmp_path):
         service, deps = make_service(tmp_path)
         reason = {"code": "transition_in_progress", "message": "evicting now", "holder": {"kind": "llm"}}
-        deps.arbiter.can_start_heavy = lambda _kind, estimated_bytes=None: {"ok": False, "reason": reason}
+        deps.arbiter.can_start_heavy = lambda _kind, **_kw: {"ok": False, "reason": reason}
         with pytest.raises(MediaError) as err:
             service.start_video_job(**self.VALID)
         assert err.value.code == "transition_in_progress"
@@ -253,7 +253,7 @@ class TestStartDiscipline:
     def test_acquire_refusal_never_spawns_and_state_unchanged(self, tmp_path):
         service, deps = make_service(tmp_path)
         reason = {"code": "evict_failed", "message": "still listening", "holder": {"kind": "llm"}}
-        deps.arbiter.acquire_heavy = lambda *_: {"ok": False, "reason": reason}
+        deps.arbiter.acquire_heavy = lambda *_a, **_kw: {"ok": False, "reason": reason}
         with pytest.raises(MediaError) as err:
             service.start_video_job(**self.VALID)
         assert err.value.code == "evict_failed"
@@ -554,3 +554,21 @@ def test_music_history_records_the_real_output_length(tmp_path, monkeypatch):
     finished_snapshot(service, lambda: service.start_music_job(caption="c", lyrics="l", duration=300))
 
     assert deps.history.entries[-1]["audio_seconds"] == 29.71
+
+
+def test_media_hands_the_arbiter_its_job_params(tmp_path):
+    """预算按作业参数算峰值（memory_estimate 就是这么设计的：分辨率×帧数决定体积项）。
+
+    只从 legacy 的 estimated_bytes 通道递过去，预算路径读不到，会退回草稿档默认值
+    ——和 llm 侧「不传 config 就把聊天算成 0 字节」是同一类漏。
+    """
+    service, deps = make_service(tmp_path)
+
+    service.start_video_job(prompt="一只猫", width=1024, height=576, frames=73, steps=16)
+
+    passed = deps.arbiter.last_precheck["params"] or {}
+    assert passed.get("width") == 1024 and passed.get("frames") == 73, \
+        f"can_start_heavy 没收到作业参数，预算只能按草稿档默认值估：{passed}"
+    assert deps.arbiter.last_precheck["key"] == "h3"
+    assert (deps.arbiter.last_acquire["params"] or {}).get("width") == 1024, \
+        "acquire_heavy 没收到作业参数"

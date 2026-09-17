@@ -79,14 +79,19 @@ class FakeArbiter:
         self.precheck_calls: list[tuple] = []
         self.memory_warning = memory_warning
 
-    def can_start_heavy(self, kind, estimated_bytes=None):
+    def can_start_heavy(self, kind, params=None, key=None, estimated_bytes=None):
+        # params/key 单独存：既有断言按位置比对 precheck_calls 的元组，塞进去会
+        # 连带炸掉一批与本次改动无关的测试。
+        self.last_precheck = {"kind": kind, "params": params, "key": key,
+                              "estimated_bytes": estimated_bytes}
         self.precheck_calls.append((kind, estimated_bytes))
         result = {"ok": True, "reason": None}
         if self.memory_warning:
             result["memory_warning"] = self.memory_warning
         return result
 
-    def acquire_heavy(self, kind, label, display=None):
+    def acquire_heavy(self, kind, label, display=None, *, params=None, key=None):
+        self.last_acquire = {"kind": kind, "label": label, "params": params, "key": key}
         token = f"permit-{len(self.acquired) + 1}"
         self.acquired.append((kind, label, token))
         return {"ok": True, "token": token}
