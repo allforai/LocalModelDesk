@@ -11,6 +11,11 @@ from __future__ import annotations
 import itertools
 from dataclasses import dataclass, field
 
+from .estimate import declared_window, per_token_bytes
+from .observe import measured_bytes_per_token, parse_cache_line
+
+GIB_F = float(1024 ** 3)
+
 SOURCES = ("measured", "predicted", "unavailable")   # 由强到弱
 
 
@@ -93,3 +98,92 @@ def plan(wanted, resident, available_bytes: int) -> Plan:
         return Plan(ok=False, release=(), verdict=fits(wanted + resident, available_bytes))
     _, combo, verdict = best
     return Plan(ok=True, release=tuple(combo), verdict=verdict)
+
+
+COMPACT_FRACTION = 0.75    # 策略值，不是推导值：额度用到这个比例就压缩
+SAFETY_FRACTION = 0.9      # 可用内存里留 10% 给系统与其它进程
+CACHE_SLOTS = 1            # mlx-lm 默认保 10 份 KV 缓存；台面一次只服务一个会话
+
+
+@dataclass(frozen=True)
+class ChatBudget:
+    token_limit: int
+    compact_at: int
+    source: str
+    window: int | None
+
+
+class Budget:
+    """门面：把 IO（内存快照、日志文本、实测档案）接到纯函数上。
+
+    依赖全部构造注入，所以测试不起服务、不装模型。
+    """
+
+    def __init__(self, measurements, memory_reader, media_estimate, now) -> None:
+        self._m = measurements
+        self._memory = memory_reader
+        self._media_estimate = media_estimate
+        self._now = now
+
+    # ---- 单件开销 ----------------------------------------------------
+    def cost(self, kind, *, key=None, params=None, config=None, weights_gb=None) -> Workload:
+        if kind in ("video", "music"):
+            measured = self._m.media_peak(kind)
+            need = measured if measured else self._media_estimate(kind, params or {})
+            return Workload(kind, key, int(need), "measured" if measured else "predicted")
+        chat = self.for_chat(key, config or {}, weights_gb or 0.0)
+        per_token = self._per_token(key, config or {}, weights_gb or 0.0)[0] or 0
+        weights = int((weights_gb or 0.0) * GIB_F)
+        return Workload(kind, key, weights + chat.token_limit * per_token, chat.source)
+
+    # ---- 聊天额度 ----------------------------------------------------
+    def _per_token(self, key, config, weights_gb):
+        """(每 token 字节, 来源)。实测优先，否则预测，都没有就 unavailable。"""
+        measured = self._m.model_bytes_per_token(key, weights_gb) if key else None
+        if measured:
+            return measured, "measured"
+        predicted = per_token_bytes(config)
+        return (predicted, "predicted") if predicted else (None, "unavailable")
+
+    def for_chat(self, key, config, weights_gb) -> ChatBudget:
+        window = declared_window(config)
+        per_token, source = self._per_token(key, config, weights_gb)
+        if per_token is None:
+            limit = window or 0
+            return ChatBudget(limit, int(limit * COMPACT_FRACTION), "unavailable", window)
+        available = self._memory.snapshot().available_bytes
+        usable = int(available * SAFETY_FRACTION)
+        by_memory = max(usable // per_token, 0)
+        limit = min(by_memory, window) if window else by_memory
+        # 收紧作用于最终额度，而不只是内存推出的那一支：否则窗口比内存更紧时
+        # （常见情况——声明窗口通常远小于内存能装下的量），爆过一次也不会让
+        # 下一次的额度变小，收紧规则形同虚设。
+        limit = int(limit * self._m.overrun_factor(key or ""))
+        return ChatBudget(limit, int(limit * COMPACT_FRACTION), source, window)
+
+    # ---- mlx-lm 限额参数 ---------------------------------------------
+    def launch_args(self, key, config, weights_gb) -> list[str]:
+        per_token, source = self._per_token(key, config, weights_gb)
+        if per_token is None:
+            return []       # 算不出来就不传：一个猜出来的上限比不传更危险
+        chat = self.for_chat(key, config, weights_gb)
+        return ["--prompt-cache-bytes", str(chat.token_limit * per_token),
+                "--prompt-cache-size", str(CACHE_SLOTS)]
+
+    # ---- 自校准 ------------------------------------------------------
+    def record_turn(self, key, log_text, prompt_tokens, weights_gb) -> None:
+        """一轮答完，把这台机器上的真值记下来（R-budget-04）。"""
+        measured = measured_bytes_per_token(parse_cache_line(log_text), prompt_tokens)
+        if measured:
+            self._m.record_model(key, measured, weights_gb, self._now())
+
+    def snapshot(self) -> dict:
+        snap = self._memory.snapshot()
+        media = {}
+        for kind in ("video", "music"):
+            peak = self._m.media_peak(kind)
+            media[kind] = {"peak_bytes": peak, "source": "measured" if peak else "predicted"}
+        return {"available_bytes": snap.available_bytes,
+                "total_bytes": snap.total_bytes,
+                "pressure": snap.pressure,
+                "media": media}
