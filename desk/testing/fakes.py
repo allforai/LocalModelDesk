@@ -69,8 +69,10 @@ class FakeLlmBackend:
     def __init__(self, script: ChatScript):
         self.script = script
         self.proc: _FakeBackendProcess | None = None
+        self.spawn_extra_args: list[str] | None = None
 
-    def spawn(self, python, model_path, port, log_path):
+    def spawn(self, python, model_path, port, log_path, extra_args=None):
+        self.spawn_extra_args = extra_args
         log_path = Path(log_path)
         log_path.parent.mkdir(parents=True, exist_ok=True)
         with log_path.open("a", encoding="utf-8") as log_file:

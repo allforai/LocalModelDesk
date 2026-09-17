@@ -145,9 +145,15 @@ class FakeBackend:
         self.spawn_exc = spawn_error
         self.hold_health = False
         self.health_release = threading.Event()
+        self.spawn_extra_args: list[str] | None = None
 
-    def spawn(self, python: Path | str, model_path: Path | str, port: int, log_path: Path | str) -> FakeProcess:
+    def spawn(self, python: Path | str, model_path: Path | str, port: int, log_path: Path | str,
+              extra_args: list[str] | None = None) -> FakeProcess:
+        # extra_args is stashed on self rather than folded into the ledger tuple: several
+        # existing tests unpack/equality-check the ("spawn", ...) entry at its old 5-tuple
+        # shape, and this keeps that contract untouched.
         _record(self.calls, "spawn", str(python), str(model_path), port, str(log_path))
+        self.spawn_extra_args = extra_args
         if self.spawn_exc is not None:
             raise self.spawn_exc
         return self.process

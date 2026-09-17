@@ -1,6 +1,7 @@
 """Load local LLMs through the arbiter and an injectable backend."""
 from __future__ import annotations
 
+import json
 import threading
 import time
 from pathlib import Path
@@ -39,6 +40,20 @@ from .state import (
 )
 
 
+def _read_model_config(model_dir: Path) -> dict:
+    """The model's config.json, for Budget's cost estimate.
+
+    Unreadable or corrupt config becomes {} rather than raising: estimate.py already
+    treats missing fields as "can't tell" (R-budget-02), so a quiet {} routes to the
+    same unavailable/conservative path instead of blocking a load over a budget input.
+    """
+    try:
+        data = json.loads((Path(model_dir) / "config.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
 def _short_command(command: str, limit: int = 80) -> str:
     """Program name plus its arguments: an install path can fill the whole limit and hide the clue."""
     program, _, args = command.strip().partition(" ")
@@ -51,12 +66,17 @@ class LlmService:
 
     def __init__(self, backend: Any, arbiter: Any, catalog: Any, paths: Any, *,
                  port: int = DEFAULT_LLM_PORT, load_timeout_s: float = 180.0,
-                 poll_interval_s: float = 0.4, term_grace_s: float = 8.0) -> None:
+                 poll_interval_s: float = 0.4, term_grace_s: float = 8.0,
+                 budget: Any = None) -> None:
         self._backend = backend
         self._arbiter = arbiter
         self._catalog = catalog
         self._paths = paths
         self._port = port
+        # Optional: existing callers/fixtures that predate the budget subsystem still
+        # construct LlmService without one, so every use below is guarded on this being
+        # not None rather than requiring every caller to supply a no-op budget.
+        self._budget = budget
         self._load_timeout_s = load_timeout_s
         self._poll_interval_s = poll_interval_s
         self._term_grace_s = term_grace_s
@@ -200,7 +220,12 @@ class LlmService:
             if token is not None:
                 self._arbiter.release_heavy(token)
             return
-        proc = self._backend.spawn(python, model_dir, self._port, log_path)
+        extra_args = None
+        if self._budget is not None:
+            extra_args = self._budget.launch_args(
+                entry.key, _read_model_config(model_dir), entry.gb
+            )
+        proc = self._backend.spawn(python, model_dir, self._port, log_path, extra_args=extra_args)
         with self._lock:
             if generation != self._load_generation:
                 proc.terminate()
@@ -450,7 +475,7 @@ class LlmService:
         payload = self._upstream_payload(request, entry)
         payload["stream"] = True
         payload["stream_options"] = {"include_usage": True}
-        return self._stream_events(payload)
+        return self._stream_events(payload, entry)
 
     def _interruption_event(self, fallback_message: str) -> dict[str, Any]:
         """Name the real cause when the resident model was taken away mid-stream."""
@@ -461,7 +486,7 @@ class LlmService:
             return error_event(ERR_EVICTED, "内存让给了媒体作业，回答被中断")
         return error_event(ERR_UPSTREAM_ERROR, fallback_message)
 
-    def _stream_events(self, payload: dict[str, Any]):
+    def _stream_events(self, payload: dict[str, Any], entry: Any):
         usage = None
         finish_reason = None
         try:
@@ -486,6 +511,11 @@ class LlmService:
         if usage is None or finish_reason is None:
             yield self._interruption_event("上游流终止但缺 usage/finish_reason")
             return
+        if self._budget is not None:
+            log_path = self._log_path(self._paths.resolve_paths())
+            log_text = self._backend.log_tail(log_path, 200)
+            prompt_tokens = usage.get("prompt_tokens") if isinstance(usage, dict) else None
+            self._budget.record_turn(entry.key, log_text, prompt_tokens, entry.gb)
         yield done_event(usage, finish_reason)
 
     def wait_settled(self, timeout_s: float = 5.0) -> dict[str, Any]:

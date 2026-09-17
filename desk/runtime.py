@@ -3,9 +3,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import logging
+import time
 
 from .app import DeskApp, Response
-from .arbiter import Arbiter
+from .arbiter import Arbiter, MemoryReader
+from .budget import Budget
+from .budget.store import Measurements
 from .foundation import capabilities, config, paths, routes as foundation_routes
 from .foundation.errors import ConfigCorruptError
 from .gateway.desk_backend import DeskGatewayBackend
@@ -17,6 +20,7 @@ from .llm.routes import build_routes as build_llm_routes
 from .llm.service import LlmService
 from .llm.state import DEFAULT_LLM_PORT
 from .media.executor import SubprocessExecutor
+from .media.memory_estimate import estimate_bytes as media_estimate_bytes
 from .media.routes import build_routes as build_media_routes
 from .media.service import MediaService
 from .resources.http import build_routes as build_resource_routes
@@ -139,8 +143,14 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
         can_start_heavy=lambda: arbiter.can_start_heavy("video"),
     )
     library = LibraryService(roots)
+    budget = Budget(
+        measurements=Measurements.load(roots.data_root / "measurements.json"),
+        memory_reader=MemoryReader(),
+        media_estimate=media_estimate_bytes,
+        now=time.time,
+    )
     llm = LlmService(
-        MlxLmBackend(), arbiter, resources, paths, port=DEFAULT_LLM_PORT
+        MlxLmBackend(), arbiter, resources, paths, port=DEFAULT_LLM_PORT, budget=budget
     )
     arbiter.set_owned_pid_provider(llm.owned_pids)
     media = MediaService(

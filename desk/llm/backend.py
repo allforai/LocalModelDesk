@@ -28,7 +28,8 @@ class LlmBackend(Protocol):
     """Injectable interface to a local OpenAI-compatible LLM backend."""
 
     def spawn(
-        self, python: Path, model_path: Path, port: int, log_path: Path
+        self, python: Path, model_path: Path, port: int, log_path: Path,
+        extra_args: list[str] | None = None,
     ) -> BackendProcess: ...
 
     def health(self, port: int) -> bool: ...
@@ -44,13 +45,15 @@ class MlxLmBackend:
     """Launches ``mlx_lm server`` and reads its diagnostic log."""
 
     def spawn(
-        self, python: Path, model_path: Path, port: int, log_path: Path
+        self, python: Path, model_path: Path, port: int, log_path: Path,
+        extra_args: list[str] | None = None,
     ) -> BackendProcess:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         argv = [
             str(python), "-s", "-m", "mlx_lm", "server",
             "--model", str(model_path), "--host", "127.0.0.1",
             "--port", str(port),
+            *(extra_args or []),
         ]
         with log_path.open("ab") as log_file:
             return subprocess.Popen(argv, stdout=log_file, stderr=log_file)
