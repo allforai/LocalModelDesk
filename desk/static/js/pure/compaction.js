@@ -90,3 +90,10 @@ export async function maybeCompact(messages, { promptTokens, sentChars, compactA
   };
   return { compacted: true, messages: [summary, ...list] };
 }
+
+/** 摘要分隔条的文案（R-context-05：摘要要在界面上可见）。
+ * 数目缺失时不编一个数：宁可说得含糊，也不报一个不成立的条数。
+ */
+export function summaryLabel(count) {
+  return count ? `这里压缩了 ${count} 条消息` : "这里有一段压缩过的对话";
+}

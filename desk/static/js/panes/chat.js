@@ -3,7 +3,7 @@
 import * as api from "../api.js";
 import { sseDataLines } from "../stream.js";
 import { initialStream, reduceChunk, wireMessages } from "../pure/chat_stream.js";
-import { maybeCompact } from "../pure/compaction.js";
+import { maybeCompact, summaryLabel } from "../pure/compaction.js";
 import { buildSummaryRequest } from "../pure/summary_prompt.js";
 import { needsWarning } from "../pure/mem_warn.js";
 import { formatBytes } from "../pure/format.js";
@@ -171,6 +171,33 @@ export function createChatPane(root, ctx = {}) {
   function messageNode(message, live = false, fallbackName = "") {
     const wrap = doc.createElement("div");
     wrap.className = `msg msg-${message.role}`;
+    if (message.role === "summary") {
+      // R-context-03：被替代的消息没有被删除，只是不发送——它们照常在下面各自渲染成自己的节点。
+      // R-context-05：摘要本身可展开、可编辑、可重新生成。
+      const details = doc.createElement("details");
+      const summaryEl = doc.createElement("summary");
+      summaryEl.textContent = summaryLabel(message.replaced_through);
+      const body = doc.createElement("div");
+      body.className = "md";
+      body.append(renderMarkdown(doc, message.content ?? ""));
+      const actions = doc.createElement("div");
+      actions.className = "summary-actions";
+      const edit = doc.createElement("button");
+      edit.className = "btn-sm";
+      edit.textContent = "改";
+      (edit.dataset ??= {}).editSummary = "1";
+      edit.addEventListener("click", () => beginEditSummary(message, body));
+      const redo = doc.createElement("button");
+      redo.className = "btn-sm";
+      redo.textContent = "重压";
+      (redo.dataset ??= {}).redoSummary = "1";
+      redo.addEventListener("click", () => regenerateSummary(message));
+      actions.append(edit, redo);
+      details.append(summaryEl, body, actions);
+      wrap.append(details);
+      els.messages.append(wrap);
+      return { wrap, details, body };
+    }
     if (message.role === "user") {
       const bubble = doc.createElement("div");
       bubble.className = "bubble";
@@ -458,19 +485,17 @@ export function createChatPane(root, ctx = {}) {
     await compactIfNeeded(session, state.usage?.prompt_tokens, sentChars);
   }
 
-  // 一轮结束后判断是否要压缩较早的历史。summarise 走同一个驻留模型的一次
-  // chatStream 调用（R-context-04：不加载第二个模型）；纯判断/切分/写回逻辑
-  // 都在 maybeCompact 里，这里只负责取数、渲染进行中提示、落盘。
-  async function compactIfNeeded(session, promptTokens, sentChars) {
-    const budget = await api.budget().catch(() => null);
-    if (!budget) return; // 预算读不到就不压缩，不能替用户裁剪历史（同 R-budget-11 的保守纪律）
+  // 「把 head 拼成填表提示词、调同一个驻留模型、拼出完整文本」——两轮之间的
+  // 自动压缩（compactIfNeeded）与用户手动点「重压」（regenerateSummary）共用
+  // 这一段：都不加载第二个模型（R-context-04），过程都要有可见提示。
+  async function runSummarise(session, head, bannerText) {
     const showBanner = () => {
       if (currentId !== session.id) return;
       els.sendBtn.disabled = true; // 摘要占用同一个模型：发送按钮得置灰，否则像是卡住了
       if (!compactingBanner) {
         compactingBanner = doc.createElement("p");
         compactingBanner.className = "compacting-banner";
-        compactingBanner.textContent = "正在压缩较早的对话…";
+        compactingBanner.textContent = bannerText;
         els.messages.prepend(compactingBanner);
       }
     };
@@ -478,35 +503,92 @@ export function createChatPane(root, ctx = {}) {
       if (compactingBanner) { compactingBanner.remove(); compactingBanner = null; }
       if (currentId === session.id) els.sendBtn.disabled = false;
     };
-    const summarise = async (head) => {
-      showBanner();
-      try {
-        const body = await api.chatStream(buildSummaryRequest(head));
-        let s = initialStream();
-        for await (const line of sseDataLines(body)) {
-          s = reduceChunk(s, line);
-          if (s.done || s.error) break;
-        }
-        if (s.error) throw new Error(s.error.message);
-        return s.content;
-      } finally {
-        hideBanner();
+    showBanner();
+    try {
+      const body = await api.chatStream(buildSummaryRequest(head));
+      let s = initialStream();
+      for await (const line of sseDataLines(body)) {
+        s = reduceChunk(s, line);
+        if (s.done || s.error) break;
       }
-    };
+      if (s.error) throw new Error(s.error.message);
+      return s.content;
+    } finally {
+      hideBanner();
+    }
+  }
+
+  async function saveSession(session) {
+    const updated = await api.updateChatSession(session.id, { messages: session.messages, model: els.modelSelect.value || null });
+    sessions = sortSessions(sessions.map((item) => item.id === updated.id ? updated : item));
+    renderSessionList();
+  }
+
+  // 一轮结束后判断是否要压缩较早的历史。summarise 走同一个驻留模型的一次
+  // chatStream 调用（R-context-04：不加载第二个模型）；纯判断/切分/写回逻辑
+  // 都在 maybeCompact 里，这里只负责取数、渲染进行中提示、落盘。
+  async function compactIfNeeded(session, promptTokens, sentChars) {
+    const budget = await api.budget().catch(() => null);
+    if (!budget) return; // 预算读不到就不压缩，不能替用户裁剪历史（同 R-budget-11 的保守纪律）
     const result = await maybeCompact(session.messages, {
       promptTokens, sentChars,
       compactAt: budget.chat?.compact_at,
       pressure: budget.pressure,
-      summarise,
+      summarise: (head) => runSummarise(session, head, "正在压缩较早的对话…"),
     });
     // 失败或没到触发点：maybeCompact 已经原样返回，什么都不用做，下一轮再判断。
     if (!result.compacted) return;
     session.messages = result.messages;
+    try { await saveSession(session); }
+    catch (error) { setError(`会话保存失败：${error.message}`); }
+    if (currentId === session.id) renderMessages();
+  }
+
+  // R-context-05：摘要本身是会话里的一条普通消息，本地模型摘歪了，用户自己
+  // 改一句就行，不必重开会话——就地编辑的写法照抄 beginRename。
+  function beginEditSummary(message, body) {
+    const session = current();
+    if (!session) return;
+    const textarea = doc.createElement("textarea");
+    textarea.className = "summary-edit";
+    textarea.value = message.content ?? "";
+    let done = false;
+    const finish = async () => {
+      if (done) return;
+      done = true;
+      const text = textarea.value.trim();
+      if (text && text !== message.content) {
+        message.content = text;
+        try { await saveSession(session); }
+        catch (error) { setError(`会话保存失败：${error.message}`); }
+      }
+      if (currentId === session.id) renderMessages();
+    };
+    textarea.addEventListener("keydown", (event) => { if (event.key === "Enter") finish(); });
+    textarea.addEventListener("blur", finish);
+    body.replaceChildren(textarea);
+    textarea.focus();
+  }
+
+  // R-context-05：在原文基础上重新生成——原文就是这条摘要替代掉的那一段，
+  // 它从未被删除（R-context-03），仍然原样躺在 session.messages 里，取回来
+  // 再喂一遍填表提示词即可。生成失败时保留旧摘要，不写半截。
+  async function regenerateSummary(message) {
+    const session = current();
+    if (!session) return;
+    const at = session.messages.indexOf(message);
+    if (at === -1) return;
+    const head = session.messages.slice(at + 1, (message.replaced_through ?? at) + 1);
+    if (head.length === 0) return;
+    setError("");
+    let text;
     try {
-      const updated = await api.updateChatSession(session.id, { messages: session.messages, model: els.modelSelect.value || null });
-      sessions = sortSessions(sessions.map((item) => item.id === updated.id ? updated : item));
-      renderSessionList();
-    } catch (error) { setError(`会话保存失败：${error.message}`); }
+      text = await runSummarise(session, head, "正在重新生成摘要…");
+    } catch (error) { setError(`重新生成摘要失败：${error.message}`); return; }
+    if (!(text ?? "").trim()) { setError("重新生成摘要失败：模型没有返回内容"); return; }
+    message.content = text.trim();
+    try { await saveSession(session); }
+    catch (error) { setError(`会话保存失败：${error.message}`); }
     if (currentId === session.id) renderMessages();
   }
 

@@ -64,6 +64,15 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .composer textarea{flex:1;background:var(--panel);border-radius:16px;padding:12px 16px}
 .messages[data-streaming="1"]~.composer textarea{opacity:.7}
 .empty-answer{color:var(--muted);font-style:italic}
+/* 摘要分隔条（R-context-05）：与正文区分得开，虚线上下边 + 次要色，跟 .thinking 同一套折叠视觉语言 */
+.msg-summary{align-self:stretch;max-width:100%}
+.msg-summary details{border-top:1px dashed var(--border);border-bottom:1px dashed var(--border);padding:12px 0;color:var(--muted);font-size:13px}
+.msg-summary summary{cursor:pointer;list-style:none;display:inline-flex;gap:6px}
+.msg-summary summary::before{content:"▸";font-size:11px}
+.msg-summary details[open] summary::before{content:"▾"}
+.msg-summary .md{margin:10px 0 0;color:var(--text);font-size:14px}
+.summary-actions{display:flex;gap:8px;margin-top:12px}
+.summary-edit{width:100%;min-height:120px}
 
 /* 6a. cards + session list */
 .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:16px}
