@@ -138,13 +138,17 @@ test("整段对话还没超出尾部预算时，没有可压的头部", () => {
 
 test("已有的 summary 永远留在头部，不进尾部也不被丢弃", () => {
   // 第二次压缩要把「上一份摘要 + 其后的老消息」一起重新摘成一份。
+  // 摘要之后的内容必须足够短，让预算判断不会先于摘要边界触发——
+  // 否则「遇到 summary 就停」这条逻辑根本没被跑到，测试测不出它被删掉。
   const messages = [
     { role: "summary", content: "上一份摘要" },
-    msg("user", "e".repeat(400)), msg("assistant", "f".repeat(400)),
+    msg("user", "e".repeat(20)), msg("assistant", "f".repeat(20)),
     msg("user", "近"), msg("assistant", "近答"),
   ];
-  const { head } = splitForCompaction(messages, { compactAt: 100, charsPerToken: 4 });
+  const { head, tail } = splitForCompaction(messages, { compactAt: 1_000, charsPerToken: 4 });
+  assert.equal(head.length, 1);
   assert.equal(head[0].role, "summary");
+  assert.equal(tail.some((m) => m.role === "summary"), false);
 });
 ```
 
@@ -195,7 +199,13 @@ export function splitForCompaction(messages, { compactAt, charsPerToken: ratio }
   const mustKeepFrom = lastUser === -1 ? list.length : lastUser;
 
   const tailBudgetChars = compactAt * TAIL_FRACTION * ratio;
+  // 强制保留区间（最近一轮问答）自身的字符数先算进预算里：它已经不可摘除，
+  // 若它本身就已经超出预算，就不该再把更早的短消息也顺手拉进尾部
+  // （测试「至少保留最近一轮完整问答，哪怕它超预算」验的正是这一点）。
   let used = 0;
+  for (let i = mustKeepFrom; i < list.length; i += 1) {
+    used += lengthOf(list[i]);
+  }
   let cut = mustKeepFrom;
   for (let i = mustKeepFrom - 1; i >= 0; i -= 1) {
     // 已有的摘要永远归头部：第二次压缩要把它和其后的老消息一起重新摘成一份。
@@ -271,7 +281,7 @@ export function wireMessages(messages) {
 // 追加到 tests/js/chat_stream.test.js
 test("摘要以 system 角色发送——模型的 chat template 只认三种角色", () => {
   const wired = wireMessages([
-    { role: "summary", content: "前情", replaced_through: 1 },
+    { role: "summary", content: "前情", replaced_through: 2 },
     { role: "user", content: "问" },
     { role: "assistant", content: "答" },
     { role: "user", content: "再问" },
@@ -282,7 +292,7 @@ test("摘要以 system 角色发送——模型的 chat template 只认三种角
 
 test("被摘要替代的消息不发送，但摘要之后的照发", () => {
   const wired = wireMessages([
-    { role: "summary", content: "前情", replaced_through: 1 },
+    { role: "summary", content: "前情", replaced_through: 2 },
     { role: "user", content: "被替代的问" },
     { role: "assistant", content: "被替代的答" },
     { role: "user", content: "还在的问" },
@@ -391,13 +401,15 @@ system/user/assistant——原样发一个 summary 角色会炸在模板里。
 
 **背景（实现者必读）**：这是对冲本地模型能力弱的**主要手段**。27B 的模型做不了「判断什么重要」这种开放任务，但能填表。所以提示词是一张固定的表，不是「总结一下」。
 
-模板小节（R-context-02 要求「含且至少含」这些）：
+模板小节——**逐条照抄 spec R-context-02 的六项，不要自己归并**（初稿把「关键概念」并进了「事实与决定」
+又整个漏掉了「错误与修法」，只剩五节）：
 
 1. 用户要做的事（**原话**）
-2. 已经定下来的事实与决定
-3. 涉及的文件、名词、数字
-4. **用户说过的每一句，逐条列出**
-5. 待办与当前进度
+2. 关键概念
+3. 涉及的文件与代码
+4. **错误与修法**
+5. **用户说过的每一句，逐条列出**
+6. 待办与当前进度
 
 第 4 节最关键：模型复述用户的话必然走样，所以这一节不是让它复述，而是**把用户原话原样抄进提示词**，要求它照抄进摘要。实现上直接把 `head` 里的 user 消息逐条拼进提示词，模型只需搬运。
 
@@ -424,9 +436,12 @@ test("提示词是一张固定的表，不是「总结一下」", () => {
 });
 
 test("用户原话原样进提示词，模型只需搬运不需复述", () => {
+  // 断言必须落在专门的「用户原话」逐条小节里（"- " 开头逐行），而不是随便在
+  // 对话记录（【用户】…）里出现就算数——否则删掉专门的原话小节这条测试也不会
+  // 变红，等于没测到「原样抄进提示词、模型只需搬运」这件事本身。
   const text = buildSummaryRequest(head).map((m) => m.content).join("\n");
-  assert.match(text, /帮我把视频导出成 4K/);
-  assert.match(text, /用 h3 那个模型/);
+  assert.match(text, /^- 帮我把视频导出成 4K$/m);
+  assert.match(text, /^- 用 h3 那个模型$/m);
 });
 
 test("助手的话也在，但和用户的话分得开", () => {
@@ -444,9 +459,9 @@ test("已有的摘要作为前情进入提示词，不被当成用户发言", ()
     { role: "user", content: "接着说" },
   ]).map((m) => m.content).join("\n");
   assert.match(text, /上一份摘要/);
-  // 上一份摘要不能被算进「用户说过的每一句」那一节的素材
-  const userSection = text.split("用户说过的每一句")[1] ?? "";
-  assert.doesNotMatch(userSection, /上一份摘要/);
+  // 「用户原话」逐条清单只认 role === "user"：摘要不能顶着 "- " 前缀混进去，
+  // 被模型误当成用户自己说过的一句话。
+  assert.doesNotMatch(text, /^- 上一份摘要$/m);
 });
 ```
 
@@ -473,11 +488,14 @@ const TEMPLATE = `请按下面的表格逐节填写，不要增加小节，不�
 ## 用户要做的事
 （用户的目标，尽量用他自己的措辞）
 
-## 事实与决定
-（已经确定下来的结论、选择、约束，一条一行）
+## 关键概念
+（对话中出现过的重要概念、术语，一条一行）
 
-## 涉及的文件、名词、数字
-（出现过的文件名、模型名、参数值，一条一行）
+## 涉及的文件与代码
+（出现过的文件名、函数名、代码片段、参数值，一条一行）
+
+## 错误与修法
+（遇到过的报错、失败，以及后来怎么解决的，一条一行；没有就写「无」）
 
 ## 用户说过的每一句
 （把下面「用户原话」里的每一条原样抄下来，一条一行，一个字都不要改）
@@ -1049,3 +1067,21 @@ git commit -m "test(chat): e2e 走一遍压缩——触发、可见、原文不�
 
 1. **`compact_at` 目前只有在模型已加载时才有值**。`/api/budget` 无驻留模型时 `chat` 是 `{"source": "unavailable"}`，所以没加载模型就不会压缩——这是对的（没模型也没法生成摘要）。
 2. **摘要请求会占用同一个模型**。生成摘要期间用户若点发送，两个请求会排队在 mlx-lm 上。Task 4 Step 6 的界面提示必须把发送按钮也置灰，否则用户会以为台面卡住了。
+
+## 执行后勘误（2026-09-18）
+
+本计划已执行完毕。执行中**四条测试被短接验证证明是假的，两处实现有实质缺陷**，
+上面的代码块与测试已就地改成实际交付的版本。原始缺陷记在这里，因为它们都是
+「看起来合理、跑起来不咬」的典型：
+
+| 缺陷 | 为什么没咬住 |
+|---|---|
+| `splitForCompaction` 没把强制保留区自身的字符算进预算 | 那一轮已超预算时，算法会继续把更早的短消息拉进尾部。真实数据跑出 head=0/tail=4，而计划自己的测试期望 2/2 |
+| 模板只有 5 节 | spec R-context-02 要求「含且至少含」六项，计划把「关键概念」并进了「事实与决定」，又整个漏掉「错误与修法」 |
+| 「已有 summary 留头部」测试 | 数据里摘要前的内容 400 字符，预算判断先触发 break，那行 summary 判断从未被执行——删掉它照样绿 |
+| 「用户原话原样进提示词」测试 | 只做全文子串匹配，而同样的原话在「对话记录」一节本来就有——删掉专门的原话小节也匹配得上 |
+| 「摘要不被当成用户发言」测试 | `text.split("用户说过的每一句")[1]` 的切分点落在模板自带的说明文字里，从未圈住实际内容，断言恒真 |
+| Task 2 样例的 `replaced_through: 1` | 应为 2。**这正是本计划反复警告的差一位，而我在另一个任务的样例数据里自己踩了** |
+
+共同点：每一条都是**对着实现写测试**而不是对着 spec 写，或者**断言的锚点落在了一个恒成立的东西上**。
+Global Constraints 里那两条（短接必须变红、对着 spec 写）不是仪式——这一轮六条全靠它们抓出来。
