@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 from desk.arbiter.core import Arbiter
 from desk.arbiter.reaper import ReapResult
+from desk.budget.budget import Workload
 
 
 def test_memory_snapshot_is_reader_dict():
@@ -303,3 +304,98 @@ def test_public_holder_carries_the_display_name_for_the_menu_bar():
                        clock=lambda: 1.0)
     arbiter2.acquire_heavy("video", "job-1")
     assert arbiter2.desk_state()["holder"]["display"] == "job-1"
+
+
+# ---- Task 7: budget-aware coexistence (R-arbiter-01/04/05) ------------------
+#
+# Everything above this line runs an `Arbiter(...)` built with no `budget`
+# argument, and exercises the legacy single-slot exclusion table byte-for-byte
+# unchanged (see the module docstring in desk/arbiter/core.py for why that
+# fallback exists). These tests instead wire a `budget` double so the real
+# R-arbiter-01 rewrite — coexistence gated by Verdict.ok, not by kind — is
+# under test.
+
+class FakeBudget:
+    """Deterministic `.cost(...)` double: fixed Workload per kind, no IO."""
+
+    def __init__(self, costs: dict):
+        self._costs = costs
+
+    def cost(self, kind, *, key=None, params=None, config=None, weights_gb=None):
+        return self._costs[kind]
+
+
+def test_can_start_heavy_grants_llm_while_media_runs_when_budget_allows():
+    """这正是被改掉的那条铁律：媒体在跑，预算够，聊天照样装得下（R-arbiter-01）。"""
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=200_000_000_000))
+    budget = FakeBudget({
+        "video": Workload("video", None, 100_000_000_000, "measured"),
+        "llm": Workload("llm", "model-a", 50_000_000_000, "measured"),
+    })
+    arbiter = Arbiter(llm_port=43123, memory=memory, budget=budget,
+                       reaper=lambda port: ReapResult(ok=True, port=port, killed_pids=[]))
+
+    granted = arbiter.acquire_heavy("video", "job-a", params={}, key=None)
+    assert granted["ok"] is True
+
+    result = arbiter.can_start_heavy("llm", params={}, key="model-a")
+    assert result == {"ok": True, "reason": None, "memory_warning": None, "release": []}
+
+    # And it is not merely advisory: acquiring actually coexists — the video
+    # holder is not evicted, both are held at once.
+    llm_grant = arbiter.acquire_heavy("llm", "model-a", params={}, key="model-a")
+    assert llm_grant["ok"] is True
+    assert arbiter.desk_state()["media_busy"] is True
+    assert arbiter.release_heavy(granted["token"]) == {"ok": True}
+    assert arbiter.release_heavy(llm_grant["token"]) == {"ok": True}
+
+
+def test_can_start_heavy_reports_the_minimal_release_when_budget_is_short():
+    """预算不够但让出音乐够用时，release 只含音乐那一件而非全部（R-arbiter-05）。"""
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=120_000_000_000))
+    budget = FakeBudget({
+        "video": Workload("video", None, 80_000_000_000, "measured"),
+        "music": Workload("music", None, 30_000_000_000, "measured"),
+        "llm": Workload("llm", "model-a", 60_000_000_000, "measured"),
+    })
+    arbiter = Arbiter(llm_port=43123, memory=memory, budget=budget)
+    arbiter.acquire_heavy("video", "job-a", params={}, key=None)
+    arbiter.acquire_heavy("music", "job-b", params={}, key=None)
+
+    result = arbiter.can_start_heavy("llm", params={}, key="model-a")
+
+    assert result["ok"] is False
+    assert result["reason"]["code"] == "insufficient_budget"
+    assert [w["kind"] for w in result["release"]] == ["music"]
+
+
+def test_can_start_heavy_names_the_source_when_it_cannot_tell():
+    """依据来源必须出现在拒绝原因里（R-budget-01）。"""
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=10_000_000_000))
+    budget = FakeBudget({"llm": Workload("llm", "model-a", 100_000_000_000, "unavailable")})
+    arbiter = Arbiter(llm_port=43123, memory=memory, budget=budget)
+
+    result = arbiter.can_start_heavy("llm", params={}, key="model-a")
+
+    assert result["ok"] is False
+    assert "unavailable" in result["reason"]["message"]
+
+
+def test_acquire_heavy_in_budget_mode_never_evicts_it_only_refuses():
+    """budget 模式下 acquire_heavy 不再自动让出——那是调用方按 release 建议做的事。"""
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=50_000_000_000))
+    budget = FakeBudget({
+        "llm": Workload("llm", "model-a", 40_000_000_000, "measured"),
+        "video": Workload("video", None, 40_000_000_000, "measured"),
+    })
+    arbiter = Arbiter(llm_port=43123, memory=memory, budget=budget)
+    llm = arbiter.acquire_heavy("llm", "model-a", params={}, key="model-a")
+    assert llm["ok"] is True
+
+    refused = arbiter.acquire_heavy("video", "job-a", params={}, key=None)
+
+    assert refused == {"ok": False, "reason": {
+        "code": "insufficient_budget",
+        "message": "需要 80000000000 字节，可用 50000000000 字节（依据：measured）",
+    }}
+    assert arbiter.desk_state()["holder"]["kind"] == "llm"   # 没有被让出

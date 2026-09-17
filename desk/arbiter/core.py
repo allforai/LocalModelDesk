@@ -1,4 +1,29 @@
-"""Thread-safe facade for heavy-work ownership and LLM eviction."""
+"""Thread-safe facade for heavy-work ownership and LLM eviction.
+
+R-arbiter-01 改写：能否并存由预算判定，预算不足时退化为互斥；持有者由单个变一组。
+This facade now has two modes, selected once at construction by whether a
+``budget`` (``desk.budget.budget.Budget``-shaped: a ``.cost(...)`` method) is
+supplied:
+
+* **legacy mode** (``budget=None``) — every call site that has not been wired
+  up to a real ``Budget`` yet (today that is every production call site:
+  ``desk/runtime.py`` builds ``Arbiter(DEFAULT_LLM_PORT)`` with no budget, and
+  wiring that is out of this task's file list — see the deviation note in the
+  Task 7 report). Behaviour here is byte-for-byte the pre-Task-7 rule table:
+  one heavy slot, media always evicts a resident LLM, a second LLM or a second
+  media job is always refused. This is *not* an approximation of the old
+  behaviour, it is the old behaviour, kept alive as a private fallback because
+  ``desk/arbiter/state.py`` no longer contains it (R-arbiter-01 deleted the
+  kind-hardcoded branches from the pure state machine on purpose).
+* **budget mode** (``budget=<Budget>``) — coexistence is a real, multi-holder
+  state: granting a request no longer evicts residents when the combined
+  ``Workload`` set still fits (this is the law R-arbiter-01 overturns —
+  "媒体在跑，预算够，聊天照样装得下"). A refusal is advisory-only here:
+  ``acquire_heavy`` never auto-evicts in this mode, it just says no; the
+  caller learns the minimal release set from ``can_start_heavy`` and releases
+  those tokens itself before retrying (R-arbiter-05 "仅在预算不足时让出，且最小
+  让出").
+"""
 from __future__ import annotations
 
 import logging
@@ -7,9 +32,12 @@ import time
 import uuid
 from collections.abc import Callable
 
+from ..budget.budget import fits, plan
 from .memory import MemoryReader
 from .reaper import ReapResult, port_listeners, reap_port
-from .state import Holder, PHASE_ACQUIRING, PHASE_HELD, plan_acquire
+from .state import (
+    KINDS, MEDIA_KINDS, PHASE_ACQUIRING, PHASE_HELD, Decision, Holder, plan_acquire,
+)
 
 
 class Arbiter:
@@ -23,6 +51,7 @@ class Arbiter:
         reaper: Callable[[int], ReapResult] = reap_port,
         clock: Callable[[], float] = time.time,
         logger: logging.Logger | None = None,
+        budget=None,
     ):
         self.llm_port = llm_port
         self._memory = memory or MemoryReader()
@@ -30,9 +59,11 @@ class Arbiter:
         self._owned_pid_provider: Callable[[], set[int]] | None = None
         self._clock = clock
         self._logger = logger or logging.getLogger(__name__)
+        self._budget = budget
         self._transition_lock = threading.Lock()
         self._state_lock = threading.Lock()
-        self._holder: Holder | None = None
+        self._holders: dict[str, Holder] = {}     # token -> Holder
+        self._workloads: dict[str, object] = {}    # token -> Workload (budget mode only)
         self._subscribers: list[Callable[[dict], None]] = []
 
     @staticmethod
@@ -43,30 +74,104 @@ class Arbiter:
     def _public_holder(holder: Holder | None) -> dict | None:
         return None if holder is None else holder.public_view()
 
-    def _state_for(self, holder: Holder | None) -> dict:
+    @staticmethod
+    def _workload_view(workload) -> dict:
+        return {"kind": workload.kind, "key": workload.key,
+                "bytes_needed": workload.bytes_needed, "source": workload.source}
+
+    # ---- decision (pure given a snapshot; no locking) -----------------
+    def _legacy_decision(self, holder: Holder | None, kind: str) -> Decision:
+        """The pre-Task-7 transition table (see module docstring)."""
+        if kind not in KINDS:
+            return Decision("refuse", "unknown_kind", f"unknown heavy kind: {kind!r}")
+        if holder is None:
+            return Decision("grant")
+        if holder.phase == PHASE_ACQUIRING:
+            return Decision(
+                "refuse", "transition_in_progress",
+                "a heavy-work transition is in progress; retry shortly",
+            )
+        if holder.kind in MEDIA_KINDS:
+            return Decision("refuse", "media_busy", f"{holder.kind} job {holder.label!r} is running")
+        if kind == "llm":
+            return Decision(
+                "refuse", "llm_already_held",
+                f"llm {holder.label!r} already holds memory; release it first",
+            )
+        return Decision("evict_then_grant")
+
+    def _cost(self, kind: str, params: dict | None, key: str | None):
+        """Budget-mode cost of a request. Never called in legacy mode."""
+        params = params or {}
+        if kind in ("video", "music"):
+            return self._budget.cost(kind, key=key, params=params)
+        return self._budget.cost(kind, key=key, config=params.get("config"),
+                                  weights_gb=params.get("weights_gb"))
+
+    def _decide_from(self, kind, params, key, holders, resident, available_bytes):
+        """Decide given an already-known snapshot — no locking, safe to call
+        while already holding ``_state_lock``."""
+        if self._budget is None:
+            holder = holders[-1] if holders else None
+            return self._legacy_decision(holder, kind), None, holder
+        workload = self._cost(kind, params, key)
+        verdict = fits(list(resident) + [workload], available_bytes)
+        holder = holders[-1] if holders else None
+        return plan_acquire(holders, kind, verdict), workload, holder
+
+    def _decide(self, kind, params, key):
+        """Snapshot current holders (briefly under `_state_lock`) then decide."""
+        available_bytes = self._memory.snapshot().available_bytes
+        with self._state_lock:
+            holders = tuple(self._holders.values())
+            resident = tuple(
+                w for h in holders if (w := self._workloads.get(h.token)) is not None
+            )
+        decision, workload, holder = self._decide_from(
+            kind, params, key, holders, resident, available_bytes)
+        return decision, workload, resident, available_bytes, holder
+
+    # ---- state mutation (holds _state_lock only) -----------------------
+    def _grant(self, token: str, holder: Holder, workload) -> dict:
+        with self._state_lock:
+            self._holders[token] = holder
+            if workload is not None:
+                self._workloads[token] = workload
+            holders = tuple(self._holders.values())
+            resident = tuple(
+                w for h in holders if (w := self._workloads.get(h.token)) is not None
+            )
+        return self._state_for(holders, resident)
+
+    def _replace_all(self, holder: Holder | None) -> dict:
+        """Legacy single-slot replace: only the no-budget eviction path uses this."""
+        with self._state_lock:
+            self._holders = {} if holder is None else {holder.token: holder}
+            self._workloads = {}
+            holders = tuple(self._holders.values())
+        return self._state_for(holders, ())
+
+    def _state_for(self, holders: tuple[Holder, ...], resident: tuple = ()) -> dict:
+        available_bytes = self._memory.snapshot().available_bytes
+
         def can_start(kind: str) -> dict:
-            decision = plan_acquire(holder, kind)
+            decision, _workload, _holder = self._decide_from(
+                kind, None, None, holders, resident, available_bytes)
             if decision.action != "refuse":
                 return {"ok": True, "reason": None}
-            return {
-                "ok": False,
-                "reason": self._reason(decision.reason_code, decision.reason_message),
-            }
+            return {"ok": False, "reason": self._reason(decision.reason_code, decision.reason_message)}
 
+        primary = holders[-1] if holders else None
         return {
-            "holder": self._public_holder(holder),
-            "media_busy": holder is not None and holder.kind in {"video", "music"},
+            "holder": self._public_holder(primary),
+            "media_busy": any(h.kind in MEDIA_KINDS for h in holders),
             "can_start": {"llm": can_start("llm"), "media": can_start("video")},
         }
 
     def _read_holder(self) -> Holder | None:
         with self._state_lock:
-            return self._holder
-
-    def _set_holder(self, holder: Holder | None) -> dict:
-        with self._state_lock:
-            self._holder = holder
-            return self._state_for(holder)
+            holders = tuple(self._holders.values())
+        return holders[-1] if holders else None
 
     def _dispatch(self, states: list[dict]) -> None:
         if not states:
@@ -120,22 +225,34 @@ class Arbiter:
         return port_listeners(port)
 
     def desk_state(self) -> dict:
-        return self._state_for(self._read_holder())
+        with self._state_lock:
+            holders = tuple(self._holders.values())
+            resident = tuple(
+                w for h in holders if (w := self._workloads.get(h.token)) is not None
+            )
+        return self._state_for(holders, resident)
 
-    def can_start_heavy(self, kind: str, estimated_bytes: int | None = None) -> dict:
-        """Read-only acquisition pre-check, with an optional memory warning."""
-        decision = plan_acquire(self._read_holder(), kind)
-        if decision.action == "refuse":
-            return {
-                "ok": False,
-                "reason": self._reason(decision.reason_code, decision.reason_message),
-                "memory_warning": None,
-            }
+    def can_start_heavy(self, kind: str, params: dict | None = None, key: str | None = None,
+                         estimated_bytes: int | None = None) -> dict:
+        """Read-only acquisition pre-check.
 
-        warning = None
-        if estimated_bytes is not None:
-            available_bytes = self._memory.snapshot().available_bytes
-            if estimated_bytes > available_bytes:
+        Legacy mode (no budget wired): unchanged from before Task 7 — an optional
+        ``estimated_bytes`` produces a ``memory_warning`` without refusing, and
+        never carries a ``release`` key.
+
+        Budget mode: consults ``budget.cost``/``fits``; a refusal whose
+        ``reason_code`` is ``insufficient_budget`` also carries ``release`` — the
+        minimal set of resident workloads (``budget.plan``) that would need to be
+        released for the request to fit (R-arbiter-05, R-budget-07).
+        """
+        decision, workload, resident, available_bytes, _holder = self._decide(kind, params, key)
+
+        if self._budget is None:
+            if decision.action == "refuse":
+                return {"ok": False, "reason": self._reason(decision.reason_code, decision.reason_message),
+                        "memory_warning": None}
+            warning = None
+            if estimated_bytes is not None and estimated_bytes > available_bytes:
                 warning = {
                     "code": "insufficient_memory",
                     "required_bytes": estimated_bytes,
@@ -145,40 +262,63 @@ class Arbiter:
                         f"{available_bytes / 1_000_000_000:.1f} GB is currently available"
                     ),
                 }
-        return {"ok": True, "reason": None, "memory_warning": warning}
+            return {"ok": True, "reason": None, "memory_warning": warning}
 
-    def acquire_heavy(self, kind: str, label: str, display: str | None = None) -> dict:
-        """Acquire a token, evicting the active LLM first for media requests."""
-        holder = self._read_holder()
-        decision = plan_acquire(holder, kind)
+        if decision.action == "refuse":
+            release: list[dict] = []
+            if decision.reason_code == "insufficient_budget":
+                outcome = plan([workload], list(resident), available_bytes)
+                if outcome.ok:
+                    release = [self._workload_view(w) for w in outcome.release]
+            return {"ok": False, "reason": self._reason(decision.reason_code, decision.reason_message),
+                    "memory_warning": None, "release": release}
+        warning = None
+        if workload.bytes_needed > available_bytes:
+            warning = {
+                "code": "insufficient_memory",
+                "required_bytes": workload.bytes_needed,
+                "available_bytes": available_bytes,
+                "source": workload.source,
+                "message": (
+                    f"model requires about {workload.bytes_needed / 1_000_000_000:.1f} GB; "
+                    f"{available_bytes / 1_000_000_000:.1f} GB is currently available"
+                ),
+            }
+        return {"ok": True, "reason": None, "memory_warning": warning, "release": []}
+
+    def acquire_heavy(self, kind: str, label: str, display: str | None = None,
+                       *, params: dict | None = None, key: str | None = None) -> dict:
+        """Acquire a token. In legacy mode, evicts the active LLM first for media
+        requests (unchanged). In budget mode, grants alongside residents when the
+        combined workload still fits and never auto-evicts otherwise — see the
+        module docstring."""
+        decision, _workload, _resident, _available, holder = self._decide(kind, params, key)
         if holder is not None and holder.phase == PHASE_ACQUIRING:
-            return {"ok": False, "reason": self._reason(
-                decision.reason_code, decision.reason_message)}
+            return {"ok": False, "reason": self._reason(decision.reason_code, decision.reason_message)}
 
         states: list[dict] = []
         with self._transition_lock:
-            holder = self._read_holder()
-            decision = plan_acquire(holder, kind)
+            decision, workload, _resident, _available, holder = self._decide(kind, params, key)
             if decision.action == "refuse":
-                return {"ok": False, "reason": self._reason(
-                    decision.reason_code, decision.reason_message)}
+                return {"ok": False, "reason": self._reason(decision.reason_code, decision.reason_message)}
 
             token = uuid.uuid4().hex
             if decision.action == "grant":
-                state = self._set_holder(Holder(kind, label, token, self._clock(), PHASE_HELD, display))
+                state = self._grant(token, Holder(kind, label, token, self._clock(), PHASE_HELD, display), workload)
                 states.append(state)
                 result = {"ok": True, "token": token, "state": state}
             else:
+                # evict_then_grant — legacy mode only; budget mode's plan_acquire
+                # never returns this action (see state.py).
                 acquiring = Holder(kind, label, token, self._clock(), PHASE_ACQUIRING, display)
-                states.append(self._set_holder(acquiring))
+                states.append(self._replace_all(acquiring))
                 reaped = self._reap(self.llm_port)
                 if reaped.ok:
-                    state = self._set_holder(
-                        Holder(kind, label, token, self._clock(), PHASE_HELD, display))
+                    state = self._grant(token, Holder(kind, label, token, self._clock(), PHASE_HELD, display), workload)
                     states.append(state)
                     result = {"ok": True, "token": token, "state": state}
                 else:
-                    states.append(self._set_holder(holder))
+                    states.append(self._replace_all(holder))
                     result = {"ok": False, "reason": self._reason(
                         "evict_failed", reaped.error or "LLM eviction failed")}
 
@@ -189,10 +329,18 @@ class Arbiter:
         """Release only the currently held matching token."""
         states: list[dict] = []
         with self._transition_lock:
-            holder = self._read_holder()
-            if holder is None or holder.token != token:
+            with self._state_lock:
+                found = token in self._holders
+                if found:
+                    self._holders.pop(token, None)
+                    self._workloads.pop(token, None)
+                holders = tuple(self._holders.values())
+                resident = tuple(
+                    w for h in holders if (w := self._workloads.get(h.token)) is not None
+                )
+            if not found:
                 return {"ok": False, "reason": self._reason(
                     "not_holder", "token does not hold the current heavy-work lease")}
-            states.append(self._set_holder(None))
+            states.append(self._state_for(holders, resident))
         self._dispatch(states)
         return {"ok": True}

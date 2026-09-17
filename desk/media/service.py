@@ -34,10 +34,24 @@ def _positive_int(name: str, value: Any) -> None:
 class MediaService:
     def __init__(self, *, resolve_paths, probe_capabilities, arbiter, list_catalog,
                  append_history, executor, clock: Callable[[], float] = time.time,
-                 term_grace_s: float = 5.0, log_limit: int = DEFAULT_LOG_LIMIT):
+                 term_grace_s: float = 5.0, log_limit: int = DEFAULT_LOG_LIMIT,
+                 measurements=None, measurements_path: Path | None = None,
+                 available_bytes: Callable[[], int] | None = None,
+                 mem_sample_interval_s: float = 1.0):
+        """`measurements`/`measurements_path`/`available_bytes` are Task 7's media
+        calibration seam (R-budget-06): optional, off by default. When all three
+        are wired, a job's peak resident bytes (baseline available_bytes right
+        before start, minus the lowest point sampled every `mem_sample_interval_s`
+        while it runs) is recorded via `Measurements.record_media` and persisted,
+        so the next job of that kind gets a `measured` estimate instead of the
+        parameter-based `predicted` one. With none wired (the production default
+        today — see Task 7 deviations, desk/runtime.py has not been updated to
+        build and pass these in), behaviour is unchanged from before this task."""
         self._resolve_paths, self._probe_capabilities, self._arbiter = resolve_paths, probe_capabilities, arbiter
         self._list_catalog, self._append_history, self._executor = list_catalog, append_history, executor
         self._clock, self._term_grace_s, self._log_limit = clock, term_grace_s, log_limit
+        self._measurements, self._measurements_path = measurements, measurements_path
+        self._available_bytes, self._mem_sample_interval_s = available_bytes, mem_sample_interval_s
         self._lock = threading.RLock()
         self._state: dict[str, Any] = {"job_id": 0, "status": "idle", "kind": None, "params": None,
             "output": None, "error": None, "started_at": None, "finished_at": None}
@@ -86,6 +100,40 @@ class MediaService:
             raise MediaError("lyrics_required", "请填写歌词：Music 3 需要歌词才能生成", 400)
         return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration}, force=force)
 
+    def _estimate(self, kind: str, params: dict) -> tuple[int, str]:
+        """(bytes, source) — this machine's measured peak for `kind` if we have
+        calibrated one (Task 7 Step 7), else the parameter-based estimate
+        (R-budget-06: the per-job formula stays; only its constants get a
+        machine-local correction once a real run has been observed)."""
+        from .memory_estimate import estimate_bytes
+        peak = self._measurements.media_peak(kind) if self._measurements else None
+        if peak:
+            return peak, "measured"
+        return estimate_bytes(kind, params), "predicted"
+
+    def _sample_available(self) -> int | None:
+        if self._available_bytes is None:
+            return None
+        try:
+            return int(self._available_bytes())
+        except Exception:
+            log.exception("media memory sampling failed")
+            return None
+
+    def _record_media_peak(self, kind: str, baseline: int | None, trough: int | None) -> None:
+        """基线 − 运行中最低点 即本机实测峰值（R-budget-06，Task 7 Step 7）。"""
+        if self._measurements is None or baseline is None or trough is None:
+            return
+        peak = baseline - trough
+        if peak <= 0:
+            return   # a bad/noisy sample is worse than none; never record a non-positive peak
+        self._measurements.record_media(kind, peak, self._clock())
+        if self._measurements_path is not None:
+            try:
+                self._measurements.save(self._measurements_path)
+            except OSError:
+                log.exception("failed to persist media calibration")
+
     def _start(self, kind: str, params: dict, *, force: bool = False) -> dict:
         with self._lock:
             if self._state["status"] == "running":
@@ -95,12 +143,11 @@ class MediaService:
             if cap is None or not cap.present:
                 raise MediaError("capability_missing", f"{cap_key} is unavailable: {getattr(cap, 'detail', '')}", 503)
             roots = self._resolve_paths()
-            from .memory_estimate import estimate_bytes
 
             catalog_key = "h3" if kind == "video" else "music3"
             catalog = list(self._list_catalog())
             model_root = Path(roots.models_root) / {e.key: e.relpath for e in catalog}[catalog_key]
-            estimated = estimate_bytes(kind, params)
+            estimated, source = self._estimate(kind, params)
             pre = self._arbiter.can_start_heavy(kind, estimated_bytes=estimated)
             if not pre.get("ok"):
                 reason = pre.get("reason") or {}
@@ -109,9 +156,10 @@ class MediaService:
             if warning and not force:
                 required = warning["required_bytes"] / 1024 ** 3
                 available = warning["available_bytes"] / 1024 ** 3
+                label = "已实测" if source == "measured" else "估算"
                 raise MediaError("insufficient_memory",
-                                  f"生成约需 {required:.1f} GiB 内存，当前可用 {available:.1f} GiB，可能失败或拖慢整机",
-                                  409, warning)
+                                  f"生成约需 {required:.1f} GiB 内存（{label}），当前可用 {available:.1f} GiB，可能失败或拖慢整机",
+                                  409, {**warning, "source": source})
             job_id = self._state["job_id"] + 1
             display = "视频生成中" if kind == "video" else "音乐生成中"
             grant = self._arbiter.acquire_heavy(kind, f"job-{job_id}", display)
@@ -144,16 +192,35 @@ class MediaService:
             self._state = {"job_id": job_id, "status": "running", "kind": kind, "params": dict(params), "output": None,
                 "error": None, "started_at": now, "finished_at": None}
             self._reset_log(); self._cancel_requested = False; self._handle = handle
-            threading.Thread(target=self._worker, args=(handle, permit, output), daemon=True).start()
+            threading.Thread(target=self._worker, args=(handle, permit, output, kind), daemon=True).start()
             return self.job_status()
 
-    def _worker(self, handle, permit: str, output: Path) -> None:
+    def _worker(self, handle, permit: str, output: Path, kind: str) -> None:
+        baseline = self._sample_available()
+        trough = [baseline]   # boxed: mutated from the sampler thread below
+        stop_sampling = threading.Event()
+        sampler = None
+        if self._available_bytes is not None:
+            def sample_loop() -> None:
+                while not stop_sampling.wait(self._mem_sample_interval_s):
+                    value = self._sample_available()
+                    if value is not None and (trough[0] is None or value < trough[0]):
+                        trough[0] = value
+            sampler = threading.Thread(target=sample_loop, daemon=True)
+            sampler.start()
         try:
             try:
                 for line in handle.iter_output(): self._append_log(line)
                 code, failure = handle.wait(), None
             except Exception as exc:
                 code, failure = None, str(exc)
+            finally:
+                stop_sampling.set()
+                if sampler is not None:
+                    sampler.join(timeout=self._term_grace_s)
+            final = self._sample_available()
+            if final is not None and (trough[0] is None or final < trough[0]):
+                trough[0] = final
             with self._lock:
                 if self._cancel_requested: status, error = "cancelled", None
                 elif failure is not None: status, error = "error", {"code": "worker_failed", "message": failure}
@@ -162,6 +229,7 @@ class MediaService:
                 else: status, error = "error", {"code": "exit_nonzero", "message": f"exit {code}", "log_tail": self._log_tail(5)}
                 self._state.update(status=status, output=output.name if status == "done" else None, error=error, finished_at=self._clock())
                 self._handle = None
+            self._record_media_peak(kind, baseline, trough[0])
         finally:
             self._finalize(permit)
 

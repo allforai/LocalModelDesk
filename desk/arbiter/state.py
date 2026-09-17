@@ -49,28 +49,28 @@ class Decision:
     reason_message: str | None = None
 
 
-def plan_acquire(holder: Holder | None, kind: str) -> Decision:
-    """Return the transition-table decision for a heavy-work request."""
+def plan_acquire(holders, kind: str, verdict) -> Decision:
+    """能否再开一件重活：由预算判定，不由持有者种类硬编码（R-arbiter-01 改写）。
+
+    互斥不再是公理，而是「预算不够时的结果」。种类相关的硬编码分支全部删除；
+    留下的两条与容量无关：正在转换中、种类不认识。
+
+    这里不再产生 `evict_then_grant`——让出哪些是 `budget.plan()` 在一组重活上算出来
+    的集合结果，状态机看不到内存数字，也不替调用方决定让出谁。`core.py` 把
+    `budget.plan()` 的建议通过 `can_start_heavy` 的 `release` 字段交给调用方，
+    由调用方自己释放对应持有者后重试（R-arbiter-05）。
+    """
     if kind not in KINDS:
         return Decision("refuse", "unknown_kind", f"unknown heavy kind: {kind!r}")
-    if holder is None:
-        return Decision("grant")
-    if holder.phase == PHASE_ACQUIRING:
+    if any(h.phase == PHASE_ACQUIRING for h in holders):
         return Decision(
-            "refuse",
-            "transition_in_progress",
+            "refuse", "transition_in_progress",
             "a heavy-work transition is in progress; retry shortly",
         )
-    if holder.kind in MEDIA_KINDS:
-        return Decision(
-            "refuse",
-            "media_busy",
-            f"{holder.kind} job {holder.label!r} is running",
-        )
-    if kind == "llm":
-        return Decision(
-            "refuse",
-            "llm_already_held",
-            f"llm {holder.label!r} already holds memory; release it first",
-        )
-    return Decision("evict_then_grant")
+    if verdict.ok:
+        return Decision("grant")
+    return Decision(
+        "refuse", "insufficient_budget",
+        f"需要 {verdict.needed_bytes} 字节，可用 {verdict.available_bytes} 字节"
+        f"（依据：{verdict.source}）",
+    )
