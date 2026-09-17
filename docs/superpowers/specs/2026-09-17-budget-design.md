@@ -96,7 +96,7 @@ class Workload:
     source: str          # predicted | measured | unavailable
 
 class Budget:
-    def cost(self, kind, key=None) -> Workload      # 单件重活要多少，带来源
+    def cost(self, kind, *, key=None, params=None) -> Workload   # 单件要多少，带来源
     def fits(self, workloads) -> Verdict            # 一组能否共存 —— 纯函数
     def plan(self, wanted) -> Plan                  # 想跑这一组 ⇒ 该让出谁（最小让出）
     def for_chat(self) -> ChatBudget                # token 上限、压缩触发点、来源
@@ -162,11 +162,19 @@ done 事件     usage.prompt_tokens                     ⇒ 本轮 token 数
 这个快慢分离是有意的：本轮安全由 mlx-lm 的 trim 兜底，不必等修正生效；
 修正只让下次起得更准。
 
-### 媒体余量同样自校准
+### 媒体估算：保留公式，换掉标定来源
 
-作业启动前记 `available_bytes`，运行中周期采样取最低点，结束算差值
-⇒ 本机 video / music 的峰值占用。首次运行无数据则保守（先卸 LLM），
-跑过一次之后才有资格判断「富余充足，聊天模型不必卸」。
+`desk/media/memory_estimate.py` 已经按作业参数估峰值（分辨率 × 帧数决定体积项），
+并由 `media/service.py:104` 传给仲裁器。**这个形式是对的，不要动**——
+它的 docstring 记着当初为什么不能按种类给一个数：报模型的 102.7 GiB 磁盘体积，
+每个作业都是同一个数，警告就没有意义了。
+
+要换的是它的**标定来源**。现在的常数（草稿档 27.0 GiB、每单位体积 1.4 GiB）
+是 2026-09-08 在一台机器上量出来写死的。改成：每次媒体作业运行期采样
+`available_bytes`（启动前基线、运行中最低点、结束差值）得到本机实测峰值，
+写进实测档案，用来修正常数项。本机没有实测记录时沿用写死值并标 `predicted`。
+
+`cost()` 因此必须接 `params`——媒体的开销取决于作业参数，不是只取决于种类。
 
 ### 实测档案
 
@@ -192,8 +200,10 @@ done 事件     usage.prompt_tokens                     ⇒ 本轮 token 数
 | R-arbiter-07 加载前比对一次体积 | 持续生效：会话中 KV 增长同样在预算内被监控 |
 | R-arbiter-02 / 03 / 06 | 不动 |
 
-**未经实测不放宽**：媒体作业占多少内存，本项目从未量过。没量过的数字不能用来放宽限制——
-在量出来之前，媒体与聊天不并存。这与本仓库其它地方的证据纪律一致：没有证据的结论不算结论。
+**未经本机实测不放宽**：媒体估算的标定值来自 2026-09-08 的一台机器，对别的机器只是预测。
+预测可以用来**警告**（今天就在这么用），但不足以用来**放宽**限制——
+在这台机器自己量出峰值之前，媒体与聊天不并存。
+这与本仓库其它地方的证据纪律一致：没有证据的结论不算结论。
 
 **压力传感器作兜底**：`kern.memorystatus_vm_pressure_level`（R-arbiter-02 已在读）
 一旦升高，第一动作是令 mlx-lm trim 掉 KV 缓存——便宜且可逆，
