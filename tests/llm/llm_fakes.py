@@ -205,7 +205,11 @@ class FakeArbiter:
         self._subscribers: list[Any] = []
         self._listeners = list(listeners)
 
-    def acquire_heavy(self, kind: str, label: str, display: str | None = None) -> dict:
+    def acquire_heavy(self, kind: str, label: str, display: str | None = None,
+                      *, params: dict | None = None, key: str | None = None) -> dict:
+        # params/key 单独存，不塞进 _record 的元组——既有断言按位置/整体相等比对，
+        # 塞进去会连带炸掉一批与本次改动无关的测试。
+        self.last_acquire = {"kind": kind, "label": label, "params": params, "key": key}
         _record(self.calls, "acquire", kind, label)
         return _pop(self._acquire)
 

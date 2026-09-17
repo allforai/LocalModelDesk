@@ -36,6 +36,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["diskUsage", [], "/api/resources/disk", "GET"],
     ["memorySnapshot", [], "/api/memory", "GET"],
     ["deskState", [], "/api/state", "GET"],
+    ["budget", [], "/api/budget", "GET"],
     ["loadLlm", ["glm"], "/api/llm/load", "POST", { key: "glm" }],
     ["unloadLlm", [], "/api/llm/unload", "POST"],
     ["llmStatus", [], "/api/llm/status", "GET"],
@@ -58,7 +59,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
   ];
   const names = [
     "readConfig", "writeConfig", "resetConfig", "completeFirstRun", "adoptLegacyModels", "discoverModels", "listCatalog", "verifyAllModels",
-    "startDownload", "cancelDownload", "deleteModel", "diskUsage", "memorySnapshot", "deskState", "loadLlm", "unloadLlm",
+    "startDownload", "cancelDownload", "deleteModel", "diskUsage", "memorySnapshot", "deskState", "budget", "loadLlm", "unloadLlm",
     "llmStatus", "chatStream", "promptAssist", "startVideoJob", "startMusicJob", "cancelJob", "jobStatus", "listOutputs",
     "serveOutput", "revealOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
   ];

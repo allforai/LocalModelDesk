@@ -164,18 +164,21 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
     roots = paths.resolve_paths(default_config_on_corrupt=True)
     paths.setup_logging(roots)
     resolve_paths = paths.resolve_paths
-    arbiter = Arbiter(DEFAULT_LLM_PORT)
+    measurements_path = roots.data_root / "measurements.json"
+    measurements = Measurements.load(measurements_path)
+    memory_reader = MemoryReader()
+    budget = Budget(
+        measurements=measurements,
+        memory_reader=memory_reader,
+        media_estimate=media_estimate_bytes,
+        now=time.time,
+    )
+    arbiter = Arbiter(DEFAULT_LLM_PORT, budget=budget)
     resources = ResourcesService(
         resolve_paths=resolve_paths,
         can_start_heavy=lambda: arbiter.can_start_heavy("video"),
     )
     library = LibraryService(roots)
-    budget = Budget(
-        measurements=Measurements.load(roots.data_root / "measurements.json"),
-        memory_reader=MemoryReader(),
-        media_estimate=media_estimate_bytes,
-        now=time.time,
-    )
     llm = LlmService(
         MlxLmBackend(), arbiter, resources, paths, port=DEFAULT_LLM_PORT, budget=budget
     )
@@ -187,6 +190,9 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
         list_catalog=resources.list_catalog,
         append_history=library.append_history,
         executor=SubprocessExecutor(),
+        measurements=measurements,
+        measurements_path=measurements_path,
+        available_bytes=lambda: memory_reader.snapshot().available_bytes,
     )
     gateway = GatewayService(DeskGatewayBackend(llm, arbiter), _gateway_config_reader())
     gateway.on_rollback = lambda cfg: config.update_config(roots, gateway=cfg)

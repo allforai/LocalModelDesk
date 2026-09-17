@@ -109,9 +109,13 @@ async function tickJob() {
 
 async function tick() {
   try {
-    const [deskState, memory, llm] = await Promise.all([api.deskState(), api.memorySnapshot(), api.llmStatus()]);
+    const [deskState, memory, llm, budget] = await Promise.all([
+      api.deskState(), api.memorySnapshot(), api.llmStatus(),
+      // 预算读不到不该让整个 tick 失败：状态栏少一行后缀，比整条状态栏掉线好。
+      api.budget().catch(() => null),
+    ]);
     const download = await panes.resources.refresh();
-    failures = 0; statusbar.offline(false); statusbar.update(deskState, memory, download, modelNames); applyHeavyAvailability(deskState); store.set({ deskState, memory });
+    failures = 0; statusbar.offline(false); statusbar.update(deskState, memory, download, modelNames, budget); applyHeavyAvailability(deskState); store.set({ deskState, memory });
     panes.chat.applyLlmStatus(llm, deskState);
     const assistReason = llm.state?.status !== "loaded" ? "先在「聊天」页加载一个模型"
       : deskState.media_busy ? "媒体作业进行中，暂时不能调用模型" : "";

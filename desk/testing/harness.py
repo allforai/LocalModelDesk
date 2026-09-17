@@ -225,6 +225,11 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
           for method, path, handler in library_http.routes(library)),
         ("GET", "/api/state", lambda _req: arbiter.desk_state()),
         ("GET", "/api/memory", lambda _req: arbiter.memory_snapshot()),
+        # 台面前端每个 tick 都会取它；测试台面不挂的话，e2e 里状态栏会一直报离线。
+        ("GET", "/api/budget", lambda _req: {"available_bytes": 0, "total_bytes": 0,
+                                             "pressure": "normal",
+                                             "chat": {"source": "unavailable"},
+                                             "media": {}}),
         ("POST", "/api/gateway/config", lambda _req: gateway.handle_config_request("POST")[1]),
         ("GET", "/api/gateway/config", lambda _req: gateway.handle_config_request("GET")[1]),
     ]

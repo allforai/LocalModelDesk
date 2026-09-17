@@ -4,6 +4,7 @@ const ROUTES = {
   catalog: "/api/resources/catalog", status: "/api/resources/status",
   download: "/api/resources/download", cancelDownload: "/api/resources/download/cancel",
   deleteModel: "/api/resources/delete", disk: "/api/resources/disk", memory: "/api/memory", deskState: "/api/state",
+  budget: "/api/budget",
   llmLoad: "/api/llm/load", llmUnload: "/api/llm/unload", llmStatus: "/api/llm/status",
   chatStream: "/api/llm/chat/stream", promptAssist: "/api/llm/prompt-assist",
   video: "/api/media/video", music: "/api/media/music",
@@ -91,6 +92,7 @@ export const deleteModel = (key) => json(ROUTES.deleteModel, "POST", { key, conf
 export const diskUsage = () => request(ROUTES.disk);
 export const memorySnapshot = () => request(ROUTES.memory);
 export const deskState = () => request(ROUTES.deskState);
+export const budget = () => request(ROUTES.budget);
 
 export const loadLlm = (key) => json(ROUTES.llmLoad, "POST", { key });
 export const unloadLlm = () => json(ROUTES.llmUnload, "POST");

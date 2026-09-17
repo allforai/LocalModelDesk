@@ -61,6 +61,14 @@ def _short_command(command: str, limit: int = 80) -> str:
     return short if len(short) <= limit else short[: limit - 1] + "…"
 
 
+
+def _read_model_config(model_dir: Path) -> dict:
+    """只读模型目录的 config.json；读不到就返回空 dict，让预算自己标「算不出」。"""
+    try:
+        return json.loads((Path(model_dir) / "config.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
 class LlmService:
     """Coordinate asynchronous model loading without owning process details."""
 
@@ -164,7 +172,13 @@ class LlmService:
                 self._load_thread.start()
                 return self._state.to_dict()
 
-        acquired = self._arbiter.acquire_heavy("llm", entry.key, getattr(entry, "name", None))
+        # 预算要靠 config 与权重才算得出这个模型的真实开销；不传的话 budget.cost
+        # 会把聊天算成 0 字节，于是预算对任何组合都说「装得下」（Task 9）。
+        acquired = self._arbiter.acquire_heavy(
+            "llm", entry.key, getattr(entry, "name", None),
+            params={"config": _read_model_config(model_dir), "weights_gb": getattr(entry, "gb", None)},
+            key=entry.key,
+        )
         if not acquired.get("ok"):
             reason = acquired.get("reason") or {}
             code = reason.get("code") if isinstance(reason, dict) else None
