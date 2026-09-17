@@ -9,12 +9,15 @@ fits 与 plan 是纯函数：一组 Workload 加一个可用字节数进，结�
 from __future__ import annotations
 
 import itertools
+import logging
 from dataclasses import dataclass, field
 
 from .estimate import declared_window, per_token_bytes
 from .observe import measured_bytes_per_token, parse_cache_line
 
 GIB_F = float(1024 ** 3)
+
+log = logging.getLogger(__name__)
 
 SOURCES = ("measured", "predicted", "unavailable")   # 由强到弱
 
@@ -119,11 +122,15 @@ class Budget:
     依赖全部构造注入，所以测试不起服务、不装模型。
     """
 
-    def __init__(self, measurements, memory_reader, media_estimate, now) -> None:
+    def __init__(self, measurements, memory_reader, media_estimate, now,
+                 measurements_path=None) -> None:
         self._m = measurements
         self._memory = memory_reader
         self._media_estimate = media_estimate
         self._now = now
+        # 没有路径就只记在内存里（单测用）；生产必须给路径，否则每次重启都从
+        # predicted 重新开始，自校准等于白做。
+        self._measurements_path = measurements_path
 
     # ---- 单件开销 ----------------------------------------------------
     def cost(self, kind, *, key=None, params=None, config=None, weights_gb=None) -> Workload:
@@ -152,7 +159,10 @@ class Budget:
             limit = window or 0
             return ChatBudget(limit, int(limit * COMPACT_FRACTION), "unavailable", window)
         available = self._memory.snapshot().available_bytes
-        usable = int(available * SAFETY_FRACTION)
+        # 权重先占掉，剩下的才轮到 KV。漏减这一项，额度就和「这个模型装不装得下」
+        # 完全脱钩：真机上可用 74 GiB、权重 75 GB 的模型曾算出满窗口 131072。
+        free_for_kv = available - int((weights_gb or 0.0) * GIB_F)
+        usable = int(free_for_kv * SAFETY_FRACTION)
         by_memory = max(usable // per_token, 0)
         limit = min(by_memory, window) if window else by_memory
         # 收紧作用于最终额度，而不只是内存推出的那一支：否则窗口比内存更紧时
@@ -174,8 +184,16 @@ class Budget:
     def record_turn(self, key, log_text, prompt_tokens, weights_gb) -> None:
         """一轮答完，把这台机器上的真值记下来（R-budget-04）。"""
         measured = measured_bytes_per_token(parse_cache_line(log_text), prompt_tokens)
-        if measured:
-            self._m.record_model(key, measured, weights_gb, self._now())
+        if not measured:
+            return
+        self._m.record_model(key, measured, weights_gb, self._now())
+        if self._measurements_path is None:
+            return
+        try:
+            self._m.save(self._measurements_path)
+        except OSError:
+            # 档案是可重建的：写不进去就下一轮再量，不能让一次落盘失败打断回答。
+            log.exception("measurements save failed")
 
     def snapshot(self) -> dict:
         snap = self._memory.snapshot()

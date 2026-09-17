@@ -92,3 +92,38 @@ def test_snapshot_labels_every_number_with_its_source():
     snap = make().snapshot()
     assert set(snap) >= {"available_bytes", "pressure", "media"}
     assert snap["media"]["video"]["source"] in ("predicted", "measured", "unavailable")
+
+
+def test_recorded_turn_survives_a_restart(tmp_path):
+    """R-budget-04 说「写入实测档案」——只记在内存里，重启就没了，自校准白做。
+
+    这条盯的是持久化本身：新建一个只从磁盘加载的 Budget，必须还能读到上一轮量到的真值。
+    """
+    path = tmp_path / "measurements.json"
+    first = Budget(measurements=Measurements.load(path), memory_reader=FakeMemory(116),
+                   media_estimate=lambda kind, params: 27 * GIB,
+                   now=lambda: 1_757_000_000.0, measurements_path=path)
+    first.record_turn("llama", "Prompt Cache: 1 sequences, 12.40 GB", 40_000, weights_gb=70.2)
+
+    reloaded = Budget(measurements=Measurements.load(path), memory_reader=FakeMemory(116),
+                      media_estimate=lambda kind, params: 27 * GIB,
+                      now=lambda: 1_757_000_000.0, measurements_path=path)
+    assert reloaded.for_chat("llama", LLAMA, weights_gb=70.2).source == "measured", \
+        "重启后丢了实测值：record_turn 没有落盘"
+
+
+def test_weights_are_subtracted_before_the_kv_budget():
+    """设计写的是 (可用 − 权重 − 安全余量) ÷ 每token字节，权重这一项不能漏。
+
+    真机实测抓到的：可用 74 GiB、Llama-70B 权重 75 GB——模型根本装不进去，
+    额度却报了满窗口 131072。漏减权重时，额度与「这个模型能不能装下」完全脱钩。
+    """
+    b = make(available_gib=74)
+    assert b.for_chat("llama", LLAMA, weights_gb=75.0).token_limit == 0, \
+        "权重比可用内存还大，却算出了正数额度"
+
+
+def test_a_smaller_model_on_the_same_machine_still_gets_a_budget():
+    """反向：权重减掉之后仍有余量的，额度要照常给出来，不能一刀切成 0。"""
+    b = make(available_gib=74)
+    assert b.for_chat("llama", LLAMA, weights_gb=10.0).token_limit > 0

@@ -172,6 +172,7 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
         memory_reader=memory_reader,
         media_estimate=media_estimate_bytes,
         now=time.time,
+        measurements_path=measurements_path,
     )
     arbiter = Arbiter(DEFAULT_LLM_PORT, budget=budget)
     resources = ResourcesService(
