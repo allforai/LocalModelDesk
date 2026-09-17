@@ -1,0 +1,55 @@
+/** 压缩的三个纯判断：要不要压、按什么换算、切在哪里。
+ *
+ * 前端没有 tokenizer，所以每 token 字符数只能从上一轮真实请求里量：
+ * usage.prompt_tokens 配那次实际发出去的字符数，相除即得。这和 budget 用
+ * 「日志字节数 ÷ prompt_tokens」自校准是同一招——不猜常数，用实测比值。
+ * 量不到就返回 null，调用方据此不压缩，而不是套一个默认值。
+ */
+
+const TAIL_FRACTION = 0.5;   // 尾部原文最多占触发点的一半，剩下留给摘要与新一轮
+
+export function charsPerToken(sentChars, promptTokens) {
+  if (!sentChars || !promptTokens) return null;
+  return sentChars / promptTokens;
+}
+
+export function needsCompaction({ promptTokens, compactAt, pressure } = {}) {
+  // 算不出额度就不压：不知道上限却去裁剪用户的历史，比不裁更糟。
+  if (!compactAt) return false;
+  // R-budget-09 第一步：压力起来时立即压。已核实 mlx-lm 没有管理端点，
+  // 外部触发不了它的 trim，收紧对话是台面唯一能便宜做到的减压动作。
+  if (pressure && pressure !== "normal") return true;
+  return (promptTokens ?? 0) >= compactAt;
+}
+
+const lengthOf = (message) => (message.content ?? "").length;
+
+export function splitForCompaction(messages, { compactAt, charsPerToken: ratio } = {}) {
+  const list = [...(messages ?? [])];
+  if (!compactAt || !ratio) return { head: [], tail: list };
+
+  // 最近一轮完整问答永远留在尾部：那是用户眼前正在看的东西，再紧也不能摘掉。
+  let lastUser = -1;
+  for (let i = list.length - 1; i >= 0; i -= 1) {
+    if (list[i].role === "user") { lastUser = i; break; }
+  }
+  const mustKeepFrom = lastUser === -1 ? list.length : lastUser;
+
+  const tailBudgetChars = compactAt * TAIL_FRACTION * ratio;
+  // 强制保留区间（最近一轮问答）自身的字符数先算进预算里：它已经不可摘除，
+  // 若它本身就已经超出预算，就不该再把更早的短消息也顺手拉进尾部
+  // （测试「至少保留最近一轮完整问答，哪怕它超预算」验的正是这一点）。
+  let used = 0;
+  for (let i = mustKeepFrom; i < list.length; i += 1) {
+    used += lengthOf(list[i]);
+  }
+  let cut = mustKeepFrom;
+  for (let i = mustKeepFrom - 1; i >= 0; i -= 1) {
+    // 已有的摘要永远归头部：第二次压缩要把它和其后的老消息一起重新摘成一份。
+    if (list[i].role === "summary") break;
+    used += lengthOf(list[i]);
+    if (used > tailBudgetChars) break;
+    cut = i;
+  }
+  return { head: list.slice(0, cut), tail: list.slice(cut) };
+}

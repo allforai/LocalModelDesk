@@ -29,9 +29,25 @@ export function reduceChunk(state, line) {
   return { ...state, content: state.content + text, reasoning: state.reasoning + reasoning };
 }
 
+const SUMMARY_PREFIX = "以下是本次对话更早部分的摘要，供你理解上下文；它不是用户的原话：\n\n";
+
 // 发给模型的历史：只要 role/content；中断且一个字都没出的回答不算一轮（P3）。
+// summary 消息（R-context-05）翻译成 system——服务端不校验角色，但 mlx-lm 要套
+// 模型的 chat template，模板只认 system/user/assistant，原样发 summary 会炸在
+// 模板里。它 replaced_through 的那一段只是不发送（R-context-03），并未被删除：
+// 会话文件与界面上一个字都不少。
 export function wireMessages(messages) {
-  return messages
+  const list = messages ?? [];
+  let skipThrough = -1;
+  for (let i = 0; i < list.length; i += 1) {
+    if (list[i].role === "summary" && Number.isInteger(list[i].replaced_through)) {
+      skipThrough = Math.max(skipThrough, list[i].replaced_through);
+    }
+  }
+  return list
+    .filter((message, index) => !(index <= skipThrough && message.role !== "summary"))
     .filter((message) => !(message.role === "assistant" && message.interrupted && !(message.content ?? "").trim()))
-    .map((message) => ({ role: message.role, content: message.content ?? "" }));
+    .map((message) => message.role === "summary"
+      ? { role: "system", content: SUMMARY_PREFIX + (message.content ?? "") }
+      : { role: message.role, content: message.content ?? "" });
 }
