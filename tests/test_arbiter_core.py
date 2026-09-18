@@ -393,19 +393,23 @@ def test_can_start_heavy_reports_the_minimal_release_when_budget_is_short():
     用 StepMemory 让 video/music 授予后各自的真实占用被 _backfill_resident 量出来，
     这样「让出音乐就够、不必动视频」才是数字上站得住的答案。
     """
-    memory = StepMemory([
-        150_000_000_000, 150_000_000_000, 70_000_000_000,   # video 授予：150 -> 70（占 80）
-        70_000_000_000, 70_000_000_000, 40_000_000_000,      # music 授予：70 -> 40（占 30）
-        40_000_000_000,                                       # can_start_heavy 读到的现状
-    ])
+    # 驻留量按持有者 pid 读（R-budget-14），所以两件都要真的报出 pid 并各自占满，
+    # 否则 bytes_resident 为 0、plan() 算不出「让出能回收多少」。
+    # 授予时可用内存要够高（否则拿不到 token），两件都起来之后才降到 40——
+    # 这正是物理上会发生的事。前六个读数覆盖两次 acquire（每次 3 次快照）。
+    memory = StepMemory([150_000_000_000] * 6 + [40_000_000_000])
+    resident = {111: 80_000_000_000, 222: 30_000_000_000}
     budget = FakeBudget({
         "video": Workload("video", None, 80_000_000_000, "measured"),
         "music": Workload("music", None, 30_000_000_000, "measured"),
         "llm": Workload("llm", "model-a", 60_000_000_000, "measured"),
     })
-    arbiter = Arbiter(llm_port=43123, memory=memory, budget=budget)
-    arbiter.acquire_heavy("video", "job-a", params={}, key=None)
-    arbiter.acquire_heavy("music", "job-b", params={}, key=None)
+    arbiter = Arbiter(llm_port=43123, memory=memory, budget=budget,
+                      read_resident_bytes=lambda pid: resident.get(pid, 0))
+    video = arbiter.acquire_heavy("video", "job-a", params={}, key=None)
+    arbiter.note_pids(video["token"], {111})
+    music = arbiter.acquire_heavy("music", "job-b", params={}, key=None)
+    arbiter.note_pids(music["token"], {222})
 
     result = arbiter.can_start_heavy("llm", params={}, key="model-a")
 

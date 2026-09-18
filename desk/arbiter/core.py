@@ -29,6 +29,7 @@ supplied:
 from __future__ import annotations
 
 import logging
+import subprocess
 import threading
 import time
 import uuid
@@ -42,27 +43,29 @@ from .state import (
     KINDS, MEDIA_KINDS, PHASE_ACQUIRING, PHASE_HELD, Decision, Holder, plan_acquire,
 )
 
-# 回填 bytes_resident 的噪声下限：差额低于它就当没测到（R-budget-12 末句
-# 「测不到时 bytes_resident 为 0，退回今天的保守行为」）。
-#
-# 为什么需要下限：available_bytes 的口径是 free+inactive+purgeable+speculative，
-# 是整机共用的一个标量，随任何进程的分配与释放抖动；而回填的第一个采样点就在
-# `_grant` 紧接着的 `_state_for` 里，那一刻模型一行权重都还没读进来。没有下限时，
-# 只要那次读数比基线低一页（16 KiB），「只填一次」就把 bytes_resident 永久钉在
-# 一个纯噪声值上。
-#
-# 为什么是 4 GiB（本机实测，2026-09-18，vm_stat 每 200 ms 一采）：
-#   * 空闲时 60 次连采，相邻两次读数差 p90 3.8 MiB、最大 8.4 MiB，整段极差 65 MiB；
-#   * 跑着完整测试套件时 355 次连采，相邻差 p50 15.8 MiB、p99 494 MiB、最大
-#     1.49 GiB，整段 75 秒窗口内的极差 3.5 GiB。
-#   * 而这台机器上最小的一件重活也要 14 GiB（最小的已装模型权重；媒体作业按
-#     memory_estimate 是 27 GiB）。
-# 4 GiB 取在这两群数之间：高于观测到的全部噪声（含负载下 3.5 GiB 的窗口极差），
-# 又比任何真实重活的驻留量小三倍以上，所以真实加载一定能越过它。
-# 取比例（bytes_needed 的百分之多少）做不到这件事：聊天的 bytes_needed 是
-# 权重 + KV 额度，而 KV 额度随可用内存浮动，权重占比可以从 90% 掉到 11%，
-# 同一个比例对不同模型的含义完全不同。
-RESIDENT_MIN_BYTES = 4 * 1024 ** 3
+def read_resident_bytes(pid: int) -> int:
+    """这个进程此刻实际驻留多少字节；读不到返回 0（R-budget-14）。
+
+    用 `ps -o rss=` 而不是整机差额，因为整机差额在最要紧的那一格只捕捉到一半：
+    2026-09-19 本机实测，只读 mmap 一个真实模型分片并逐页触碰，真占 4.82 GiB，
+    ps rss 读到 4.84 GiB，而 available_bytes 的净降幅只有 2.46 GiB——51%。
+    mlx 的权重正是这种 mmap 的文件页。匿名页那一格好一些但也只有 71%。
+
+    shell out 与本模块既有做法一致（memory.py 已经在调 vm_stat / sysctl），零新依赖。
+    phys_footprint 更贴近活动监视器，但要 ctypes 进 libproc，脆弱性换来的精度在那两组
+    读数面前没有意义。
+
+    读不到就返回 0——进程刚没、pid 复用、ps 不在，都归到「不知道」而不是猜一个数。
+    """
+    try:
+        out = subprocess.run(["ps", "-o", "rss=", "-p", str(pid)],
+                             capture_output=True, text=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        return 0
+    text = out.stdout.strip()
+    if out.returncode != 0 or not text.isdigit():
+        return 0
+    return int(text) * 1024        # ps 报的是 KiB
 
 
 class Arbiter:
@@ -77,6 +80,7 @@ class Arbiter:
         clock: Callable[[], float] = time.time,
         logger: logging.Logger | None = None,
         budget=None,
+        read_resident_bytes: "Callable[[int], int]" = read_resident_bytes,
     ):
         self.llm_port = llm_port
         self._memory = memory or MemoryReader()
@@ -89,7 +93,8 @@ class Arbiter:
         self._state_lock = threading.Lock()
         self._holders: dict[str, Holder] = {}     # token -> Holder
         self._workloads: dict[str, object] = {}    # token -> Workload (budget mode only)
-        self._grant_baseline: dict[str, int] = {}  # token -> available_bytes at grant time
+        self._read_resident_bytes = read_resident_bytes
+        self._holder_pids: dict[str, set[int]] = {}   # token -> 这件重活自己的进程
         self._subscribers: list[Callable[[dict], None]] = []
 
     @staticmethod
@@ -169,7 +174,7 @@ class Arbiter:
     def _decide(self, kind, params, key):
         """Snapshot current holders (briefly under `_state_lock`) then decide."""
         available_bytes = self._memory.snapshot().available_bytes
-        self._backfill_resident(available_bytes)
+        self._backfill_resident()
         with self._state_lock:
             holders = tuple(self._holders.values())
             resident = tuple(
@@ -179,52 +184,60 @@ class Arbiter:
             kind, params, key, holders, resident, available_bytes)
         return decision, workload, resident, available_bytes, holder
 
-    def _record_baseline(self, token: str, available_bytes: int) -> None:
-        """授予时的可用内存。回填 bytes_resident 要用它作差。"""
-        self._grant_baseline[token] = available_bytes
+    def note_pids(self, token: str, pids: "set[int]") -> None:
+        """告诉仲裁器这件重活自己的进程是哪些（R-budget-14）。
 
-    def _backfill_resident(self, available_bytes: int) -> None:
-        """用「授予时基线 − 当前可用」回填已分配字节，只填一次。
-
-        采样点不在 acquire_heavy 里：那时模型还没开始加载，量到的是 0。改为每次读
-        快照时顺带回填，不需要新线程也不需要改调用方。
-
-        三道闸，缺一不可：
-
-        1. **只有恰好一件待回填时才记**。available_bytes 是整机口径的一个标量，
-           它的降幅是所有进程的合计。两件重活先后授予、一起加载时，对每件各算一次
-           「基线 − 当前」会把同一批字节记两遍：A 需 80、B 需 27，基线都约 120，
-           一起加载后可用降到 63，则两件各记 57，而 A 真实只占 30。A 的未分配被从
-           50 算成 23，`fits` 整组少扣 27 GiB，足以放行一件本该拒绝的作业。
-           分不清是谁占的就不记——这正是 R-budget-12 末句要的「测不到就记 0」。
-        2. **夹在 bytes_needed 以内**。回填值同时喂给 `_unallocated`（还差多少没
-           分配）与 `plan()` 的 freed（让出能回收多少）。`_unallocated` 自己有
-           max(...,0) 兜底，`plan()` 没有，所以上界要在这里就夹住：一件重活不可能
-           占得比它要的还多，超出的部分一定是别人的分配被算到了它头上。
-        3. **低于 RESIDENT_MIN_BYTES 不记**，见该常量上方的实测理由。
-
-        只填一次是有意的：KV 慢慢长起来时若跟着涨，未分配会越算越小，最终等于把
-        这件重活当成不占内存。可用内存不降反升（别的进程释放了）时记 0，不记负数。
-
-        量到的值系统性地偏小，这一点要知道：本机实测（2026-09-18，子进程真实占住
-        12 GiB 不可压缩的匿名内存）Pages free 降 12.5 GiB，但 Pages inactive 同时涨
-        5.8 GiB，而 inactive 也算在 free+inactive+purgeable+speculative 里，于是
-        available_bytes 的净降幅只有约 6 GiB——占到实际的一半。跑 scripts/
-        budget-readback.py 可以复现。偏小的方向是保守的：`_unallocated` 多扣、
-        `plan()` 的 freed 少算，都不会因此放行一件装不下的作业。
+        由持有者在 spawn 之后调用——acquire 发生在 spawn 之前，那时还没有 pid。
+        token 已经不在（持有者早已释放）就忽略：迟到的调用不该凭空造出一条记录。
         """
         with self._state_lock:
-            pending = [token for token, workload in self._workloads.items()
-                       if not workload.bytes_resident
-                       and self._grant_baseline.get(token) is not None]
-            if len(pending) != 1:
-                return
-            token = pending[0]
-            workload = self._workloads[token]
-            drop = max(self._grant_baseline[token] - available_bytes, 0)
-            measured = min(drop, workload.bytes_needed)
-            if measured >= RESIDENT_MIN_BYTES:
-                self._workloads[token] = replace(workload, bytes_resident=measured)
+            if token in self._workloads:
+                self._holder_pids[token] = set(pids)
+
+    def _backfill_resident(self) -> None:
+        """按持有者自己的进程读它实际驻留了多少（R-budget-14）。
+
+        取代原先的「整机 available_bytes 作差」。那个口径有两个解不掉的病，实测都量到了：
+
+        1. **只捕捉到一部分。** 只读 mmap 一个真实模型分片并逐页触碰：真占 4.82 GiB，
+           ps rss 读到 4.84，而 available_bytes 净降只有 2.46——51%。mlx 的权重正是这种
+           mmap 的文件页。（匿名页那格是 71%，也不全。）
+        2. **分不清是谁占的。** 多件同时加载时一次全局差额无法归属，旧实现只好用
+           「只有一件待回填时才记」的闸回避，代价是共存场景下谁都不会被回填——
+           而共存正是预算模式的主用例。
+
+        换成按 pid 读之后，那道闸和 4 GiB 噪声下限一起消失了：进程自己的 rss 不含
+        别人的噪声，也不需要靠量级去区分「这是噪声还是加载」。
+
+        **这里不再「只填一次」**。旧实现必须只填一次，因为整机差额一旦被噪声污染就
+        永远错；按 pid 读是幂等查询，KV 长起来时它跟着涨反而让未分配量随时准确。
+
+        上界仍然夹在 bytes_needed：一件重活不可能占得比它要的还多，超出的部分一定是
+        别的东西被算了进来；而 `plan()` 的 freed 直接吃这个值，不夹会让「让出能回收
+        多少」偏乐观。读不到（进程还没起、已经没了、ps 不在）记 0，退回保守。
+        """
+        with self._state_lock:
+            pending = {token: set(pids) for token, pids in self._holder_pids.items()
+                       if token in self._workloads}
+        if not pending:
+            return
+        measured = {}
+        for token, pids in pending.items():        # 锁外读：ps 是子进程调用，别占着锁
+            total = 0
+            for pid in pids:
+                try:
+                    total += self._read_resident_bytes(pid)
+                except OSError:
+                    total = 0                      # 读不到就整件记 0，不拿半份数当真
+                    break
+            measured[token] = total
+        with self._state_lock:
+            for token, total in measured.items():
+                workload = self._workloads.get(token)
+                if workload is None:
+                    continue
+                self._workloads[token] = replace(
+                    workload, bytes_resident=min(total, workload.bytes_needed))
 
     # ---- state mutation (holds _state_lock only) -----------------------
     def _grant(self, token: str, holder: Holder, workload, available_bytes: int) -> dict:
@@ -232,7 +245,6 @@ class Arbiter:
             self._holders[token] = holder
             if workload is not None:
                 self._workloads[token] = workload
-                self._record_baseline(token, available_bytes)
             holders = tuple(self._holders.values())
         return self._state_for(holders)
 
@@ -241,7 +253,7 @@ class Arbiter:
         with self._state_lock:
             self._holders = {} if holder is None else {holder.token: holder}
             self._workloads = {}
-            self._grant_baseline = {}
+            self._holder_pids = {}
             holders = tuple(self._holders.values())
         return self._state_for(holders)
 
@@ -271,7 +283,7 @@ class Arbiter:
         backfill from ever running.
         """
         available_bytes = self._memory.snapshot().available_bytes
-        self._backfill_resident(available_bytes)
+        self._backfill_resident()
 
         def can_start(kind: str) -> dict:
             if self._budget is not None:
@@ -500,7 +512,7 @@ class Arbiter:
                 if found:
                     self._holders.pop(token, None)
                     self._workloads.pop(token, None)
-                    self._grant_baseline.pop(token, None)
+                    self._holder_pids.pop(token, None)
                 holders = tuple(self._holders.values())
             if not found:
                 return {"ok": False, "reason": self._reason(

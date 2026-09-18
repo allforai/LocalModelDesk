@@ -22,6 +22,9 @@ class ProcessHandle(Protocol):
 
 
 class Executor(Protocol):
+    @property
+    def pid(self) -> int: ...
+
     def spawn(
         self, cmd: list[str], *, extra_env: dict[str, str] | None = None
     ) -> ProcessHandle: ...
@@ -30,6 +33,11 @@ class Executor(Protocol):
 class SubprocessHandle:
     def __init__(self, proc: subprocess.Popen[str]) -> None:
         self._proc = proc
+
+    @property
+    def pid(self) -> int:
+        """作业进程的 pid——仲裁器按它读这件重活实际驻留多少（R-budget-14）。"""
+        return self._proc.pid
 
     def iter_output(self) -> Iterator[str]:
         assert self._proc.stdout is not None
