@@ -31,6 +31,7 @@ import threading
 import time
 import uuid
 from collections.abc import Callable
+from dataclasses import replace
 
 from ..budget.budget import fits, plan
 from .memory import MemoryReader
@@ -64,6 +65,7 @@ class Arbiter:
         self._state_lock = threading.Lock()
         self._holders: dict[str, Holder] = {}     # token -> Holder
         self._workloads: dict[str, object] = {}    # token -> Workload (budget mode only)
+        self._grant_baseline: dict[str, int] = {}  # token -> available_bytes at grant time
         self._subscribers: list[Callable[[dict], None]] = []
 
     @staticmethod
@@ -122,6 +124,7 @@ class Arbiter:
     def _decide(self, kind, params, key):
         """Snapshot current holders (briefly under `_state_lock`) then decide."""
         available_bytes = self._memory.snapshot().available_bytes
+        self._backfill_resident(available_bytes)
         with self._state_lock:
             holders = tuple(self._holders.values())
             resident = tuple(
@@ -131,12 +134,37 @@ class Arbiter:
             kind, params, key, holders, resident, available_bytes)
         return decision, workload, resident, available_bytes, holder
 
+    def _record_baseline(self, token: str, available_bytes: int) -> None:
+        """授予时的可用内存。回填 bytes_resident 要用它作差。"""
+        self._grant_baseline[token] = available_bytes
+
+    def _backfill_resident(self, available_bytes: int) -> None:
+        """用「授予时基线 − 当前可用」回填已分配字节，只填一次。
+
+        采样点不在 acquire_heavy 里：那时模型还没开始加载，量到的是 0。改为每次读
+        快照时顺带回填，不需要新线程也不需要改调用方。
+
+        只填一次是有意的：KV 慢慢长起来时若跟着涨，未分配会越算越小，最终等于把
+        这件重活当成不占内存。可用内存不降反升（别的进程释放了）时记 0，不记负数。
+        """
+        with self._state_lock:
+            for token, workload in list(self._workloads.items()):
+                if workload.bytes_resident:
+                    continue
+                baseline = self._grant_baseline.get(token)
+                if baseline is None:
+                    continue
+                measured = max(baseline - available_bytes, 0)
+                if measured:
+                    self._workloads[token] = replace(workload, bytes_resident=measured)
+
     # ---- state mutation (holds _state_lock only) -----------------------
-    def _grant(self, token: str, holder: Holder, workload) -> dict:
+    def _grant(self, token: str, holder: Holder, workload, available_bytes: int) -> dict:
         with self._state_lock:
             self._holders[token] = holder
             if workload is not None:
                 self._workloads[token] = workload
+                self._record_baseline(token, available_bytes)
             holders = tuple(self._holders.values())
             resident = tuple(
                 w for h in holders if (w := self._workloads.get(h.token)) is not None
@@ -148,11 +176,13 @@ class Arbiter:
         with self._state_lock:
             self._holders = {} if holder is None else {holder.token: holder}
             self._workloads = {}
+            self._grant_baseline = {}
             holders = tuple(self._holders.values())
         return self._state_for(holders, ())
 
     def _state_for(self, holders: tuple[Holder, ...], resident: tuple = ()) -> dict:
         available_bytes = self._memory.snapshot().available_bytes
+        self._backfill_resident(available_bytes)
 
         def can_start(kind: str) -> dict:
             decision, _workload, _holder = self._decide_from(
@@ -321,7 +351,8 @@ class Arbiter:
 
             token = uuid.uuid4().hex
             if decision.action == "grant":
-                state = self._grant(token, Holder(kind, label, token, self._clock(), PHASE_HELD, display), workload)
+                state = self._grant(token, Holder(kind, label, token, self._clock(), PHASE_HELD, display),
+                                     workload, available_bytes)
                 states.append(state)
                 result = {"ok": True, "token": token, "state": state}
             else:
@@ -331,7 +362,8 @@ class Arbiter:
                 states.append(self._replace_all(acquiring))
                 reaped = self._reap(self.llm_port)
                 if reaped.ok:
-                    state = self._grant(token, Holder(kind, label, token, self._clock(), PHASE_HELD, display), workload)
+                    state = self._grant(token, Holder(kind, label, token, self._clock(), PHASE_HELD, display),
+                                         workload, available_bytes)
                     states.append(state)
                     result = {"ok": True, "token": token, "state": state}
                 else:
@@ -351,6 +383,7 @@ class Arbiter:
                 if found:
                     self._holders.pop(token, None)
                     self._workloads.pop(token, None)
+                    self._grant_baseline.pop(token, None)
                 holders = tuple(self._holders.values())
                 resident = tuple(
                     w for h in holders if (w := self._workloads.get(h.token)) is not None

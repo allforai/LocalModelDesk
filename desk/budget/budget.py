@@ -100,7 +100,11 @@ def plan(wanted, resident, available_bytes: int) -> Plan:
     best = None
     for size in range(len(resident) + 1):
         for combo in itertools.combinations(resident, size):
-            freed = sum(w.bytes_needed for w in combo)
+            # 物理上只能回收已经分配的那部分：让出一件已驻留重活，未分配的那份
+            # 从来没占过内存，回收不了。bytes_resident 恒为 0 时与 bytes_needed
+            # 相等，今天看不出来——一旦接到真实驻留点（bytes_resident > 0），用
+            # bytes_needed 算 freed 会让 plan() 把可用余量算得偏乐观。
+            freed = sum(w.bytes_resident for w in combo)
             keep = [w for w in resident if w not in combo]
             verdict = fits(list(wanted) + keep, available_bytes + freed)
             accepted = verdict.ok and verdict.needed_bytes < verdict.available_bytes

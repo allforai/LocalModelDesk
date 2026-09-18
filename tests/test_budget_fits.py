@@ -110,6 +110,19 @@ def test_noisy_measurement_never_makes_a_workload_contribute_headroom():
     assert verdict.ok
 
 
+def test_plan_frees_only_the_resident_bytes_not_the_whole_need():
+    """让出一件已驻留重活，物理上只回收它已经分配的那部分（bytes_resident）。
+
+    未分配的那份从没占过内存，回收不了；plan() 若按 bytes_needed 算 freed，会把
+    可用余量虚增到 5+80=85 GiB，而不是实际能回收的 5+50=55 GiB。
+    """
+    resident = [Workload("chat", "m", int(80 * GIB), "measured", bytes_resident=int(50 * GIB))]
+    p = plan([w("video", 20)], resident, 5 * GIB)
+    assert p.ok
+    assert p.release == tuple(resident)
+    assert p.verdict.available_bytes == 55 * GIB     # 5 + 50，不是 5 + 80
+
+
 def test_bytes_resident_defaults_to_zero_so_existing_call_sites_keep_working():
     """既有几十处四参构造不用改——加字段必须带默认值。"""
     assert Workload("video", None, 1, "measured").bytes_resident == 0

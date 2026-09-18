@@ -325,6 +325,23 @@ class FakeBudget:
         return self._costs[kind]
 
 
+class StepMemory:
+    """按调用次序吐出预设的 available_bytes，模拟「授予后可用内存下降」。
+
+    与 tests/test_arbiter_resident_accounting.py 里的同名夹具同源：_backfill_resident
+    的采样点在每次读快照时，不在 acquire_heavy 里，所以要控制的是调用顺序上的值，
+    不是时间。"""
+
+    def __init__(self, values):
+        self._values = list(values)
+        self.calls = 0
+
+    def snapshot(self):
+        value = self._values[min(self.calls, len(self._values) - 1)]
+        self.calls += 1
+        return SimpleNamespace(available_bytes=value)
+
+
 def test_can_start_heavy_grants_llm_while_media_runs_when_budget_allows():
     """这正是被改掉的那条铁律：媒体在跑，预算够，聊天照样装得下（R-arbiter-01）。"""
     memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=200_000_000_000))
@@ -351,8 +368,18 @@ def test_can_start_heavy_grants_llm_while_media_runs_when_budget_allows():
 
 
 def test_can_start_heavy_reports_the_minimal_release_when_budget_is_short():
-    """预算不够但让出音乐够用时，release 只含音乐那一件而非全部（R-arbiter-05）。"""
-    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=120_000_000_000))
+    """预算不够但让出音乐够用时，release 只含音乐那一件而非全部（R-arbiter-05）。
+
+    R-budget-12 payload 修正后，plan() 只按已实测的 bytes_resident 算「让出能收回多少」；
+    静态内存读数下没有任何一件会被量到已驻留，plan() 只能保守地判定「谁都不放心让出」。
+    用 StepMemory 让 video/music 授予后各自的真实占用被 _backfill_resident 量出来，
+    这样「让出音乐就够、不必动视频」才是数字上站得住的答案。
+    """
+    memory = StepMemory([
+        150_000_000_000, 150_000_000_000, 70_000_000_000,   # video 授予：150 -> 70（占 80）
+        70_000_000_000, 70_000_000_000, 40_000_000_000,      # music 授予：70 -> 40（占 30）
+        40_000_000_000,                                       # can_start_heavy 读到的现状
+    ])
     budget = FakeBudget({
         "video": Workload("video", None, 80_000_000_000, "measured"),
         "music": Workload("music", None, 30_000_000_000, "measured"),
