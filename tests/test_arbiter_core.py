@@ -315,13 +315,31 @@ def test_public_holder_carries_the_display_name_for_the_menu_bar():
 # R-arbiter-01 rewrite — coexistence gated by Verdict.ok, not by kind — is
 # under test.
 
+GIB = 1024 ** 3
+
+MEDIA_KIND_NAMES = ("video", "music")
+
+
 class FakeBudget:
-    """Deterministic `.cost(...)` double: fixed Workload per kind, no IO."""
+    """Deterministic `.cost(...)` double: fixed Workload per kind, no IO.
+
+    Mirrors the one real-`Budget` detail R-budget-13 tests depend on: for a
+    non-media kind (chat needs a model `key` to look up a per-token cost),
+    `cost()` called without a `key` cannot produce a real number and falls
+    back to a `bytes_needed=0`/`source="unavailable"` stub — see
+    `Budget._per_token`/`Budget.for_chat` in desk/budget/budget.py, which
+    return exactly that shape when `key` is falsy. A double that ignored this
+    and always returned the fixture Workload regardless of `key` would let
+    the R-budget-13 regression tests pass by coincidence (small, round byte
+    counts happening to still fit) without ever exercising the bug they name.
+    """
 
     def __init__(self, costs: dict):
         self._costs = costs
 
     def cost(self, kind, *, key=None, params=None, config=None, weights_gb=None):
+        if kind not in MEDIA_KIND_NAMES and key is None:
+            return Workload(kind, None, 0, "unavailable")
         return self._costs[kind]
 
 
@@ -476,3 +494,66 @@ def test_budget_mode_refuses_rather_than_killing_a_running_media_job():
 
     assert grant["ok"] is False
     assert grant["reason"]["code"] == "insufficient_budget"
+
+
+# ---- Task 3: parameterless queries answer ownership, not budget arithmetic --
+# (R-budget-13)
+
+def test_a_parameterless_query_never_answers_insufficient_budget():
+    """R-budget-13：无参问的是归属，不是容量。拿不到参数就产出空壳 workload，
+    再撞上「一件 unavailable 整组保守」，会与机器多大无关地恒为拒绝。"""
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=60 * GIB))
+    budget = FakeBudget({
+        "llm": Workload("llm", "model-a", 30 * GIB, "measured"),
+        "video": Workload("video", None, 27 * GIB, "measured"),
+    })
+    arbiter = Arbiter(llm_port=43125, memory=memory, budget=budget)
+    arbiter.acquire_heavy("llm", "model-a", params={}, key="model-a")
+
+    answer = arbiter.can_start_heavy("llm")          # 无参
+
+    assert answer["reason"] is None or answer["reason"]["code"] != "insufficient_budget"
+
+
+def test_the_model_switch_path_stays_reachable_with_a_model_resident():
+    """已复现的回归：驻留模型后 desk_state 的 can_start.llm 恒为 insufficient_budget，
+    前端只对 llm_already_held 放行，于是「换模型」按钮灰掉。"""
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=60 * GIB))
+    budget = FakeBudget({
+        "llm": Workload("llm", "model-a", 30 * GIB, "measured"),
+        "video": Workload("video", None, 27 * GIB, "measured"),
+    })
+    arbiter = Arbiter(llm_port=43125, memory=memory, budget=budget)
+    arbiter.acquire_heavy("llm", "model-a", params={}, key="model-a")
+
+    llm_button = arbiter.desk_state()["can_start"]["llm"]
+
+    assert llm_button["ok"] is True or llm_button["reason"]["code"] == "llm_already_held"
+
+
+def test_a_parameterless_media_query_still_reports_media_busy():
+    """归属分支保留唯一与容量无关的那条拒绝：媒体在跑时不能开第二个媒体。"""
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=200 * GIB))
+    budget = FakeBudget({"video": Workload("video", None, 1, "measured"),
+                         "music": Workload("music", None, 1, "measured"),
+                         "llm": Workload("llm", None, 1, "measured")})
+    arbiter = Arbiter(llm_port=43125, memory=memory, budget=budget)
+    arbiter.acquire_heavy("video", "job-1", params={}, key=None)
+
+    answer = arbiter.can_start_heavy("music")
+
+    assert answer["ok"] is False
+    assert answer["reason"]["code"] == "media_busy"
+
+
+def test_a_query_with_params_still_does_the_budget_arithmetic():
+    """反向：带参数的容量判定不受本任务影响，仍按预算判。"""
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=10 * GIB))
+    budget = FakeBudget({"llm": Workload("llm", "m", 5 * GIB, "measured"),
+                         "video": Workload("video", None, 40 * GIB, "measured")})
+    arbiter = Arbiter(llm_port=43125, memory=memory, budget=budget)
+
+    answer = arbiter.can_start_heavy("video", params={"width": 1024}, key="h3")
+
+    assert answer["ok"] is False
+    assert answer["reason"]["code"] == "insufficient_budget"

@@ -121,6 +121,27 @@ class Arbiter:
         holder = holders[-1] if holders else None
         return plan_acquire(holders, kind, verdict), workload, holder
 
+    def _ownership_answer(self, kind: str, holders) -> dict:
+        """无参查询的答案：只看谁占着，不看内存（R-budget-13）。
+
+        六个调用点（下载闸、网关守卫、台面状态的两个按钮、两处测试台面）问的都是
+        「现在谁占着、能不能开这一类」。无参进预算路径时 cost() 拿不到输入，产出
+        bytes_needed=0 且 source=unavailable 的空壳，再撞上「一件 unavailable 整组
+        保守」，会与机器多大无关地恒为 insufficient_budget。
+        """
+        if kind not in KINDS:
+            return {"ok": False, "reason": self._reason("unknown_kind", f"unknown heavy kind: {kind!r}"),
+                    "memory_warning": None, "release": []}
+        if any(h.phase == PHASE_ACQUIRING for h in holders):
+            return {"ok": False, "reason": self._reason(
+                "transition_in_progress", "a heavy-work transition is in progress; retry shortly"),
+                "memory_warning": None, "release": []}
+        busy = next((h for h in holders if h.kind in MEDIA_KINDS), None)
+        if kind in MEDIA_KINDS and busy is not None:
+            return {"ok": False, "reason": self._reason("media_busy", f"{busy.kind} job {busy.label!r} is running"),
+                    "memory_warning": None, "release": []}
+        return {"ok": True, "reason": None, "memory_warning": None, "release": []}
+
     def _decide(self, kind, params, key):
         """Snapshot current holders (briefly under `_state_lock`) then decide."""
         available_bytes = self._memory.snapshot().available_bytes
@@ -180,30 +201,20 @@ class Arbiter:
     def _state_for(self, holders: tuple[Holder, ...]) -> dict:
         """Build the public state dict for `holders`.
 
-        `resident` is *not* accepted as a parameter: it must be read from
-        ``self._workloads`` after ``_backfill_resident`` below, not captured by
-        the caller beforehand. A caller-captured tuple would be the pre-backfill
-        one — this call's own ``_backfill_resident`` only benefits the *next*
-        reader, and a request granted this instant would report a stale (often
-        zero) ``bytes_resident`` in the ``can_start`` it returns right now (the
-        thing subscribers get dispatched). Re-deriving here, the same way
-        ``_decide`` already orders backfill-then-capture, keeps every caller
-        automatically correct — including the legacy-mode callers below that
-        pass an empty ``self._workloads``, which still resolves to `()`.
+        `can_start` answers ownership only (R-budget-13, via ``_ownership_answer``)
+        — it takes no params/key, so it has no budget arithmetic to do. The
+        ``_backfill_resident`` call below stays regardless: it is not read by
+        ``can_start`` any more, but this is still the 2-second desk_state poll
+        that drives backfill for every other reader of ``bytes_resident``
+        (``can_start_heavy`` with params, ``release`` planning, ...). Dropping it
+        here would silently stop backfill from ever running.
         """
         available_bytes = self._memory.snapshot().available_bytes
         self._backfill_resident(available_bytes)
-        with self._state_lock:
-            resident = tuple(
-                w for h in holders if (w := self._workloads.get(h.token)) is not None
-            )
 
         def can_start(kind: str) -> dict:
-            decision, _workload, _holder = self._decide_from(
-                kind, None, None, holders, resident, available_bytes)
-            if decision.action != "refuse":
-                return {"ok": True, "reason": None}
-            return {"ok": False, "reason": self._reason(decision.reason_code, decision.reason_message)}
+            answer = self._ownership_answer(kind, holders)
+            return {"ok": answer["ok"], "reason": answer["reason"]}
 
         primary = holders[-1] if holders else None
         return {
@@ -285,7 +296,21 @@ class Arbiter:
         ``reason_code`` is ``insufficient_budget`` also carries ``release`` — the
         minimal set of resident workloads (``budget.plan``) that would need to be
         released for the request to fit (R-arbiter-05, R-budget-07).
+
+        R-budget-13: a call with neither ``params`` nor ``key`` is asking who
+        currently owns what, not whether a specific job fits — it never reaches
+        the budget arithmetic below, because ``_cost`` would have nothing to
+        cost and would fall back to an ``unavailable`` stub that always refuses
+        (R-budget-10 treats one ``unavailable`` workload as grounds to refuse
+        the whole group, regardless of machine size). This is the judgment call
+        that matters, not whether a budget happens to be wired
+        (``self._budget is None`` is the unrelated legacy fallback).
         """
+        if self._budget is not None and params is None and key is None:
+            with self._state_lock:
+                holders = tuple(self._holders.values())
+            return self._ownership_answer(kind, holders)
+
         decision, workload, resident, available_bytes, _holder = self._decide(kind, params, key)
 
         if self._budget is None:

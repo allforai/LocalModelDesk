@@ -59,6 +59,13 @@ test("拒绝码翻译成中文原因，llm_already_held 指向卸载动作", () 
   assert.equal(heavyAvailability(evicted, "llm").reason, "让出内存失败，请重试或先手动卸载");
 });
 
+test("insufficient_budget 有中文兜底文案，不直接把错误码显示给用户（R-budget-13）", () => {
+  const state = { can_start: { llm: { ok: false, reason: { code: "insufficient_budget" } } } };
+  const result = heavyAvailability(state, "llm");
+  assert.equal(result.reason, "内存不够，先卸掉一个再来");
+  assert.notEqual(result.reason, "insufficient_budget");
+});
+
 test("快照缺失如实说不可用，不编数字", () => {
   assert.equal(renderState(idle, null).memText, "内存读数不可用");
 });

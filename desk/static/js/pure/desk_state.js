@@ -9,6 +9,7 @@ const REASON_TEXT = {
   evict_failed: "让出内存失败，请重试或先手动卸载",
   memory_low: "可用内存不足",
   insufficient_memory: "可用内存不足",
+  insufficient_budget: "内存不够，先卸掉一个再来",
 };
 
 function decisionFor(deskState, kind) {
