@@ -285,7 +285,9 @@ class FixedBudget:
 
 def test_resident_bytes_are_backfilled_from_the_measured_drop():
     # 授予时可用 100 GiB；加载完成后降到 70 GiB ⇒ 实际占了 30 GiB
-    memory = StepMemory([100 * GIB, 100 * GIB, 70 * GIB, 70 * GIB])
+    # 前三个值覆盖 acquire 期间的全部快照读取（_decide 两次 + _grant→_state_for 一次），
+    # 这样夹具不依赖精确的调用次数；第四个值是加载完成后的可用内存。
+    memory = StepMemory([100 * GIB, 100 * GIB, 100 * GIB, 70 * GIB])
     budget = FixedBudget({"llm": Workload("llm", "m", 80 * GIB, "measured"),
                           "video": Workload("video", None, 27 * GIB, "measured")})
     arbiter = Arbiter(llm_port=43124, memory=memory, budget=budget)
@@ -301,7 +303,7 @@ def test_resident_bytes_are_backfilled_from_the_measured_drop():
 def test_backfill_happens_once_and_never_grows():
     """回填后不再更新：KV 慢慢长起来时若跟着涨，未分配会越算越小，
     最终等于把这件重活当成不占内存。"""
-    memory = StepMemory([100 * GIB, 100 * GIB, 70 * GIB, 70 * GIB, 40 * GIB, 40 * GIB])
+    memory = StepMemory([100 * GIB, 100 * GIB, 100 * GIB, 70 * GIB, 40 * GIB, 40 * GIB])
     budget = FixedBudget({"llm": Workload("llm", "m", 80 * GIB, "measured"),
                           "video": Workload("video", None, 1, "measured")})
     arbiter = Arbiter(llm_port=43124, memory=memory, budget=budget)
@@ -314,7 +316,7 @@ def test_backfill_happens_once_and_never_grows():
 
 def test_a_rise_in_available_memory_records_zero_not_a_negative():
     """别的进程释放内存导致可用不降反升时，记 0 而不是负数。"""
-    memory = StepMemory([100 * GIB, 100 * GIB, 120 * GIB, 120 * GIB])
+    memory = StepMemory([100 * GIB, 100 * GIB, 100 * GIB, 120 * GIB])
     budget = FixedBudget({"llm": Workload("llm", "m", 80 * GIB, "measured"),
                           "video": Workload("video", None, 1, "measured")})
     arbiter = Arbiter(llm_port=43124, memory=memory, budget=budget)
@@ -358,10 +360,23 @@ Expected: FAIL — `bytes_resident` 恒为 0（回填未实现）
                     self._workloads[token] = replace(workload, bytes_resident=measured)
 ```
 
-`__init__` 里加 `self._grant_baseline: dict[str, int] = {}`；`_grant` 里调 `_record_baseline`；
-`_decide` 取到 `available_bytes` 之后、读 `self._workloads` 之前调 `_backfill_resident`；
+`__init__` 里加 `self._grant_baseline: dict[str, int] = {}`；
 释放 token 时把 `_grant_baseline` 里那条一并删掉（否则 token 复用会拿到旧基线）。
 需要 `from dataclasses import replace`。
+
+**基线必须是做出该决策时的 `available_bytes`，不得在 `_grant` 里重新读快照**（预检裁决 R2）：
+一次 `acquire_heavy` 期间会读 3 次快照（`_decide` 两次 + `_grant → _state_for` 一次），
+重新读拿到的可能已经是加载后的值，差值就变成 0。`_grant` 目前的签名
+`_grant(self, token, holder, workload)` 收不到它——加一个 `available_bytes` 参数，
+由 `acquire_heavy` 把 `_decide` 返回的那个值传下去。
+
+**回填要挂两处，不是一处**（预检裁决 R1）：
+- `_decide` 取到 `available_bytes` 之后、读 `self._workloads` 之前；
+- **以及 `_state_for`**（它第 155 行本来就读了快照）。
+
+理由：Task 3 会让无参 `can_start_heavy` 在进 `_decide` 之前就返回，而生产里最频繁的
+读者正是 2 秒一次的 `desk_state()`——它走 `_state_for`，不走 `_decide`。只挂 `_decide`
+的话，回填在真实运行中几乎不发生，这个任务等于白做。回填只填一次，所以多挂一处是幂等的。
 
 - [ ] **Step 4: 跑测试确认通过**
 
@@ -414,6 +429,10 @@ git commit -m "fix(arbiter): 已分配字节由实测回填，不由估算
 判据是「这次调用有没有给出容量输入」，不是「这个 Arbiter 有没有接预算」。
 
 - [ ] **Step 1: 写失败的测试**
+
+**先补一行**：`tests/test_arbiter_core.py` **没有定义 `GIB`**（既有测试用十进制字面量如
+`40_000_000_000`），而下面的测试用到了它。在 `FakeBudget` 类附近加 `GIB = 1024 ** 3`
+（预检裁决 R3）。
 
 ```python
 # 追加到 tests/test_arbiter_core.py
