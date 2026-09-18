@@ -55,9 +55,13 @@
 
 - **R-budget-12** `fits` 对**已驻留**的重活只计其**尚未分配**的那部分，不计已分配的部分。
 
-  实测（2026-09-18，本机）：在子进程里真实占用 6 GiB，`available_bytes` 从 68.4 降到 63.7 GiB，
-  释放后回到 68.4——**常驻内存已经从 `available_bytes` 里扣掉了**（它的计数口径是
-  free+inactive+purgeable+speculative，见 `desk/arbiter/memory.py`）。因此把 resident 的
+  **前提句已被后续实测修正（2026-09-18 当天，见 R-budget-14）：`available_bytes` 对常驻内存
+  只排除了一部分。** 最初那次实测（占 6 GiB、68.4 → 63.7）自己算出来是 78% 而非 100%，当时
+  无人注意；复测更清楚：真占 12 GiB 时 `Pages free` 降 11.8 GiB，而 `Pages inactive` 同时
+  涨 4.6 GiB，两者都算在 `available_bytes`（free+inactive+purgeable+speculative）里，
+  净降幅只有 6.9 GiB（另两次探针测得 48% / 51%）。比例随机器、页面老化时机与内存类型而变，
+  不是常数。所以下面这条纪律仍然成立（重复扣除客观存在，消掉一部分严格优于消掉零），
+  但它只消除了约一半。因此把 resident 的
   `bytes_needed` 整个加上去再和 `available_bytes` 比，等于把已分配部分扣两遍，
   使 budget 模式在**所有**共存判定上系统性偏保守。
 
@@ -66,6 +70,27 @@
   所以 `Workload` 增加 `bytes_resident`——授予后由实测得出（授予前后的 `available_bytes`
   之差），`fits` 对 resident 计 `bytes_needed - bytes_resident`。测不到时 `bytes_resident` 为 0，
   退回今天的保守行为。
+
+- **R-budget-14** 驻留量必须改由**按持有者 pid 的进程级读数**得出（`proc_pid_rusage` /
+  `task_info` 的 `phys_footprint`，或 `ps rss`），不再用整机标量作差。
+
+  整机标量作差有两个无法在该口径内解决的病：
+
+  1. **双向误差，且不可假设互相抵消。** (a) `bytes_resident = 基线 − 当前可用` 系统性**低估**
+     真实驻留（见 R-budget-12 的实测）；(b) **同一机制**使 `available_bytes` 系统性**高估**
+     可分配量——`Pages inactive` 里躺着活进程的脏匿名页，不经压缩/交换收不回来，却被当成余量。
+     两者方向相反、碰巧部分抵消，但没有任何理由认为它们等量。
+  2. **整机标量分不清是谁占的。** 多件重活同时加载时，一次全局差额无法归属到具体某一件。
+     当前实现用「只有一件待回填时才记」的闸回避它，代价是**共存场景下谁都不会被回填**——
+     而共存正是预算模式的主用例，于是该特性在主路径上退化为空操作。
+
+  换成进程级读数同时解掉这两条，并让上述那道闸可以整个拆掉。
+
+  在此之前，`bytes_resident` 只是**下界估计**：禁止用于任何需要准确值的用途——
+  按它向用户显示「已占 X GiB」、按它排序「最小让出」都属此列。
+
+- **R-budget-15** `Pages inactive` 该不该计入 `AVAILABLE_COUNTERS` 需单独裁决。
+  剔除它会让 `available_bytes` 诚实但骤减、整体大幅转保守；这是 spec 层决定，不是代码微调。
 
 - **R-budget-13** **无参的 `can_start_heavy(kind)` 只回答归属问题，绝不做预算算术。**
 
