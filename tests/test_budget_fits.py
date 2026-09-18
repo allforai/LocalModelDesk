@@ -75,3 +75,41 @@ def test_plan_reports_failure_when_even_full_eviction_is_not_enough():
     p = plan([w("video", 200)], [w("chat", 80, key="llama")], 120 * GIB)
     assert not p.ok
     assert p.verdict.shortfall_bytes > 0
+
+
+def test_resident_bytes_are_not_counted_twice():
+    """R-budget-12：available_bytes 已经排除了常驻内存，再整个加一遍就是扣两遍。
+
+    实测（2026-09-18 本机）：子进程真实占用 6 GiB，available_bytes 降 4.7 GiB，
+    释放后回升——它确实随常驻占用变化。
+    """
+    resident = Workload("chat", "m", int(80 * GIB), "measured", bytes_resident=int(80 * GIB))
+    # 80 GiB 全部已分配 ⇒ 对剩余额度不再有任何占用
+    assert fits([resident, w("video", 30)], 40 * GIB).ok
+
+
+def test_the_unallocated_half_of_a_resident_still_counts():
+    """懒分配是这条的理由：已驻留模型的权重占掉了，被授予的 KV 额度还没占，
+    那部分仍是对内存的承诺，必须留着。"""
+    resident = Workload("chat", "m", int(80 * GIB), "measured", bytes_resident=int(50 * GIB))
+    # 未分配 30 GiB 仍要计 ⇒ 30 + 30 = 60 > 40
+    assert not fits([resident, w("video", 30)], 40 * GIB).ok
+
+
+def test_a_candidate_that_is_not_resident_counts_in_full():
+    """还没授予的候选 bytes_resident 恒为 0——它还没占任何东西。"""
+    assert w("video", 30).bytes_resident == 0
+    assert not fits([w("chat", 80), w("video", 30)], 100 * GIB).ok
+
+
+def test_noisy_measurement_never_makes_a_workload_contribute_headroom():
+    """实测可能因采样噪声略大于 bytes_needed；负数会让一件重活反过来「贡献」额度。"""
+    noisy = Workload("chat", "m", int(10 * GIB), "measured", bytes_resident=int(12 * GIB))
+    verdict = fits([noisy], 1 * GIB)
+    assert verdict.needed_bytes == 0
+    assert verdict.ok
+
+
+def test_bytes_resident_defaults_to_zero_so_existing_call_sites_keep_working():
+    """既有几十处四参构造不用改——加字段必须带默认值。"""
+    assert Workload("video", None, 1, "measured").bytes_resident == 0

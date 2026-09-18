@@ -28,6 +28,9 @@ class Workload:
     key: str | None
     bytes_needed: int
     source: str
+    # 这件重活已经占掉、因而已经从 available_bytes 里扣除的字节数。只有被授予并
+    # 驻留之后才有值；未驻留的候选恒为 0。默认值不能去掉：既有几十处四参构造靠它。
+    bytes_resident: int = 0
 
 
 @dataclass(frozen=True)
@@ -51,10 +54,20 @@ def weakest_source(workloads) -> str:
     return max((w.source for w in workloads), key=SOURCES.index, default="measured")
 
 
+def _unallocated(workload) -> int:
+    """这件重活还会再吃掉多少内存。
+
+    available_bytes 的口径（free+inactive+purgeable+speculative）已经排除了已分配的
+    部分，所以只有尚未分配的那半还需要从余量里扣。实测的 bytes_resident 可能因采样
+    噪声略大于 bytes_needed，夹到 0：负数会让一件重活反过来「贡献」额度。
+    """
+    return max(workload.bytes_needed - getattr(workload, "bytes_resident", 0), 0)
+
+
 def fits(workloads, available_bytes: int) -> Verdict:
     """这一组重活能否共存。"""
     workloads = list(workloads)
-    needed = sum(w.bytes_needed for w in workloads)
+    needed = sum(_unallocated(w) for w in workloads)
     source = weakest_source(workloads)
     ok = needed <= available_bytes
     # 未经本机实测不放宽：来源不可用时，只允许单件——这正是今天的互斥行为。
