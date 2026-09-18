@@ -61,3 +61,20 @@ def test_status_idle_has_no_loaded_model(tmp_path):
         "state": {"status": "idle", "model_key": None, "error": None, "loaded_at": None},
         "loaded_model": None,
     }
+
+
+def test_a_non_dict_config_json_does_not_kill_the_load_thread(tmp_path):
+    """config.json 合法但不是对象时，预算该退回「算不出」，而不是让加载线程死掉。
+
+    keep-code-simple S1/F6：_read_model_config 在 service.py 里定义了两次，
+    带类型守卫的那份（43 行）被无守卫的那份（65 行）遮蔽，于是 json.loads("[]")
+    得到 list，一路传到 estimate.py 的 config.get(...) 抛 AttributeError；
+    它发生在 _load_worker 里、spawn 之前，线程直接死 → 状态永远停在 loading。
+    """
+    from desk.llm.service import _read_model_config
+
+    model_dir = tmp_path / "m"
+    model_dir.mkdir()
+    (model_dir / "config.json").write_text("[]", encoding="utf-8")
+
+    assert _read_model_config(model_dir) == {}, "非 dict 的 config 必须被挡成 {}"

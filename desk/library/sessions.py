@@ -27,6 +27,11 @@ class SessionStore:
 
         sessions = []
         for path in sorted(self._dir.glob("*.json")):
+            # 跳过写入中的临时文件。新版本的临时名已不带 .json 后缀，但旧版本
+            # 留下的 .tmp-XXXX.json 残留仍会被 glob 捞到——真会话的 id 不会以
+            # 点开头，所以按点开头跳过既安全又能兜住残留。
+            if path.name.startswith("."):
+                continue
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
                 if not isinstance(data, dict):
@@ -89,7 +94,10 @@ class SessionStore:
     def _write(self, session: dict) -> None:
         payload = json.dumps(session, ensure_ascii=False, indent=2)
         self._dir.mkdir(parents=True, exist_ok=True)
-        fd, temporary_path = tempfile.mkstemp(dir=self._dir, prefix=".tmp-", suffix=".json")
+        # 临时文件不带 .json 后缀：list() 用 glob("*.json")，而 pathlib 的 glob
+        # 会匹配点开头的 .tmp-XXXX.json，写入窗口内并发读会读到半写文件，
+        # 被记成一条 corrupt 的幽灵会话（keep-code-simple F5）。
+        fd, temporary_path = tempfile.mkstemp(dir=self._dir, prefix=".tmp-", suffix=".part")
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
                 handle.write(payload)

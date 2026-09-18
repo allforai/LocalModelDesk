@@ -1,5 +1,8 @@
 """library.sessions — multi-session chat persistence tests."""
 
+import tempfile
+from pathlib import Path
+
 import pytest
 
 from desk.library.errors import NotFoundError, ValidationError
@@ -108,3 +111,59 @@ def test_corrupt_file_yields_placeholder(tmp_path):
 
     assert session["id"] in {item["id"] for item in listed}
     assert {"id": "f" * 32, "corrupt": True} in listed
+
+
+def test_list_ignores_the_half_written_temp_file(tmp_path):
+    """写入窗口内 list() 不该返回幽灵损坏会话（keep-code-simple F5）。
+
+    `_write` 的临时文件叫 `.tmp-XXXX.json`，而 `list()` 用 glob("*.json") ——
+    实测 pathlib 的 glob **会**匹配点开头的 .tmp-XXXX.json。于是并发读时会读到
+    空的或半写的文件，被记成 {"id": ".tmp-XXXX", "corrupt": True} 混进列表。
+    """
+    store = SessionStore(tmp_path / "sessions")
+    real = store.create(title="真会话")
+    # 模拟写入窗口：一个刚 mkstemp 出来、还没 os.replace 的空临时文件
+    (tmp_path / "sessions" / ".tmp-abcd1234.json").write_text("", encoding="utf-8")
+
+    listed = store.list()
+
+    assert [s["id"] for s in listed] == [real["id"]], f"临时文件混进了会话列表：{listed}"
+    assert not any(s.get("corrupt") for s in listed)
+
+
+def test_a_genuinely_corrupt_session_is_still_reported(tmp_path):
+    """反向：真正损坏的会话文件仍要报出来，不能被上面的修法一起滤掉。"""
+    store = SessionStore(tmp_path / "sessions")
+    (tmp_path / "sessions").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "sessions" / "broken.json").write_text("{not json", encoding="utf-8")
+
+    listed = store.list()
+
+    assert listed == [{"id": "broken", "corrupt": True}]
+
+
+def test_the_write_temp_file_is_not_named_like_a_session(tmp_path):
+    """两道防护各自要能独立咬住：这条盯的是临时文件名本身。
+
+    list() 的「点开头跳过」能兜住残留，但它盖住了后缀这一半——撤掉 .part 改回
+    .json 时上面那条测试并不会红。临时名不以 .json 结尾是独立的一道：任何别的
+    读取方（备份、外部工具、未来某个不跳点文件的 glob）都不该把它当成会话。
+    """
+    store = SessionStore(tmp_path / "sessions")
+    seen = []
+    original = tempfile.mkstemp
+
+    def spy(*args, **kwargs):
+        fd, path = original(*args, **kwargs)
+        seen.append(Path(path).name)
+        return fd, path
+
+    tempfile.mkstemp = spy
+    try:
+        store.create(title="写一条")
+    finally:
+        tempfile.mkstemp = original
+
+    assert seen, "create 没有走 mkstemp"
+    assert not any(name.endswith(".json") for name in seen), \
+        f"临时文件名以 .json 结尾，会被任何 glob('*.json') 的读取方当成会话：{seen}"
