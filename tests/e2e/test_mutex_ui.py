@@ -1,22 +1,11 @@
-"""R-e2e-08: mutual exclusion is visible and clears when media work ends.
-
-R-budget-13 (2026-09-18 budget-arithmetic plan, Task 3): the desk_state
-`can_start` buttons answer ownership only, not budget arithmetic. Ownership
-only forbids a second concurrent media job — it does not forbid loading a
-chat model while media runs (that coexistence question needs real params,
-which this parameterless poll never has; see the plan's self-review note on
-F3, "方向是放宽" — deliberately left unblocked here, F3 is a separate,
-un-taken product decision about whether to also gate it elsewhere). So the
-chat "load" control must stay enabled throughout a media job; only the two
-media controls are mutually exclusive with each other.
-"""
+"""R-e2e-08: mutual exclusion is visible and clears when media work ends."""
 
 from playwright.sync_api import expect
 
 from desk.testing import launch_test_harness
 
 
-def test_media_job_disables_other_media_control_shows_reason_and_restores(page, tmp_path):
+def test_media_job_disables_other_heavy_controls_shows_reason_and_restores(page, tmp_path):
     with launch_test_harness(tmp_path) as harness:
         page.goto(harness.base_url)
         video = page.locator("#pane-video")
@@ -29,7 +18,7 @@ def test_media_job_disables_other_media_control_shows_reason_and_restores(page, 
 
         expect(video.locator("[data-video-start]")).to_be_disabled()
         expect(music.locator("[data-music-start]")).to_be_disabled()
-        expect(chat.locator("[data-load]")).to_be_enabled()
+        expect(chat.locator("[data-load]")).to_be_disabled()
         expect(page.locator("#statusbar")).to_contain_text("不可：媒体作业进行中")
 
         harness.media_script.step()

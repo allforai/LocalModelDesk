@@ -5,14 +5,16 @@ This facade now has two modes, selected once at construction by whether a
 ``budget`` (``desk.budget.budget.Budget``-shaped: a ``.cost(...)`` method) is
 supplied:
 
-* **legacy mode** (``budget=None``) — every call site that has not been wired
-  up to a real ``Budget`` yet (today that is every production call site:
-  ``desk/runtime.py`` builds ``Arbiter(DEFAULT_LLM_PORT)`` with no budget, and
-  wiring that is out of this task's file list — see the deviation note in the
-  Task 7 report). Behaviour here is byte-for-byte the pre-Task-7 rule table:
-  one heavy slot, media always evicts a resident LLM, a second LLM or a second
-  media job is always refused. This is *not* an approximation of the old
-  behaviour, it is the old behaviour, kept alive as a private fallback because
+* **legacy mode** (``budget=None``) — a fallback for call sites not wired up to
+  a real ``Budget``. As of Task 7, ``desk/runtime.py`` *does* wire one
+  (``arbiter = Arbiter(DEFAULT_LLM_PORT, budget=budget)``) — production runs in
+  budget mode. What still runs legacy today is the browser-e2e test harness
+  (``desk/testing/harness.py`` constructs its ``Arbiter`` with no ``budget=``),
+  which is why ``tests/e2e/*`` exercises this branch, not the one below.
+  Behaviour here is byte-for-byte the pre-Task-7 rule table: one heavy slot,
+  media always evicts a resident LLM, a second LLM or a second media job is
+  always refused. This is *not* an approximation of the old behaviour, it is
+  the old behaviour, kept alive as a private fallback because
   ``desk/arbiter/state.py`` no longer contains it (R-arbiter-01 deleted the
   kind-hardcoded branches from the pure state machine on purpose).
 * **budget mode** (``budget=<Budget>``) — coexistence is a real, multi-holder
@@ -201,20 +203,40 @@ class Arbiter:
     def _state_for(self, holders: tuple[Holder, ...]) -> dict:
         """Build the public state dict for `holders`.
 
-        `can_start` answers ownership only (R-budget-13, via ``_ownership_answer``)
-        — it takes no params/key, so it has no budget arithmetic to do. The
-        ``_backfill_resident`` call below stays regardless: it is not read by
-        ``can_start`` any more, but this is still the 2-second desk_state poll
-        that drives backfill for every other reader of ``bytes_resident``
-        (``can_start_heavy`` with params, ``release`` planning, ...). Dropping it
-        here would silently stop backfill from ever running.
+        In budget mode, `can_start` answers ownership only (R-budget-13, via
+        ``_ownership_answer``) — it takes no params/key, so it has no budget
+        arithmetic to do. In legacy mode it still goes through
+        ``_decide_from``/``_legacy_decision`` unchanged: the module docstring
+        promises legacy is byte-for-byte the pre-Task-7 rule table (single
+        heavy slot, any resident holder blocks any other kind), and
+        ``_ownership_answer``'s narrower "only media blocks media" rule would
+        silently widen that table — a real regression a Playwright e2e test
+        caught (``tests/e2e/test_mutex_ui.py``, which runs the legacy-mode test
+        harness): with a video holder resident, ``can_start_heavy("llm")``
+        (still legacy) said refuse/media_busy while this method's `can_start`
+        (switched unconditionally) said ok — two answers to the same
+        parameterless ownership question from the same arbiter state. See
+        ``test_can_start_heavy_and_desk_state_agree_on_ownership_in_legacy_mode``.
+
+        The ``_backfill_resident`` call below stays regardless of branch: in
+        budget mode it is not read by ``can_start`` any more, but this is
+        still the 2-second desk_state poll that drives backfill for every
+        other reader of ``bytes_resident`` (``can_start_heavy`` with params,
+        ``release`` planning, ...). Dropping it here would silently stop
+        backfill from ever running.
         """
         available_bytes = self._memory.snapshot().available_bytes
         self._backfill_resident(available_bytes)
 
         def can_start(kind: str) -> dict:
-            answer = self._ownership_answer(kind, holders)
-            return {"ok": answer["ok"], "reason": answer["reason"]}
+            if self._budget is not None:
+                answer = self._ownership_answer(kind, holders)
+                return {"ok": answer["ok"], "reason": answer["reason"]}
+            decision, _workload, _holder = self._decide_from(
+                kind, None, None, holders, (), available_bytes)
+            if decision.action != "refuse":
+                return {"ok": True, "reason": None}
+            return {"ok": False, "reason": self._reason(decision.reason_code, decision.reason_message)}
 
         primary = holders[-1] if holders else None
         return {

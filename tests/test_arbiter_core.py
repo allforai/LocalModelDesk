@@ -557,3 +557,24 @@ def test_a_query_with_params_still_does_the_budget_arithmetic():
 
     assert answer["ok"] is False
     assert answer["reason"]["code"] == "insufficient_budget"
+
+
+def test_can_start_heavy_and_desk_state_agree_on_ownership_in_legacy_mode():
+    """回归（复审 Important）：legacy 模式（不传 budget，如 e2e 测试台面）下，
+    `can_start_heavy` 和 `desk_state()["can_start"]` 问的是同一个「无参归属」问题，
+    必须给出同一个答案。`_state_for` 的 `can_start` 闭包若不按 `self._budget` 分流、
+    无条件换成 `_ownership_answer`，会把 legacy 模式自己的排他表（任何一件重活在跑，
+    其余全部拒绝——模块顶部 docstring 承诺的「byte-for-byte pre-Task-7 rule table」）
+    悄悄收窄成「只有媒体挡媒体」，而 `can_start_heavy` 的 legacy 分支毫不知情，仍按
+    旧表判。两个入口、同一个 arbiter 状态、同一个无参问题，答案却不一致——这条只被
+    Playwright e2e（tests/e2e/test_mutex_ui.py）间接撞到，没有单测钉住。
+    """
+    arbiter = Arbiter(llm_port=43125)   # 不传 budget：legacy 模式
+    arbiter.acquire_heavy("video", "job-1")
+
+    direct = arbiter.can_start_heavy("llm")
+    via_state = arbiter.desk_state()["can_start"]["llm"]
+
+    assert direct["ok"] is False
+    assert direct["reason"]["code"] == "media_busy"
+    assert (via_state["ok"], via_state["reason"]) == (direct["ok"], direct["reason"])
