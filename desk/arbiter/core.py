@@ -166,10 +166,7 @@ class Arbiter:
                 self._workloads[token] = workload
                 self._record_baseline(token, available_bytes)
             holders = tuple(self._holders.values())
-            resident = tuple(
-                w for h in holders if (w := self._workloads.get(h.token)) is not None
-            )
-        return self._state_for(holders, resident)
+        return self._state_for(holders)
 
     def _replace_all(self, holder: Holder | None) -> dict:
         """Legacy single-slot replace: only the no-budget eviction path uses this."""
@@ -178,11 +175,28 @@ class Arbiter:
             self._workloads = {}
             self._grant_baseline = {}
             holders = tuple(self._holders.values())
-        return self._state_for(holders, ())
+        return self._state_for(holders)
 
-    def _state_for(self, holders: tuple[Holder, ...], resident: tuple = ()) -> dict:
+    def _state_for(self, holders: tuple[Holder, ...]) -> dict:
+        """Build the public state dict for `holders`.
+
+        `resident` is *not* accepted as a parameter: it must be read from
+        ``self._workloads`` after ``_backfill_resident`` below, not captured by
+        the caller beforehand. A caller-captured tuple would be the pre-backfill
+        one — this call's own ``_backfill_resident`` only benefits the *next*
+        reader, and a request granted this instant would report a stale (often
+        zero) ``bytes_resident`` in the ``can_start`` it returns right now (the
+        thing subscribers get dispatched). Re-deriving here, the same way
+        ``_decide`` already orders backfill-then-capture, keeps every caller
+        automatically correct — including the legacy-mode callers below that
+        pass an empty ``self._workloads``, which still resolves to `()`.
+        """
         available_bytes = self._memory.snapshot().available_bytes
         self._backfill_resident(available_bytes)
+        with self._state_lock:
+            resident = tuple(
+                w for h in holders if (w := self._workloads.get(h.token)) is not None
+            )
 
         def can_start(kind: str) -> dict:
             decision, _workload, _holder = self._decide_from(
@@ -257,10 +271,7 @@ class Arbiter:
     def desk_state(self) -> dict:
         with self._state_lock:
             holders = tuple(self._holders.values())
-            resident = tuple(
-                w for h in holders if (w := self._workloads.get(h.token)) is not None
-            )
-        return self._state_for(holders, resident)
+        return self._state_for(holders)
 
     def can_start_heavy(self, kind: str, params: dict | None = None, key: str | None = None,
                          estimated_bytes: int | None = None) -> dict:
@@ -385,12 +396,9 @@ class Arbiter:
                     self._workloads.pop(token, None)
                     self._grant_baseline.pop(token, None)
                 holders = tuple(self._holders.values())
-                resident = tuple(
-                    w for h in holders if (w := self._workloads.get(h.token)) is not None
-                )
             if not found:
                 return {"ok": False, "reason": self._reason(
                     "not_holder", "token does not hold the current heavy-work lease")}
-            states.append(self._state_for(holders, resident))
+            states.append(self._state_for(holders))
         self._dispatch(states)
         return {"ok": True}
