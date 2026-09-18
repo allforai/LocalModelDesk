@@ -191,6 +191,10 @@ def test_reading_residency_is_real_on_this_machine():
 
     这条钉住的是「实现真的能从操作系统拿到数」，不是某个具体数值——
     数值本身随机器与时刻变。只起 512 MiB，跑得快且对机器无压力。
+
+    用的是 proc_pid_rusage 的 phys_footprint。最初写的是 `ps -o rss=`，被一次
+    实测推翻：mlx 走 Metal buffer 分配统一内存时 ps rss 只看得到 1%，而模型权重
+    与 KV cache 都在那里。详见 desk/arbiter/core.py 里 read_resident_bytes 的三行对照表。
     """
     import subprocess
     import sys

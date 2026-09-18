@@ -28,8 +28,8 @@ supplied:
 """
 from __future__ import annotations
 
+import ctypes
 import logging
-import subprocess
 import threading
 import time
 import uuid
@@ -43,29 +43,64 @@ from .state import (
     KINDS, MEDIA_KINDS, PHASE_ACQUIRING, PHASE_HELD, Decision, Holder, plan_acquire,
 )
 
-def read_resident_bytes(pid: int) -> int:
-    """这个进程此刻实际驻留多少字节；读不到返回 0（R-budget-14）。
+class _RUsageInfoV2(ctypes.Structure):
+    """`rusage_info_v2` 的前若干字段，只为取 `ri_phys_footprint`（第 8 个 uint64）。
 
-    用 `ps -o rss=` 而不是整机差额，因为整机差额在最要紧的那一格只捕捉到一半：
-    2026-09-19 本机实测，只读 mmap 一个真实模型分片并逐页触碰，真占 4.82 GiB，
-    ps rss 读到 4.84 GiB，而 available_bytes 的净降幅只有 2.46 GiB——51%。
-    mlx 的权重正是这种 mmap 的文件页。匿名页那一格好一些但也只有 71%。
-
-    shell out 与本模块既有做法一致（memory.py 已经在调 vm_stat / sysctl），零新依赖。
-    phys_footprint 更贴近活动监视器，但要 ctypes 进 libproc，脆弱性换来的精度在那两组
-    读数面前没有意义。
-
-    读不到就返回 0——进程刚没、pid 复用、ps 不在，都归到「不知道」而不是猜一个数。
+    字段顺序取自 macOS 的 `<sys/resource.h>`；后面还有更多字段，但 proc_pid_rusage
+    按 flavor 决定写多少，声明到我们要的那个为止即可——多声明反而会在结构体变长时
+    读到越界的垃圾。
     """
-    try:
-        out = subprocess.run(["ps", "-o", "rss=", "-p", str(pid)],
-                             capture_output=True, text=True, timeout=5)
-    except (OSError, subprocess.SubprocessError):
+
+    _fields_ = [("ri_uuid", ctypes.c_uint8 * 16)] + [
+        (name, ctypes.c_uint64) for name in (
+            "ri_user_time", "ri_system_time", "ri_pkg_idle_wkups", "ri_interrupt_wkups",
+            "ri_pageins", "ri_wired_size", "ri_resident_size", "ri_phys_footprint",
+            "ri_proc_start_abstime", "ri_proc_exit_abstime", "ri_child_user_time",
+            "ri_child_system_time", "ri_child_pkg_idle_wkups", "ri_child_interrupt_wkups",
+            "ri_child_pageins", "ri_child_elapsed_abstime", "ri_diskio_bytesread",
+            "ri_diskio_byteswritten",
+        )
+    ]
+
+
+_RUSAGE_INFO_V2 = 2
+
+try:
+    _libc = ctypes.CDLL("libc.dylib", use_errno=True)
+    _libc.proc_pid_rusage.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_void_p]
+    _libc.proc_pid_rusage.restype = ctypes.c_int
+except OSError:          # 非 macOS，或 libc 换了名字
+    _libc = None
+
+
+def read_resident_bytes(pid: int) -> int:
+    """这个进程此刻实际占住多少字节；读不到返回 0（R-budget-14）。
+
+    用 `proc_pid_rusage` 的 `phys_footprint`——活动监视器显示的就是它。三种读法在
+    本机各测过一次（2026-09-19），没有一个通吃，选它是因为它盖住的正是要管的那部分：
+
+    | 场景 | ps rss | phys_footprint | 整机 available 差额 |
+    |---|---|---|---|
+    | 匿名页 12 GiB | 100% | 100% | 73% |
+    | mmap 的模型分片 4.82 GiB | 100% | **0%** | 74% |
+    | mlx 统一内存 4 GiB | **1%** | 100% | 106% |
+
+    第三行是要害：mlx 走 Metal buffer，`ps rss` 完全看不见它——而模型权重与 KV cache
+    都在那里，正是预算要管的大头。第二行的 0% 不是缺陷：mmap 进来的**干净**文件页
+    操作系统随时可以丢弃回收，本来就不该算成「占住了」；footprint 排除它们是对的。
+    合起来说，phys_footprint 量的是「不杀这个进程就收不回来的内存」，这正是预算的口径。
+
+    （最初选的是 `ps rss`，理由是不想碰 ctypes。那个判断建立在只测了匿名页与 mmap
+    文件页的两组读数上，而这两格恰好都不含 mlx 的分配——补上第三格就翻了。）
+
+    读不到就返回 0——进程刚没、pid 复用、非 macOS，都归到「不知道」而不是猜一个数。
+    """
+    if _libc is None or pid <= 0:
         return 0
-    text = out.stdout.strip()
-    if out.returncode != 0 or not text.isdigit():
+    info = _RUsageInfoV2()
+    if _libc.proc_pid_rusage(pid, _RUSAGE_INFO_V2, ctypes.byref(info)) != 0:
         return 0
-    return int(text) * 1024        # ps 报的是 KiB
+    return int(info.ri_phys_footprint)
 
 
 class Arbiter:
