@@ -42,6 +42,28 @@ from .state import (
     KINDS, MEDIA_KINDS, PHASE_ACQUIRING, PHASE_HELD, Decision, Holder, plan_acquire,
 )
 
+# 回填 bytes_resident 的噪声下限：差额低于它就当没测到（R-budget-12 末句
+# 「测不到时 bytes_resident 为 0，退回今天的保守行为」）。
+#
+# 为什么需要下限：available_bytes 的口径是 free+inactive+purgeable+speculative，
+# 是整机共用的一个标量，随任何进程的分配与释放抖动；而回填的第一个采样点就在
+# `_grant` 紧接着的 `_state_for` 里，那一刻模型一行权重都还没读进来。没有下限时，
+# 只要那次读数比基线低一页（16 KiB），「只填一次」就把 bytes_resident 永久钉在
+# 一个纯噪声值上。
+#
+# 为什么是 4 GiB（本机实测，2026-09-18，vm_stat 每 200 ms 一采）：
+#   * 空闲时 60 次连采，相邻两次读数差 p90 3.8 MiB、最大 8.4 MiB，整段极差 65 MiB；
+#   * 跑着完整测试套件时 355 次连采，相邻差 p50 15.8 MiB、p99 494 MiB、最大
+#     1.49 GiB，整段 75 秒窗口内的极差 3.5 GiB。
+#   * 而这台机器上最小的一件重活也要 14 GiB（最小的已装模型权重；媒体作业按
+#     memory_estimate 是 27 GiB）。
+# 4 GiB 取在这两群数之间：高于观测到的全部噪声（含负载下 3.5 GiB 的窗口极差），
+# 又比任何真实重活的驻留量小三倍以上，所以真实加载一定能越过它。
+# 取比例（bytes_needed 的百分之多少）做不到这件事：聊天的 bytes_needed 是
+# 权重 + KV 额度，而 KV 额度随可用内存浮动，权重占比可以从 90% 掉到 11%，
+# 同一个比例对不同模型的含义完全不同。
+RESIDENT_MIN_BYTES = 4 * 1024 ** 3
+
 
 class Arbiter:
     """Serialize heavy work, replacing an LLM holder before media work starts."""
@@ -167,19 +189,42 @@ class Arbiter:
         采样点不在 acquire_heavy 里：那时模型还没开始加载，量到的是 0。改为每次读
         快照时顺带回填，不需要新线程也不需要改调用方。
 
+        三道闸，缺一不可：
+
+        1. **只有恰好一件待回填时才记**。available_bytes 是整机口径的一个标量，
+           它的降幅是所有进程的合计。两件重活先后授予、一起加载时，对每件各算一次
+           「基线 − 当前」会把同一批字节记两遍：A 需 80、B 需 27，基线都约 120，
+           一起加载后可用降到 63，则两件各记 57，而 A 真实只占 30。A 的未分配被从
+           50 算成 23，`fits` 整组少扣 27 GiB，足以放行一件本该拒绝的作业。
+           分不清是谁占的就不记——这正是 R-budget-12 末句要的「测不到就记 0」。
+        2. **夹在 bytes_needed 以内**。回填值同时喂给 `_unallocated`（还差多少没
+           分配）与 `plan()` 的 freed（让出能回收多少）。`_unallocated` 自己有
+           max(...,0) 兜底，`plan()` 没有，所以上界要在这里就夹住：一件重活不可能
+           占得比它要的还多，超出的部分一定是别人的分配被算到了它头上。
+        3. **低于 RESIDENT_MIN_BYTES 不记**，见该常量上方的实测理由。
+
         只填一次是有意的：KV 慢慢长起来时若跟着涨，未分配会越算越小，最终等于把
         这件重活当成不占内存。可用内存不降反升（别的进程释放了）时记 0，不记负数。
+
+        量到的值系统性地偏小，这一点要知道：本机实测（2026-09-18，子进程真实占住
+        12 GiB 不可压缩的匿名内存）Pages free 降 12.5 GiB，但 Pages inactive 同时涨
+        5.8 GiB，而 inactive 也算在 free+inactive+purgeable+speculative 里，于是
+        available_bytes 的净降幅只有约 6 GiB——占到实际的一半。跑 scripts/
+        budget-readback.py 可以复现。偏小的方向是保守的：`_unallocated` 多扣、
+        `plan()` 的 freed 少算，都不会因此放行一件装不下的作业。
         """
         with self._state_lock:
-            for token, workload in list(self._workloads.items()):
-                if workload.bytes_resident:
-                    continue
-                baseline = self._grant_baseline.get(token)
-                if baseline is None:
-                    continue
-                measured = max(baseline - available_bytes, 0)
-                if measured:
-                    self._workloads[token] = replace(workload, bytes_resident=measured)
+            pending = [token for token, workload in self._workloads.items()
+                       if not workload.bytes_resident
+                       and self._grant_baseline.get(token) is not None]
+            if len(pending) != 1:
+                return
+            token = pending[0]
+            workload = self._workloads[token]
+            drop = max(self._grant_baseline[token] - available_bytes, 0)
+            measured = min(drop, workload.bytes_needed)
+            if measured >= RESIDENT_MIN_BYTES:
+                self._workloads[token] = replace(workload, bytes_resident=measured)
 
     # ---- state mutation (holds _state_lock only) -----------------------
     def _grant(self, token: str, holder: Holder, workload, available_bytes: int) -> dict:
@@ -390,7 +435,21 @@ class Arbiter:
         """Acquire a token. In legacy mode, evicts the active LLM first for media
         requests (unchanged). In budget mode, grants alongside residents when the
         combined workload still fits and never auto-evicts otherwise — see the
-        module docstring."""
+        module docstring.
+
+        R-budget-13 的判据是「这次调用有没有给出容量输入」，和 can_start_heavy 那边
+        同一条，只是答案相反：查询没有容量输入时只回答归属，**授予**没有容量输入时
+        必须拒绝。`_cost` 拿不到 params/key 只能产出 bytes_needed=0、
+        source=unavailable 的空壳；空壳若恰好是当下唯一一件，`fits` 会判它装得下并
+        授予，`_workloads` 里从此多出一个 0 字节的幽灵持有者，往后每一次 `fits`
+        都把它整件漏算。两个生产调用点（desk/llm/service.py、desk/media/service.py）
+        今天都传了参数，但防线要在 arbiter 里，不在调用点——本支刚修掉的正是这类
+        「查询与授予各有一套判据」的不对称。"""
+        if self._budget is not None and params is None and key is None:
+            return {"ok": False, "reason": self._reason(
+                "capacity_unknown",
+                f"授予 {kind} 需要作业参数才算得出内存开销；这次调用没有给出，不予授予")}
+
         decision, _workload, _resident, _available, holder = self._decide(kind, params, key)
         if holder is not None and holder.phase == PHASE_ACQUIRING:
             return {"ok": False, "reason": self._reason(decision.reason_code, decision.reason_message)}

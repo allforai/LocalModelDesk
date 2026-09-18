@@ -123,6 +123,21 @@ def test_plan_frees_only_the_resident_bytes_not_the_whole_need():
     assert p.verdict.available_bytes == 55 * GIB     # 5 + 50，不是 5 + 80
 
 
+def test_plan_never_credits_more_freed_bytes_than_the_workload_ever_asked_for():
+    """让出一件重活能回收的上界是它自己的 bytes_needed，不是它字段里写的数。
+
+    `Workload` 是公开的 frozen dataclass，外部可以直接构造（scripts/budget-readback.py
+    就是手搓的），实测回填也可能因为把别人的分配算到它头上而超额。夹紧只做在回填那一处
+    不够：`_unallocated` 的 max(...,0) 只保护 `fits`，`plan()` 的 freed 没有任何兜底，
+    一个虚高的 bytes_resident 会让 plan() 以为让出它就腾得出地方，于是自动卸掉聊天模型
+    再授予一件其实装不下的作业——偏乐观的方向才是会 OOM 的那个方向。
+    """
+    inflated = [Workload("chat", "m", int(30 * GIB), "measured", bytes_resident=int(90 * GIB))]
+    p = plan([w("video", 50)], inflated, 5 * GIB)
+    # 只能回收 30 GiB（它总共也就要了这么多）⇒ 5+30=35 < 50，怎么让都不够
+    assert not p.ok
+
+
 def test_bytes_resident_defaults_to_zero_so_existing_call_sites_keep_working():
     """既有几十处四参构造不用改——加字段必须带默认值。"""
     assert Workload("video", None, 1, "measured").bytes_resident == 0

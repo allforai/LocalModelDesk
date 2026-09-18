@@ -578,3 +578,33 @@ def test_can_start_heavy_and_desk_state_agree_on_ownership_in_legacy_mode():
     assert direct["ok"] is False
     assert direct["reason"]["code"] == "media_busy"
     assert (via_state["ok"], via_state["reason"]) == (direct["ok"], direct["reason"])
+
+
+def test_acquire_heavy_without_capacity_input_is_refused_in_budget_mode():
+    """R-budget-13 的判据同样管授予：拿不到容量输入时拒绝，不是照常授予。
+
+    无参进 `_cost` 只能拿到 bytes_needed=0 / source=unavailable 的空壳。空壳若是
+    当下唯一一件，`fits` 判它装得下并授予，`_workloads` 里从此留下一个 0 字节的
+    幽灵持有者，往后每一次 `fits` 都把它整件漏算——一件 100 GiB 的作业会被当成
+    不占内存，第二件重活于是被放行。
+    """
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=60 * GIB))
+    budget = FakeBudget({"llm": Workload("llm", "model-a", 30 * GIB, "measured")})
+    arbiter = Arbiter(llm_port=43125, memory=memory, budget=budget)
+
+    grant = arbiter.acquire_heavy("llm", "model-a")        # 无 params、无 key
+
+    assert grant["ok"] is False
+    assert grant["reason"]["code"] == "capacity_unknown"
+    assert arbiter._workloads == {}, "被拒绝的调用不许在账上留下持有者"
+    assert arbiter.desk_state()["holder"] is None
+
+
+def test_legacy_mode_still_accepts_a_parameterless_acquire():
+    """判据是「这次调用有没有容量输入」，不是「有没有接预算」——没接预算的
+    legacy 模式压根没有预算算术可做，它的无参授予必须原样可用（e2e 台面就这么调）。"""
+    arbiter = Arbiter(llm_port=43125)
+
+    grant = arbiter.acquire_heavy("llm", "model-a")
+
+    assert grant["ok"] is True

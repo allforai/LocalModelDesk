@@ -61,7 +61,7 @@ def _unallocated(workload) -> int:
     部分，所以只有尚未分配的那半还需要从余量里扣。实测的 bytes_resident 可能因采样
     噪声略大于 bytes_needed，夹到 0：负数会让一件重活反过来「贡献」额度。
     """
-    return max(workload.bytes_needed - getattr(workload, "bytes_resident", 0), 0)
+    return max(workload.bytes_needed - workload.bytes_resident, 0)
 
 
 def fits(workloads, available_bytes: int) -> Verdict:
@@ -104,11 +104,23 @@ def plan(wanted, resident, available_bytes: int) -> Plan:
             # 从来没占过内存，回收不了。bytes_resident 恒为 0 时与 bytes_needed
             # 相等，今天看不出来——一旦接到真实驻留点（bytes_resident > 0），用
             # bytes_needed 算 freed 会让 plan() 把可用余量算得偏乐观。
-            freed = sum(w.bytes_resident for w in combo)
+            #
+            # 夹在 bytes_needed 以内：一件重活占掉的不可能比它要的还多，而
+            # bytes_resident 是实测量、且 Workload 可被外部直接构造
+            # （scripts/budget-readback.py 就是手搓的），夹紧不能只靠回填那一处。
+            # 不夹住，plan() 会以为让出它能回收超额的字节，据此自动卸掉聊天模型
+            # 再授予一件其实装不下的作业——偏乐观的方向才是会 OOM 的那个方向。
+            freed = sum(min(w.bytes_resident, w.bytes_needed) for w in combo)
             keep = [w for w in resident if w not in combo]
             verdict = fits(list(wanted) + keep, available_bytes + freed)
             accepted = verdict.ok and verdict.needed_bytes < verdict.available_bytes
             if accepted:
+                # released 故意不跟着 freed 改用 bytes_resident：两者问的不是同一件事。
+                # freed 是「让出之后物理上真能收回多少」，所以只能算已分配的部分；
+                # released 是「让用户放弃了多大一件东西」，是「最小让出」的排序量——
+                # 一件已授予 60 GiB 额度、当下才占 5 GiB 的聊天模型，被卸掉时用户
+                # 失去的是那整件 60 GiB，不是 5 GiB。把两者「统一」成同一个字段，
+                # 最小让出就会开始偏向卸掉大件（大件往往回填得慢、bytes_resident 小）。
                 released = sum(w.bytes_needed for w in combo)
                 if best is None or released < best[0]:
                     best = (released, combo, verdict)
