@@ -53,6 +53,32 @@
   三个两两判断的合取，「最小让出」也只有在集合上才算得出来。
   拒绝必须带机器可读原因与数字：需要多少、现有多少、依据来源为预测还是实测。
 
+- **R-budget-12** `fits` 对**已驻留**的重活只计其**尚未分配**的那部分，不计已分配的部分。
+
+  实测（2026-09-18，本机）：在子进程里真实占用 6 GiB，`available_bytes` 从 68.4 降到 63.7 GiB，
+  释放后回到 68.4——**常驻内存已经从 `available_bytes` 里扣掉了**（它的计数口径是
+  free+inactive+purgeable+speculative，见 `desk/arbiter/memory.py`）。因此把 resident 的
+  `bytes_needed` 整个加上去再和 `available_bytes` 比，等于把已分配部分扣两遍，
+  使 budget 模式在**所有**共存判定上系统性偏保守。
+
+  但不能简单地把 resident 整个排除：mlx-lm 的 KV cache 是懒分配的，一个已驻留模型的
+  `bytes_needed` 里权重已经占掉（该排除），它被授予的 KV 额度还没占（该保留为预留）。
+  所以 `Workload` 增加 `bytes_resident`——授予后由实测得出（授予前后的 `available_bytes`
+  之差），`fits` 对 resident 计 `bytes_needed - bytes_resident`。测不到时 `bytes_resident` 为 0，
+  退回今天的保守行为。
+
+- **R-budget-13** **无参的 `can_start_heavy(kind)` 只回答归属问题，绝不做预算算术。**
+
+  今天有六个调用点不传 `params`/`key`（下载闸、网关守卫、台面状态的两个按钮、两处测试台面）。
+  它们问的是「现在谁占着、能不能开这一类」，不是「这个具体作业装不装得下」——后者需要参数。
+  无参调用走预算算术时，`cost()` 拿不到输入只能产出 `bytes_needed=0` 且 `source=unavailable`
+  的空壳 workload，再撞上 R-budget-10（有一件 unavailable 就整组保守），**与机器多大无关地恒为
+  `insufficient_budget`**。已复现的后果：驻留模型后「换模型」按钮灰掉、下载可能被误拒、
+  网关对外返回的错误码从 `media_busy` 漂移成 `insufficient_budget`。
+
+  两个问题必须有各自的入口：归属查询不吃参数、不碰内存数字；容量判定必须带参数，
+  调不出参数就不该问容量。
+
 - **R-budget-10** 一组重活的依据来源取其中最弱者：只要有一件是 `unavailable`，
   整组按 `unavailable` 处理并走保守路径。不得让「两件实测加一件未量过」
   被当作实测依据放行。
