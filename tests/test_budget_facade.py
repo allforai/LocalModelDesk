@@ -18,8 +18,20 @@ class FakeMemory:
         return S()
 
 
-def make(available_gib=116, measurements=None):
-    return Budget(measurements=measurements or Measurements(),
+def make(available_gib=116, measurements=None, capacity_gib=None):
+    """`available_gib` 现在只影响压力那条路径；预算的分母是机器自报的能力。
+
+    R-budget-16 之后分母不再是「此刻可用多少」而是「这台机器能给重活多少」——
+    静态属性，从实测档案里读。夹具默认把它设成与旧参数同值，让既有断言的数值关系不变。
+    """
+    m = measurements or Measurements()
+    if m.gpu_capacity() is None:
+        from desk.budget.device import GpuCapacity
+        gib = capacity_gib if capacity_gib is not None else available_gib
+        m.record_gpu_capacity(
+            GpuCapacity("测试设备", int(gib * GIB * 1.2), int(gib * GIB), int(gib * GIB * 0.75)),
+            1_757_000_000.0)
+    return Budget(measurements=m,
                   memory_reader=FakeMemory(available_gib),
                   media_estimate=lambda kind, params: 27 * GIB,
                   now=lambda: 1_757_000_000.0)
@@ -99,8 +111,12 @@ def test_recorded_turn_survives_a_restart(tmp_path):
 
     这条盯的是持久化本身：新建一个只从磁盘加载的 Budget，必须还能读到上一轮量到的真值。
     """
+    from desk.budget.device import GpuCapacity
     path = tmp_path / "measurements.json"
-    first = Budget(measurements=Measurements.load(path), memory_reader=FakeMemory(116),
+    m = Measurements.load(path)
+    # 机器能力和每 token 开销存在同一份档案里，重启后都要还在。
+    m.record_gpu_capacity(GpuCapacity("测试设备", 128 * GIB, 107 * GIB, 80 * GIB), 1_757_000_000.0)
+    first = Budget(measurements=m, memory_reader=FakeMemory(116),
                    media_estimate=lambda kind, params: 27 * GIB,
                    now=lambda: 1_757_000_000.0, measurements_path=path)
     first.record_turn("llama", "Prompt Cache: 1 sequences, 12.40 GB", 40_000, weights_gb=70.2)
@@ -127,3 +143,51 @@ def test_a_smaller_model_on_the_same_machine_still_gets_a_budget():
     """反向：权重减掉之后仍有余量的，额度要照常给出来，不能一刀切成 0。"""
     b = make(available_gib=74)
     assert b.for_chat("llama", LLAMA, weights_gb=10.0).token_limit > 0
+
+
+def test_the_denominator_is_the_machines_capacity_not_what_is_free_right_now():
+    """R-budget-16：同一台机器同一个模型，答案不随此刻在跑什么变化。
+
+    分母换成机器自报的 wired limit 之后，可用内存只剩下「压力兜底」这一个用途。
+    这条钉住的正是那个性质：把可用内存改小一个数量级，额度一个字节都不该变。
+    """
+    m = Measurements()
+    from desk.budget.device import GpuCapacity
+    m.record_gpu_capacity(GpuCapacity("测试设备", 128 * GIB, 107 * GIB, 80 * GIB), 0.0)
+    roomy = Budget(measurements=m, memory_reader=FakeMemory(116),
+                   media_estimate=lambda kind, params: 27 * GIB, now=lambda: 0.0)
+    cramped = Budget(measurements=m, memory_reader=FakeMemory(3),
+                     media_estimate=lambda kind, params: 27 * GIB, now=lambda: 0.0)
+    assert (roomy.for_chat("llama", LLAMA, weights_gb=70.2).token_limit
+            == cramped.for_chat("llama", LLAMA, weights_gb=70.2).token_limit)
+
+
+def test_no_capacity_means_unavailable_not_a_guess_from_total_memory():
+    """问不出分母时标「算不出」，不拿整机内存顶替——那会把系统留量一起吃掉。"""
+    b = Budget(measurements=Measurements(), memory_reader=FakeMemory(116),
+               media_estimate=lambda kind, params: 27 * GIB, now=lambda: 0.0)
+    chat = b.for_chat("llama", LLAMA, weights_gb=70.2)
+    assert chat.source == "unavailable"
+    assert chat.token_limit == 131072          # 只剩声明窗口
+
+
+def test_capacity_is_probed_once_and_remembered(tmp_path):
+    """机器能力是静态属性：问一次记下来，之后不再问。"""
+    from desk.budget.device import GpuCapacity
+    calls = []
+
+    def fake_probe(python):
+        calls.append(python)
+        return GpuCapacity("测试设备", 128 * GIB, 107 * GIB, 80 * GIB)
+
+    import desk.budget.budget as mod
+    original, mod.probe_gpu_capacity = mod.probe_gpu_capacity, fake_probe
+    try:
+        b = Budget(measurements=Measurements(), memory_reader=FakeMemory(116),
+                   media_estimate=lambda kind, params: 27 * GIB, now=lambda: 0.0,
+                   probe_python="/fake/python")
+        assert b.capacity_bytes() == 107 * GIB
+        assert b.capacity_bytes() == 107 * GIB
+    finally:
+        mod.probe_gpu_capacity = original
+    assert len(calls) == 1, f"机器能力被问了 {len(calls)} 次，它是静态属性，应该只问一次"

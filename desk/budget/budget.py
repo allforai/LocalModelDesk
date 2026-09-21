@@ -13,6 +13,7 @@ import logging
 from dataclasses import dataclass, field
 
 from .estimate import declared_window, per_token_bytes
+from .device import probe_gpu_capacity
 from .observe import measured_bytes_per_token, parse_cache_line
 
 GIB_F = float(1024 ** 3)
@@ -152,7 +153,7 @@ class Budget:
     """
 
     def __init__(self, measurements, memory_reader, media_estimate, now,
-                 measurements_path=None) -> None:
+                 measurements_path=None, probe_python=None) -> None:
         self._m = measurements
         self._memory = memory_reader
         self._media_estimate = media_estimate
@@ -160,6 +161,32 @@ class Budget:
         # 没有路径就只记在内存里（单测用）；生产必须给路径，否则每次重启都从
         # predicted 重新开始，自校准等于白做。
         self._measurements_path = measurements_path
+        # 问机器能力用的解释器（要装了 mlx 的那个）。给 None 就只能靠档案里已有的读数。
+        self._probe_python = probe_python
+
+    # ---- 分母：机器自报的重活能力 ------------------------------------
+    def capacity_bytes(self) -> int | None:
+        """重活总共能用多少内存（R-budget-16）；问不出返回 None。
+
+        这是**静态的机器属性**，不是此刻的可用内存——来自 mlx 的
+        `max_recommended_working_set_size`，也就是它自己会 `set_wired_limit` 的那个值。
+        wired 的内存不参与换页，所以它是硬上限；而 Apple 报这个数时已经替系统
+        留好了量（本机 128 GiB 报 107.5 GiB，留 20.5 GiB ≈ 16%），不需要我们再拍留量。
+
+        量一次记进实测档案，之后直接读——同一台机器同一个模型永远同一个答案，
+        不随此刻在跑什么波动。
+        """
+        recorded = self._m.gpu_capacity()
+        if recorded:
+            return int(recorded["working_set_bytes"])
+        if self._probe_python is None:
+            return None
+        capacity = probe_gpu_capacity(self._probe_python)
+        if capacity is None:
+            return None
+        self._m.record_gpu_capacity(capacity, self._now())
+        self._persist()
+        return capacity.working_set_bytes
 
     # ---- 单件开销 ----------------------------------------------------
     def cost(self, kind, *, key=None, params=None, config=None, weights_gb=None) -> Workload:
@@ -187,12 +214,16 @@ class Budget:
         if per_token is None:
             limit = window or 0
             return ChatBudget(limit, int(limit * COMPACT_FRACTION), "unavailable", window)
-        available = self._memory.snapshot().available_bytes
+        capacity = self.capacity_bytes()
+        if capacity is None:
+            # 分母问不出来（没装 mlx、非 Apple 芯片、字段改名）就只用声明窗口，
+            # 并如实标「算不出」——不拿整机内存顶替（R-budget-16）。
+            limit = window or 0
+            return ChatBudget(limit, int(limit * COMPACT_FRACTION), "unavailable", window)
         # 权重先占掉，剩下的才轮到 KV。漏减这一项，额度就和「这个模型装不装得下」
-        # 完全脱钩：真机上可用 74 GiB、权重 75 GB 的模型曾算出满窗口 131072。
-        free_for_kv = available - int((weights_gb or 0.0) * GIB_F)
-        usable = int(free_for_kv * SAFETY_FRACTION)
-        by_memory = max(usable // per_token, 0)
+        # 完全脱钩：曾经算出过一个根本装不进去的模型能带满窗口。
+        free_for_kv = capacity - int((weights_gb or 0.0) * GIB_F)
+        by_memory = max(free_for_kv // per_token, 0)
         limit = min(by_memory, window) if window else by_memory
         # 收紧作用于最终额度，而不只是内存推出的那一支：否则窗口比内存更紧时
         # （常见情况——声明窗口通常远小于内存能装下的量），爆过一次也不会让
@@ -216,12 +247,15 @@ class Budget:
         if not measured:
             return
         self._m.record_model(key, measured, weights_gb, self._now())
+        self._persist()
+
+    def _persist(self) -> None:
+        """档案是可重建的：写不进去就下次再量，不能让一次落盘失败打断别的事。"""
         if self._measurements_path is None:
             return
         try:
             self._m.save(self._measurements_path)
         except OSError:
-            # 档案是可重建的：写不进去就下一轮再量，不能让一次落盘失败打断回答。
             log.exception("measurements save failed")
 
     def snapshot(self) -> dict:

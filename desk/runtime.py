@@ -173,6 +173,8 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
         media_estimate=media_estimate_bytes,
         now=time.time,
         measurements_path=measurements_path,
+        # 问机器能力要用装了 mlx 的那个解释器——台面自己的通常没有（R-budget-16）。
+        probe_python=roots.venv_python,
     )
     arbiter = Arbiter(DEFAULT_LLM_PORT, budget=budget)
     resources = ResourcesService(

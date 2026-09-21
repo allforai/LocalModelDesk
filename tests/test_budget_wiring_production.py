@@ -31,7 +31,11 @@ class FakeMemory:
 
 
 def make_budget():
-    return Budget(measurements=Measurements(), memory_reader=FakeMemory(),
+    """分母是机器自报的能力（R-budget-16），夹具里直接记一份，不去问真机。"""
+    from desk.budget.device import GpuCapacity
+    m = Measurements()
+    m.record_gpu_capacity(GpuCapacity("测试设备", 128 * GIB, 107 * GIB, 80 * GIB), 0.0)
+    return Budget(measurements=m, memory_reader=FakeMemory(),
                   media_estimate=lambda kind, params: 27 * GIB, now=lambda: 0.0)
 
 
@@ -121,3 +125,16 @@ def test_llm_load_hands_the_arbiter_the_model_config_and_weights(tmp_path):
     params = call["params"] or {}
     assert params.get("weights_gb"), "acquire_heavy 没收到 weights_gb，预算会把聊天算成 0 字节"
     assert params.get("config"), "acquire_heavy 没收到模型 config，预算算不出每 token 开销"
+
+
+def test_production_runtime_can_probe_the_machine_capacity(tmp_path, monkeypatch):
+    """R-budget-16：生产装配要把「装了 mlx 的解释器」交给预算，否则分母永远问不出来。"""
+    _isolated_data_root(tmp_path, monkeypatch)
+    from desk.runtime import build_runtime
+    runtime = build_runtime(port=0)
+    try:
+        budget = runtime.llm._arbiter._budget
+        assert getattr(budget, "_probe_python", None) is not None, \
+            "build_runtime 没把 venv_python 传给 Budget，机器能力问不出来"
+    finally:
+        runtime.app._server.server_close()
