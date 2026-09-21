@@ -189,11 +189,6 @@ class MediaService:
                     command = build_music_command(Path(roots.music_python), Path(roots.media_cli_dir) / "music3_cli.py", model_root, output=output, **params)
                     extra_env = dict(roots.music_env)
                 handle = self._executor.spawn(command, extra_env=extra_env)
-                # 驻留量按作业进程自己的 rss 读（R-budget-14）——acquire 时它还没起。
-                pid = getattr(handle, "pid", None)
-                note = getattr(self._arbiter, "note_pids", None)
-                if note is not None and isinstance(pid, int):
-                    note(permit, {pid})
             except Exception as exc:
                 self._state = {"job_id": job_id, "status": "error", "kind": kind, "params": dict(params), "output": None,
                     "error": {"code": "spawn_failed", "message": str(exc)}, "started_at": now, "finished_at": self._clock()}

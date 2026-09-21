@@ -233,13 +233,6 @@ class LlmService:
                 entry.key, _read_model_config(model_dir), entry.gb
             )
         proc = self._backend.spawn(python, model_dir, self._port, log_path, extra_args=extra_args)
-        # 驻留量按这个进程自己的 rss 读（R-budget-14）。acquire 发生在 spawn 之前，
-        # 那时还没有 pid，所以要等到这里才报得出来。
-        token, pid = self._token, getattr(proc, "pid", None)
-        if token is not None and isinstance(pid, int):
-            note = getattr(self._arbiter, "note_pids", None)
-            if note is not None:
-                note(token, {pid})
         with self._lock:
             if generation != self._load_generation:
                 proc.terminate()

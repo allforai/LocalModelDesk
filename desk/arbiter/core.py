@@ -28,7 +28,6 @@ supplied:
 """
 from __future__ import annotations
 
-import ctypes
 import logging
 import threading
 import time
@@ -43,66 +42,6 @@ from .state import (
     KINDS, MEDIA_KINDS, PHASE_ACQUIRING, PHASE_HELD, Decision, Holder, plan_acquire,
 )
 
-class _RUsageInfoV2(ctypes.Structure):
-    """`rusage_info_v2` 的前若干字段，只为取 `ri_phys_footprint`（第 8 个 uint64）。
-
-    字段顺序取自 macOS 的 `<sys/resource.h>`；后面还有更多字段，但 proc_pid_rusage
-    按 flavor 决定写多少，声明到我们要的那个为止即可——多声明反而会在结构体变长时
-    读到越界的垃圾。
-    """
-
-    _fields_ = [("ri_uuid", ctypes.c_uint8 * 16)] + [
-        (name, ctypes.c_uint64) for name in (
-            "ri_user_time", "ri_system_time", "ri_pkg_idle_wkups", "ri_interrupt_wkups",
-            "ri_pageins", "ri_wired_size", "ri_resident_size", "ri_phys_footprint",
-            "ri_proc_start_abstime", "ri_proc_exit_abstime", "ri_child_user_time",
-            "ri_child_system_time", "ri_child_pkg_idle_wkups", "ri_child_interrupt_wkups",
-            "ri_child_pageins", "ri_child_elapsed_abstime", "ri_diskio_bytesread",
-            "ri_diskio_byteswritten",
-        )
-    ]
-
-
-_RUSAGE_INFO_V2 = 2
-
-try:
-    _libc = ctypes.CDLL("libc.dylib", use_errno=True)
-    _libc.proc_pid_rusage.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_void_p]
-    _libc.proc_pid_rusage.restype = ctypes.c_int
-except OSError:          # 非 macOS，或 libc 换了名字
-    _libc = None
-
-
-def read_resident_bytes(pid: int) -> int:
-    """这个进程此刻实际占住多少字节；读不到返回 0（R-budget-14）。
-
-    用 `proc_pid_rusage` 的 `phys_footprint`——活动监视器显示的就是它。三种读法在
-    本机各测过一次（2026-09-19），没有一个通吃，选它是因为它盖住的正是要管的那部分：
-
-    | 场景 | ps rss | phys_footprint | 整机 available 差额 |
-    |---|---|---|---|
-    | 匿名页 12 GiB | 100% | 100% | 73% |
-    | mmap 的模型分片 4.82 GiB | 100% | **0%** | 74% |
-    | mlx 统一内存 4 GiB | **1%** | 100% | 106% |
-
-    第三行是要害：mlx 走 Metal buffer，`ps rss` 完全看不见它——而模型权重与 KV cache
-    都在那里，正是预算要管的大头。第二行的 0% 不是缺陷：mmap 进来的**干净**文件页
-    操作系统随时可以丢弃回收，本来就不该算成「占住了」；footprint 排除它们是对的。
-    合起来说，phys_footprint 量的是「不杀这个进程就收不回来的内存」，这正是预算的口径。
-
-    （最初选的是 `ps rss`，理由是不想碰 ctypes。那个判断建立在只测了匿名页与 mmap
-    文件页的两组读数上，而这两格恰好都不含 mlx 的分配——补上第三格就翻了。）
-
-    读不到就返回 0——进程刚没、pid 复用、非 macOS，都归到「不知道」而不是猜一个数。
-    """
-    if _libc is None or pid <= 0:
-        return 0
-    info = _RUsageInfoV2()
-    if _libc.proc_pid_rusage(pid, _RUSAGE_INFO_V2, ctypes.byref(info)) != 0:
-        return 0
-    return int(info.ri_phys_footprint)
-
-
 class Arbiter:
     """Serialize heavy work, replacing an LLM holder before media work starts."""
 
@@ -115,7 +54,6 @@ class Arbiter:
         clock: Callable[[], float] = time.time,
         logger: logging.Logger | None = None,
         budget=None,
-        read_resident_bytes: "Callable[[int], int]" = read_resident_bytes,
     ):
         self.llm_port = llm_port
         self._memory = memory or MemoryReader()
@@ -128,8 +66,6 @@ class Arbiter:
         self._state_lock = threading.Lock()
         self._holders: dict[str, Holder] = {}     # token -> Holder
         self._workloads: dict[str, object] = {}    # token -> Workload (budget mode only)
-        self._read_resident_bytes = read_resident_bytes
-        self._holder_pids: dict[str, set[int]] = {}   # token -> 这件重活自己的进程
         self._subscribers: list[Callable[[dict], None]] = []
 
     @staticmethod
@@ -209,7 +145,6 @@ class Arbiter:
     def _decide(self, kind, params, key):
         """Snapshot current holders (briefly under `_state_lock`) then decide."""
         available_bytes = self._memory.snapshot().available_bytes
-        self._backfill_resident()
         with self._state_lock:
             holders = tuple(self._holders.values())
             resident = tuple(
@@ -218,61 +153,6 @@ class Arbiter:
         decision, workload, holder = self._decide_from(
             kind, params, key, holders, resident, available_bytes)
         return decision, workload, resident, available_bytes, holder
-
-    def note_pids(self, token: str, pids: "set[int]") -> None:
-        """告诉仲裁器这件重活自己的进程是哪些（R-budget-14）。
-
-        由持有者在 spawn 之后调用——acquire 发生在 spawn 之前，那时还没有 pid。
-        token 已经不在（持有者早已释放）就忽略：迟到的调用不该凭空造出一条记录。
-        """
-        with self._state_lock:
-            if token in self._workloads:
-                self._holder_pids[token] = set(pids)
-
-    def _backfill_resident(self) -> None:
-        """按持有者自己的进程读它实际驻留了多少（R-budget-14）。
-
-        取代原先的「整机 available_bytes 作差」。那个口径有两个解不掉的病，实测都量到了：
-
-        1. **只捕捉到一部分。** 只读 mmap 一个真实模型分片并逐页触碰：真占 4.82 GiB，
-           ps rss 读到 4.84，而 available_bytes 净降只有 2.46——51%。mlx 的权重正是这种
-           mmap 的文件页。（匿名页那格是 71%，也不全。）
-        2. **分不清是谁占的。** 多件同时加载时一次全局差额无法归属，旧实现只好用
-           「只有一件待回填时才记」的闸回避，代价是共存场景下谁都不会被回填——
-           而共存正是预算模式的主用例。
-
-        换成按 pid 读之后，那道闸和 4 GiB 噪声下限一起消失了：进程自己的 rss 不含
-        别人的噪声，也不需要靠量级去区分「这是噪声还是加载」。
-
-        **这里不再「只填一次」**。旧实现必须只填一次，因为整机差额一旦被噪声污染就
-        永远错；按 pid 读是幂等查询，KV 长起来时它跟着涨反而让未分配量随时准确。
-
-        上界仍然夹在 bytes_needed：一件重活不可能占得比它要的还多，超出的部分一定是
-        别的东西被算了进来；而 `plan()` 的 freed 直接吃这个值，不夹会让「让出能回收
-        多少」偏乐观。读不到（进程还没起、已经没了、ps 不在）记 0，退回保守。
-        """
-        with self._state_lock:
-            pending = {token: set(pids) for token, pids in self._holder_pids.items()
-                       if token in self._workloads}
-        if not pending:
-            return
-        measured = {}
-        for token, pids in pending.items():        # 锁外读：ps 是子进程调用，别占着锁
-            total = 0
-            for pid in pids:
-                try:
-                    total += self._read_resident_bytes(pid)
-                except OSError:
-                    total = 0                      # 读不到就整件记 0，不拿半份数当真
-                    break
-            measured[token] = total
-        with self._state_lock:
-            for token, total in measured.items():
-                workload = self._workloads.get(token)
-                if workload is None:
-                    continue
-                self._workloads[token] = replace(
-                    workload, bytes_resident=min(total, workload.bytes_needed))
 
     # ---- state mutation (holds _state_lock only) -----------------------
     def _grant(self, token: str, holder: Holder, workload, available_bytes: int) -> dict:
@@ -288,7 +168,6 @@ class Arbiter:
         with self._state_lock:
             self._holders = {} if holder is None else {holder.token: holder}
             self._workloads = {}
-            self._holder_pids = {}
             holders = tuple(self._holders.values())
         return self._state_for(holders)
 
@@ -310,15 +189,8 @@ class Arbiter:
         parameterless ownership question from the same arbiter state. See
         ``test_can_start_heavy_and_desk_state_agree_on_ownership_in_legacy_mode``.
 
-        The ``_backfill_resident`` call below stays regardless of branch: in
-        budget mode it is not read by ``can_start`` any more, but this is
-        still the 2-second desk_state poll that drives backfill for every
-        other reader of ``bytes_resident`` (``can_start_heavy`` with params,
-        ``release`` planning, ...). Dropping it here would silently stop
-        backfill from ever running.
-        """
+"""
         available_bytes = self._memory.snapshot().available_bytes
-        self._backfill_resident()
 
         def can_start(kind: str) -> dict:
             if self._budget is not None:
@@ -547,7 +419,6 @@ class Arbiter:
                 if found:
                     self._holders.pop(token, None)
                     self._workloads.pop(token, None)
-                    self._holder_pids.pop(token, None)
                 holders = tuple(self._holders.values())
             if not found:
                 return {"ok": False, "reason": self._reason(
