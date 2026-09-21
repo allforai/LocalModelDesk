@@ -602,3 +602,38 @@ def test_legacy_mode_still_accepts_a_parameterless_acquire():
     grant = arbiter.acquire_heavy("llm", "model-a")
 
     assert grant["ok"] is True
+
+
+def test_evicting_the_llm_leaves_a_concurrent_media_holder_intact():
+    """预算模式下的自动让出只该动让出集合里的那些（R-arbiter-05「最小让出」）。
+
+    `_replace_all` 是 legacy 的单槽语义：把 _holders / _workloads 整个清空。
+    预算模式下真的可能有两件重活共存，这时让出聊天模型会把并发的媒体作业一起
+    从台账上抹掉——**而那个作业的进程还在跑**。后果：它的 token 再也释放不掉
+    （release_heavy 返回 not_holder）、media_busy 变 false、它占的内存不再计入预算，
+    于是后续判定会放行过量的重活。
+    """
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=100_000_000_000))
+    budget = FakeBudget({
+        "llm": Workload("llm", "model-a", 60_000_000_000, "measured"),
+        # 视频要得少，让出它不够用（100 - 10 + 50 + 60 = 刚好塞满，plan 要求严格富余），
+        # 于是最小让出只剩「卸聊天模型」这一种——正是本条要测的那条路径。
+        "video": Workload("video", None, 10_000_000_000, "measured"),
+        "music": Workload("music", None, 50_000_000_000, "measured"),
+    })
+    arbiter = Arbiter(llm_port=43123, memory=memory, budget=budget,
+                      reaper=lambda port, **kw: SimpleNamespace(
+                          ok=True, port=port, killed_pids=[], error=None))
+    llm = arbiter.acquire_heavy("llm", "model-a", params={}, key="model-a")
+    video = arbiter.acquire_heavy("video", "job-a", params={}, key=None)
+    assert llm["ok"] and video["ok"], "前置：两件要先共存得起来"
+
+    # music 要 50G，当前 60+10=70 已占，可用 100 ⇒ 装不下；只有让出 llm（60）才够。
+    music = arbiter.acquire_heavy("music", "job-b", params={}, key=None)
+    assert music["ok"] is True
+
+    kinds = {h["kind"] for h in [arbiter.desk_state()["holder"]] if h}
+    all_kinds = {w.kind for w in arbiter._workloads.values()}
+    assert "video" in all_kinds, f"并发的视频作业被一起抹掉了，它的进程还在跑：{all_kinds}"
+    assert "llm" not in all_kinds, f"聊天模型本该被让出：{all_kinds}"
+    assert arbiter.release_heavy(video["token"])["ok"] is True, "视频作业的 token 释放不掉了"

@@ -171,6 +171,33 @@ class Arbiter:
             holders = tuple(self._holders.values())
         return self._state_for(holders)
 
+    def _begin_eviction(self, acquiring: Holder) -> dict:
+        """移除要被让出的那些持有者，把 `acquiring` 放上台；返回新状态与回滚材料。
+
+        legacy 模式整张台子换人（单槽语义，原样保留）；budget 模式只移除聊天持有者，
+        因为那里可能有别的重活正在共存，而它们的进程不归这次让出管。
+        """
+        with self._state_lock:
+            if self._budget is None:
+                undo = (dict(self._holders), dict(self._workloads))
+                self._holders, self._workloads = {acquiring.token: acquiring}, {}
+            else:
+                undo = (dict(self._holders), dict(self._workloads))
+                for token in [t for t, h in self._holders.items() if h.kind == "llm"]:
+                    self._holders.pop(token, None)
+                    self._workloads.pop(token, None)
+                self._holders[acquiring.token] = acquiring
+            holders = tuple(self._holders.values())
+        return {"state": self._state_for(holders), "undo": undo}
+
+    def _restore_eviction(self, undo) -> dict:
+        """让出失败时把台账放回让出之前的样子。"""
+        holders, workloads = undo
+        with self._state_lock:
+            self._holders, self._workloads = dict(holders), dict(workloads)
+            current = tuple(self._holders.values())
+        return self._state_for(current)
+
     def _state_for(self, holders: tuple[Holder, ...]) -> dict:
         """Build the public state dict for `holders`.
 
@@ -392,10 +419,17 @@ class Arbiter:
                 states.append(state)
                 result = {"ok": True, "token": token, "state": state}
             else:
-                # evict_then_grant — legacy mode only; budget mode's plan_acquire
-                # never returns this action (see state.py).
+                # evict_then_grant。两种模式都会走到这里：legacy 的转移表产生它，
+                # budget 模式在「最小让出恰好只需卸聊天模型」时也产生它
+                # （见 _should_evict_llm）。区别在于清掉谁——
+                #   legacy 是单槽语义，整张台子换人；
+                #   budget 下可能有两件重活共存，只该移除被让出的那一件。整个清空
+                #   会把并发的媒体作业也从台账上抹掉，而它的进程还在跑：token 再也
+                #   释放不掉、media_busy 变 false、它占的内存不再计入预算，
+                #   后续判定于是放行过量的重活。
                 acquiring = Holder(kind, label, token, self._clock(), PHASE_ACQUIRING, display)
-                states.append(self._replace_all(acquiring))
+                evicted = self._begin_eviction(acquiring)
+                states.append(evicted["state"])
                 reaped = self._reap(self.llm_port)
                 if reaped.ok:
                     state = self._grant(token, Holder(kind, label, token, self._clock(), PHASE_HELD, display),
@@ -403,7 +437,7 @@ class Arbiter:
                     states.append(state)
                     result = {"ok": True, "token": token, "state": state}
                 else:
-                    states.append(self._replace_all(holder))
+                    states.append(self._restore_eviction(evicted["undo"]))
                     result = {"ok": False, "reason": self._reason(
                         "evict_failed", reaped.error or "LLM eviction failed")}
 
