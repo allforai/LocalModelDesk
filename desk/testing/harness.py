@@ -10,6 +10,10 @@ from types import SimpleNamespace
 
 from desk.app import DeskApp, Response
 from desk.arbiter.core import Arbiter
+from desk.budget.budget import Budget
+from desk.budget.device import GpuCapacity
+from desk.budget.store import Measurements
+from desk.media.memory_estimate import estimate_bytes as media_estimate_bytes
 from desk.foundation import capabilities, config, firstrun, paths
 from desk.foundation.paths import normalize_user_path
 from desk.foundation.routes import config_payload
@@ -277,8 +281,24 @@ def launch_test_harness(
     media_script = media_script or MediaScript()
     download_control = download_control or DownloadControl()
     memory_script = memory_script or MemoryScript([DEFAULT_SNAPSHOT_A])
+    # 台面要复现生产装配：生产的 Arbiter 恒接 budget（runtime.py），不接就只能测到
+    # legacy 排他表，而预算模式的共存语义在浏览器层零覆盖。机器能力用预录的固定值
+    # ——它是静态机器属性，测试里不该去问真机。
+    budget_measurements = Measurements()
+    budget_measurements.record_gpu_capacity(
+        GpuCapacity("测试设备", 128 * 1024 ** 3, 100 * 1024 ** 3, 80 * 1024 ** 3), 0.0)
+    # 注意别和 launch_test_harness(budget=...) 那个参数撞名——那个是喂给
+    # /api/budget 路由的**响应载荷**（压缩 e2e 用它设一个很小的 compact_at），
+    # 这个是仲裁器真正用来判共存的**预算对象**，两者不是一回事。
+    heavy_budget = Budget(
+        measurements=budget_measurements,
+        memory_reader=FakeMemoryReader(memory_script),
+        media_estimate=media_estimate_bytes,
+        now=clock,
+    )
     arbiter = Arbiter(
-        0, memory=FakeMemoryReader(memory_script), reaper=fake_reaper, clock=clock
+        0, memory=FakeMemoryReader(memory_script), reaper=fake_reaper, clock=clock,
+        budget=heavy_budget,
     )
     resources = ResourcesService(
         resolve_paths=lambda: roots,

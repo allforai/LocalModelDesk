@@ -72,9 +72,21 @@ def seed_models(
     for key, state in states.items():
         if state == "missing":
             continue
-        root = models_root / by_key[key].relpath / "weights"
+        model_dir = models_root / by_key[key].relpath
+        root = model_dir / "weights"
         root.mkdir(parents=True, exist_ok=True)
         (root / "a.safetensors").write_bytes(b"x" * 600)
         if state == "present":
             (root / "b.safetensors").write_bytes(b"x" * 400)
+            # 真实模型目录都有 config.json，预算靠它算每 token 的 KV 开销。
+            # 台面不铺这个文件，budget 模式下 cost() 就只能产出 source=unavailable
+            # 的空壳，于是「一组取最弱来源」会让任何共存判定恒为拒绝——
+            # e2e 测的就不是生产语义了。
+            model_dir.joinpath("config.json").write_text(json.dumps({
+                "model_type": "llama",
+                "max_position_embeddings": 8192,
+                "num_hidden_layers": 32,
+                "num_key_value_heads": 8,
+                "head_dim": 128,
+            }), encoding="utf-8")
     return states
