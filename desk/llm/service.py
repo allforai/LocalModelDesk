@@ -521,8 +521,10 @@ class LlmService:
         if self._budget is not None:
             log_path = self._log_path(self._paths.resolve_paths())
             log_text = self._backend.log_tail(log_path, 200)
-            prompt_tokens = usage.get("prompt_tokens") if isinstance(usage, dict) else None
-            self._budget.record_turn(entry.key, log_text, prompt_tokens, entry.gb)
+            # 缓存里存的是 prompt + 生成的全部 token，所以分母用 total_tokens；
+            # 只用 prompt_tokens 会把每 token 开销算大（偏保守，但不必要）。
+            total_tokens = usage.get("total_tokens") if isinstance(usage, dict) else None
+            self._budget.record_turn(entry.key, log_text, total_tokens, entry.gb)
         yield done_event(usage, finish_reason)
 
     def wait_settled(self, timeout_s: float = 5.0) -> dict[str, Any]:

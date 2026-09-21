@@ -40,8 +40,8 @@ class FakeBudget:
         self.launch_args_calls.append((key, config, weights_gb))
         return list(self._launch_args_result)
 
-    def record_turn(self, key, log_text, prompt_tokens, weights_gb):
-        self.record_turn_calls.append((key, log_text, prompt_tokens, weights_gb))
+    def record_turn(self, key, log_text, tokens, weights_gb):
+        self.record_turn_calls.append((key, log_text, tokens, weights_gb))
 
 
 def test_load_passes_budget_launch_args_to_spawn(tmp_path):
@@ -77,12 +77,16 @@ def test_load_without_budget_spawns_with_no_extra_args(tmp_path):
 DONE_CHUNKS = [
     {"choices": [{"delta": {"content": "你"}}]},
     {"choices": [{"delta": {}, "finish_reason": "stop"}],
-     "usage": {"prompt_tokens": 40_000, "total_tokens": 40_003}},
+     "usage": {"prompt_tokens": 40_003, "total_tokens": 40_003}},
 ]
 
 
-def test_completed_turn_records_prompt_tokens_from_the_done_event(tmp_path):
-    """一轮流式结束后 record_turn 被调用一次，prompt_tokens 取自 done 事件。"""
+def test_completed_turn_records_total_tokens_from_the_done_event(tmp_path):
+    """一轮流式结束后 record_turn 被调用一次，分母取自 done 事件的 total_tokens。
+
+    用 total 而不是 prompt：mlx-lm 的缓存里存的是 prompt 加上生成的全部 token，
+    只用 prompt_tokens 会把每 token 开销算大（偏保守，但不必要）。
+    """
     budget = FakeBudget()
     testbed = make_loaded(
         tmp_path, budget=budget,
@@ -94,7 +98,7 @@ def test_completed_turn_records_prompt_tokens_from_the_done_event(tmp_path):
     assert events[-1]["type"] == "done"
     (key, log_text, prompt_tokens, weights_gb), = budget.record_turn_calls
     assert key == "glm"
-    assert prompt_tokens == 40_000
+    assert prompt_tokens == 40_003
     assert log_text == "Prompt Cache: 1 sequences, 12.40 GB"
     assert weights_gb == testbed.entries[0].gb
 

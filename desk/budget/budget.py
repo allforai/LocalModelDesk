@@ -140,6 +140,8 @@ class Budget:
         self._measurements_path = measurements_path
         # 问机器能力用的解释器（要装了 mlx 的那个）。给 None 就只能靠档案里已有的读数。
         self._probe_python = probe_python
+        # 上一轮的 (key, tokens, weights)——日志行落后一轮，见 record_turn。
+        self._pending_turn = None
 
     # ---- 分母：机器自报的重活能力 ------------------------------------
     def capacity_bytes(self) -> int | None:
@@ -218,12 +220,30 @@ class Budget:
                 "--prompt-cache-size", str(CACHE_SLOTS)]
 
     # ---- 自校准 ------------------------------------------------------
-    def record_turn(self, key, log_text, prompt_tokens, weights_gb) -> None:
-        """一轮答完，把这台机器上的真值记下来（R-budget-04）。"""
-        measured = measured_bytes_per_token(parse_cache_line(log_text), prompt_tokens)
+    def record_turn(self, key, log_text, tokens, weights_gb) -> None:
+        """一轮答完，把这台机器上的真值记下来（R-budget-04）。
+
+        **日志行落后一轮，这一点是真机上量出来的。** mlx-lm 的 `_log_cache_stats()`
+        在 `fetch_nearest_cache` **之前**调用（server.py:752 与 :964），所以一轮结束时
+        读到的那行，描述的是**上一轮**结束后的缓存状态。拿它配本轮的 token 数会错位
+        一轮；而第一轮时缓存还空（`0 sequences, 0.00 GB`），于是什么都记不上，
+        预算永远停在 predicted——这正是真机上观察到的现象。
+
+        所以配对是「第 N+1 轮开头记的那行」÷「第 N 轮的 token 数」：本轮先用日志
+        结清上一轮，再把自己挂起等下一轮。
+        """
+        cache_bytes = parse_cache_line(log_text)
+        pending = self._pending_turn
+        self._pending_turn = (key, tokens, weights_gb)
+        if pending is None or not cache_bytes:
+            return
+        prev_key, prev_tokens, prev_weights = pending
+        if prev_key != key:
+            return          # 中间换过模型，这份缓存不是它的
+        measured = measured_bytes_per_token(cache_bytes, prev_tokens)
         if not measured:
             return
-        self._m.record_model(key, measured, weights_gb, self._now())
+        self._m.record_model(prev_key, measured, prev_weights, self._now())
         self._persist()
 
     def _persist(self) -> None:

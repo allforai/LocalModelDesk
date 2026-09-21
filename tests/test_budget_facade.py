@@ -69,7 +69,9 @@ def test_unknown_per_token_cost_falls_back_to_window_and_says_so():
 def test_recorded_turn_switches_the_source_to_measured():
     m = Measurements()
     b = make(measurements=m)
-    b.record_turn("llama", "Prompt Cache: 1 sequences, 12.40 GB", 40_000, weights_gb=70.2)
+    # 日志行落后一轮（mlx-lm 在处理开始前打它），所以要两轮才结清第一轮。
+    b.record_turn("llama", "Prompt Cache: 0 sequences, 0.00 GB", 40_000, weights_gb=70.2)
+    b.record_turn("llama", "Prompt Cache: 1 sequences, 12.40 GB", 5_000, weights_gb=70.2)
     assert m.model_bytes_per_token("llama", 70.2) == 310_000
     assert make(measurements=m).for_chat("llama", LLAMA, weights_gb=70.2).source == "measured"
 
@@ -119,7 +121,8 @@ def test_recorded_turn_survives_a_restart(tmp_path):
     first = Budget(measurements=m, memory_reader=FakeMemory(116),
                    media_estimate=lambda kind, params: 27 * GIB,
                    now=lambda: 1_757_000_000.0, measurements_path=path)
-    first.record_turn("llama", "Prompt Cache: 1 sequences, 12.40 GB", 40_000, weights_gb=70.2)
+    first.record_turn("llama", "Prompt Cache: 0 sequences, 0.00 GB", 40_000, weights_gb=70.2)
+    first.record_turn("llama", "Prompt Cache: 1 sequences, 12.40 GB", 5_000, weights_gb=70.2)
 
     reloaded = Budget(measurements=Measurements.load(path), memory_reader=FakeMemory(116),
                       media_estimate=lambda kind, params: 27 * GIB,
@@ -191,3 +194,37 @@ def test_capacity_is_probed_once_and_remembered(tmp_path):
     finally:
         mod.probe_gpu_capacity = original
     assert len(calls) == 1, f"机器能力被问了 {len(calls)} 次，它是静态属性，应该只问一次"
+
+
+def test_calibration_pairs_the_log_line_with_the_turn_it_actually_describes():
+    """mlx-lm 在**处理开始前**打 Prompt Cache 行，它反映的是上一轮结束后的缓存。
+
+    真机上抓到的：拿「本轮结束时读到的行」配「本轮的 token 数」，配错了一轮；
+    第一轮时缓存还空（0.00 GB），于是什么都记不上，预算永远停在 predicted。
+    正确的配对是「第 N+1 轮开头记的那行」÷「第 N 轮的 token 数」。
+    """
+    m = Measurements()
+    from desk.budget.device import GpuCapacity
+    m.record_gpu_capacity(GpuCapacity("测试设备", 128 * GIB, 107 * GIB, 80 * GIB), 0.0)
+    b = Budget(measurements=m, memory_reader=FakeMemory(116),
+               media_estimate=lambda kind, params: 27 * GIB, now=lambda: 0.0)
+
+    # 第一轮：此时日志里的行是上一轮（不存在）留下的空缓存 —— 什么都不该记。
+    b.record_turn("llama", "Prompt Cache: 0 sequences, 0.00 GB", 10_000, weights_gb=70.2)
+    assert m.model_bytes_per_token("llama", 70.2) is None
+
+    # 第二轮：现在日志里那行描述的是第一轮结束后的缓存，配第一轮的 10000 token。
+    b.record_turn("llama", "Prompt Cache: 1 sequences, 1.00 GB", 20_000, weights_gb=70.2)
+    assert m.model_bytes_per_token("llama", 70.2) == 1_000_000_000 // 10_000
+
+
+def test_calibration_ignores_an_empty_cache_reading():
+    """缓存被清过（换模型、trim）时那行是 0.00 GB——记 0 会把额度算成无穷大。"""
+    m = Measurements()
+    from desk.budget.device import GpuCapacity
+    m.record_gpu_capacity(GpuCapacity("测试设备", 128 * GIB, 107 * GIB, 80 * GIB), 0.0)
+    b = Budget(measurements=m, memory_reader=FakeMemory(116),
+               media_estimate=lambda kind, params: 27 * GIB, now=lambda: 0.0)
+    b.record_turn("llama", "Prompt Cache: 1 sequences, 1.00 GB", 10_000, weights_gb=70.2)
+    b.record_turn("llama", "Prompt Cache: 0 sequences, 0.00 GB", 20_000, weights_gb=70.2)
+    assert m.model_bytes_per_token("llama", 70.2) is None
