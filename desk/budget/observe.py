@@ -11,7 +11,11 @@ from __future__ import annotations
 
 import re
 
-_CACHE_LINE = re.compile(r"(?<!- )Prompt Cache:\s*\d+\s+sequences,\s*([\d.]+)\s*GB")
+# 真实日志每行都有 "… - INFO - " 前缀，所以**不能**用 (?<!- ) 去挡分类型明细行——
+# 那个负向后顾会把总数行自己挡掉，自校准于是从来没工作过（真机上抓到的）。
+# 明细行 mlx-lm 打成 "- QuantizedKVCache: …"，不含 "Prompt Cache:" 字面量，
+# 本来就匹配不上，那道守卫从一开始就是多余的。
+_CACHE_LINE = re.compile(r"Prompt Cache:\s*\d+\s+sequences,\s*([\d.]+)\s*GB")
 _GB = 1_000_000_000
 
 
