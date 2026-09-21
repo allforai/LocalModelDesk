@@ -142,9 +142,24 @@ class Arbiter:
                     "memory_warning": None, "release": []}
         return {"ok": True, "reason": None, "memory_warning": None, "release": []}
 
+    def _capacity_bytes(self) -> int:
+        """判共存用的分母：这台机器能给重活多少（R-budget-16）。
+
+        **整个系统只许有一个分母。** 预算给每件重活定额度时用的是机器自报的静态能力，
+        这里判「装不装得下」必须用同一个数——否则模型会拿到一个按 107.5 GiB 尺寸算出的
+        KV 额度，再被此刻只剩 61 GiB 的现实拒掉，结果是任何模型都加载不了。
+        （真机上撞到过；当时单测全绿，因为夹具喂的两个数恰好一致。）
+
+        问不出机器能力时退回可用内存：保守，且不会让台面整个不可用。
+        """
+        capacity = getattr(self._budget, "capacity_bytes", lambda: None)()
+        if capacity:
+            return int(capacity)
+        return self._memory.snapshot().available_bytes
+
     def _decide(self, kind, params, key):
         """Snapshot current holders (briefly under `_state_lock`) then decide."""
-        available_bytes = self._memory.snapshot().available_bytes
+        available_bytes = self._capacity_bytes()
         with self._state_lock:
             holders = tuple(self._holders.values())
             resident = tuple(
@@ -217,7 +232,7 @@ class Arbiter:
         ``test_can_start_heavy_and_desk_state_agree_on_ownership_in_legacy_mode``.
 
 """
-        available_bytes = self._memory.snapshot().available_bytes
+        available_bytes = self._capacity_bytes()
 
         def can_start(kind: str) -> dict:
             if self._budget is not None:

@@ -3,7 +3,36 @@
 ## 范围与证据限制
 
 - **repo/cwd**：`/Users/aa/LocalModelDesk`，分支 `main`。
-- **版本漂移（重要）**：调查起点 `ae6c17a7e591eae41141e6f7f021ae92f03ceede`（工作区有 6 个未提交文件）。调查期间 `71ba54a feat(chat): 压缩的三块纯逻辑` 与 `250fb63 feat(chat): 在两轮之间压缩，失败时一个字都不写` 落地，工作区变干净，**报告以 `250fb63c81dd60996de92618316f9769f99bb68a` 为准**。漂移影响一条建议：`maybeCompact` 已由 `desk/static/js/panes/chat.js:496` 接线（S9 的"尚未通电"前提已失效，建议正文已按新状态写）。
+- **版本漂移（重要）**：调查起点 `ae6c17a7e591eae41141e6f7f021ae92f03ceede`（工作区有 6 个未提交文件）。调查期间 `71ba54a feat(chat): 压缩的三块纯逻辑` 与 `250fb63 feat(chat): 在两轮之间压缩，失败时一个字都不写` 落地，工作区变干净，**报告正文以 `250fb63c81dd60996de92618316f9769f99bb68a` 为准**。漂移影响一条建议：`maybeCompact` 已由 `desk/static/js/panes/chat.js:496` 接线（S9 的「尚未通电」前提已失效，建议正文已按新状态写）。
+- **复核（re-anchor，2026-09-18 晚）**：本报告被收进 git（`53f5996`）之后，仓库又前进了 21 个提交，HEAD 现为 `5408186`。其中一批**正是在改这份报告的发现**（预算分母换成机器自报的静态能力、删掉驻留量对账 568 行、无参查询只回答归属、e2e 台面接真预算）。已逐条重读受影响位置，结果见下表。**下面各条建议的「现状与证据」保留 250fb63 时点的原文，效力以本表为准。**
+
+## 复核状态（@5408186）
+
+| 条目 | 状态 | 依据（@5408186） |
+|---|---|---|
+| S1 | **已修** | `53f5996`：`desk/llm/service.py` 只剩 `:43` 一份带 `isinstance` 守卫的定义 |
+| S2 | **部分**（临时名那半已修） | `desk/library/sessions.py:100` 已改 `suffix=".part"` 并有防御注释 `:29-32`；helper 未抽，`sessions.py` 与 `desk/library/__init__.py:57` 仍无 fsync |
+| S3 | 仍有效 | `desk/library/__init__.py:22-45` 八个转发原样 |
+| S4 | 仍有效 | `desk/gateway/openai_dialect.py:96`、`desk/app.py:126`、`desk/testing/harness.py:353` |
+| S5 | 仍有效 | `desk/library/http.py:133-144` 仍产出两种 shape |
+| S6 | 仍有效 | `desk/static/js/store.js` 在；`tabFromHash` 仍只有测试引用 |
+| S7 | 仍有效 | `desk/static/js/pure/desk_state.js:39-44,:58`；`desk/static/js/widgets/statusbar.js:8,:20-24` |
+| S8 | 仍有效 | `desk/static/js/panes/video.js:91`、`music.js:23` |
+| S9 | 仍有效 | `desk/static/js/pure/compaction.js:65`，`:89` 的 `created_at` 全库仍无消费者（新增的 `summaryLabel` 从 pure 导出不影响本条） |
+| S10 | 仍有效 | `desk/resources/downloader.py:192-197` 仍把所有 `.incomplete` 计入 `stale_bytes`（`:226` 的终态已复用 `verify_tree`，属另一条路径） |
+| S11 | **部分关闭**（第②步已完成） | `desk/testing/harness.py:293-302` 已构造 `Budget` 并传给 `Arbiter`（`5408186`），集成/e2e 不再走 legacy；`_legacy_decision`/`_replace_all` 仍在（`core.py:85,166,181`），剩下的是「删不删 legacy」 |
+| S12 | 仍有效（本建议仍是「不做」） | `desk/llm/backend.py` 手写 `http.client` 未动 |
+| S13 | **半修** | `desk/arbiter/core.py:8-16` 已改成与 `runtime.py` 一致、并写明 legacy 只剩测试台面可达；`desk/media/service.py:46-51` 仍是旧的「the production default today … desk/runtime.py has not been updated」错误陈述 |
+| S14 | 四项全未做 | `scripts/build-app.sh:34` `MIN_OS`、`python3.13` ×8（build-app）/×2（verify-app）、`scripts/install-app.sh:45` bundle id、`build-app.sh:49` 的 rsync 仍无 `--exclude 'testing'` |
+| S15 | 仍有效 | `desk/gateway/errors.py:5-6` 两个常量原样 |
+| S16 | 仍有效 | `tests/media_fakes.py:75`、`tests/llm/llm_fakes.py:193`；`wait_until`/`_wait_for` 三处仍在 |
+| F1 | **已修** | R-budget-13（`docs/superpowers/specs/2026-09-17-budget-spec.md:95-102`）+ `139e21f`：无参 `can_start_heavy(kind)` 只回答归属，不做预算算术 |
+| F2 | **已修** | 同上 + `c635e6b`：`_state_for` 的 `can_start` 按 `self._budget` 分流 |
+| F3 | 仍有效，且已是**明确的 spec 冲突** | `budget-spec.md:150`「R-arbiter-04 改：拒绝条件由『媒体在跑』变为『预算装不下』」，但 `desk/llm/service.py:421` 与 `desk/gateway/guard.py:19` 仍无条件按 `media_busy` 拒绝 |
+| F4 | **已随 F2 一并修** | 无参查询不再走预算算术，网关 media 忙时的 code 不再漂移成 `insufficient_budget` |
+| F5 | **已修** | `53f5996`：`suffix=".part"` + `list()` 的防御性跳过 + `tests/test_library_sessions.py` |
+| F6 | **已修** | `53f5996`（提交信息逐字写明 loading 卡死与 token 不释放） |
+| F7 | **已修** | R-budget-16 + `6170f3d`：分母换成机器自报的静态能力，「声明」与「分母」同量纲，驻留量对账连同其 568 行实现与测试整体删除 |
 - **调查时间**：2026-09-18（JST）。
 - **需求来源**（引用时区分「明确承诺 / 代码现状 / 推断」）：
   - `README.md`「必须能做到」清单（本机对话、文生视频、文生歌曲、同一时刻只干一件重活、模型齐不齐一眼能看出来、成品不丢能再做一版、安装与卸载）——明确承诺。
@@ -306,10 +335,12 @@
 
 待用户选择；接受建议不代表授权实施。以下每项可选 A / B / C（C 一律为「暂缓」）。互斥项已合并为同一题。
 
+**@5408186 复核后：S1 已修、F1–F7 里 5 条已修，不必再选这两类；S2 只剩「抽 helper + 补 fsync」那半；S11 的第②步（迁 harness）已由 `5408186` 完成，剩下的只是第③步（删不删 legacy）。**
+
 | 编号 | 建议 | A（推荐项） | B | C |
 |---|---|---|---|---|
-| S1 | 删重复 `_read_model_config` | 删 `:65-70`、保 `:43-54` + 补回归测试 | 只删不补测试 | 暂缓 |
-| S2 | 原子写收敛 | 新增 helper、统一无 `.json` 临时名、全部 fsync | 只统一命名与复用，sessions/legacy 保持不 fsync | 暂缓 |
+| S1 | 删重复 `_read_model_config` | **已修（`53f5996`），无需选择** | — | — |
+| S2 | 原子写收敛 | 新增 helper、全部 fsync（临时名那半已由 `53f5996` 改成 `.part`） | 只抽 helper，sessions/legacy 保持不 fsync | 暂缓 |
 | S3 | 删 `LibraryService` 8 个转发 | 全部直穿 | 反向补齐 `reveal` 包装 | 暂缓 |
 | S4 | SSE 帧合并（3 处） | 抽公共函数，Anthropic 独立 | 只合并 `app.py` 与 harness | 暂缓 |
 | S5 | 错误信封统一 | 共同基类 + 前端同步收紧（**条件：先核对前端消费方**） | 只把 library 扁平形态改成对象 | 暂缓 |
@@ -318,7 +349,7 @@
 | S8 | video/music 重试去重 | 抽共享函数 + 统一 `confirm(options)` 签名 | 只去重不改签名 | 暂缓 |
 | S9 | `maybeCompact` 分层 | 移到 `panes/`，`created_at` 删或改为传参 | 只删 `created_at`，位置不动 | 暂缓 |
 | S10 | `_sample` 复用 `verify_tree` | 采用 fresh/stale 拆分（口径与 status 对齐，**进度百分比可能变**） | 只抽「遍历 manifest 算 done」内部函数，stale 口径不变 | 暂缓 |
-| S11 | 收敛两套准入 | 先修 F1/F2 → 迁 harness 到 budget → 删 legacy | 保留 legacy，只订正注释（S13） | 暂缓 |
+| S11 | 收敛两套准入 | 删 legacy（F1/F2 已修、harness 已迁 budget，只剩这一步） | 保留 legacy，只订正注释（S13） | 暂缓 |
 | S12 | httpx 重写 | **不做**（收益被高估） | 只替换非流式两个方法 | 全量重写 |
 | S13 | 订正过期 docstring | 改全部三处（含 `core.py:22-25`） | 只改被 runtime 反证的两处 | 暂缓 |
 | S14 | 构建/打包 4 小项 | a+b+c+d 全做 | 只做 a+b+c（不动 `desk/testing` 分发，尊重 A1） | 暂缓 |

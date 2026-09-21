@@ -637,3 +637,38 @@ def test_evicting_the_llm_leaves_a_concurrent_media_holder_intact():
     assert "video" in all_kinds, f"并发的视频作业被一起抹掉了，它的进程还在跑：{all_kinds}"
     assert "llm" not in all_kinds, f"聊天模型本该被让出：{all_kinds}"
     assert arbiter.release_heavy(video["token"])["ok"] is True, "视频作业的 token 释放不掉了"
+
+
+def test_budget_mode_judges_against_the_machine_capacity_not_what_is_free_now():
+    """整个系统只许有一个分母（R-budget-16）。
+
+    真机上撞到的：for_chat 按静态能力算额度（107.5 GiB），而仲裁器的 fits 仍拿
+    此刻可用内存（61 GiB）去判——于是模型拿到一个按 107.5 GiB 尺寸算出的 KV 额度，
+    再被 61 GiB 的现实拒掉，**任何模型都加载不了**。单测当时全绿，因为夹具喂的
+    两个数恰好一致；真机上它们差了 46 GiB。
+    """
+    class Cap:
+        def capacity_bytes(self): return 100_000_000_000
+        def cost(self, kind, *, key=None, params=None, config=None, weights_gb=None):
+            return Workload(kind, key, 80_000_000_000, "predicted")
+
+    # 此刻可用只有 40G，但这台机器的能力是 100G —— 该按 100G 判。
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=40_000_000_000))
+    arbiter = Arbiter(llm_port=43123, memory=memory, budget=Cap())
+
+    answer = arbiter.can_start_heavy("llm", params={}, key="model-a")
+
+    assert answer["ok"] is True, f"拿此刻可用内存当分母了：{answer}"
+
+
+def test_budget_mode_without_a_capacity_falls_back_to_available_memory():
+    """问不出机器能力时退回可用内存——保守，且不会让台面整个不可用。"""
+    class NoCap:
+        def capacity_bytes(self): return None
+        def cost(self, kind, *, key=None, params=None, config=None, weights_gb=None):
+            return Workload(kind, key, 80_000_000_000, "predicted")
+
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=40_000_000_000))
+    arbiter = Arbiter(llm_port=43123, memory=memory, budget=NoCap())
+
+    assert arbiter.can_start_heavy("llm", params={}, key="model-a")["ok"] is False
