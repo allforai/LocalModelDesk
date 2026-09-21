@@ -59,6 +59,20 @@ class Measurements:
             "measured_at": now,
         }
 
+    def gpu_capacity(self) -> dict | None:
+        """这台机器自报的重活能力（R-budget-16）。静态属性，量一次就够。"""
+        entry = self._data.get("gpu")
+        return entry if isinstance(entry, dict) and entry.get("working_set_bytes") else None
+
+    def record_gpu_capacity(self, capacity, now: float) -> None:
+        self._data["gpu"] = {
+            "device_name": capacity.device_name,
+            "memory_bytes": int(capacity.memory_bytes),
+            "working_set_bytes": int(capacity.working_set_bytes),
+            "max_buffer_bytes": int(capacity.max_buffer_bytes),
+            "measured_at": now,
+        }
+
     def media_peak(self, kind: str) -> int | None:
         return (self._data.get("media", {}).get(kind) or {}).get("peak_bytes")
 

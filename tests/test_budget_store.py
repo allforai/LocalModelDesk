@@ -99,3 +99,22 @@ def test_save_leaves_the_original_file_untouched_if_the_write_fails(tmp_path, mo
 
     assert path.read_text(encoding="utf-8") == original
     assert list(tmp_path.glob(".tmp-*")) == []
+
+
+def test_gpu_capacity_round_trips(tmp_path):
+    """机器能力是静态属性，量一次记下来（R-budget-16）。"""
+    from desk.budget.device import GpuCapacity
+    path = tmp_path / "m.json"
+    m = Measurements.load(path)
+    assert m.gpu_capacity() is None
+    m.record_gpu_capacity(GpuCapacity("Apple M5 Max", 137438953472, 115418661683, 86570401792), T0)
+    m.save(path)
+    got = Measurements.load(path).gpu_capacity()
+    assert got["working_set_bytes"] == 115418661683
+    assert got["device_name"] == "Apple M5 Max"
+
+
+def test_a_capacity_without_a_working_set_is_not_usable(tmp_path):
+    """缺了分母就不是能用的读数——上层据此退回保守，而不是拿别的字段顶替。"""
+    m = Measurements({"gpu": {"device_name": "x", "memory_bytes": 1, "working_set_bytes": 0}})
+    assert m.gpu_capacity() is None
