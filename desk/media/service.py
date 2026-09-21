@@ -34,10 +34,7 @@ def _positive_int(name: str, value: Any) -> None:
 class MediaService:
     def __init__(self, *, resolve_paths, probe_capabilities, arbiter, list_catalog,
                  append_history, executor, clock: Callable[[], float] = time.time,
-                 term_grace_s: float = 5.0, log_limit: int = DEFAULT_LOG_LIMIT,
-                 measurements=None, measurements_path: Path | None = None,
-                 available_bytes: Callable[[], int] | None = None,
-                 mem_sample_interval_s: float = 1.0):
+                 term_grace_s: float = 5.0, log_limit: int = DEFAULT_LOG_LIMIT):
         """`measurements`/`measurements_path`/`available_bytes` are Task 7's media
         calibration seam (R-budget-06): optional, off by default. When all three
         are wired, a job's peak resident bytes (baseline available_bytes right
@@ -50,8 +47,6 @@ class MediaService:
         self._resolve_paths, self._probe_capabilities, self._arbiter = resolve_paths, probe_capabilities, arbiter
         self._list_catalog, self._append_history, self._executor = list_catalog, append_history, executor
         self._clock, self._term_grace_s, self._log_limit = clock, term_grace_s, log_limit
-        self._measurements, self._measurements_path = measurements, measurements_path
-        self._available_bytes, self._mem_sample_interval_s = available_bytes, mem_sample_interval_s
         self._lock = threading.RLock()
         self._state: dict[str, Any] = {"job_id": 0, "status": "idle", "kind": None, "params": None,
             "output": None, "error": None, "started_at": None, "finished_at": None}
@@ -101,38 +96,18 @@ class MediaService:
         return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration}, force=force)
 
     def _estimate(self, kind: str, params: dict) -> tuple[int, str]:
-        """(bytes, source) — this machine's measured peak for `kind` if we have
-        calibrated one (Task 7 Step 7), else the parameter-based estimate
-        (R-budget-06: the per-job formula stays; only its constants get a
-        machine-local correction once a real run has been observed)."""
+        """(bytes, source) —— 按作业参数估算的峰值。
+
+        作业峰值是**作业本身的属性**（模型 + 分辨率 × 帧数），不是机器的属性：
+        同样的参数在任何机器上要的内存都一样。所以这里只有按参数算的一条路。
+
+        曾经还有一条「用运行时 available_bytes 的基线减最低点来标定」的路，已删除：
+        后来量到 available_bytes 对常驻内存只捕捉 51–73%，那样记下的峰值系统性偏低，
+        而 measured 优先于 predicted —— 预算会以为视频只要 14 GiB（实际 27），
+        放行装不下的组合。偏低的方向正是会 OOM 的那一侧。
+        """
         from .memory_estimate import estimate_bytes
-        peak = self._measurements.media_peak(kind) if self._measurements else None
-        if peak:
-            return peak, "measured"
         return estimate_bytes(kind, params), "predicted"
-
-    def _sample_available(self) -> int | None:
-        if self._available_bytes is None:
-            return None
-        try:
-            return int(self._available_bytes())
-        except Exception:
-            log.exception("media memory sampling failed")
-            return None
-
-    def _record_media_peak(self, kind: str, baseline: int | None, trough: int | None) -> None:
-        """基线 − 运行中最低点 即本机实测峰值（R-budget-06，Task 7 Step 7）。"""
-        if self._measurements is None or baseline is None or trough is None:
-            return
-        peak = baseline - trough
-        if peak <= 0:
-            return   # a bad/noisy sample is worse than none; never record a non-positive peak
-        self._measurements.record_media(kind, peak, self._clock())
-        if self._measurements_path is not None:
-            try:
-                self._measurements.save(self._measurements_path)
-            except OSError:
-                log.exception("failed to persist media calibration")
 
     def _start(self, kind: str, params: dict, *, force: bool = False) -> dict:
         with self._lock:
@@ -201,31 +176,12 @@ class MediaService:
             return self.job_status()
 
     def _worker(self, handle, permit: str, output: Path, kind: str) -> None:
-        baseline = self._sample_available()
-        trough = [baseline]   # boxed: mutated from the sampler thread below
-        stop_sampling = threading.Event()
-        sampler = None
-        if self._available_bytes is not None:
-            def sample_loop() -> None:
-                while not stop_sampling.wait(self._mem_sample_interval_s):
-                    value = self._sample_available()
-                    if value is not None and (trough[0] is None or value < trough[0]):
-                        trough[0] = value
-            sampler = threading.Thread(target=sample_loop, daemon=True)
-            sampler.start()
         try:
             try:
                 for line in handle.iter_output(): self._append_log(line)
                 code, failure = handle.wait(), None
             except Exception as exc:
                 code, failure = None, str(exc)
-            finally:
-                stop_sampling.set()
-                if sampler is not None:
-                    sampler.join(timeout=self._term_grace_s)
-            final = self._sample_available()
-            if final is not None and (trough[0] is None or final < trough[0]):
-                trough[0] = final
             with self._lock:
                 if self._cancel_requested: status, error = "cancelled", None
                 elif failure is not None: status, error = "error", {"code": "worker_failed", "message": failure}
@@ -234,7 +190,6 @@ class MediaService:
                 else: status, error = "error", {"code": "exit_nonzero", "message": f"exit {code}", "log_tail": self._log_tail(5)}
                 self._state.update(status=status, output=output.name if status == "done" else None, error=error, finished_at=self._clock())
                 self._handle = None
-            self._record_media_peak(kind, baseline, trough[0])
         finally:
             self._finalize(permit)
 

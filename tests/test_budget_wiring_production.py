@@ -87,19 +87,21 @@ def test_production_runtime_wires_budget_into_the_arbiter(tmp_path, monkeypatch)
         runtime.app._server.server_close()
 
 
-def test_production_runtime_wires_measurements_into_media(tmp_path, monkeypatch):
-    """媒体标定采样：没有这三个参数，R-budget-06 的自校准永远不会发生。"""
+def test_production_runtime_does_not_calibrate_media_from_the_memory_delta(tmp_path, monkeypatch):
+    """媒体峰值按作业参数估算，不接运行时的整机差额（那个读数系统性偏低，方向朝 OOM）。
+
+    这条原先断言的恰好相反——要求把 measurements / available_bytes 接进 MediaService。
+    后来量到 available_bytes 对常驻内存只捕捉 51–73%，用它标定会让预算偏乐观，
+    整套标定连同这条断言一起翻过来。
+    """
     _isolated_data_root(tmp_path, monkeypatch)
     from desk.runtime import build_runtime
     runtime = build_runtime(port=0)
     try:
         media = runtime.media
-        assert getattr(media, "_measurements", None) is not None
-        assert getattr(media, "_measurements_path", None) is not None
-        assert getattr(media, "_available_bytes", None) is not None
+        for gone in ("_measurements", "_available_bytes"):
+            assert not hasattr(media, gone), f"MediaService 又接上了 {gone}"
     finally:
-        # 没 start 过的 runtime 不能调 shutdown()（serve 循环没跑，标志位没人看），
-        # 照 tests/test_production_runtime.py 的既有写法释放套接字。
         runtime.app._server.server_close()
 
 

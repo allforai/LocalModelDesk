@@ -193,9 +193,6 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
         list_catalog=resources.list_catalog,
         append_history=library.append_history,
         executor=SubprocessExecutor(),
-        measurements=measurements,
-        measurements_path=measurements_path,
-        available_bytes=lambda: memory_reader.snapshot().available_bytes,
     )
     gateway = GatewayService(DeskGatewayBackend(llm, arbiter), _gateway_config_reader())
     gateway.on_rollback = lambda cfg: config.update_config(roots, gateway=cfg)
