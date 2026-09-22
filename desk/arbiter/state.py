@@ -74,3 +74,22 @@ def plan_acquire(holders, kind: str, verdict) -> Decision:
         f"需要 {verdict.needed_bytes} 字节，可用 {verdict.available_bytes} 字节"
         f"（依据：{verdict.source}）",
     )
+
+
+def still_holds(desk_state, kind: str, label: str | None) -> bool:
+    """台面此刻是否还认这件重活由 `label` 持有。
+
+    消费者问的从来是这个，而不是「有没有别的重活在跑」：预算模式下媒体作业可以与
+    聊天共存，`holder` 只是最后授予的那一件，只看它就会把「别人也拿到了」误读成
+    「我被驱逐了」。共存的安全性在授予那一刻已经算过了——`budget.cost("llm")` 报的
+    `bytes_needed` 就是权重加满窗 KV，媒体能开正说明两者一起装得下。
+    """
+    if not isinstance(desk_state, dict):
+        return False
+    holders = desk_state.get("holders")
+    if not isinstance(holders, list):
+        holders = [desk_state.get("holder")]
+    return any(
+        isinstance(h, dict) and h.get("kind") == kind and h.get("label") == label
+        for h in holders
+    )

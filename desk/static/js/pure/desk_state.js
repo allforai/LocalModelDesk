@@ -57,3 +57,16 @@ export function renderState(deskState, snapshot, download = null, names = {}) {
   const tone = deskState?.media_busy || downloading ? "busy" : holder ? "ok" : ok ? "ok" : "error";
   return { memText, holderText, mediaText, nextText, nextOk: ok, nextIcon: ok ? "check" : "x", tone };
 }
+
+// 提示词助手用驻留的聊天模型改写提示词。能不能用只取决于「台面还认不认这个模型」，
+// 与有没有媒体作业在跑无关：预算模式下两者可以共存，而共存的安全性在授予那一刻
+// 就算过了（聊天的满窗 KV 已经报进判定）。返回空串表示可用。
+export function assistReason(llm, deskState) {
+  const state = llm?.state;
+  if (state?.status !== "loaded") return "先在「聊天」页加载一个模型";
+  const holders = Array.isArray(deskState?.holders)
+    ? deskState.holders : [deskState?.holder];
+  const held = holders.some(
+    (h) => h && h.kind === "llm" && h.label === state.model_key);
+  return held ? "" : "模型已被台面收回，请重新加载";
+}

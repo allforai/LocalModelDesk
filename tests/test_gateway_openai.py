@@ -202,7 +202,7 @@ def test_http_chat_completions_full_paths_and_never_loads():
         }, "finish_reason": "stop"}],
         "usage": {"prompt_tokens": 12, "completion_tokens": 7, "total_tokens": 19},
     }
-    assert backend.called_methods() == ["desk_state", "llm_status", "chat_completion"]
+    assert backend.called_methods() == ["llm_status", "desk_state", "chat_completion"]
 
     backend = FakeBackend(events=EVENTS)
     with serve(backend) as port:
@@ -216,7 +216,7 @@ def test_http_chat_completions_full_paths_and_never_loads():
         {"reasoning_content": "打招呼。"}, {"content": "你"},
         {"content": "好！"}, {},
     ]
-    assert backend.called_methods() == ["desk_state", "llm_status", "chat_stream"]
+    assert backend.called_methods() == ["llm_status", "desk_state", "chat_stream"]
 
     rejected = FakeBackend(llm=IDLE_STATUS)
     with serve(rejected) as port:

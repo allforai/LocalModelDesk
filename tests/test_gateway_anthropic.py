@@ -191,7 +191,7 @@ def test_http_messages_full_paths_503_envelope_and_stream_errors():
     decoded = _decode_frames(iter(frame.encode("utf-8") for frame in frames))
     assert [name for name, _ in decoded][-2:] == ["message_delta", "message_stop"]
     assert decoded[0][1]["message"]["id"] == "msg_fixedfixedfixedfixedfixedfixed00"
-    assert streaming.called_methods() == ["desk_state", "llm_status", "chat_stream"]
+    assert streaming.called_methods() == ["llm_status", "desk_state", "chat_stream"]
 
     rejected = FakeBackend(llm=IDLE_STATUS)
     with serve(rejected) as port:

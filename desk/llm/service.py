@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from ..arbiter.state import still_holds
 from .backend import BackendHttpError
 from .sampling import model_sampling_defaults
 from .state import (
@@ -330,11 +331,18 @@ class LlmService:
         The arbiter marks a media job as holder *before* it reaps mlx-lm and only notifies
         subscribers afterwards, so a dying backend or a broken stream must consult the
         holder directly to tell an eviction from a crash.
+
+        「让位了吗」要问全部持有者：只看 `holder`（最后授予的那件）的话，视频一开始
+        它就是 video，共存期间任何崩溃都会被归因成让位，真正的原因被那句话盖掉。
+        台面上一个持有者都没有时仍算崩溃——那是状态不一致，不是有人把内存拿走了。
         """
-        holder = (desk_state or {}).get("holder")
-        if not isinstance(holder, dict):
+        holders = (desk_state or {}).get("holders")
+        if not isinstance(holders, list):
+            holder = (desk_state or {}).get("holder")
+            holders = [holder] if isinstance(holder, dict) else []
+        if not any(isinstance(h, dict) for h in holders):
             return False
-        return holder.get("kind") != "llm" or holder.get("label") != model_key
+        return not still_holds({"holders": holders}, "llm", model_key)
 
     def status(self) -> dict[str, Any]:
         """Return the current public state and loaded model, when one is resident."""
@@ -424,12 +432,18 @@ class LlmService:
     def _chat_precheck(self, request: dict[str, Any]) -> Any:
         """Reject chat requests that cannot use the currently resident model."""
         desk_state = self._arbiter.desk_state() or {}
-        if desk_state.get("media_busy"):
-            raise LlmRejected(ERR_MEDIA_BUSY, "媒体作业进行中，聊天请求被拒绝")
         with self._lock:
             if self._state.status != STATUS_LOADED or self._entry is None:
                 raise LlmRejected(ERR_NO_MODEL_LOADED, "当前没有加载模型")
             entry = self._entry
+        # 问「台面还认不认这个模型」，不问「有没有媒体作业在跑」。后者是互斥时代的
+        # 问法：预算模式下媒体能与聊天共存，而共存的安全性在授予那一刻就算过了——
+        # `budget.cost("llm")` 报的 bytes_needed 就是权重加满窗 KV，视频能开正说明
+        # 两者一起装得下。这道闸真正要挡的是另一件事：驱逐是异步送达的，
+        # `_on_desk_state` 把状态改成 error 之前有一个窗口，那时 status 还是 loaded
+        # 而持有权已经没了。
+        if not still_holds(desk_state, "llm", entry.key):
+            raise LlmRejected(ERR_EVICTED, "模型已被台面收回")
         requested_model = request.get("model")
         if requested_model and requested_model not in (entry.key, entry.hf_repo):
             raise LlmRejected(

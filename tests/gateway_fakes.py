@@ -17,7 +17,21 @@ MEDIA_DESK = {
     "holder": {"kind": "video", "label": "H3 视频", "phase": "running"}, "media_busy": True,
     "can_start": {"llm": {"ok": False, "reason": {"code": "media_busy", "message": "视频作业进行中"}}},
 }
+# 模型驻留时台面一定持有它——`acquire_heavy("llm")` 就是这么记的。
+# 默认台面必须跟着默认 llm 状态走，否则假件描述的是一个真机上不存在的组合。
+RESIDENT_DESK = {
+    "holders": [{"kind": "llm", "label": "qwen3-30b", "phase": "held"}],
+    "holder": {"kind": "llm", "label": "qwen3-30b", "phase": "held"}, "media_busy": False,
+    "can_start": {"llm": {"ok": True, "reason": None}, "media": {"ok": True, "reason": None}},
+}
 MEDIA_REFUSAL = {"ok": False, "reason": {"code": "media_busy", "message": "视频作业进行中"}}
+# 预算模式下媒体与聊天真的能共存：两件都在持有者名单上。
+COEXIST_DESK = {
+    "holders": [{"kind": "llm", "label": "qwen3-30b", "phase": "held"},
+                {"kind": "video", "label": "H3 视频", "phase": "running"}],
+    "holder": {"kind": "video", "label": "H3 视频", "phase": "running"}, "media_busy": True,
+    "can_start": {"llm": {"ok": False, "reason": {"code": "media_busy", "message": "视频作业进行中"}}},
+}
 RESULT = {"content": "你好！", "reasoning": "用户在打招呼。", "finish_reason": "stop",
           "usage": {"prompt_tokens": 12, "completion_tokens": 7}}
 EVENTS = [("reasoning", "用户在"), ("content", "好！"),
@@ -33,7 +47,9 @@ class FakeBackend:
                  events=None, stream_error=None, completion_error=None):
         self.calls = []
         self._llm = llm if llm is not None else LOADED_STATUS
-        self._desk = desk if desk is not None else IDLE_DESK
+        if desk is None:
+            desk = RESIDENT_DESK if (self._llm or {}).get("loaded") else IDLE_DESK
+        self._desk = desk
         self._can_start = can_start if can_start is not None else {"ok": True, "reason": None}
         self._result = result if result is not None else RESULT
         self._events = list(events) if events is not None else list(EVENTS)

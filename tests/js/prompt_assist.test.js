@@ -94,3 +94,14 @@ test("失败时写明原因、按钮恢复可用、输入框不变", async () =>
   assert.equal(byData(container, "assistRefine").disabled, false);
   assert.equal(state.text, "猫");
 });
+
+test("台面收回模型时提示重新加载，而不是留一句「媒体作业进行中」", async () => {
+  // 服务端不再用 media_busy 拒聊天（媒体与聊天可以共存），这条路上真正会回来的
+  // 是 evicted；旧映射里那个键已经不会出现，留着只会让这里落回裸错误文案。
+  const { container, assist } = setup({ fields: { text: "猫" } });
+  assist.setAvailable(true, "");
+  await withFetch(() => new Response(
+    JSON.stringify({ error: { code: "evicted", message: "模型已被台面收回" } }), { status: 503 }),
+    async () => { await byData(container, "assistRefine").click(); });
+  assert.equal(byData(container, "assistHint").textContent, "模型已被台面收回，请重新加载");
+});

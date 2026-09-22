@@ -55,15 +55,43 @@ def test_no_model_loaded_rejected_immediately(tmp_path):
     assert not any(call[0] in ("chat", "chat_stream") for call in testbed.calls)
 
 
-def test_media_busy_rejected_immediately(tmp_path):
+def test_a_coexisting_media_job_does_not_block_chat(tmp_path):
+    """媒体作业在跑不是拒绝聊天的理由——只要台面还认这个模型驻留着。
+
+    互斥时代这里一律拒。预算取代互斥之后，视频能与聊天共存**正是因为**
+    `budget.cost("llm")` 把满窗 KV 报了进去、`fits()` 判过两者一起装得下
+    （真机实测：聊天 80.1 GiB + 视频 27.0 GiB ≤ 能力 107.5 GiB）。
+    再拦一道，共存就只剩「省一次加载」，兑现不了「边渲染边聊」。
+    """
+    testbed = make_loaded(tmp_path, backend_kw={"chat_result": OK})
+    testbed.arbiter.set_desk_state({
+        "holders": [{"kind": "llm", "label": "glm", "phase": "held"},
+                    {"kind": "video", "label": "j", "phase": "held"}],
+        "holder": {"kind": "video", "label": "j", "phase": "held"},
+        "media_busy": True})
+
+    got = testbed.service.chat_completion({"messages": []})
+
+    assert got["content"] == "答案", "媒体作业在跑时聊天被拦住了"
+    assert any(call[0] == "chat" for call in testbed.calls)
+
+
+def test_chat_is_rejected_once_the_desk_no_longer_holds_the_model(tmp_path):
+    """台面不再认这个模型时必须拒——这才是这道闸该问的问题。
+
+    驱逐是异步送达的，`_on_desk_state` 把状态改成 error 之前有一个窗口，
+    这时 status 还是 loaded 而持有权已经没了。
+    """
     testbed = make_loaded(tmp_path)
-    testbed.arbiter.set_desk_state({"holder": {"kind": "video", "label": "j", "phase": "held"},
-                                    "media_busy": True})
+    testbed.arbiter.set_desk_state({
+        "holders": [{"kind": "video", "label": "j", "phase": "held"}],
+        "holder": {"kind": "video", "label": "j", "phase": "held"},
+        "media_busy": True})
 
     with pytest.raises(LlmRejected) as exc:
         testbed.service.chat_completion({"messages": []})
 
-    assert exc.value.code == "media_busy"
+    assert exc.value.code == "evicted"
     assert not any(call[0] == "chat" for call in testbed.calls)
 
 

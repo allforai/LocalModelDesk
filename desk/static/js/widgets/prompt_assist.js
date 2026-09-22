@@ -3,7 +3,8 @@ import * as api from "../api.js";
 import { confirmDialog } from "./confirm.js";
 
 const NEED_MODEL = "先在「聊天」页加载一个模型";
-const REASON_BY_CODE = { no_model_loaded: NEED_MODEL, media_busy: "媒体作业进行中，暂时不能调用模型" };
+// 媒体作业在跑不再是拒绝理由（预算判过共存），这条路上回来的是 evicted。
+const REASON_BY_CODE = { no_model_loaded: NEED_MODEL, evicted: "模型已被台面收回，请重新加载" };
 const isBlank = (fields) => Object.values(fields).every((value) => !String(value ?? "").trim());
 
 export function createPromptAssist(doc, container, { task, read, write, mode = () => "text", confirm }) {

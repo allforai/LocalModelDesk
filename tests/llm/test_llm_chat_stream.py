@@ -112,16 +112,60 @@ def test_stream_cut_by_eviction_reports_evicted_not_upstream_error(tmp_path):
 
 
 def test_stream_cut_while_media_is_taking_the_memory_reports_evicted(tmp_path):
-    """真机：仲裁先杀 mlx-lm、后通知订阅者，断流时服务状态还没变成 evicted（2026-09-15 真机复核）。"""
+    """真机：仲裁先杀 mlx-lm、后通知订阅者，断流时服务状态还没变成 evicted（2026-09-15 真机复核）。
+
+    这里走的是**轮询**那条路（`set_desk_state`，服务自己去读），不是推送那条；
+    断流的原因只能靠台面状态分辨，否则会被标成 upstream_error。
+    """
     testbed = make_loaded(
         tmp_path, backend_kw={"chunks": CONTENT_CHUNKS[:2], "stream_error_after": 1}
     )
+    events = testbed.service.chat_stream({"messages": []})
+    first = next(events)
     testbed.arbiter.set_desk_state({"holder": {"kind": "video", "label": "job-1", "phase": "acquiring"},
                                     "media_busy": False})
 
-    events = list(testbed.service.chat_stream({"messages": []}))
+    rest = list(events)
 
-    assert events[-1] == {"type": "error", "code": "evicted", "message": "内存让给了媒体作业，回答被中断"}
+    assert first["type"] == "delta"
+    assert rest[-1] == {"type": "error", "code": "evicted", "message": "内存让给了媒体作业，回答被中断"}
+
+
+def test_a_crash_during_a_coexisting_media_job_is_not_called_an_eviction(tmp_path):
+    """共存时后端自己崩了，不能报成「已被媒体任务驱逐」。
+
+    判据只看 `holder`（= 最后授予的那件）就会这样：视频一开始它就是 video，
+    于是任何断流都被归因成让位，真正的崩溃原因被这句话盖掉。
+    """
+    testbed = make_loaded(
+        tmp_path, backend_kw={"chunks": CONTENT_CHUNKS[:2], "stream_error_after": 1}
+    )
+    events = testbed.service.chat_stream({"messages": []})
+    next(events)
+    testbed.arbiter.set_desk_state({
+        "holders": [{"kind": "llm", "label": "glm", "phase": "held"},
+                    {"kind": "video", "label": "job-1", "phase": "held"}],
+        "holder": {"kind": "video", "label": "job-1", "phase": "held"},
+        "media_busy": True})
+
+    rest = list(events)
+
+    assert rest[-1]["code"] != "evicted", "共存时的崩溃被误报成驱逐"
+
+
+def test_chat_stream_is_rejected_once_the_desk_no_longer_holds_the_model(tmp_path):
+    """持有权已经没了就别开流——不必先吐半截答案再报错。"""
+    testbed = make_loaded(tmp_path, backend_kw={"chunks": CONTENT_CHUNKS})
+    testbed.arbiter.set_desk_state({
+        "holders": [{"kind": "video", "label": "job-1", "phase": "held"}],
+        "holder": {"kind": "video", "label": "job-1", "phase": "held"},
+        "media_busy": True})
+
+    with pytest.raises(LlmRejected) as exc:
+        list(testbed.service.chat_stream({"messages": []}))
+
+    assert exc.value.code == "evicted"
+    assert not any(call[0] == "chat_stream" for call in testbed.calls)
 
 
 def test_stream_uses_the_models_recommended_sampling_unless_the_request_sets_it(tmp_path):

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { renderState, heavyAvailability } from "../../desk/static/js/pure/desk_state.js";
+import { renderState, heavyAvailability, assistReason } from "../../desk/static/js/pure/desk_state.js";
 
 const GB = 1024 ** 3;
 const idle = { holder: null, media_busy: false, can_start: { ok: true } };
@@ -112,4 +112,28 @@ test("heavyAvailability 透出原因码", () => {
   const held = { holder: { kind: "llm", label: "glm" }, media_busy: false, can_start: { llm: { ok: false, reason: { code: "llm_already_held" } } } };
   assert.equal(heavyAvailability(held, "llm").code, "llm_already_held");
   assert.equal(heavyAvailability(idle, "llm").code, null);
+});
+
+// ---- 提示词助手：媒体在跑不是拒绝理由 --------------------------------
+
+test("媒体作业与聊天共存时，提示词助手仍可用", () => {
+  // 互斥时代这里一律置灰。预算取代互斥后，视频能开正说明「聊天用满窗口 + 视频」
+  // 一起装得下——再拦一道，共存就只剩「省一次加载」。
+  const reason = assistReason(
+    { state: { status: "loaded", model_key: "superqwen" } },
+    { holders: [{ kind: "llm", label: "superqwen" }, { kind: "video", label: "job-2" }],
+      holder: { kind: "video", label: "job-2" }, media_busy: true });
+  assert.equal(reason, "");
+});
+
+test("模型没加载时说没加载，而不是说媒体在跑", () => {
+  const reason = assistReason({ state: { status: "idle" } }, { media_busy: true });
+  assert.equal(reason, "先在「聊天」页加载一个模型");
+});
+
+test("台面不再持有这个模型时，助手置灰并说明原因", () => {
+  const reason = assistReason(
+    { state: { status: "loaded", model_key: "superqwen" } },
+    { holders: [{ kind: "video", label: "job-2" }], media_busy: true });
+  assert.equal(reason, "模型已被台面收回，请重新加载");
 });

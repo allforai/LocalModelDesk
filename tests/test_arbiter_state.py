@@ -58,3 +58,47 @@ def test_holder_display_falls_back_to_label_when_absent():
     """没有显式 display 时（旧调用点未传），仍需给出可读值而非 None。"""
     h = Holder(kind="music", label="job-2", token="tok", since=0.0, phase=PHASE_HELD)
     assert h.public_view()["display"] == "job-2"
+
+
+# ---- still_holds：台面还认不认这件重活 ---------------------------------
+
+def test_still_holds_finds_a_coexisting_holder_not_just_the_last_one():
+    """媒体作业与聊天共存时，聊天必须仍算「被持有」。
+
+    这是共存的判据：媒体在不在跑与「我还能不能用这个模型」无关——预算在授予那一刻
+    就按「聊天用满窗口」把 KV 预留进去了（budget.cost("llm") 报的 bytes_needed
+    就是权重加满窗 KV），媒体能开正说明两者一起装得下。
+    """
+    from desk.arbiter.state import still_holds
+    desk = {"holders": [{"kind": "llm", "label": "superqwen"},
+                        {"kind": "video", "label": "job-2"}],
+            "holder": {"kind": "video", "label": "job-2"},
+            "media_busy": True}
+    assert still_holds(desk, "llm", "superqwen"), "共存时聊天被判成没被持有"
+
+
+def test_still_holds_is_false_once_the_holder_is_gone():
+    from desk.arbiter.state import still_holds
+    desk = {"holders": [{"kind": "video", "label": "job-2"}], "media_busy": True}
+    assert not still_holds(desk, "llm", "superqwen")
+
+
+def test_still_holds_distinguishes_labels_within_a_kind():
+    """换了模型也是「不再持有」——不能只看 kind。"""
+    from desk.arbiter.state import still_holds
+    desk = {"holders": [{"kind": "llm", "label": "gemma"}]}
+    assert not still_holds(desk, "llm", "superqwen")
+
+
+def test_still_holds_falls_back_to_the_single_holder_field():
+    """台面状态没有 holders 时退回读 holder——旧形状不能让判据静默变成 False。"""
+    from desk.arbiter.state import still_holds
+    assert still_holds({"holder": {"kind": "llm", "label": "superqwen"}}, "llm", "superqwen")
+    assert not still_holds({"holder": None}, "llm", "superqwen")
+
+
+def test_still_holds_survives_junk_entries():
+    from desk.arbiter.state import still_holds
+    desk = {"holders": [None, "nonsense", {"kind": "llm", "label": "superqwen"}]}
+    assert still_holds(desk, "llm", "superqwen")
+    assert not still_holds({}, "llm", "superqwen")
