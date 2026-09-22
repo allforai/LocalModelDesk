@@ -1,6 +1,8 @@
 """Facade tests for the heavy-work arbiter."""
 
 import threading
+
+import pytest
 from types import SimpleNamespace
 
 from desk.arbiter.core import Arbiter
@@ -409,7 +411,7 @@ def test_can_start_heavy_reports_the_minimal_release_when_budget_is_short():
 
 
 def test_can_start_heavy_names_the_source_when_it_cannot_tell():
-    """依据来源必须出现在拒绝原因里（R-budget-01）。"""
+    """依据来源必须出现在拒绝原因里（R-budget-01），且是人话——这句用户读得到。"""
     memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=10_000_000_000))
     budget = FakeBudget({"llm": Workload("llm", "model-a", 100_000_000_000, "unavailable")})
     arbiter = Arbiter(llm_port=43123, memory=memory, budget=budget)
@@ -417,7 +419,7 @@ def test_can_start_heavy_names_the_source_when_it_cannot_tell():
     result = arbiter.can_start_heavy("llm", params={}, key="model-a")
 
     assert result["ok"] is False
-    assert "unavailable" in result["reason"]["message"]
+    assert "算不出" in result["reason"]["message"]
 
 
 def test_acquire_heavy_in_budget_mode_evicts_the_llm_per_the_minimal_plan():
@@ -697,3 +699,72 @@ def test_desk_state_lists_every_holder_not_just_the_last_one():
     assert kinds == ["llm", "video"], f"共存时状态里只剩 {kinds}"
     # 旧字段保留：界面与既有消费者还在用它显示「当前在干什么」。
     assert state["holder"]["kind"] == "video"
+
+
+# ---- 查询与授予必须给同一个答案 ---------------------------------------
+
+def _budget_arbiter(costs, available, reaped=None):
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=available))
+    sink = reaped if reaped is not None else []
+    return Arbiter(llm_port=43123, memory=memory, budget=FakeBudget(costs),
+                   reaper=lambda port: (sink.append(port) or
+                                        SimpleNamespace(ok=True, port=port, killed_pids=[], error=None)))
+
+
+@pytest.mark.parametrize("llm_bytes, expected, why", [
+    (20_000_000_000, True, "两件一起装得下，直接共存"),
+    (70_000_000_000, True, "装不下，但最小让出只需卸聊天模型——授予时会自动让出"),
+])
+def test_the_query_and_the_grant_never_disagree_about_the_same_request(llm_bytes, expected, why):
+    """同一个请求，`can_start_heavy` 与 `acquire_heavy` 必须答得一样。
+
+    真机上就是这两个入口答得不一样把「挂着聊天模型开视频」堵死的：媒体服务先问
+    查询，得到「内存不够」当场报错退出，而 `acquire_heavy` 里那半「最小让出只需
+    卸聊天模型就自动让出」永远走不到。自动让出的单测一直是绿的，因为它们直接调
+    授予，绕过了真实调用顺序里的那道问询。
+
+    所以这里不测某个具体组合，测这条等价性本身——它对任何组合都得成立。
+    """
+    costs = {"llm": Workload("llm", "model-a", llm_bytes, "measured"),
+             "video": Workload("video", None, 27_000_000_000, "measured")}
+    asked = _budget_arbiter(costs, 80_000_000_000)
+    asked.acquire_heavy("llm", "model-a", params={}, key="model-a")
+    query = asked.can_start_heavy("video", params={}, key=None)
+
+    granting = _budget_arbiter(costs, 80_000_000_000)
+    granting.acquire_heavy("llm", "model-a", params={}, key="model-a")
+    grant = granting.acquire_heavy("video", "job-1", params={}, key=None)
+
+    assert query["ok"] == grant["ok"] == expected, (
+        f"{why}：查询答 {query['ok']}，授予答 {grant['ok']}——两个入口对同一个请求不一致")
+
+
+def test_a_query_that_would_need_a_running_media_job_released_still_refuses():
+    """要腾掉正在跑的媒体作业时，查询和授予都得答「不行」。
+
+    自动让出只有「卸聊天模型」这一种；为了开另一件重活静默杀掉用户正在跑的生成，
+    不是台面该替他做的决定。放宽查询时别把这条一起放宽了。
+    """
+    costs = {"video": Workload("video", None, 60_000_000_000, "measured"),
+             "music": Workload("music", None, 60_000_000_000, "measured")}
+    asked = _budget_arbiter(costs, 80_000_000_000)
+    asked.acquire_heavy("video", "job-1", params={}, key=None)
+
+    answer = asked.can_start_heavy("music", params={}, key=None)
+
+    assert answer["ok"] is False
+    assert answer["reason"]["code"] in ("insufficient_budget", "media_busy")
+
+
+def test_a_query_that_can_proceed_by_evicting_says_which_holder_goes():
+    """答「能开」时要说清代价：哪件重活会被让出，界面才讲得出「会先卸掉聊天模型」。"""
+    costs = {"llm": Workload("llm", "model-a", 70_000_000_000, "measured"),
+             "video": Workload("video", None, 27_000_000_000, "measured")}
+    asked = _budget_arbiter(costs, 80_000_000_000)
+    asked.acquire_heavy("llm", "model-a", params={}, key="model-a")
+
+    answer = asked.can_start_heavy("video", params={}, key=None)
+
+    assert answer["ok"] is True
+    assert [w["kind"] for w in answer["release"]] == ["llm"], "没说会让出谁"
+    assert answer["release"][0]["key"] == "model-a"

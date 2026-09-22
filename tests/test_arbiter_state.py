@@ -8,9 +8,10 @@ from desk.arbiter.state import (
 )
 from desk.budget.budget import Verdict
 
+GIB = 1024 ** 3
 OK = Verdict(True, 0, 0, "measured", 0)
-NO = Verdict(False, 100, 80, "measured", 20)
-UNKNOWN = Verdict(False, 100, 80, "unavailable", 20)
+NO = Verdict(False, 120 * GIB, 100 * GIB, "measured", 20 * GIB)
+UNKNOWN = Verdict(False, 120 * GIB, 100 * GIB, "unavailable", 20 * GIB)
 
 
 def holder(kind, token="t"):
@@ -30,11 +31,11 @@ def test_budget_short_refuses_with_the_numbers():
     d = plan_acquire((holder("video"),), "llm", NO)
     assert d.action == "refuse"
     assert d.reason_code == "insufficient_budget"
-    assert "80" in d.reason_message and "100" in d.reason_message
+    assert "120" in d.reason_message and "100" in d.reason_message
 
 
 def test_reason_message_names_the_source():
-    assert "unavailable" in plan_acquire((holder("video"),), "llm", UNKNOWN).reason_message
+    assert "算不出" in plan_acquire((holder("video"),), "llm", UNKNOWN).reason_message
 
 
 def test_transition_in_progress_still_refuses():
@@ -102,3 +103,20 @@ def test_still_holds_survives_junk_entries():
     desk = {"holders": [None, "nonsense", {"kind": "llm", "label": "superqwen"}]}
     assert still_holds(desk, "llm", "superqwen")
     assert not still_holds({}, "llm", "superqwen")
+
+
+# ---- 拒绝的理由要人读得懂 ----------------------------------------------
+
+def test_the_refusal_reads_in_gib_not_raw_bytes():
+    """真机上这句原样显示给用户：「需要 129385889792 字节，可用 115448725504 字节」。
+
+    对着屏幕的人读不出那是 120 GB，也不知道该干什么。数字换成 GiB、来源换成人话。
+    """
+    message = plan_acquire((holder("video"),), "llm", NO).reason_message
+    assert "字节" not in message, f"还在报裸字节：{message}"
+    assert "GiB" in message
+    assert "估算" in message or "实测" in message, f"来源没翻译成人话：{message}"
+
+
+def test_an_unavailable_source_says_so_in_chinese():
+    assert "算不出" in plan_acquire((holder("video"),), "llm", UNKNOWN).reason_message

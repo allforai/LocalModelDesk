@@ -15,6 +15,11 @@ MEDIA_KINDS = ("video", "music")
 PHASE_HELD = "held"
 PHASE_ACQUIRING = "acquiring"
 
+_GIB = 1024 ** 3
+# 拒绝的理由会原样显示给用户。裸字节数（129385889792）读不出是 120 GB，
+# 英文来源码也不是人话——这句是用户唯一看得到的解释，得让他知道该干什么。
+_SOURCE_TEXT = {"measured": "实测", "predicted": "估算", "unavailable": "算不出"}
+
 
 @dataclass(frozen=True)
 class Holder:
@@ -71,8 +76,9 @@ def plan_acquire(holders, kind: str, verdict) -> Decision:
         return Decision("grant")
     return Decision(
         "refuse", "insufficient_budget",
-        f"需要 {verdict.needed_bytes} 字节，可用 {verdict.available_bytes} 字节"
-        f"（依据：{verdict.source}）",
+        f"这一组重活需要约 {verdict.needed_bytes / _GIB:.1f} GiB，"
+        f"这台机器能给重活 {verdict.available_bytes / _GIB:.1f} GiB"
+        f"（依据：{_SOURCE_TEXT.get(verdict.source, verdict.source)}）",
     )
 
 

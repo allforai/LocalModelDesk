@@ -369,6 +369,14 @@ class Arbiter:
                 outcome = plan([workload], list(resident), available_bytes)
                 if outcome.ok:
                     release = [self._workload_view(w) for w in outcome.release]
+                if self._should_evict_llm(decision, workload, resident, available_bytes):
+                    # 查询与授予必须给同一个答案。`acquire_heavy` 在「最小让出只需卸
+                    # 聊天模型」时会自动让出并授予；查询若还答「不行」，调用方看到
+                    # 拒绝就当场退出，后面那半永远走不到——真机上「挂着聊天模型开
+                    # 视频」正是这样被堵死的，而自动让出的单测一直绿着，因为它们
+                    # 直接调授予，绕过了真实调用顺序里的这道问询。
+                    # `release` 同时说明代价：界面据此讲「会先卸掉聊天模型」。
+                    return {"ok": True, "reason": None, "memory_warning": None, "release": release}
             return {"ok": False, "reason": self._reason(decision.reason_code, decision.reason_message),
                     "memory_warning": None, "release": release}
         warning = None
