@@ -246,7 +246,12 @@ class Arbiter:
 
         primary = holders[-1] if holders else None
         return {
+            # `holder` 是"主"持有者（最后授予的那件），界面用它显示「当前在干什么」。
+            # `holders` 是全部——预算模式下真的可能有两件共存，而消费者若只看
+            # `holder` 就会把「别人也拿到了」误读成「我被驱逐了」：真机上聊天模型
+            # 正是这样在视频作业授予的瞬间自己拆了自己（service.py::_on_desk_state）。
             "holder": self._public_holder(primary),
+            "holders": [h.public_view() for h in holders],
             "media_busy": any(h.kind in MEDIA_KINDS for h in holders),
             "can_start": {"llm": can_start("llm"), "media": can_start("video")},
         }

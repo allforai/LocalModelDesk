@@ -672,3 +672,28 @@ def test_budget_mode_without_a_capacity_falls_back_to_available_memory():
     arbiter = Arbiter(llm_port=43123, memory=memory, budget=NoCap())
 
     assert arbiter.can_start_heavy("llm", params={}, key="model-a")["ok"] is False
+
+
+def test_desk_state_lists_every_holder_not_just_the_last_one():
+    """共存时台面状态必须列出全部持有者（真机上抓到的）。
+
+    `holder` 取的是 holders[-1]，而 llm 服务用「我还是不是那个 holder」判断自己
+    有没有被驱逐（service.py::_on_desk_state）。于是预算判「可以共存」、视频被授予
+    之后，视频成了最后一个持有者，**聊天模型自己把自己拆了**——共存在端到端上
+    根本不成立，尽管仲裁器这一层判对了。
+    """
+    memory = SimpleNamespace(snapshot=lambda: SimpleNamespace(available_bytes=200 * GIB))
+    budget = FakeBudget({
+        "llm": Workload("llm", "model-a", 10 * GIB, "measured"),
+        "video": Workload("video", None, 10 * GIB, "measured"),
+    })
+    arbiter = Arbiter(llm_port=43123, memory=memory, budget=budget)
+    arbiter.acquire_heavy("llm", "model-a", params={}, key="model-a")
+    arbiter.acquire_heavy("video", "job-a", params={}, key=None)
+
+    state = arbiter.desk_state()
+
+    kinds = [h["kind"] for h in state["holders"]]
+    assert kinds == ["llm", "video"], f"共存时状态里只剩 {kinds}"
+    # 旧字段保留：界面与既有消费者还在用它显示「当前在干什么」。
+    assert state["holder"]["kind"] == "video"

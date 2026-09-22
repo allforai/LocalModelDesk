@@ -297,11 +297,17 @@ class LlmService:
         with self._lock:
             if self._state.status not in {STATUS_LOADING, STATUS_LOADED}:
                 return
-            holder = desk_state.get("holder")
-            still_held = (
-                isinstance(holder, dict)
-                and holder.get("kind") == "llm"
-                and holder.get("label") == self._state.model_key
+            # 看全部持有者，不是只看「主」那个：预算模式下媒体作业可以与聊天共存，
+            # 而 `holder` 取的是最后授予的一件。只看它的话，视频一开始我们就会
+            # 把「别人也拿到了」误读成「我被驱逐了」（真机上就是这么拆的）。
+            holders = desk_state.get("holders")
+            if not isinstance(holders, list):
+                holders = [desk_state.get("holder")]
+            still_held = any(
+                isinstance(h, dict)
+                and h.get("kind") == "llm"
+                and h.get("label") == self._state.model_key
+                for h in holders
             )
             if still_held:
                 return

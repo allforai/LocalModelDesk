@@ -121,3 +121,48 @@ def test_stream_without_budget_still_works(tmp_path):
     events = list(testbed.service.chat_stream({"messages": []}))
 
     assert events[-1]["type"] == "done"
+
+
+def test_a_media_holder_alongside_does_not_look_like_an_eviction(tmp_path):
+    """共存时别把「别人也拿到了」误读成「我被驱逐了」（真机上抓到的）。
+
+    台面状态的 `holder` 是最后授予的那件。预算判可以共存、视频被授予之后，
+    视频成了主持有者——llm 服务若只看 `holder`，就会当场把自己拆掉，
+    共存在端到端上根本不成立。它要看的是 `holders` 里有没有自己。
+    """
+    from tests.llm.llm_fakes import make_service
+
+    built = make_service(tmp_path)
+    entry = built.entries[0]
+    built.service.load(entry.key)
+    built.service.wait_settled(timeout_s=2.0)
+
+    built.service._on_desk_state({
+        "holder": {"kind": "video", "label": "job-1", "display": "视频生成中"},
+        "holders": [
+            {"kind": "llm", "label": entry.key, "display": entry.name},
+            {"kind": "video", "label": "job-1", "display": "视频生成中"},
+        ],
+        "media_busy": True,
+    })
+
+    status = built.service.status()["state"]["status"]
+    assert status != "error", "视频作业一开始，聊天模型就把自己拆了——共存没成立"
+
+
+def test_losing_the_holder_entirely_is_still_an_eviction(tmp_path):
+    """反向：自己真的不在持有者里了，仍然要认这是驱逐。"""
+    from tests.llm.llm_fakes import make_service
+
+    built = make_service(tmp_path)
+    entry = built.entries[0]
+    built.service.load(entry.key)
+    built.service.wait_settled(timeout_s=2.0)
+
+    built.service._on_desk_state({
+        "holder": {"kind": "video", "label": "job-1"},
+        "holders": [{"kind": "video", "label": "job-1"}],
+        "media_busy": True,
+    })
+
+    assert built.service.status()["state"]["status"] == "error"
