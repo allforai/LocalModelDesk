@@ -56,12 +56,15 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["deleteChatSession", ["a/b"], "/api/sessions/a%2Fb", "DELETE"],
     ["gatewayConfig", [], "/api/gateway/config", "GET"],
     ["gatewayConfig", [true], "/api/gateway/config", "POST"],
+    ["listSkills", [], "/api/skills", "GET"],
+    ["rescanSkills", [], "/api/skills/rescan", "POST", {}],
   ];
   const names = [
     "readConfig", "writeConfig", "resetConfig", "completeFirstRun", "adoptLegacyModels", "discoverModels", "listCatalog", "verifyAllModels",
     "startDownload", "cancelDownload", "deleteModel", "diskUsage", "memorySnapshot", "deskState", "budget", "loadLlm", "unloadLlm",
     "llmStatus", "chatStream", "promptAssist", "startVideoJob", "startMusicJob", "cancelJob", "jobStatus", "listOutputs",
     "serveOutput", "revealOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
+    "listSkills", "rescanSkills",
   ];
   assert.deepEqual(Object.keys(api).sort(), [...names, "uploadMediaInput", "DeskApiError"].sort());
   await withFetch({}, async (calls) => {

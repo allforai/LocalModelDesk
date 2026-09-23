@@ -3,7 +3,8 @@
 import * as api from "../api.js";
 import { sseDataLines } from "../stream.js";
 import { initialStream, reduceChunk, wireMessages } from "../pure/chat_stream.js";
-import { maybeCompact, summaryLabel } from "../pure/compaction.js";
+import { maybeCompact, summaryLabel, charsPerToken } from "../pure/compaction.js";
+import { resolveSelection, skillSystemMessage, skillChars, skillTokens } from "../pure/skills.js";
 import { buildSummaryRequest } from "../pure/summary_prompt.js";
 import { needsWarning } from "../pure/mem_warn.js";
 import { formatBytes } from "../pure/format.js";
@@ -29,6 +30,9 @@ export function createChatPane(root, ctx = {}) {
     sendBtn: root.querySelector("[data-send]"),
     error: root.querySelector("[data-chat-error]"),
     loadHint: root.querySelector("[data-load-hint]"),
+    skillBar: root.querySelector("[data-skill-bar]"),
+    skillNotice: root.querySelector("[data-skill-notice]"),
+    skillCost: root.querySelector("[data-skill-cost]"),
   };
   let catalog = [];
   let sessions = [];
@@ -44,9 +48,135 @@ export function createChatPane(root, ctx = {}) {
   let heavyAllowed = true;
   let heavyReason = "";
   let compactingBanner = null; // 「正在压缩较早的对话…」提示条，压缩期间显示（R-context-04）
+  // 可用列表与选中状态分开存：列表来自扫描（唯一一份已解析列表，R-skill-16），
+  // 选中来自会话（R-skill-15）。两者每次扫描后对账一次（refreshSkills）。
+  let availableSkills = [];
+  // 每 token 字符数前端量不出来，只能从上一轮真实请求里量：sentChars 配那次
+  // 真实返回的 usage.prompt_tokens，相除即得（compaction.js 同一招）。没发生过
+  // 请求之前就是 null——绝不套一个默认值（R-skill-06）。
+  let lastCharsPerToken = null;
+  let lastCompactAt = null;
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
   const current = () => sessions.find((s) => s.id === currentId) ?? null;
+
+  // 会话可能是这个功能上线之前存的，没有 skills 这个键——`session?.skills ?? []`
+  // 是有意的，不是多余的防御：裸读 session.skills 会在这种旧会话上炸掉整个聊天面板。
+  function currentResolution() {
+    const session = current();
+    return resolveSelection(session?.skills ?? [], availableSkills);
+  }
+
+  // 占用显示：量不到每 token 字符数就只报字符数，绝不套一个默认比值（R-skill-06）。
+  // compaction.js 的房规是「量不到就返回 null，而不是套一个默认值」，这里沿用。
+  function renderSkillCost(ratio, compactAt) {
+    const { resolved } = currentResolution();
+    const chars = skillChars(resolved);
+    if (chars === 0) { els.skillCost.textContent = ""; els.skillCost.dataset.warn = ""; return; }
+    const tokens = skillTokens(chars, ratio);
+    if (tokens === null) {
+      els.skillCost.textContent = `skill 占用 ${chars} 字符（还没量过 token）`;
+      els.skillCost.dataset.warn = "";
+      return;
+    }
+    els.skillCost.textContent = compactAt
+      ? `skill 占用 ${tokens} / 额度 ${compactAt}`
+      : `skill 占用 ${tokens}`;
+    // 超过三成时警告而不禁止——是用户的机器，由他决定（R-skill-06）。
+    els.skillCost.dataset.warn = compactAt && tokens > compactAt * 0.3 ? "1" : "";
+  }
+
+  async function toggleSkill(entry) {
+    if (!entry.ok) return; // 坏的点不动（R-skill-08）
+    const session = current();
+    if (!session) return;
+    const picked = session.skills ?? [];
+    session.skills = picked.some((s) => s.name === entry.name)
+      ? picked.filter((s) => s.name !== entry.name)
+      : [...picked, { name: entry.name, attachments: [] }];
+    renderSkillChips();
+    try { await saveSession(session); } catch (error) { setError(`会话保存失败：${error.message}`); }
+  }
+
+  async function toggleAttachment(name, file, checked) {
+    const session = current();
+    if (!session) return;
+    session.skills = (session.skills ?? []).map((s) => {
+      if (s.name !== name) return s;
+      const attachments = checked
+        ? [...new Set([...(s.attachments ?? []), file])]
+        : (s.attachments ?? []).filter((f) => f !== file);
+      return { ...s, attachments };
+    });
+    renderSkillChips();
+    try { await saveSession(session); } catch (error) { setError(`会话保存失败：${error.message}`); }
+  }
+
+  // 芯片渲染：好条目 title 写 description（今天的消费者是用户，他靠这句话决定点不点，
+  // 不是模型），坏条目 disabled 且 title 写 error（R-skill-08 后半）。
+  // overrides_bundled 为真时标出「已覆盖自带」——覆盖必须看得见（R-skill-07）。
+  // 附件在芯片展开后以勾选框列出，每个标明 file 与 chars（R-skill-10）。
+  function renderSkillChips() {
+    for (const child of [...(els.skillBar.children ?? [])]) {
+      if (child === els.skillNotice || child === els.skillCost) continue;
+      child.remove();
+    }
+    const { resolved } = currentResolution();
+    const selectedNames = new Set(resolved.map((s) => s.name));
+    const session = current();
+    for (const entry of availableSkills) {
+      const chip = doc.createElement("button");
+      chip.className = "skill-chip";
+      (chip.dataset ??= {}).skillChip = entry.name;
+      chip.disabled = !entry.ok;
+      chip.title = entry.ok ? (entry.description ?? "") : (entry.error ?? "");
+      const isSelected = selectedNames.has(entry.name);
+      chip.textContent = entry.overrides_bundled ? `${entry.name} · 已覆盖自带` : entry.name;
+      chip.classList.toggle("active", isSelected);
+      chip.addEventListener("click", () => toggleSkill(entry));
+      els.skillBar.append(chip);
+      if (entry.ok && (entry.attachments ?? []).length) {
+        const picked = (session?.skills ?? []).find((s) => s.name === entry.name);
+        const pickedAttachments = new Set(picked?.attachments ?? []);
+        for (const att of entry.attachments) {
+          const label = doc.createElement("label");
+          label.className = "skill-attachment";
+          const checkbox = doc.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.disabled = !isSelected;
+          checkbox.checked = isSelected && pickedAttachments.has(att.file);
+          (checkbox.dataset ??= {}).skillAttachment = `${entry.name}/${att.file}`;
+          checkbox.addEventListener("change", () => toggleAttachment(entry.name, att.file, checkbox.checked));
+          const span = doc.createElement("span");
+          span.textContent = `${att.file}（${att.chars} 字符）`;
+          label.append(checkbox, span);
+          els.skillBar.append(label);
+        }
+      }
+    }
+    renderSkillCost(lastCharsPerToken, lastCompactAt);
+  }
+
+  // 扫描完成后的对账：会话里记的选中，对上刚扫描出来的可用列表。消失或变坏的
+  // 摘出来在界面上说明，并把会话里的选中写回成对账后的结果——不静默丢弃
+  // （R-skill-14）。
+  async function refreshSkills(rescan = false) {
+    const payload = rescan ? await api.rescanSkills() : await api.listSkills();
+    availableSkills = payload.skills ?? [];
+    const session = current();
+    if (!session) { renderSkillChips(); return; }
+    const { resolved, dropped } = resolveSelection(session.skills ?? [], availableSkills);
+    if (dropped.length) {
+      els.skillNotice.textContent = dropped.map((d) => `${d.name}：${d.reason}`).join("；");
+      session.skills = resolved.map((s) => ({
+        name: s.name, attachments: s.attachments.map((a) => a.file),
+      }));
+      try { await saveSession(session); } catch (error) { setError(`会话保存失败：${error.message}`); }
+    } else {
+      els.skillNotice.textContent = "";
+    }
+    renderSkillChips();
+  }
 
   // Writing button.textContent replaces every child, icon SVG included (F3).
   // Route label changes through a dedicated <span data-label> instead so the
@@ -293,6 +423,7 @@ export function createChatPane(root, ctx = {}) {
     currentId = sessions.some((session) => session.id === wanted) ? wanted : sessions[0].id;
     renderSessionList();
     renderMessages();
+    renderSkillChips(); // 切到别的会话，芯片的选中态、占用显示都得跟着换
   }
 
   function beginRename(li, session) {
@@ -358,6 +489,7 @@ export function createChatPane(root, ctx = {}) {
         currentId = session.id;
         renderSessionList();
         renderMessages();
+        renderSkillChips();
         [...(els.sessionList.children ?? [])].find((node) => node.dataset?.sessionId === session.id)?.focus?.();
       };
       (li.dataset ??= {}).sessionId = session.id;
@@ -407,7 +539,11 @@ export function createChatPane(root, ctx = {}) {
     // 记下这一轮实际发出去的字符数：压缩要靠它反推每 token 字符数（R-context-01 背景）。
     let sentChars = 0;
     try {
-      const wired = wireMessages(session.messages);
+      // skill 必须在这里、在测量 sentChars 之前拼进去（R-skill-13）：每 token
+      // 字符数由 sentChars / promptTokens 反推，而 skill 必然计入上游返回的
+      // promptTokens——它若没计入 sentChars，比值会被悄悄带偏，且没有任何迹象。
+      const { resolved } = currentResolution();
+      const wired = wireMessages(session.messages, skillSystemMessage(resolved));
       sentChars = JSON.stringify(wired).length;
       const body = await api.chatStream(wired, { signal: streamAbort.signal });
       for await (const line of sseDataLines(body)) {
@@ -519,7 +655,9 @@ export function createChatPane(root, ctx = {}) {
   }
 
   async function saveSession(session) {
-    const updated = await api.updateChatSession(session.id, { messages: session.messages, model: els.modelSelect.value || null });
+    const updated = await api.updateChatSession(session.id, {
+      messages: session.messages, model: els.modelSelect.value || null, skills: session.skills ?? [],
+    });
     sessions = sortSessions(sessions.map((item) => item.id === updated.id ? updated : item));
     renderSessionList();
   }
@@ -530,10 +668,17 @@ export function createChatPane(root, ctx = {}) {
   async function compactIfNeeded(session, promptTokens, sentChars) {
     const budget = await api.budget().catch(() => null);
     if (!budget) return; // 预算读不到就不压缩，不能替用户裁剪历史（同 R-budget-11 的保守纪律）
+    lastCompactAt = budget.chat?.compact_at ?? null;
+    const ratio = charsPerToken(sentChars, promptTokens);
+    if (ratio) lastCharsPerToken = ratio; // 量不到就保留上一次量到的值，不回退成猜的
+    if (currentId === session.id) renderSkillCost(lastCharsPerToken, lastCompactAt);
     const result = await maybeCompact(session.messages, {
       promptTokens, sentChars,
       compactAt: budget.chat?.compact_at,
       pressure: budget.pressure,
+      // skill 占着同一个窗口却不在 messages 里（R-skill-12）：不把它的占用告诉
+      // maybeCompact，压缩会按只剩历史来算预算，压完仍然超，下一轮接着压。
+      skillChars: skillChars(currentResolution().resolved),
       summarise: (head) => runSummarise(session, head, "正在压缩较早的对话…"),
     });
     // 失败或没到触发点：maybeCompact 已经原样返回，什么都不用做，下一轮再判断。
@@ -621,6 +766,7 @@ export function createChatPane(root, ctx = {}) {
   async function init() {
     try { await refreshModels(); } catch (error) { setError(error.message); }
     try { await refreshSessions(); } catch (error) { setError(error.message); }
+    try { await refreshSkills(); } catch (error) { setError(error.message); }
   }
 
   function syncLoadButton() {
@@ -646,5 +792,8 @@ export function createChatPane(root, ctx = {}) {
     }
   }
 
-  return { init, refreshModels, setHeavyAllowed, showMessages, applyLlmStatus: renderLlm, refreshSessionsIfStale };
+  return {
+    init, refreshModels, setHeavyAllowed, showMessages, applyLlmStatus: renderLlm, refreshSessionsIfStale,
+    rescanSkills: () => refreshSkills(true),
+  };
 }

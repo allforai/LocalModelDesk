@@ -10,6 +10,7 @@ const ROUTES = {
   video: "/api/media/video", music: "/api/media/music",
   cancelJob: "/api/media/cancel", job: "/api/media/job", outputs: "/api/outputs",
   history: "/api/history", sessions: "/api/sessions", gatewayConfig: "/api/gateway/config",
+  skills: "/api/skills", skillsRescan: "/api/skills/rescan",
 };
 
 export class DeskApiError extends Error {
@@ -130,3 +131,6 @@ export const updateChatSession = (id, patch, { keepalive = false } = {}) =>
   request(`${ROUTES.sessions}/${encoded(id)}`, { method: "PATCH", body: patch, keepalive });
 export const deleteChatSession = (id) => json(`${ROUTES.sessions}/${encoded(id)}`, "DELETE");
 export const gatewayConfig = (apply = false) => request(ROUTES.gatewayConfig, { method: apply ? "POST" : "GET" });
+
+export const listSkills = () => request(ROUTES.skills);
+export const rescanSkills = () => json(ROUTES.skillsRescan, "POST", {});

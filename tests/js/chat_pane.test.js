@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createChatPane } from "../../desk/static/js/panes/chat.js";
 
 class Element {
   constructor(tag = "div") {
@@ -46,24 +47,52 @@ class Element {
 
 function makePane() {
   const controls = new Map();
-  for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error", "load-hint"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
+  for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error", "load-hint", "skill-bar", "skill-notice", "skill-cost"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
   const doc = {
     body: new Element("body"),
     createElement: (tag) => new Element(tag),
     createDocumentFragment: () => new Element("#fragment"),
     createTextNode: (text) => ({ tagName: "#text", textContent: text }),
   };
-  return { controls, doc, root: { ownerDocument: doc, querySelector: (selector) => controls.get(selector) } };
+  // 顶层控件走原来那条扁平表；skill 芯片是动态生成、名字不定的，找不到扁平项时
+  // 退到在已知控件的子树里递归找 [data-x] / [data-x="y"]——真实 DOM 的 querySelector
+  // 本就是递归的，这里只是把伪 DOM 补齐到够用，不改变任何既有选择器的返回值。
+  const deepFind = (node, key, want) => {
+    for (const child of node.children ?? []) {
+      if (child.dataset && key in child.dataset && (want === undefined || child.dataset[key] === want)) return child;
+      const found = deepFind(child, key, want);
+      if (found) return found;
+    }
+    return null;
+  };
+  const querySelector = (selector) => {
+    if (controls.has(selector)) return controls.get(selector);
+    const m = /^\[data-([a-z-]+)(?:="([^"]*)")?\]$/.exec(selector);
+    if (!m) return null;
+    const key = m[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    const want = m[2];
+    for (const el of controls.values()) {
+      const found = deepFind(el, key, want);
+      if (found) return found;
+    }
+    return null;
+  };
+  return { controls, doc, root: { ownerDocument: doc, querySelector } };
 }
 const json = (payload) => new Response(JSON.stringify(payload), { status: 200 });
 const stream = (lines) => new Response(new ReadableStream({ start(controller) {
   controller.enqueue(new TextEncoder().encode(lines.map((line) => `data: ${line}\n\n`).join(""))); controller.close();
 } }), { status: 200 });
 
+// name → 属性值的映射进 data-skill-chip 这种属性的值里，不拼进属性名（R-skill-08 附近的实现要求）。
+const chipFor = (root, name) => root.querySelector(`[data-skill-chip="${name}"]`);
+const byData = (root, name) => root.querySelector(`[data-${name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}]`);
+
 test("chat 面板初始化、加载和卸载模型会调用对应 API 并更新可见状态", async () => {
   const oldFetch = globalThis.fetch;
   const calls = [];
   globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
     calls.push([path, options.method ?? "GET", options.body]);
     if (path === "/api/resources/catalog") return json([{ key: "chat-a", group: "chat", name: "聊天 A", gb: 1, params: "7B" }]);
     if (String(path).startsWith("/api/resources/status")) return json({ models: [{ key: "chat-a", state: "present" }] });
@@ -129,6 +158,7 @@ test("chat 面板发送流式回复、折叠思考并把完整消息写回当前
   const oldFetch = globalThis.fetch;
   const patches = [];
   globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
     if (path === "/api/resources/catalog") return json([]);
     if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
     if (path === "/api/llm/status") return json({ state: { status: "idle" } });
@@ -175,6 +205,7 @@ test("会话卡片：标题行、元信息行、动作区，当前项 active", a
   const { root, controls } = makePane();
   const previous = globalThis.fetch;
   globalThis.fetch = async (path) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
     if (path === "/api/sessions") return json([{ id: "s1", title: "第一会话", model: "glm", messages: [], updated: "2026-09-07T10:05:00" }]);
     if (String(path).includes("catalog")) return json([]);
     if (String(path).includes("status")) return json({ models: [] });
@@ -197,6 +228,7 @@ test("chat 面板的新建、改名和确认删除会写入会话 API 并重绘�
   let sessions = [{ id: "s1", title: "旧标题", messages: [], updated: "2026-01-01" }];
   const calls = [];
   globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
     calls.push([path, options.method ?? "GET", options.body]);
     if (path === "/api/resources/catalog") return json([]);
     if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
@@ -242,6 +274,7 @@ test("换模型：A 驻留时选 B 点加载 → 确认 → 先卸载再加载�
   const oldFetch = globalThis.fetch; const calls = [];
   let loaded = "a";
   globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
     calls.push([path, options.method ?? "GET", options.body]);
     if (path === "/api/resources/catalog") return json([{ key: "a", group: "chat", name: "模型 A", gb: 1 }, { key: "b", group: "chat", name: "模型 B", gb: 1 }]);
     if (String(path).startsWith("/api/resources/status")) return json({ models: [{ key: "a", state: "present" }, { key: "b", state: "present" }] });
@@ -326,6 +359,7 @@ test("send button keeps its icon in every state (F3)", async () => {
   const oldFetch = globalThis.fetch;
   let releaseStream;
   globalThis.fetch = async (path) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
     if (path === "/api/resources/catalog") return json([]);
     if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
     if (path === "/api/llm/status") return json({ state: { status: "idle" } });
@@ -393,6 +427,7 @@ test("中断的回答带原因写回会话，并出现重试按钮（P3）", asy
   const streamBodies = [];
   let streamCalls = 0;
   globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
     if (path === "/api/resources/catalog") return json([]);
     if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
     if (path === "/api/llm/status") return json({ state: { status: "idle" } });
@@ -443,6 +478,7 @@ test("推理用完预算只剩思考时：摘要给出时长，正文说明没�
   const oldFetch = globalThis.fetch;
   const patches = [];
   globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
     if (path === "/api/resources/catalog") return json([]);
     if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
     if (path === "/api/llm/status") return json({ state: { status: "idle" } });
@@ -519,6 +555,7 @@ test("媒体作业已结束时，被驱逐状态显示中性徽章和可重新�
 test("没有下载好的聊天模型时加载按钮禁用并指向资源页", async () => {
   const oldFetch = globalThis.fetch;
   globalThis.fetch = async (path) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
     if (path === "/api/resources/catalog") return json([{ key: "glm", group: "chat", name: "GLM", gb: 60 }]);
     if (String(path).startsWith("/api/resources/status")) return json({ models: [{ key: "glm", state: "missing" }] });
     if (path === "/api/resources/download") return json({});
@@ -541,6 +578,7 @@ test("没有下载好的聊天模型时加载按钮禁用并指向资源页", as
 test("下拉按状态分三档：present 无后缀，missing/partial 沿用资源页说法，unknown 说明拿不到清单而非「未下载」", async () => {
   const oldFetch = globalThis.fetch;
   globalThis.fetch = async (path) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
     if (path === "/api/resources/catalog") return json([
       { key: "a", group: "chat", name: "模型 A", gb: 1 },
       { key: "b", group: "chat", name: "模型 B", gb: 1 },
@@ -583,6 +621,7 @@ test("流式中页面关闭：把问句和已出的半句带 keepalive 写回会
   const saved = [];
   let releaseStream;
   globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
     if (path === "/api/resources/catalog") return json([]);
     if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
     if (path === "/api/llm/status") return json({ state: { status: "idle" } });
@@ -623,6 +662,7 @@ test("会话卡片可 Tab 聚焦，Enter/Space 切换（P2，cross-exam 2026-09-
   const { root, controls } = makePane();
   const previous = globalThis.fetch;
   globalThis.fetch = async (path) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
     if (path === "/api/sessions") return json([
       { id: "s1", title: "一", messages: [], updated: "2026-09-07T10:05:00" },
       { id: "s2", title: "二", messages: [], updated: "2026-09-07T10:04:00" },
@@ -665,6 +705,7 @@ test("生成中「发送」变「停止」：点了中止请求，已出内容�
   const patches = [];
   let streamSignal;
   globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
     if (path === "/api/resources/catalog") return json([]);
     if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
     if (path === "/api/llm/status") return json({ state: { status: "idle" } });
@@ -705,4 +746,264 @@ test("生成中「发送」变「停止」：点了中止请求，已出内容�
     assert.deepEqual(saved.interrupted, { code: "stopped", message: "已停止生成" });
     assert.equal(saved.reasoning, "重复重复");
   } finally { globalThis.fetch = oldFetch; }
+});
+
+// ---- Task 8：输入框上方的芯片——选中、勾附件、占用可见、坏的点不动 ----
+//
+// setupChat 同步返回（不 await），selectSkill/sendAndCaptureRequest 等方法内部
+// 自己等 ready：这样才能照抄 brief 给的调用写法（`const pane = setupChat(...)`
+// 不带 await）。ready 里若给了 charsPerToken，会先悄悄发一轮「热身」消息，让
+// 每 token 字符数从一次真实请求里量出来——这与生产代码完全同一条路径
+// （compaction.js 的自校准），只是测试需要在断言前就把这个数吃到肚子里。
+const attachmentCheckbox = (root, name, file) => root.querySelector(`[data-skill-attachment="${name}/${file}"]`);
+
+function setupChat({ skills = [], charsPerToken, compactAt, sessionSkills = [], omitSkillsKey = false, initialMessages = [] } = {}) {
+  const { root, controls } = makePane();
+  let skillsPayload = skills;
+  const savedSession = { id: "s1", title: "t", messages: [...initialMessages], updated: "2026-01-01" };
+  if (!omitSkillsKey) savedSession.skills = sessionSkills;
+  let lastRequestMessages = null;
+
+  globalThis.fetch = async (path, options = {}) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: skillsPayload });
+    if (path === "/api/resources/catalog") return json([]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    if (path === "/api/sessions") return json([savedSession]);
+    if (path === "/api/sessions/s1" && (options.method ?? "GET") === "PATCH") {
+      Object.assign(savedSession, JSON.parse(options.body));
+      return json({ ...savedSession });
+    }
+    if (path === "/api/budget") return json({ chat: { compact_at: compactAt ?? null }, pressure: "normal" });
+    if (path === "/api/llm/chat/stream") {
+      const messages = JSON.parse(options.body).messages;
+      lastRequestMessages = messages;
+      const sentChars = JSON.stringify(messages).length;
+      const lines = ['{"type":"delta","text":"ok"}'];
+      lines.push(charsPerToken !== undefined
+        ? `{"type":"done","usage":{"prompt_tokens":${Math.max(1, Math.round(sentChars / charsPerToken))}}}`
+        : '{"type":"done"}');
+      return stream(lines);
+    }
+    throw new Error(`setupChat 没处理的请求：${path} ${options.method ?? "GET"}`);
+  };
+
+  const pane = createChatPane(root);
+  const ready = (async () => {
+    await pane.init();
+    if (charsPerToken !== undefined) {
+      // 热身一轮：只为了让 lastCharsPerToken 在断言前就有值，走的还是 send() 这条真实代码路径。
+      controls.get("[data-chat-input]").value = "热身";
+      await controls.get("[data-send]").click();
+    }
+  })();
+
+  return {
+    container: root,
+    controls,
+    ready,
+    async selectSkill(name) {
+      await ready;
+      const chip = chipFor(root, name);
+      if (!chip) throw new Error(`没找到芯片：${name}`);
+      await chip.click();
+    },
+    async sendAndCaptureRequest(text) {
+      await ready;
+      controls.get("[data-chat-input]").value = text;
+      await controls.get("[data-send]").click();
+      return lastRequestMessages;
+    },
+    async sendAndCaptureSentChars(text) {
+      const messages = await this.sendAndCaptureRequest(text);
+      return JSON.stringify(messages).length;
+    },
+    async rescanWith(list) {
+      await ready;
+      skillsPayload = list;
+      await pane.rescanSkills();
+    },
+    currentSelection() {
+      return savedSession.skills ?? [];
+    },
+    savedSession: () => ({ ...savedSession }),
+  };
+}
+
+test("选中 skill 后，发出去的消息第一条是它的正文", async () => {
+  const pane = setupChat({ skills: [
+    { name: "review", description: "d", source: "user", overrides_bundled: false,
+      body: "审查指令", chars: 4, attachments: [], ok: true, error: null },
+  ] });
+  await pane.selectSkill("review");
+  const sent = await pane.sendAndCaptureRequest("你好");
+  assert.equal(sent[0].role, "system");
+  assert.ok(sent[0].content.includes("审查指令"));
+});
+
+test("占用显示在芯片上；量不到比值时显示字符数而不是猜一个 token 数", async () => {
+  const pane = setupChat({ skills: [
+    { name: "review", description: "d", source: "user", overrides_bundled: false,
+      body: "x".repeat(400), chars: 400, attachments: [], ok: true, error: null },
+  ] });
+  await pane.selectSkill("review");
+  const costLabel = byData(pane.container, "skillCost").textContent;
+  assert.ok(costLabel.includes("字符"), `量不到比值却显示了 token：${costLabel}`);
+});
+
+test("skill 计入 sentChars，否则每 token 字符数会被悄悄带偏", async () => {
+  // R-skill-13：ratio = sentChars / promptTokens，而 skill 必然计入上游的 promptTokens。
+  // 它若没计入 sentChars，比值偏小，之后所有由它换算的字符预算跟着偏小——没有任何迹象。
+  const pane = setupChat({ skills: [
+    { name: "big", description: "d", source: "user", overrides_bundled: false,
+      body: "z".repeat(500), chars: 500, attachments: [], ok: true, error: null },
+  ] });
+  const bare = await pane.sendAndCaptureSentChars("你好");
+  await pane.selectSkill("big");
+  const withSkill = await pane.sendAndCaptureSentChars("你好");
+  assert.ok(withSkill - bare >= 500, `sentChars 没把 skill 算进去：${bare} → ${withSkill}`);
+});
+
+test("占用超过额度三成时警告，但不禁止发送", async () => {
+  // 是用户的机器，由他决定（R-skill-06）。
+  const pane = setupChat({
+    skills: [{ name: "huge", description: "d", source: "user", overrides_bundled: false,
+               body: "w".repeat(4000), chars: 4000, attachments: [], ok: true, error: null }],
+    charsPerToken: 4, compactAt: 1000,          // 4000 字符 ÷ 4 = 1000 token，远超三成
+  });
+  await pane.selectSkill("huge");
+  assert.equal(byData(pane.container, "skillCost").dataset.warn, "1");
+  assert.equal(byData(pane.container, "send").disabled, false, "警告不该变成禁止");
+});
+
+test("占用不到三成时不警告", async () => {
+  const pane = setupChat({
+    skills: [{ name: "tiny", description: "d", source: "user", overrides_bundled: false,
+               body: "w".repeat(40), chars: 40, attachments: [], ok: true, error: null }],
+    charsPerToken: 4, compactAt: 1000,          // 40 字符 ÷ 4 = 10 token，远低于三成
+  });
+  await pane.selectSkill("tiny");
+  assert.equal(byData(pane.container, "skillCost").dataset.warn, "");
+});
+
+test("量到比值但还没量到额度上限时：只报 token 数，不编一个『/ 额度』", async () => {
+  const pane = setupChat({
+    skills: [{ name: "review", description: "d", source: "user", overrides_bundled: false,
+               body: "w".repeat(40), chars: 40, attachments: [], ok: true, error: null }],
+    charsPerToken: 4, // compactAt 不传：额度还没量到
+  });
+  await pane.selectSkill("review");
+  const text = byData(pane.container, "skillCost").textContent;
+  assert.ok(!text.includes("额度"), `没有额度上限却编出了一个：${text}`);
+  assert.equal(byData(pane.container, "skillCost").dataset.warn, "", "没有额度上限时不该警告");
+});
+
+test("坏的 skill 列出来但点不动", async () => {
+  const pane = setupChat({ skills: [
+    { name: "bad", description: "", source: "user", overrides_bundled: false,
+      body: "", chars: 0, attachments: [], ok: false, error: "frontmatter 缺 description" },
+  ] });
+  await pane.ready;
+  const chip = chipFor(pane.container, "bad");
+  assert.equal(chip.disabled, true);
+  assert.ok(chip.title.includes("缺 description"));
+});
+
+test("好的 skill 芯片 title 是给用户看的 description，不是 error", async () => {
+  // description 今天的消费者是用户（他靠这句话决定点不点这个芯片），不是模型。
+  const pane = setupChat({ skills: [
+    { name: "review", description: "审查一遍代码风格", source: "user", overrides_bundled: false,
+      body: "正文", chars: 2, attachments: [], ok: true, error: "不该被读到" },
+  ] });
+  await pane.ready;
+  const chip = chipFor(pane.container, "review");
+  assert.equal(chip.title, "审查一遍代码风格");
+});
+
+test("overrides_bundled 为真时芯片上标出已覆盖自带——覆盖不能是静默的", async () => {
+  const pane = setupChat({ skills: [
+    { name: "review", description: "d", source: "user", overrides_bundled: true,
+      body: "正文", chars: 2, attachments: [], ok: true, error: null },
+  ] });
+  await pane.ready;
+  const chip = chipFor(pane.container, "review");
+  assert.match(chip.textContent, /已覆盖自带/);
+});
+
+test("再点一次已选中的芯片会取消选中", async () => {
+  const pane = setupChat({ skills: [
+    { name: "review", description: "d", source: "user", overrides_bundled: false,
+      body: "正文", chars: 2, attachments: [], ok: true, error: null },
+  ] });
+  await pane.selectSkill("review");
+  assert.deepEqual(pane.currentSelection().map((s) => s.name), ["review"]);
+  await pane.selectSkill("review");
+  assert.deepEqual(pane.currentSelection(), []);
+});
+
+test("勾中的附件原文进入发出去的消息，没勾的不进去（R-skill-10）", async () => {
+  const pane = setupChat({ skills: [
+    { name: "review", description: "d", source: "user", overrides_bundled: false, body: "正文", chars: 2,
+      attachments: [{ file: "A.md", chars: 5, text: "附件A原文" }, { file: "B.md", chars: 5, text: "附件B原文" }],
+      ok: true, error: null },
+  ] });
+  await pane.selectSkill("review");
+  const boxA = attachmentCheckbox(pane.container, "review", "A.md");
+  assert.equal(boxA.disabled, false, "选中 skill 后附件勾选框该能点了");
+  boxA.checked = true;
+  await boxA.listeners.change();
+  const sent = await pane.sendAndCaptureRequest("你好");
+  assert.ok(sent[0].content.includes("附件A原文"), "勾中的附件原文没有进去");
+  assert.ok(!sent[0].content.includes("附件B原文"), "没勾的附件原文不该进去");
+});
+
+test("旧会话没有 skills 这个键时不报错，芯片照常渲染（这个功能上线前存的会话）", async () => {
+  const pane = setupChat({
+    skills: [{ name: "review", description: "d", source: "user", overrides_bundled: false,
+               body: "正文", chars: 2, attachments: [], ok: true, error: null }],
+    omitSkillsKey: true,
+  });
+  await pane.ready; // 裸读 session.skills 会在这里炸——ready 内部走的就是 init() → refreshSkills()
+  const chip = chipFor(pane.container, "review");
+  assert.ok(chip, "旧会话不该让芯片条整个渲染不出来");
+  assert.equal(chip.className.includes("active"), false, "旧会话没有选中记录，不该有芯片是 active 的");
+  // 点一下选中它：这条路走的是 toggleSkill 自己的 `session.skills ?? []`——
+  // resolveSelection 内部对 undefined 也有防御，光测「渲染不炸」盖不到这一条，
+  // 得真的点一次才会经过它。
+  await pane.selectSkill("review");
+  assert.deepEqual(pane.currentSelection().map((s) => s.name), ["review"]);
+});
+
+test("选中的 skill 消失后，界面说明并取消选中", async () => {
+  const pane = setupChat({ skills: [
+    { name: "gone", description: "d", source: "user", overrides_bundled: false,
+      body: "正文", chars: 2, attachments: [], ok: true, error: null },
+  ] });
+  await pane.selectSkill("gone");
+  await pane.rescanWith([]);                       // 用户在文件夹里删掉了它
+  assert.match(byData(pane.container, "skillNotice").textContent, /已不存在/);
+  assert.deepEqual(pane.currentSelection(), []);
+});
+
+test("skillChars 没被传进 maybeCompact 的话，该触发的压缩会悄悄不触发（两处 wiring 之一）", async () => {
+  // 用一个很大的 skill 把预算几乎占满：compactAt(100) × ratio(≈4) − skillChars(≈2000) ≤ 0，
+  // 尾部预算被压到 0，哪怕最早那一轮很短也会被推进 head、触发压缩。
+  // 如果 chat.js 忘了把 skillChars 传给 maybeCompact（默认值 0），同样这几条消息的
+  // 尾部预算是 100×4=400，两条 20 字符的旧消息都装得下尾部，压缩根本不会发生——
+  // 这正是 brief 点名的「两处 wiring 点」之一，必须有一条测试在它被短接时会红。
+  const oldTurn = [
+    { role: "user", content: "问".repeat(20) },
+    { role: "assistant", content: "答".repeat(20) },
+  ];
+  const pane = setupChat({
+    skills: [{ name: "big", description: "d", source: "user", overrides_bundled: false,
+               body: "k".repeat(2000), chars: 2000, attachments: [], ok: true, error: null }],
+    sessionSkills: [{ name: "big", attachments: [] }],
+    initialMessages: oldTurn,
+    charsPerToken: 4, compactAt: 100,
+  });
+  await pane.sendAndCaptureRequest("你");
+  const saved = pane.savedSession();
+  assert.ok(saved.messages.some((m) => m.role === "summary"),
+    `skill 占用没有挤压尾部预算，压缩没有被触发：${JSON.stringify(saved.messages)}`);
 });

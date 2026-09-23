@@ -28,6 +28,8 @@ from desk.resources.catalog import list_catalog
 from desk.resources.http import build_routes as build_resource_routes
 from desk.resources.manifest import ManifestFile
 from desk.resources.service import ResourcesService
+from desk.skills.routes import build_routes as build_skills_routes
+from desk.skills.service import SkillsService
 from desk.ui import StaticAssets
 
 from .fakes import (
@@ -141,7 +143,7 @@ DEFAULT_BUDGET_PAYLOAD = {
 }
 
 
-def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, gateway, budget_payload):
+def _mount_routes(app: DeskApp, roots, resources, llm, media, library, skills, arbiter, gateway, budget_payload):
     """Mount the real service seams behind DeskApp's deliberately small codec.
 
     The production route modules use richer response carriers than ``DeskApp``.
@@ -233,6 +235,8 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, arbiter, 
           for method, path, handler in build_media_routes(media)),
         *((method, path, lambda req, handler=handler: library_adapter(req, handler))
           for method, path, handler in library_http.routes(library)),
+        *((method, path, lambda req, handler=handler: handler(req.body, req.query))
+          for method, path, handler in build_skills_routes(skills)),
         ("GET", "/api/state", lambda _req: arbiter.desk_state()),
         ("GET", "/api/memory", lambda _req: arbiter.memory_snapshot()),
         # 台面前端每个 tick 都会取它；测试台面不挂的话，e2e 里状态栏会一直报离线。
@@ -311,6 +315,7 @@ def launch_test_harness(
         sleep=lambda _seconds: None,
     )
     library = LibraryService(roots)
+    skills = SkillsService(roots)
     reveal_calls: list[list[str]] = []
     # Real "open -R" would launch Finder during test runs; record calls instead
     # (mirrors the seam tests/test_library_http.py already exercises).
@@ -371,7 +376,7 @@ def launch_test_harness(
         lambda: config.read_config(roots).to_json(),
     )
     budget_payload = budget if budget is not None else DEFAULT_BUDGET_PAYLOAD
-    route_specs = _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway, budget_payload)
+    route_specs = _mount_routes(app, roots, resources, llm, media, library, skills, arbiter, gateway, budget_payload)
     app.start_background()
     if configured and gateway_enabled:
         gateway.start_from_config()
