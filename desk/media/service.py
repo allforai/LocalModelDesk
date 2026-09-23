@@ -4,11 +4,12 @@ from __future__ import annotations
 import logging
 import threading
 import time
+import uuid
 from pathlib import Path
 from typing import Any, Callable
 
 from .audio import wav_seconds
-from .commands import build_h3_command, build_music_command
+from .commands import build_h3_command, build_music_command, build_image_command
 from .inputs import save_input, resolve_input
 
 log = logging.getLogger(__name__)
@@ -95,6 +96,20 @@ class MediaService:
             raise MediaError("lyrics_required", "请填写歌词：Music 3 需要歌词才能生成", 400)
         return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration}, force=force)
 
+    def start_image_job(self, *, prompt, width=1024, height=1024, steps=40, seed=42, force=False) -> dict:
+        _nonempty("prompt", prompt, code="prompt_required", message="请填写图片提示词")
+        for name, value in (("width", width), ("height", height)):
+            _positive_int(name, value)
+            if not 256 <= value <= 2048 or value % 16:
+                raise MediaError("invalid_params", "宽高须为 256–2048 范围内的 16 的倍数", 400)
+        if isinstance(steps, bool) or not isinstance(steps, int) or not 1 <= steps <= 100:
+            raise MediaError("invalid_params", "步数须为 1–100 的整数", 400)
+        if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < 2**32:
+            raise MediaError("invalid_params", "种子须为 0–4294967295 的整数", 400)
+        if not isinstance(force, bool):
+            raise MediaError("invalid_params", "force 必须为布尔值", 400)
+        return self._start("image", dict(prompt=prompt, width=width, height=height, steps=steps, seed=seed), force=force)
+
     def _estimate(self, kind: str, params: dict) -> tuple[int, str]:
         """(bytes, source) —— 按作业参数估算的峰值。
 
@@ -113,15 +128,21 @@ class MediaService:
         with self._lock:
             if self._state["status"] == "running":
                 raise MediaError("media_busy", "a media job is already running", 409)
-            cap_key = "mlx_h3" if kind == "video" else "music_runtime"
+            cap_key = {"video": "mlx_h3", "music": "music_runtime", "image": "image_runtime"}[kind]
             cap = self._probe_capabilities().get(cap_key)
             if cap is None or not cap.present:
                 raise MediaError("capability_missing", f"{cap_key} is unavailable: {getattr(cap, 'detail', '')}", 503)
             roots = self._resolve_paths()
 
-            catalog_key = "h3" if kind == "video" else "music3"
+            catalog_key = {"video": "h3", "music": "music3", "image": "qwen-image"}[kind]
             catalog = list(self._list_catalog())
             model_root = Path(roots.models_root) / {e.key: e.relpath for e in catalog}[catalog_key]
+            if kind == "image":
+                from .image_model import validate_model
+                try:
+                    validate_model(model_root)
+                except (OSError, ValueError) as exc:
+                    raise MediaError("model_incomplete", str(exc), 409) from exc
             estimated, source = self._estimate(kind, params)
             # 预算按作业参数算峰值（memory_estimate 就是这么设计的：分辨率×帧数决定体积项）。
             # 只从 legacy 的 estimated_bytes 通道递过去，预算路径读不到，会退回草稿档默认值——
@@ -140,7 +161,7 @@ class MediaService:
                                   f"生成约需 {required:.1f} GiB 内存（{label}），当前可用 {available:.1f} GiB，可能失败或拖慢整机",
                                   409, {**warning, "source": source})
             job_id = self._state["job_id"] + 1
-            display = "视频生成中" if kind == "video" else "音乐生成中"
+            display = {"video": "视频生成中", "music": "音乐生成中", "image": "图片生成中"}[kind]
             grant = self._arbiter.acquire_heavy(kind, f"job-{job_id}", display,
                                                 params=params, key=catalog_key)
             if not grant.get("ok"):
@@ -159,10 +180,14 @@ class MediaService:
                             command_params[key] = resolve_input(root, command_params[key], "video" if key == "ref_video" else "image")
                     command = build_h3_command(tuple(roots.mlx_h3_cmd), model_root, output=output, **command_params)
                     extra_env = dict(roots.mlx_h3_env)
-                else:
+                elif kind == "music":
                     output = root / f"music3-{stamp}.wav"
                     command = build_music_command(Path(roots.music_python), Path(roots.media_cli_dir) / "music3_cli.py", model_root, output=output, **params)
                     extra_env = dict(roots.music_env)
+                else:
+                    output = root / f"qwen-image-{stamp}-{uuid.uuid4().hex[:8]}.png"
+                    command = build_image_command(Path(roots.image_python), Path(roots.media_cli_dir) / "image_cli.py", model_root, output=output, **params)
+                    extra_env = dict(roots.image_env)
                 handle = self._executor.spawn(command, extra_env=extra_env)
             except Exception as exc:
                 self._state = {"job_id": job_id, "status": "error", "kind": kind, "params": dict(params), "output": None,

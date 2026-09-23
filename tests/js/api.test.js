@@ -37,12 +37,14 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["memorySnapshot", [], "/api/memory", "GET"],
     ["deskState", [], "/api/state", "GET"],
     ["budget", [], "/api/budget", "GET"],
+    ["capabilities", [], "/api/capabilities", "GET"],
     ["loadLlm", ["glm"], "/api/llm/load", "POST", { key: "glm" }],
     ["unloadLlm", [], "/api/llm/unload", "POST"],
     ["llmStatus", [], "/api/llm/status", "GET"],
     ["chatStream", [[{ role: "user", content: "hi" }]], "/api/llm/chat/stream", "POST", { messages: [{ role: "user", content: "hi" }] }],
     ["startVideoJob", [{ prompt: "sky" }], "/api/media/video", "POST", { prompt: "sky" }],
     ["startMusicJob", [{ caption: "calm" }], "/api/media/music", "POST", { caption: "calm" }],
+    ["startImageJob", [{ prompt: "cat", seed: 0 }], "/api/media/image", "POST", { prompt: "cat", seed: 0 }],
     ["cancelJob", [], "/api/media/cancel", "POST"],
     ["jobStatus", [120, 3], "/api/media/job?log_from=120&job_id=3", "GET"],
     ["jobStatus", [], "/api/media/job?log_from=0", "GET"],
@@ -65,7 +67,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
   const names = [
     "readConfig", "writeConfig", "resetConfig", "completeFirstRun", "adoptLegacyModels", "discoverModels", "listCatalog", "verifyAllModels",
     "startDownload", "cancelDownload", "deleteModel", "diskUsage", "memorySnapshot", "deskState", "budget", "loadLlm", "unloadLlm",
-    "llmStatus", "chatStream", "promptAssist", "startVideoJob", "startMusicJob", "cancelJob", "jobStatus", "listOutputs",
+    "llmStatus", "chatStream", "promptAssist", "startVideoJob", "startMusicJob", "startImageJob", "capabilities", "cancelJob", "jobStatus", "listOutputs",
     "serveOutput", "revealOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
     "listSkills", "rescanSkills", "previewSkill", "installSkill", "discardSkill",
   ];

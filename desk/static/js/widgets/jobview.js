@@ -63,7 +63,9 @@ export function createJobView(root, { mediaTag, kind = null }) {
     if (payload.status === "error" && payload.error) renderError(payload.error);
     if (payload.status === "done" && payload.output && !els.player.firstChild) {
       const media = root.ownerDocument.createElement(mediaTag);
-      media.controls = true; media.src = api.serveOutput(payload.output); els.player.append(media);
+      if (mediaTag === "img") media.alt = payload.params?.prompt || "生成的图片";
+      else media.controls = true;
+      media.src = api.serveOutput(payload.output); els.player.append(media);
     }
     return payload;
   }

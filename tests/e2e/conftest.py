@@ -18,7 +18,7 @@ except ImportError as exc:
 expect.set_options(timeout=10_000)
 REPO = Path(__file__).resolve().parents[2]
 FORBIDDEN_ROOTS = tuple(REPO / name for name in (
-    "llms", "minimax-h3", "minimax-music3", "outputs"))
+    "llms", "minimax-h3", "minimax-music3", "image-models", "outputs"))
 _open_violations: list[str] = []
 
 

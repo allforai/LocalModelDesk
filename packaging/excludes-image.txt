@@ -1,0 +1,5 @@
+# QwenImage21 txt2img does not import cv2. The upstream aggregate dependency
+# serves ControlNet/OpenPose, which this application does not expose.
+# Keep this exclusion explicit at resolution AND installation; never trim a
+# required binary or weaken the bundle self-containment/signature checks.
+opencv-python

@@ -138,9 +138,25 @@ def test_serve_full_and_range_bytes(tmp_path):
 def test_serve_content_types(tmp_path):
     outputs, root, _ = make_stores(tmp_path)
     for name, ctype in [("a.wav", "audio/wav"), ("a.m4a", "audio/mp4"),
-                        ("a.webm", "video/webm")]:
+                        ("a.webm", "video/webm"), ("a.png", "image/png")]:
         (root / name).write_bytes(b"x")
         assert outputs.serve(name, None).headers["Content-Type"] == ctype
+
+
+def test_png_history_orphan_and_sidecar_delivery(tmp_path):
+    outputs, root, history = make_stores(tmp_path)
+    params = dict(prompt="cat", width=1024, height=768, steps=40, seed=0)
+    history.append(dict(kind="image", status="done", output="cat.png", params=params))
+    (root / "cat.png").write_bytes(b"png fixture")
+    (root / "orphan.PNG").write_bytes(b"png fixture")
+    (root / "cat.json").write_text("{}")
+    items = {item["name"]: item for item in outputs.list()}
+    assert set(items) == {"cat.png", "orphan.PNG"}
+    assert all(item["kind"] == "image" for item in items.values())
+    assert not items["cat.png"]["orphan"]
+    assert items["orphan.PNG"]["orphan"]
+    assert history.list()[0]["params"] == params
+    assert outputs.serve("cat.json").status == 404
 
 
 def test_reveal_folder_missing_root_raises_with_code(tmp_path):

@@ -41,6 +41,7 @@ export function renderState(deskState, snapshot, download = null, names = {}) {
     if (holder.kind === "llm") holderText = `内存里：${display(holder.label)}`;
     else if (holder.kind === "video") holderText = "视频生成中";
     else if (holder.kind === "music") holderText = "音乐生成中";
+    else if (holder.kind === "image") holderText = "图片生成中";
     else holderText = `${holder.kind}：${holder.label}`;
   }
 

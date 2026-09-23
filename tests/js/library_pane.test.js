@@ -232,7 +232,24 @@ test("没有成品时显示引导语", async (t) => {
   await pane.refresh();
 
   assert.equal(parts["lib-list"].children[0].className, "empty");
-  assert.equal(parts["lib-list"].children[0].textContent, "还没有成品。去「视频」或「音乐」面板生成第一件，它会出现在这里。");
+  assert.equal(parts["lib-list"].children[0].textContent, "还没有成品。去「图片」「视频」或「音乐」面板生成第一件，它会出现在这里。");
+});
+
+test("图片成品用 img 预览并支持全部参数回填", async (t) => {
+  const previous = globalThis.fetch; t.after(() => { globalThis.fetch = previous; });
+  const params = { prompt: "橘猫", width: 1024, height: 768, steps: 40, seed: 0 };
+  const { root, parts } = makeLibrary([{ name: "cat.png", kind: "image", bytes: 10 }], [{ kind: "image", status: "done", output: "cat.png", params }]);
+  const fills = [];
+  await createLibraryPane(root, { applyFill: (p) => fills.push(p) }).refresh();
+  const row = parts["lib-list"].children[0];
+  find(row, (e) => e.tagName === "button" && e.textContent === "预览").click();
+  const img = parts["lib-player"].children[0];
+  assert.equal(img.tagName, "img"); assert.equal(img.controls, undefined); assert.equal(img.autoplay, undefined);
+  assert.equal(img.alt, "橘猫");
+  assert.match(parts["lib-player"].children[1].textContent, /正在预览/);
+  find(row, (e) => e.tagName === "button" && e.textContent === "回填参数").click();
+  assert.deepEqual(fills, [{ pane: "image", fields: params }]);
+  assert.match(find(row, (e) => e.className === "lib-meta").textContent, /1024×768.*40步.*种子 0/);
 });
 
 test("歌曲记录按成品实际时长标注，并注明请求值", async (t) => {

@@ -169,7 +169,7 @@ class Budget:
 
     # ---- 单件开销 ----------------------------------------------------
     def cost(self, kind, *, key=None, params=None, config=None, weights_gb=None) -> Workload:
-        if kind in ("video", "music"):
+        if kind in ("video", "music", "image"):
             measured = self._m.media_peak(kind)
             need = measured if measured else self._media_estimate(kind, params or {})
             return Workload(kind, key, int(need), "measured" if measured else "predicted")
@@ -258,7 +258,7 @@ class Budget:
     def snapshot(self) -> dict:
         snap = self._memory.snapshot()
         media = {}
-        for kind in ("video", "music"):
+        for kind in ("video", "music", "image"):
             peak = self._m.media_peak(kind)
             media[kind] = {"peak_bytes": peak, "source": "measured" if peak else "predicted"}
         return {"available_bytes": snap.available_bytes,

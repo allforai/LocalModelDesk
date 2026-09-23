@@ -5,7 +5,7 @@ import { formatBytes, formatDuration, formatTimestamp } from "../pure/format.js"
 import { addIcon } from "../icons.js";
 import { renderErrorBlock } from "../widgets/error_block.js";
 
-const KIND_LABEL = { video: "视频", music: "音乐", file: "文件" };
+const KIND_LABEL = { video: "视频", music: "音乐", image: "图片", file: "文件" };
 const STATUS_LABEL = { done: "完成", failed: "失败", cancelled: "已取消" };
 
 export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
@@ -32,7 +32,7 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
     if (!outputs.length && !history.length) {
       const empty = doc.createElement("li");
       empty.className = "empty";
-      empty.textContent = "还没有成品。去「视频」或「音乐」面板生成第一件，它会出现在这里。";
+      empty.textContent = "还没有成品。去「图片」「视频」或「音乐」面板生成第一件，它会出现在这里。";
       els.list.append(empty);
       return;
     }
@@ -55,7 +55,10 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
   function summarize(entry) {
     const params = entry.params ?? {};
     const text = String(params.prompt ?? params.caption ?? "");
-    const spec = entry.kind === "video"
+    const spec = entry.kind === "image"
+      ? [params.width && params.height ? `${params.width}×${params.height}` : null,
+        params.steps ? `${params.steps}步` : null, params.seed != null ? `种子 ${params.seed}` : null]
+      : entry.kind === "video"
       ? [
         params.width && params.height ? `${params.width}×${params.height}` : null,
         params.frames ? `约 ${Math.round(params.frames / 24)} 秒` : null,
@@ -112,8 +115,9 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
     if (playable) {
       li.addEventListener("click", () => playOutput(playable, rowTitle));
       const play = doc.createElement("button");
-      play.textContent = "播放";
-      addIcon(play, "play", doc);
+      const image = playable.kind === "image" || /\.png$/i.test(playable.name);
+      play.textContent = image ? "预览" : "播放";
+      addIcon(play, image ? "image" : "play", doc);
       play.addEventListener("click", (event) => {
         event.stopPropagation();
         playOutput(playable, rowTitle);
@@ -150,13 +154,14 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
     }
     els.player.replaceChildren();
     const isVideo = output.kind === "video" || /\.(mp4|webm)$/i.test(output.name);
-    const media = doc.createElement(isVideo ? "video" : "audio");
-    media.controls = true;
-    media.autoplay = true;
+    const isImage = output.kind === "image" || /\.png$/i.test(output.name);
+    const media = doc.createElement(isImage ? "img" : isVideo ? "video" : "audio");
+    if (isImage) media.alt = title || "生成的图片";
+    else { media.controls = true; media.autoplay = true; }
     media.src = api.serveOutput(output.name);
     const caption = doc.createElement("p");
     caption.className = "hint";
-    caption.textContent = `正在播放：${title || output.name}`;
+    caption.textContent = `${isImage ? "正在预览" : "正在播放"}：${title || output.name}`;
     els.player.append(media, caption);
     els.player.scrollIntoView?.({ block: "start", behavior: "smooth" });
   }

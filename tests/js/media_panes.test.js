@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createVideoPane } from "../../desk/static/js/panes/video.js";
 import { createMusicPane } from "../../desk/static/js/panes/music.js";
+import { createImagePane } from "../../desk/static/js/panes/image.js";
 
 class Element {
   constructor(value = "", tagName = "div") {
@@ -31,6 +32,67 @@ function withFetch(responses, run) {
   globalThis.fetch = async (url, options = {}) => { calls.push({ url, options }); return { ok: true, json: async () => responses.shift() }; };
   return Promise.resolve(run(calls)).finally(() => { globalThis.fetch = previous; });
 }
+
+function imagePane(ctx = {}) {
+  const root = pane({ "image-prompt": "橘猫", "image-width": "1024", "image-height": "1024", "image-steps": "40", "image-seed": "42", "image-start": "", "image-error": "", "image-hint": "", "image-model": "" });
+  const controller = createImagePane(root, ctx);
+  return { root, controller, ready() {
+    controller.setHeavyAllowed(true);
+    controller.setRuntimeStatus({ present: true });
+    controller.setModelStatus({ state: "present" });
+  } };
+}
+
+test("图片页需要模型、运行时和仲裁同时就绪，轮询不能误解禁", () => {
+  const { root, controller, ready } = imagePane();
+  assert.equal(root.parts["image-start"].disabled, true);
+  ready(); assert.equal(root.parts["image-start"].disabled, false);
+  controller.setModelStatus({ state: "partial" });
+  controller.setHeavyAllowed(true);
+  assert.equal(root.parts["image-start"].disabled, true);
+  assert.match(root.parts["image-hint"].textContent, /不完整/);
+  ready(); controller.setRuntimeStatus({ present: false, detail: "运行环境缺失" });
+  assert.equal(root.parts["image-start"].disabled, true);
+  assert.match(root.parts["image-hint"].textContent, /运行环境缺失/);
+});
+
+test("图片页回填并提交完整参数，PNG 无音视频控件", async () => {
+  const { root, controller, ready } = imagePane(); ready();
+  const params = { prompt: "蓝杯子", width: 512, height: 768, steps: 30, seed: 0 };
+  controller.fill(params);
+  await withFetch([{ job_id: 8, kind: "image", status: "done", params, output: "qwen-image-1.png" }], async (calls) => {
+    await root.parts["image-start"].click();
+    assert.equal(calls[0].url, "/api/media/image");
+    assert.deepEqual(JSON.parse(calls[0].options.body), params);
+  });
+  const img = root.parts["job-player"].firstChild;
+  assert.equal(img.tagName, "img"); assert.equal(img.controls, false);
+  assert.equal(img.alt, "蓝杯子");
+  assert.equal(img.src, "/api/outputs/qwen-image-1.png");
+});
+
+test("图片页输入不合法时不请求；失败后可以重新提交", async () => {
+  const { root, controller, ready } = imagePane(); ready();
+  for (const invalid of [{ width: 257 }, { steps: 0 }, { seed: -1 }, { prompt: " " }, { seed: "" }]) {
+    controller.fill({ prompt: "猫", width: 1024, height: 1024, steps: 40, seed: 42, ...invalid });
+    await withFetch([], async (calls) => { await root.parts["image-start"].click(); assert.equal(calls.length, 0); });
+    assert.ok(root.parts["image-error"].textContent);
+    assert.equal(root.parts["image-start"].disabled, false);
+  }
+});
+
+test("图片页提交中阻止双击，即使仲裁轮询暂时空闲", async () => {
+  const { root, controller, ready } = imagePane(); ready();
+  const previous = globalThis.fetch; let calls = 0, release;
+  globalThis.fetch = async () => { calls += 1; await new Promise((r) => { release = r; }); return { ok: true, json: async () => ({ job_id: 4, kind: "image", status: "running" }) }; };
+  try {
+    const first = root.parts["image-start"].click();
+    controller.setHeavyAllowed(true);
+    await root.parts["image-start"].click();
+    assert.equal(calls, 1); release(); await first;
+    assert.equal(root.parts["image-start"].disabled, true);
+  } finally { globalThis.fetch = previous; }
+});
 
 test("video/music panes use documented DOM selectors, submit media APIs, and fill saved fields", async () => {
   const video = pane({ "video-prompt": "海边", "video-size": "768x448", "video-frames": "49", "video-steps": "16", "video-start": "" });

@@ -96,11 +96,16 @@ def main(argv: list[str] | None = None, *, sleep=time.sleep) -> int:
     args = parser.parse_args(argv)
 
     local_dir = Path(args.local_dir)
-    files = json.loads(Path(args.manifest).read_text(encoding="utf-8"))["files"]
+    manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
+    files = manifest["files"]
     headers = _headers()
     for item in files:
         rel, size = item["path"], int(item["size"])
-        url = file_url(args.endpoint, args.repo, rel, args.revision)
+        if not (local_dir / rel).resolve().is_relative_to(local_dir.resolve()):
+            print(f"模型文件路径超出目标目录：{rel}", file=sys.stderr, flush=True)
+            return 1
+        url = file_url(args.endpoint, item.get("repo") or args.repo,
+                       item.get("source_path") or rel, item.get("revision") or args.revision)
         for attempt in range(1, RETRIES + 1):
             try:
                 result = fetch_file(url, local_dir / rel, part_path(local_dir, rel), size, headers=headers)
@@ -114,6 +119,11 @@ def main(argv: list[str] | None = None, *, sleep=time.sleep) -> int:
             except OSError as exc:
                 print(f"下载 {rel} 失败：{exc}", file=sys.stderr, flush=True)
                 return 1
+    if manifest.get("image_provenance"):
+        marker = local_dir / "localmodeldesk-image.json"
+        temporary = marker.with_suffix(".tmp")
+        temporary.write_text(json.dumps({**manifest["image_provenance"], "complete": True}, indent=2) + "\n")
+        os.replace(temporary, marker)
     return 0
 
 

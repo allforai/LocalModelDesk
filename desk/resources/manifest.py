@@ -7,7 +7,7 @@ import os
 import re
 import tempfile
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -34,6 +34,12 @@ def _urllib_get(url: str) -> tuple[bytes, str | None]:
 class ManifestFile:
     path: str
     size: int
+    repo: str | None = None
+    revision: str | None = None
+    source_path: str | None = None
+
+    def to_json(self) -> dict:
+        return {key: value for key, value in asdict(self).items() if value is not None}
 
 
 @dataclass(frozen=True)
@@ -77,6 +83,10 @@ class ManifestStore:
         self._fetcher = fetcher
 
     def get(self, entry: ModelEntry, refresh: bool = False) -> Manifest:
+        if entry.key == "qwen-image":
+            from ..media.image_model import files
+            return Manifest(repo=entry.hf_repo, files=tuple(ManifestFile(**f) for f in files()),
+                            fetched_at="2026-09-23T00:00:00Z", source="pinned")
         cache_path = Path(self._cache_dir_provider()) / f"{entry.key}.json"
         cached = self._load_cache(cache_path)
         if cached is not None and cached.repo != entry.hf_repo:
@@ -105,7 +115,7 @@ class ManifestStore:
         try:
             raw = json.loads(cache_path.read_text(encoding="utf-8"))
             files = tuple(
-                ManifestFile(path=file["path"], size=int(file["size"]))
+                ManifestFile(**file)
                 for file in raw["files"]
             )
             return Manifest(
@@ -120,7 +130,7 @@ class ManifestStore:
         payload = {
             "repo": manifest.repo,
             "fetched_at": manifest.fetched_at,
-            "files": [{"path": file.path, "size": file.size} for file in manifest.files],
+            "files": [file.to_json() for file in manifest.files],
         }
         fd, temp_path = tempfile.mkstemp(
             dir=str(cache_path.parent), prefix=cache_path.name, suffix=".tmp"

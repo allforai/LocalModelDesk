@@ -15,9 +15,10 @@ SKIP_DIRS = {
     ".git", ".claude", "__pycache__", ".pytest_cache", "node_modules", "docs",
     "dist", ".venv-desk", ".venv-music3", "llms", "minimax-h3", "minimax-music3",
     "outputs",
-    # 仓库里但不是产品代码：`.worktrees/` 是 git 工作区（里面有一整份代码副本），
-    # `.superpowers/` 是流程草稿。不跳过的话，「只许有一份」这类全仓库不变式会把
-    # 副本当成第二份而误报——2026-09-23 真踩过一次，三条测试同时变红。
+    # 仓库里但不是产品代码，一律跳过。不跳过的话，「目录表只许有一份」这类全仓库
+    # 不变式会把副本或草稿当成第二份而误报——`.worktrees/` 上面真踩过一次
+    # （2026-09-23，三条测试同时变红）。
+    ".allforai", ".codex", ".venv-image", "image-models",
     ".worktrees", ".superpowers",
 }
 TEXT_SUFFIXES = {
@@ -25,7 +26,7 @@ TEXT_SUFFIXES = {
     ".md", ".txt", ".plist", ".yml", ".yaml", ".toml",
 }
 
-ALLOWED = {"desk/resources/catalog.py"}
+ALLOWED = {"desk/resources/catalog.py", "desk/media/image_model.py"}
 LEGACY: set[str] = set()
 TESTS_PREFIX = "tests/"
 

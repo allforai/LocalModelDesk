@@ -9,6 +9,7 @@ const CODE_TITLE = {
   no_output: "生成结束但没有产出文件", spawn_failed: "无法启动生成程序",
   worker_failed: "生成程序意外退出", exit_nonzero: "生成程序异常退出",
   insufficient_memory: "可用内存不足", media_busy: "已有作业在进行",
+  model_incomplete: "图片模型不完整，请到资源页检查", capability_missing: "生成运行环境不可用",
 };
 
 export function describeJobError(error) {

@@ -27,5 +27,11 @@ export function fillPlan(entry) {
       },
     };
   }
+  if (entry.kind === "image") {
+    return { pane: "image", fields: {
+      prompt: params.prompt ?? "", width: params.width ?? 1024, height: params.height ?? 1024,
+      steps: params.steps ?? 40, seed: params.seed ?? 42,
+    } };
+  }
   return null;
 }

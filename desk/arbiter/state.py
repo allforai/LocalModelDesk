@@ -9,8 +9,8 @@ from dataclasses import dataclass
 from typing import Literal
 
 
-KINDS = ("llm", "video", "music")
-MEDIA_KINDS = ("video", "music")
+KINDS = ("llm", "video", "music", "image")
+MEDIA_KINDS = ("video", "music", "image")
 
 PHASE_HELD = "held"
 PHASE_ACQUIRING = "acquiring"

@@ -8,7 +8,7 @@ import { addIcon } from "../icons.js";
 const ACTION_LABEL = { download: "下载", resume: "续传", cancel: "取消", delete: "删除" };
 const ACTION_ICON = { download: "download", resume: "refresh", cancel: "x", delete: "trash" };
 
-export function createResourcesPane(root) {
+export function createResourcesPane(root, ctx = {}) {
   const doc = root.ownerDocument;
   let downloadProgress = null;
   let modelsRoot = null;
@@ -39,9 +39,11 @@ export function createResourcesPane(root) {
       if (config) modelsRoot = config.models_root ?? "";
       const catalog = catalogPayload.models ?? catalogPayload;
       const statuses = statusPayload.models ?? [];
+      ctx.onModels?.(statuses);
       downloadProgress = statusPayload.download ?? statusPayload.download_progress ?? downloadProgress;
       render(catalog, statuses, downloadProgress, disk ?? statusPayload.disk);
     } catch (err) {
+      ctx.onModels?.(null);
       if (els.error) els.error.textContent = err.message;
     } finally {
       if (revalidate && els.refreshBtn) {
@@ -97,6 +99,16 @@ export function createResourcesPane(root) {
       meta.textContent = [`预计 ${view.sizeText} · 占用 ${view.diskText}`, view.note].filter(Boolean).join(" · ");
     }
     li.append(head, meta);
+    if (entry.sources?.length) {
+      const sources = doc.createElement("details");
+      sources.className = "res-sources";
+      const summary = doc.createElement("summary");
+      summary.textContent = "模型来源与固定版本";
+      const text = doc.createElement("p");
+      text.className = "hint";
+      text.textContent = entry.sources.map((source) => `${source.repo} · ${source.revision}`).join("\n");
+      sources.append(summary, text); li.append(sources);
+    }
     if (view.pct > 0 && view.pct < 100) {
       const progress = doc.createElement("progress");
       progress.className = "res-progress";

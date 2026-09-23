@@ -4,11 +4,13 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 
 from .errors import UnknownModelError
+from ..media.image_model import BASE, BASE_REVISION, ENCODER, ENCODER_REVISION
 
 
 GROUP_CHAT = "chat"
 GROUP_VIDEO = "video"
 GROUP_MUSIC = "music"
+GROUP_IMAGE = "image"
 
 
 @dataclass(frozen=True)
@@ -22,12 +24,18 @@ class ModelEntry:
     vision: bool = False
     quant: str | None = None
     params: str | None = None
+    sources: tuple[dict, ...] = ()
 
     def to_json(self) -> dict:
         return asdict(self)
 
 
 CATALOG: tuple[ModelEntry, ...] = (
+    ModelEntry("qwen-image", "Qwen-Image 2.1 + Heretic · MLX BF16", GROUP_IMAGE,
+               BASE, "image-models/qwen-image-2.1-heretic", 30.9,
+               quant="BF16", sources=(
+                   {"repo": BASE, "revision": BASE_REVISION, "target": "."},
+                   {"repo": ENCODER, "revision": ENCODER_REVISION, "target": "text_encoder"})),
     ModelEntry("h3", "MiniMax H3 视频 8bit", GROUP_VIDEO,
                "appautomaton/minimax-h3-base-8bit-mlx", "minimax-h3", 103.0),
     ModelEntry("music3", "MiniMax Music 3", GROUP_MUSIC,

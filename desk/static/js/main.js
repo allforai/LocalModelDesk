@@ -5,6 +5,7 @@ import { createStatusBar } from "./widgets/statusbar.js";
 import { createChatPane } from "./panes/chat.js";
 import { createVideoPane } from "./panes/video.js";
 import { createMusicPane } from "./panes/music.js";
+import { createImagePane } from "./panes/image.js";
 import { createResourcesPane } from "./panes/resources.js";
 import { createLibraryPane } from "./panes/library.js";
 import { createFirstRunPane } from "./panes/firstrun.js";
@@ -43,7 +44,13 @@ function enterDesk() {
     statusbar = createStatusBar($("#statusbar"));
     api.listCatalog().then((entries) => { modelNames = Object.fromEntries((entries.models ?? entries).map((e) => [e.key, e.name])); }).catch(() => {});
     const onStarted = (job) => { jobActive = job.status === "running"; lastJobId = job.job_id ?? null; jobLogFrom = job.next_log_from ?? 0; };
-    panes = { chat:createChatPane($("#pane-chat")), video:createVideoPane($("#pane-video"), { onStarted }), music:createMusicPane($("#pane-music"), { onStarted }), resources:createResourcesPane($("#pane-resources")), library:createLibraryPane($("#pane-library"), { applyFill }) };
+    panes = {
+      chat:createChatPane($("#pane-chat")), video:createVideoPane($("#pane-video"), { onStarted }),
+      music:createMusicPane($("#pane-music"), { onStarted }), image:createImagePane($("#pane-image"), { onStarted }),
+      resources:createResourcesPane($("#pane-resources"), {
+        onModels: (models) => panes.image.setModelStatus(models?.find((m) => m.key === "qwen-image")),
+      }), library:createLibraryPane($("#pane-library"), { applyFill }),
+    };
     settings = createSettingsPane($("#pane-settings"), { onReset: () => globalThis.location.reload() });
     $("[data-open-settings]").addEventListener("click", () => setDrawerOpen(true));
     $("[data-close-settings]").addEventListener("click", () => setDrawerOpen(false));
@@ -80,6 +87,7 @@ function showTab(name) {
   if (name === "library") panes.library.refresh();
   if (name === "video") panes.video.jobView.sync({ busyReason: mediaBusyReason });
   if (name === "music") panes.music.jobView.sync({ busyReason: mediaBusyReason });
+  if (name === "image") panes.image.jobView.sync({ busyReason: mediaBusyReason });
 }
 
 function applyFill(plan) { if (plan) { panes[plan.pane].fill(plan.fields); showTab(plan.pane); } }
@@ -91,16 +99,18 @@ function applyHeavyAvailability(deskState) {
   panes.chat.setHeavyAllowed(llmAllowed, llmAllowed ? "" : llm.reason);
   panes.video.setHeavyAllowed(media.allowed, media.reason);
   panes.music.setHeavyAllowed(media.allowed, media.reason);
+  panes.image.setHeavyAllowed(media.allowed, media.reason);
   // Idle panes must say why they can't start, not silently keep the last
   // finished job's caption while their own button is disabled (F14, gap #9).
   mediaBusyReason = media.allowed ? "" : media.reason;
   panes.video.jobView.setBusyReason(mediaBusyReason);
   panes.music.jobView.setBusyReason(mediaBusyReason);
+  panes.image.jobView.setBusyReason(mediaBusyReason);
 }
 
 async function tickJob() {
   const payload = await api.jobStatus(jobLogFrom, lastJobId);
-  const pane = payload.kind === "music" ? panes.music : panes.video;
+  const pane = panes[payload.kind] ?? panes.video;
   const changed = payload.job_id !== lastJobId;
   if (changed) { lastJobId = payload.job_id; jobLogFrom = 0; }
   pane.jobView.apply(payload, { replaceLog: changed, busyReason: mediaBusyReason }); jobLogFrom = payload.next_log_from ?? jobLogFrom;
@@ -109,11 +119,13 @@ async function tickJob() {
 
 async function tick() {
   try {
-    const [deskState, memory, llm, budget] = await Promise.all([
+    const [deskState, memory, llm, budget, capabilities] = await Promise.all([
       api.deskState(), api.memorySnapshot(), api.llmStatus(),
       // 预算读不到不该让整个 tick 失败：状态栏少一行后缀，比整条状态栏掉线好。
       api.budget().catch(() => null),
+      api.capabilities().catch(() => null),
     ]);
+    panes.image.setRuntimeStatus(capabilities?.image_runtime);
     const download = await panes.resources.refresh();
     failures = 0; statusbar.offline(false); statusbar.update(deskState, memory, download, modelNames, budget); applyHeavyAvailability(deskState); store.set({ deskState, memory });
     panes.chat.applyLlmStatus(llm, deskState);
@@ -123,7 +135,10 @@ async function tick() {
     await panes.chat.refreshSessionsIfStale();
     if (deskState.media_busy) jobActive = true;
     if (jobActive) await tickJob();
-  } catch (error) { failures += 1; if (failures >= 3) statusbar.offline(true); }
+  } catch (error) {
+    panes.image.setHeavyAllowed(false, "服务状态暂不可用，请稍后重试");
+    failures += 1; if (failures >= 3) statusbar.offline(true);
+  }
 }
 
 hydrateIcons(document);

@@ -31,11 +31,14 @@ _CONTENT_TYPES = {
     ".wav": "audio/wav",
     ".m4a": "audio/mp4",
     ".webm": "video/webm",
+    ".png": "image/png",
 }
 _MEDIA_SUFFIXES = frozenset(_CONTENT_TYPES)
 
 
 def _infer_kind(name: str) -> str:
+    if name.lower().endswith(".png"):
+        return "image"
     if name.startswith("h3-"):
         return "video"
     if name.startswith("music3-"):
@@ -137,7 +140,7 @@ class OutputsStore:
     def serve(self, name: str, range_header: str | None = None) -> Response:
         """Describe a safe complete or ranged output-file response."""
         path = self.resolve(name)
-        if path is None:
+        if path is None or path.suffix.lower() not in _CONTENT_TYPES:
             return Response(
                 404,
                 {"Content-Type": "application/json"},

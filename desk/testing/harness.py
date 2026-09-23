@@ -217,6 +217,10 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, skills, a
         ("PUT", "/api/config", lambda req: config.update_config(roots, **req.body).to_json()),
         ("POST", "/api/config/reset", lambda req: config.reset_config(roots, force=bool((req.body or {}).get("force")))),
         ("GET", "/api/paths", get_paths),
+        ("GET", "/api/capabilities", lambda _req: {
+            name: {"present": cap.present, "detail": cap.detail}
+            for name, cap in capabilities.probe_capabilities(roots).items()
+        }),
         ("POST", "/api/first-run", lambda req: firstrun.complete_first_run(
             roots, normalize_user_path(req.body["models_root"])
             if req.body.get("models_root") else None,

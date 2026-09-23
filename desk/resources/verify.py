@@ -95,6 +95,13 @@ def verify_tree(entry: ModelEntry, manifest: Manifest, models_root: Path, *,
     in_flight = 0 if not gaps else min(fresh, max(expected_total - local_total - resumable, 0))
     counted = local_total + resumable + in_flight
     state = "present" if not gaps else "missing" if counted == 0 else "partial"
+    reason = None
+    if entry.key == "qwen-image" and state == "present":
+        from ..media.image_model import validate_model
+        try:
+            validate_model(model_dir)
+        except (ValueError, OSError) as exc:
+            state, reason = "partial", str(exc)
     percent = round(min(counted / expected_total, 1.0) * 100.0, 2) if expected_total else 0.0
     return ModelStatus(
         key=entry.key,
@@ -109,6 +116,7 @@ def verify_tree(entry: ModelEntry, manifest: Manifest, models_root: Path, *,
         bytes_in_flight=in_flight,
         stale_bytes=stale,
         resumable_bytes=resumable,
+        reason=reason,
     )
 
 
