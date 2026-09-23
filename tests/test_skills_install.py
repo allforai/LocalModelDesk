@@ -3,6 +3,7 @@
 `fetch` 由调用方注入，所以这一层不联网也能完整测试。
 """
 import shutil
+import threading
 from pathlib import Path
 
 import pytest
@@ -307,3 +308,116 @@ def test_a_failed_final_swap_restores_the_previous_version(tmp_path, monkeypatch
         "第二次改名失败，用户丢了原本能用的旧版本"
     assert sorted(p.name for p in user.iterdir()) == ["fetched"], "残留的临时目录没清干净"
     assert list(staging.glob("*")) == []
+
+
+def test_concurrent_land_calls_are_serialized_and_neither_destroys_the_other(tmp_path):
+    """land() 整个函数都在一把进程级的锁里（2026-09-23 修复轮 3 finding 1）：并发装
+    两个不同的 skill，两边都必须完整落地，谁也不会踩谁。用真正的线程加
+    threading.Event 控制先后顺序，不靠 mock 猜时序——先卡住第一个 land() 在拷贝阶段，
+    确认第二个 land() 真的被锁挡住、还没完成，再放行，验证两边最终都成功。"""
+    staging, user = tmp_path / "staging", tmp_path / "user"
+    original_copytree = shutil.copytree
+    first_call_started = threading.Event()
+    first_call_may_finish = threading.Event()
+    gate_state = {"used": False}
+
+    def gated_copytree(src, dst, *args, **kwargs):
+        if not gate_state["used"]:
+            gate_state["used"] = True
+            first_call_started.set()
+            assert first_call_may_finish.wait(timeout=5), "测试本身卡住了，没人来放行"
+        return original_copytree(src, dst, *args, **kwargs)
+
+    staged_a = stage_from_url(
+        "https://example.com/x", staging,
+        lambda _u: {"SKILL.md": "---\nname: alpha\ndescription: A\n---\n\nA 的正文\n"})
+    staged_b = stage_from_url(
+        "https://example.com/x", staging,
+        lambda _u: {"SKILL.md": "---\nname: beta\ndescription: B\n---\n\nB 的正文\n"})
+
+    results: dict[str, object] = {}
+
+    def run(label: str, staging_id: str) -> None:
+        try:
+            results[label] = land(staging_id, staging, user)
+        except Exception as exc:                       # noqa: BLE001 —— 测试要能捕获任何异常类型
+            results[label] = exc
+
+    shutil.copytree = gated_copytree
+    try:
+        thread_a = threading.Thread(target=run, args=("a", staged_a["staging_id"]))
+        thread_a.start()
+        assert first_call_started.wait(timeout=5), "第一个 land() 没能进入拷贝阶段"
+
+        thread_b = threading.Thread(target=run, args=("b", staged_b["staging_id"]))
+        thread_b.start()
+
+        # 给 B 一点时间：如果锁真的挡住了它，它这时候还不该完成。
+        thread_b.join(timeout=0.3)
+        assert thread_b.is_alive(), "第二个 land() 不该在第一个还没放锁之前就完成"
+
+        first_call_may_finish.set()
+        thread_a.join(timeout=5)
+        thread_b.join(timeout=5)
+    finally:
+        shutil.copytree = original_copytree
+
+    assert results.get("a") == "alpha", results.get("a")
+    assert results.get("b") == "beta", results.get("b")
+    assert (user / "alpha" / "SKILL.md").is_file()
+    assert (user / "beta" / "SKILL.md").is_file()
+    assert list(staging.glob("*")) == []
+
+
+def test_a_double_fault_during_reinstall_degrades_to_a_clean_install_error(tmp_path, monkeypatch):
+    """最终改名失败、换回旧版本也失败——双重故障必须还是一个干净的 InstallError，
+    不能让原始的 OSError 冒穿出去变成一次没处理的崩溃；报错要点名旧版本被留在了
+    哪个目录，用户才能手动救回来（2026-09-23 修复轮 3 finding 2）。"""
+    staging, user = tmp_path / "staging", tmp_path / "user"
+    staged1 = stage_from_url("https://example.com/x", staging, fetch_ok)
+    land(staged1["staging_id"], staging, user)
+
+    staged2 = stage_from_url(
+        "https://example.com/x", staging,
+        lambda _u: {"SKILL.md": "---\nname: fetched\ndescription: v2\n---\n\n第二版\n"})
+
+    original_rename = Path.rename
+
+    def flaky_rename(self, target):
+        # 最终改名（incoming -> target）和恢复改名（aside -> target）都失败；
+        # target -> aside 那一步（把旧版本挪开）必须成功，不然根本走不到双重故障。
+        if self.name.startswith(".incoming-") or self.name.startswith(".replacing-"):
+            raise OSError("disk full during swap")
+        return original_rename(self, target)
+
+    monkeypatch.setattr(Path, "rename", flaky_rename)
+    with pytest.raises(InstallError) as excinfo:
+        land(staged2["staging_id"], staging, user)
+
+    message = str(excinfo.value)
+    assert "没能换回来" in message, "必须明说旧版本也没能恢复"
+
+    leftover = [p for p in user.iterdir() if p.name.startswith(".replacing-")]
+    assert len(leftover) == 1, "旧版本应该原样留在 .replacing-* 里，不多不少"
+    assert leftover[0].name in message, "报错要点名旧版本被留在了哪个目录"
+    assert (leftover[0] / "SKILL.md").read_text(encoding="utf-8") == SKILL, "旧版本内容不能被弄坏"
+    assert list(staging.glob("*")) == []
+
+
+def test_reinstalling_over_a_corrupted_target_gives_a_clear_message(tmp_path):
+    """target 存在，但读不出里面的 SKILL.md——不能说「已经是另一个 skill（叫
+    None）」，那自相矛盾：同名却说不是同一个 skill。要说清楚问题在哪（读不出来），
+    让用户自己删了或者修好（2026-09-23 修复轮 3 finding 3）。"""
+    staging, user = tmp_path / "staging", tmp_path / "user"
+    user.mkdir(parents=True)
+    (user / "fetched").mkdir()          # 故意不放 SKILL.md：_declared_name 读不出，返回 None
+
+    staged = stage_from_url("https://example.com/x", staging, fetch_ok)
+    with pytest.raises(InstallError) as excinfo:
+        land(staged["staging_id"], staging, user)
+
+    message = str(excinfo.value)
+    assert "None" not in message, "不能把读不出来的状态说成一个叫 None 的 skill"
+    assert "fetched" in message
+    assert list(staging.glob("*")) == []
+    assert (user / "fetched").is_dir(), "没读懂的目录也不能被动"

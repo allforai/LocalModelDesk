@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import shutil
+import threading
 import uuid
 from pathlib import Path
 
@@ -23,6 +24,15 @@ class InstallError(Exception):
 
 def _clear(path: Path) -> None:
     shutil.rmtree(path, ignore_errors=True)
+
+
+# 台面用 ThreadingHTTPServer（desk/app.py），一个请求一个线程，land() 之前没有任何
+# 东西串行化并发的安装。两个安装同时在飞时，「清掉上一次崩溃留下的痕迹」这条 sweep
+# 分不清「崩溃留下的」和「另一个线程正在用的」——不试着靠时间戳、年龄之类的启发式让
+# sweep 变聪明（那是拿一个猜测替换一条清楚的不变量，而两个安装真的并发时这个猜测恰好
+# 是错的），直接把整个 land() 串行化：装是一个人手动触发的稀有动作，串行化不花什么
+# 代价，却能干净地消掉这整类问题（2026-09-23 修复轮 3 finding 1）。
+_LAND_LOCK = threading.Lock()
 
 
 def stage_from_url(url: str, staging_root: Path, fetch) -> dict:
@@ -76,84 +86,114 @@ def _declared_name(skill_md: Path) -> str | None:
 
 
 def land(staging_id: str, staging_root: Path, user_root: Path) -> str:
-    staged = Path(staging_root) / staging_id
-    if not (staged / "SKILL.md").is_file():
-        raise InstallError("暂存已经不在了，请重新预览")
-    # 落盘前再读一遍暂存的 SKILL.md，不能假设预览之后它没被动过
-    # （2026-09-23 修复轮 1 finding 3）。
-    fields, _body, error = split_skill((staged / "SKILL.md").read_text(encoding="utf-8"))
-    if error:
-        _clear(staged)
-        raise InstallError(error)
-    name = fields["name"].strip()
-    user_root = Path(user_root)
-    target = user_root / name
-
-    try:
-        user_root.mkdir(parents=True, exist_ok=True)
-    except OSError as exc:
-        _clear(staged)
-        raise InstallError(f"落盘失败：{exc}") from exc
-
-    # 起步先清掉上一次崩溃（断电、被杀）留下的痕迹：崩溃窗口只可能落在下面两次改名
-    # 之间，留下的只会是 .incoming-*/.replacing-* 这两类点开头的目录。只清这两类前缀，
-    # 不做全局扫描式的 sweep——那会有清到正在进行中的操作的风险
-    # （2026-09-23 修复轮 2 finding 3）。
-    for stale in user_root.glob(".incoming-*"):
-        _clear(stale)
-    for stale in user_root.glob(".replacing-*"):
-        _clear(stale)
-
-    # 「路径撞了」不等于「是同一个 skill」：这台设备的文件系统既不区分大小写、也不做
-    # Unicode 规范化，`Foo` 和 `foo`、NFC 的 `café` 和 NFD 的 `café` 都会落在同一个路径。
-    # 只有已存在的目录声明的 name 和这次要装的 name 完全一样，才当成「重装同一个
-    # skill」去替换；否则拒绝，绝不能把用户认识的另一个 skill 悄悄换掉——桌面猜不出
-    # 用户想要哪个，猜错了不可挽回（2026-09-23 修复轮 2 finding 2，是修复轮 1
-    # 引入的整体替换逻辑本身造出来的洞）。
-    if target.exists():
-        existing_name = _declared_name(target / "SKILL.md")
-        if existing_name != name:
+    # 整个函数都在锁里：sweep、名字校验、拷贝、两次改名——没有一步是安全的部分执行，
+    # 全部串行化（2026-09-23 修复轮 3 finding 1）。
+    with _LAND_LOCK:
+        staged = Path(staging_root) / staging_id
+        if not (staged / "SKILL.md").is_file():
+            raise InstallError("暂存已经不在了，请重新预览")
+        # 落盘前再读一遍暂存的 SKILL.md，不能假设预览之后它没被动过
+        # （2026-09-23 修复轮 1 finding 3）。
+        fields, _body, error = split_skill((staged / "SKILL.md").read_text(encoding="utf-8"))
+        if error:
             _clear(staged)
-            raise InstallError(
-                f"{target.name!r} 已经是另一个 skill（叫 {existing_name!r}），这次装的是 "
-                f"{name!r}：文件系统认为路径相同，但不是同一个 skill——先给其中一个改名再装")
+            raise InstallError(error)
+        name = fields["name"].strip()
+        user_root = Path(user_root)
+        target = user_root / name
 
-    # 新版本先整个拷到一个点开头的临时目录——这一步最耗时，但 target 此刻完全没被动过，
-    # 拷贝失败也好、进程被杀也好，target 都还是原样。真正有风险的窗口收窄成下面两次
-    # 改名之间那一小段，而不是整个拷贝的时长（2026-09-23 修复轮 2 finding 3，
-    # 取代修复轮 1「先挪旧的、再拷新的」的顺序）。
-    incoming = user_root / f".incoming-{uuid.uuid4().hex}"
-    try:
-        shutil.copytree(staged, incoming)
-    except OSError as exc:
-        _clear(incoming)
-        _clear(staged)
-        raise InstallError(f"落盘失败：{exc}") from exc
-
-    aside = None
-    if target.exists():
-        aside = user_root / f".replacing-{uuid.uuid4().hex}"
         try:
-            target.rename(aside)
+            user_root.mkdir(parents=True, exist_ok=True)
         except OSError as exc:
-            # 挪都没挪成功：目标还是原来那份，新版本的临时拷贝清掉，只清暂存。
+            _clear(staged)
+            raise InstallError(f"落盘失败：{exc}") from exc
+
+        # 起步先清掉上一次崩溃（断电、被杀）留下的痕迹：崩溃窗口只可能落在下面两次
+        # 改名之间，留下的只会是 .incoming-*/.replacing-* 这两类点开头的目录。有了
+        # 上面那把锁，这里看到的绝不会是另一个线程正在用的东西——只清这两类前缀，
+        # 不做全局扫描式的 sweep（2026-09-23 修复轮 2 finding 3，锁的必要性见
+        # 修复轮 3 finding 1：没有锁，这条 sweep 分不清「崩溃留下的」和「另一个线程
+        # 正在用的」）。
+        for stale in user_root.glob(".incoming-*"):
+            _clear(stale)
+        for stale in user_root.glob(".replacing-*"):
+            _clear(stale)
+
+        # 「路径撞了」不等于「是同一个 skill」：这台设备的文件系统既不区分大小写、也
+        # 不做 Unicode 规范化，`Foo` 和 `foo`、NFC 的 `café` 和 NFD 的 `café` 都会落在
+        # 同一个路径。只有已存在的目录声明的 name 和这次要装的 name 完全一样，才当成
+        # 「重装同一个 skill」去替换；否则拒绝，绝不能把用户认识的另一个 skill 悄悄
+        # 换掉——桌面猜不出用户想要哪个，猜错了不可挽回（2026-09-23 修复轮 2
+        # finding 2，是修复轮 1 引入的整体替换逻辑本身造出来的洞）。
+        if target.exists():
+            existing_name = _declared_name(target / "SKILL.md")
+            if existing_name is None:
+                # 读不出来不等于「是另一个 skill」——那是自相矛盾的说法（同名却说
+                # 不是同一个）。说清楚问题在哪：SKILL.md 缺失、读不出或者解析不了，
+                # 不敢动这个目录，让用户自己删或者修（2026-09-23 修复轮 3 finding 3）。
+                _clear(staged)
+                raise InstallError(
+                    f"{target.name!r} 这个目录已经存在，但读不出里面的 SKILL.md（缺失、"
+                    "读不出，或者解析不了）：没法确认它是不是同一个 skill，不敢动它——"
+                    f"先手动删掉或者修好 {target} 再装")
+            if existing_name != name:
+                _clear(staged)
+                raise InstallError(
+                    f"{target.name!r} 已经是另一个 skill（叫 {existing_name!r}），这次装的是 "
+                    f"{name!r}：文件系统认为路径相同，但不是同一个 skill——"
+                    "先给其中一个改名再装")
+
+        # 新版本先整个拷到一个点开头的临时目录——这一步最耗时，但 target 此刻完全没
+        # 被动过，拷贝失败也好、进程被杀也好，target 都还是原样。真正有风险的窗口
+        # 收窄成下面两次改名之间那一小段，而不是整个拷贝的时长（2026-09-23 修复轮 2
+        # finding 3，取代修复轮 1「先挪旧的、再拷新的」的顺序）。
+        incoming = user_root / f".incoming-{uuid.uuid4().hex}"
+        try:
+            shutil.copytree(staged, incoming)
+        except OSError as exc:
             _clear(incoming)
             _clear(staged)
             raise InstallError(f"落盘失败：{exc}") from exc
 
-    try:
-        incoming.rename(target)
-    except OSError as exc:
-        if aside is not None:
-            aside.rename(target)        # 换回旧版本：重装失败不能让用户连能用的版本都丢了
-        _clear(incoming)
-        _clear(staged)
-        raise InstallError(f"落盘失败：{exc}") from exc
+        aside = None
+        if target.exists():
+            aside = user_root / f".replacing-{uuid.uuid4().hex}"
+            try:
+                target.rename(aside)
+            except OSError as exc:
+                # 挪都没挪成功：目标还是原来那份，新版本的临时拷贝清掉，只清暂存。
+                _clear(incoming)
+                _clear(staged)
+                raise InstallError(f"落盘失败：{exc}") from exc
 
-    if aside is not None:
-        _clear(aside)
-    _clear(staged)
-    return name
+        try:
+            incoming.rename(target)
+        except OSError as exc:
+            if aside is not None:
+                try:
+                    # 换回旧版本：重装失败不能让用户连能用的版本都丢了。
+                    aside.rename(target)
+                except OSError as restore_exc:
+                    # 双重故障：新版本换不上、旧版本也换不回去。旧版本原样留在
+                    # aside，只是名字变了——不能让 restore_exc 就这样原样冒出去：
+                    # 那样下面的 InstallError 包装就被跳过了，routes.py 的
+                    # except InstallError 接不住，直接变成一次没处理的崩溃，而且
+                    # 什么都没告诉用户去哪找回旧版本（2026-09-23 修复轮 3
+                    # finding 2）。
+                    _clear(incoming)
+                    _clear(staged)
+                    raise InstallError(
+                        f"落盘失败（{exc}），旧版本也没能换回来（{restore_exc}）："
+                        f"旧版本原样留在了 {aside}，请手动把它改名或移回 "
+                        f"{target}") from restore_exc
+            _clear(incoming)
+            _clear(staged)
+            raise InstallError(f"落盘失败：{exc}") from exc
+
+        if aside is not None:
+            _clear(aside)
+        _clear(staged)
+        return name
 
 
 def discard(staging_id: str, staging_root: Path) -> None:
