@@ -182,3 +182,32 @@ def test_file_inputs_stay_in_the_tab_order():
     for tag in inputs:
         assert " hidden" not in tag
         assert 'class="visually-hidden"' in tag
+
+
+def test_skill_bar_states_editing_skill_md_takes_effect_next_turn():
+    """R-skill-05：skill 是「当前的指令」，不是「当时说过的话」——改了 SKILL.md，
+    老会话的下一轮就用新版本。这个后果 spec 要求「必须在界面上说明」，但一直
+    只活在 spec 文字里，desk/static/ 下找不到这句话（2026-09-23 finding 4）。
+    2026-09-23 反馈后芯片栏收进了 model-row 里的一个按钮（data-skill-toggle），
+    这句话跟着搬进展开后的面板（data-skill-panel），仍然挨着重新扫描按钮。
+    """
+    assert "data-skill-effect-hint" in HTML
+    panel_and_after = HTML.split("data-skill-panel", 1)[1]
+    hint = panel_and_after.split("data-skill-effect-hint", 1)[1].split("</p>", 1)[0]
+    assert "SKILL.md" in hint
+    assert "下一轮" in hint and "新版本" in hint
+
+
+def test_skill_control_collapsed_into_model_row_not_a_permanent_bar():
+    """2026-09-23 反馈：「skill 放到普通会话，这样太占用心智了。不是高频行为不
+    应该这么浅的入口」——芯片栏不能再是消息区上方常驻的一条（data-skill-bar），
+    折叠态必须活在 model-row 里，跟模型的 select/加载/卸载/状态文字挨在一起
+    （它们说的是同一件事：这个对话跑在什么上面）。
+    """
+    assert "data-skill-bar" not in HTML, "常驻芯片栏该已经收起来，不该还在 HTML 里"
+    assert "data-skill-toggle" in HTML
+    model_row = HTML.split('class="model-row"', 1)[1].split("</div>", 1)[0]
+    assert "data-skill-toggle" in model_row, "折叠态入口必须在 model-row 里，不是另起一块"
+    # 展开态默认收起，不是常驻显示——这也是这次改动的核心：入口可以浅，但别默认摊开。
+    panel_open_tag = HTML.split("data-skill-panel", 1)[1].split(">", 1)[0]
+    assert "hidden" in panel_open_tag, "面板默认应该是收起的（hidden），不是常驻展开"

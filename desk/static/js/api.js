@@ -10,6 +10,8 @@ const ROUTES = {
   video: "/api/media/video", music: "/api/media/music", image: "/api/media/image", capabilities: "/api/capabilities",
   cancelJob: "/api/media/cancel", job: "/api/media/job", outputs: "/api/outputs",
   history: "/api/history", sessions: "/api/sessions", gatewayConfig: "/api/gateway/config",
+  skills: "/api/skills", skillsRescan: "/api/skills/rescan",
+  skillsPreview: "/api/skills/preview", skillsInstall: "/api/skills/install", skillsDiscard: "/api/skills/discard",
 };
 
 export class DeskApiError extends Error {
@@ -132,3 +134,13 @@ export const updateChatSession = (id, patch, { keepalive = false } = {}) =>
   request(`${ROUTES.sessions}/${encoded(id)}`, { method: "PATCH", body: patch, keepalive });
 export const deleteChatSession = (id) => json(`${ROUTES.sessions}/${encoded(id)}`, "DELETE");
 export const gatewayConfig = (apply = false) => request(ROUTES.gatewayConfig, { method: apply ? "POST" : "GET" });
+
+export const listSkills = () => request(ROUTES.skills);
+export const rescanSkills = () => json(ROUTES.skillsRescan, "POST", {});
+// 三个装 skill 的动作（R-skill-11）：预览只落暂存、不装；确认落盘但不启用；
+// 取消把暂存扔掉。三个都是 409 报错带后端自己的中文消息，走跟别处一样的
+// DeskApiError（toError 已经把 payload.error.message 摘出来了），UI 层不用
+// 另外处理格式，直接读 error.message 显示即可。
+export const previewSkill = (url) => json(ROUTES.skillsPreview, "POST", { url });
+export const installSkill = (stagingId) => json(ROUTES.skillsInstall, "POST", { staging_id: stagingId });
+export const discardSkill = (stagingId) => json(ROUTES.skillsDiscard, "POST", { staging_id: stagingId });

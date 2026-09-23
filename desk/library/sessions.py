@@ -13,7 +13,7 @@ from .errors import NotFoundError, ValidationError
 
 _ID_RE = re.compile(r"^[0-9a-f]{32}$")
 _TS_FMT = "%Y-%m-%dT%H:%M:%S"
-_PATCH_KEYS = frozenset({"title", "model", "messages"})
+_PATCH_KEYS = frozenset({"title", "model", "messages", "skills"})
 
 
 class SessionStore:
@@ -52,6 +52,9 @@ class SessionStore:
             "created": now,
             "updated": now,
             "messages": [],
+            # 选中的 skill 是会话级的（R-skill-15）：附件勾选不写回 skill 目录，
+            # 因为自带目录是只读的，而同一个 skill 在不同会话里想带的附件本就可以不同。
+            "skills": [],
         }
         with self._lock:
             self._write(session)
@@ -72,6 +75,8 @@ class SessionStore:
             raise ValidationError(f"unknown patch keys: {sorted(unknown)}")
         if "messages" in patch and not isinstance(patch["messages"], list):
             raise ValidationError("messages must be a list")
+        if "skills" in patch and not isinstance(patch["skills"], list):
+            raise ValidationError("skills must be a list")
 
         with self._lock:
             session = self._load(session_id)

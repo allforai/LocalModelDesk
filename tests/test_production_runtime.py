@@ -162,3 +162,34 @@ def test_prompt_assist_is_mounted_in_production(tmp_path, monkeypatch):
         assert payload["error"]["code"] == "no_model_loaded"
     finally:
         runtime.shutdown()
+
+
+def test_skills_routes_call_distinct_handlers_in_production(tmp_path, monkeypatch):
+    """`_mount_routes` builds one adapter closure per route inside a `for` loop
+    (`handler=handler` default arg). SkillsService.rescan() happens to return the
+    exact same shape as list_skills(), so a bare shape-equality check can't tell
+    whether GET /api/skills actually ran list_skills or (via a stray shared closure)
+    silently ran rescan instead. Assert on *which method fired*, not just the shape.
+    """
+    import desk.skills.service as skills_service
+
+    calls = []
+    monkeypatch.setattr(
+        skills_service.SkillsService, "list_skills",
+        lambda self: calls.append("list") or {"skills": []},
+    )
+    monkeypatch.setattr(
+        skills_service.SkillsService, "rescan",
+        lambda self: calls.append("rescan") or {"skills": []},
+    )
+    _configured_data_root(tmp_path, monkeypatch)
+    runtime = build_runtime(port=0)
+    runtime.start_background()
+    try:
+        status, _ = http_call(runtime, "GET", "/api/skills")
+        assert status == 200
+        status, _ = http_call(runtime, "POST", "/api/skills/rescan")
+        assert status == 200
+        assert calls == ["list", "rescan"]
+    finally:
+        runtime.shutdown()

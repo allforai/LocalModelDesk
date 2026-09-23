@@ -6,7 +6,7 @@ tolerated any more (the media-gui prototype was deleted 2026-09-11).
 import os
 from pathlib import Path
 
-from desk.resources.catalog import CATALOG
+from desk.resources.catalog import CATALOG  # noqa: F401
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -15,7 +15,11 @@ SKIP_DIRS = {
     ".git", ".claude", "__pycache__", ".pytest_cache", "node_modules", "docs",
     "dist", ".venv-desk", ".venv-music3", "llms", "minimax-h3", "minimax-music3",
     "outputs",
+    # 仓库里但不是产品代码，一律跳过。不跳过的话，「目录表只许有一份」这类全仓库
+    # 不变式会把副本或草稿当成第二份而误报——`.worktrees/` 上面真踩过一次
+    # （2026-09-23，三条测试同时变红）。
     ".allforai", ".codex", ".venv-image", "image-models",
+    ".worktrees", ".superpowers",
 }
 TEXT_SUFFIXES = {
     ".py", ".sh", ".js", ".mjs", ".html", ".css", ".swift", ".json",
@@ -27,8 +31,8 @@ LEGACY: set[str] = set()
 TESTS_PREFIX = "tests/"
 
 
-def iter_text_files():
-    for root, dirs, files in os.walk(REPO):
+def iter_text_files(root_dir: Path = REPO):
+    for root, dirs, files in os.walk(root_dir):
         dirs[:] = [directory for directory in dirs if directory not in SKIP_DIRS]
         for name in files:
             path = Path(root) / name
@@ -90,3 +94,24 @@ def test_legacy_allowlist_entries_are_files_while_present():
         path = REPO / relative_path
         if path.exists():
             assert path.is_file()
+
+
+# ---- 扫描范围：仓库里的非产品目录必须跳过 ----------------------------
+
+def test_scan_skips_git_worktrees_and_scratch_dirs(tmp_path):
+    """`.worktrees/` 与 `.superpowers/` 住在仓库里，但不是产品代码。
+
+    真实踩过：SDD 流程在 `.worktrees/<分支>/` 下开 git 工作区，那里有一份完整的代码副本，
+    于是「目录表只许有一份」这类全仓库不变式会把副本当成第二份，三条测试同时误报。
+    当时是靠撤掉工作区绕过的——但下一个用工作区的人会再踩一次。
+    """
+    (tmp_path / "desk").mkdir()
+    (tmp_path / "desk" / "real.py").write_text("x = 1", encoding="utf-8")
+    for scratch in (".worktrees/branch/desk", ".superpowers/sdd/plan"):
+        d = tmp_path / scratch
+        d.mkdir(parents=True)
+        (d / "copy.py").write_text("x = 1", encoding="utf-8")
+
+    found = sorted(p.relative_to(tmp_path).as_posix() for p in iter_text_files(tmp_path))
+
+    assert found == ["desk/real.py"], f"扫到了非产品目录：{found}"
