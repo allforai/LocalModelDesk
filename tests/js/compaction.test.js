@@ -80,3 +80,35 @@ test("已有的 summary 永远留在头部，不进尾部也不被丢弃", () =>
   assert.equal(head[0].role, "summary");
   assert.equal(tail.some((m) => m.role === "summary"), false);
 });
+
+test("skill 占掉的窗口要从尾部预算里扣掉", () => {
+  // R-skill-12：splitForCompaction 算的是「历史原文最多留多少」，而 skill 占着同一个
+  // 窗口又不在 messages 里。不扣掉它，压完仍然超，下一轮再压——大 skill 下收敛不了。
+  const messages = Array.from({ length: 20 }, (_, i) => ({ role: "user", content: "x".repeat(100) }));
+  const options = { compactAt: 1000, charsPerToken: 4 };
+  const without = splitForCompaction(messages, options);
+  const withSkill = splitForCompaction(messages, { ...options, skillChars: 1500 });
+  assert.ok(withSkill.tail.length < without.tail.length,
+    "带着 skill 时尾部没有变短——预算没扣掉 skill");
+});
+
+test("skill 大到吃光预算时，仍然保留最近一轮完整问答", () => {
+  // 预算被扣成负数不能变成「一条都不留」：用户眼前正在看的那一轮再紧也不能摘掉。
+  const messages = [
+    { role: "user", content: "老的" },
+    { role: "assistant", content: "老答" },
+    { role: "user", content: "最近的问" },
+    { role: "assistant", content: "最近的答" },
+  ];
+  const { tail } = splitForCompaction(messages, {
+    compactAt: 100, charsPerToken: 4, skillChars: 100000,
+  });
+  assert.deepEqual(tail.map((m) => m.content), ["最近的问", "最近的答"]);
+});
+
+test("没有 skill 时切分结果和以前一模一样", () => {
+  const messages = Array.from({ length: 10 }, () => ({ role: "user", content: "y".repeat(50) }));
+  const options = { compactAt: 800, charsPerToken: 4 };
+  assert.deepEqual(splitForCompaction(messages, options),
+                   splitForCompaction(messages, { ...options, skillChars: 0 }));
+});
