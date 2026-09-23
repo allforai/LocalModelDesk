@@ -2,10 +2,15 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+from desk.skills.install import stage_from_url
 from desk.skills.routes import build_routes
 from desk.skills.service import SkillsService
 
 SKILL = "---\nname: {n}\ndescription: d\n---\n\n正文\n"
+
+
+def fetch_ok(_url):
+    return {"SKILL.md": "---\nname: fetched\ndescription: d\n---\n\n正文\n"}
 
 
 def roots(tmp_path):
@@ -51,3 +56,55 @@ def test_both_routes_return_the_same_shape(tmp_path):
     listed = handler(service, "GET", "/api/skills")(None, {})[1]
     rescanned = handler(service, "POST", "/api/skills/rescan")(None, {})[1]
     assert listed == rescanned, "两个入口对同一个问题给了不同形状的答案"
+
+
+def test_preview_install_returns_the_full_text_over_http(tmp_path):
+    r = roots(tmp_path)
+    service = SkillsService(r)
+    service.preview_install = lambda url: stage_from_url(url, service._staging_root(), fetch_ok)
+    status, body = handler(service, "POST", "/api/skills/preview")({"url": "u"}, {})
+    assert status == 200
+    assert body["name"] == "fetched"
+
+
+def test_preview_install_error_maps_to_409(tmp_path):
+    """`InstallError` 过 `_run` 必须变成 409，而不是让异常冒穿 HTTP 层。"""
+    r = roots(tmp_path)
+    service = SkillsService(r)
+    status, body = handler(service, "POST", "/api/skills/preview")({"url": ""}, {})
+    assert status == 409
+    assert body["error"]["code"] == "install_failed"
+    assert body["error"]["message"]
+
+
+def test_preview_install_with_a_missing_url_gives_the_dedicated_message(tmp_path):
+    """没给 url（body 里根本没有这个键）：`preview_install` 自己的守卫先接住，
+    不能滑到 `_fetch_github` 里被那条更笼统的「取不下来」吞掉。"""
+    r = roots(tmp_path)
+    service = SkillsService(r)
+    status, body = handler(service, "POST", "/api/skills/preview")({}, {})
+    assert status == 409
+    assert body["error"]["message"] == "请给一个仓库地址"
+
+
+def test_install_route_lands_but_does_not_enable(tmp_path):
+    r = roots(tmp_path)
+    service = SkillsService(r)
+    service.preview_install = lambda url: stage_from_url(url, service._staging_root(), fetch_ok)
+    _, staged = handler(service, "POST", "/api/skills/preview")({"url": "u"}, {})
+    status, body = handler(service, "POST", "/api/skills/install")({"staging_id": staged["staging_id"]}, {})
+    assert status == 200
+    assert body == {"installed": "fetched", "enabled": False}
+
+
+def test_discard_route_then_install_fails_with_409(tmp_path):
+    r = roots(tmp_path)
+    service = SkillsService(r)
+    service.preview_install = lambda url: stage_from_url(url, service._staging_root(), fetch_ok)
+    _, staged = handler(service, "POST", "/api/skills/preview")({"url": "u"}, {})
+    status, body = handler(service, "POST", "/api/skills/discard")({"staging_id": staged["staging_id"]}, {})
+    assert status == 200
+    assert body == {"discarded": staged["staging_id"]}
+    status, body = handler(service, "POST", "/api/skills/install")({"staging_id": staged["staging_id"]}, {})
+    assert status == 409
+    assert body["error"]["code"] == "install_failed"
