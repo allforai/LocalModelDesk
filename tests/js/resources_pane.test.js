@@ -168,6 +168,37 @@ test("删除按钮带 btn-danger，下载带 btn-primary", async () => {
   } finally { globalThis.fetch = previous; }
 });
 
+test("resources 面板给每行加机型适配的常驻标记（R-ui-fit）", async () => {
+  const { root, parts } = makePane();
+  const previous = globalThis.fetch;
+  const GIB = 1024 ** 3;
+  globalThis.fetch = async (url) => ({ ok: true, status: 200, json: async () => {
+    const path = String(url);
+    if (path.startsWith("/api/config")) return { models_root: "/m" };
+    if (path.includes("catalog")) return [
+      { key: "fits", name: "能跑的", gb: 1, fit: { level: "fits", needed_bytes: 16 * GIB, available_bytes: 100 * GIB, headroom_bytes: 84 * GIB, shortfall_bytes: 0 } },
+      { key: "too-big", name: "装不下的", gb: 90, fit: { level: "too_big", needed_bytes: 90 * GIB, available_bytes: 100 * GIB, headroom_bytes: -0, shortfall_bytes: 10 * GIB } },
+    ];
+    if (path.startsWith("/api/resources/status")) return { models: [
+      { key: "fits", state: "present", disk_bytes: 1 },
+      { key: "too-big", state: "missing", disk_bytes: 0 },
+    ] };
+    if (path === "/api/resources/download") return {};
+    return { free_bytes: 1, total_bytes: 2 };
+  }});
+  try {
+    const pane = createResourcesPane(root);
+    await pane.refresh();
+    const row0Head = parts["res-list"].children[0].children[0];
+    assert.equal(row0Head.children.length, 3);
+    assert.equal(row0Head.children[2].className, "badge badge-ok");
+    assert.equal(row0Head.children[2].textContent, "能跑");
+    const row1Head = parts["res-list"].children[1].children[0];
+    assert.equal(row1Head.children[2].className, "badge badge-unknown");
+    assert.equal(row1Head.children[2].textContent, "装不下");
+  } finally { globalThis.fetch = previous; }
+});
+
 test("resources header shows the models root (F11/W8)", async () => {
   const { root, parts } = makePane();
   const previous = globalThis.fetch;

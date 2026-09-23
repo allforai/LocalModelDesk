@@ -17,6 +17,19 @@ test("present：徽标「齐」、pct 100、只有删除（R-ui-05）", () => {
   assert.equal(v.diskText, "68.4 GiB");
 });
 
+test("rowView 透传目录端点带的适配判定：常驻标记 + 数字文案，不缺省成好看的猜测", () => {
+  const GIB = 1024 ** 3;
+  const fitsEntry = { ...entry, fit: { level: "fits", needed_bytes: 16 * GIB, available_bytes: 100 * GIB, headroom_bytes: 84 * GIB, shortfall_bytes: 0 } };
+  const v = rowView(fitsEntry, base);
+  assert.deepEqual(v.fit, { label: "能跑", badgeKind: "ok" });
+  assert.match(v.fitDetail, /剩 84\.0 GiB/);
+
+  const noFitEntry = { ...entry, fit: undefined };
+  const unknown = rowView(noFitEntry, base);
+  assert.deepEqual(unknown.fit, { label: "算不出", badgeKind: "none" });
+  assert.equal(unknown.fitDetail, "这台机器的重活能力还没能测出来");
+});
+
 test("size text 在 bytes_expected 缺失时回退到目录估计", () => {
   const v = rowView(entry, { ...base, bytes_expected: undefined });
   assert.equal(v.sizeText, "68.4 GiB（目录）");

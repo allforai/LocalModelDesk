@@ -29,7 +29,7 @@ def _truthy(value) -> bool:
 def build_routes(service) -> list[Route]:
     @_guarded
     def get_catalog(query, body):
-        return 200, {"models": [entry.to_json() for entry in service.list_catalog()]}
+        return 200, {"models": service.list_catalog_with_fit()}
 
     @_guarded
     def get_status(query, body):

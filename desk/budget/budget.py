@@ -114,6 +114,41 @@ def plan(wanted, resident, available_bytes: int) -> Plan:
 COMPACT_FRACTION = 0.75    # 策略值，不是推导值：额度用到这个比例就压缩
 CACHE_SLOTS = 1            # mlx-lm 默认保 10 份 KV 缓存；台面一次只服务一个会话
 
+FIT_TIGHT_FRACTION = 0.85  # 策略值，不是推导值：需求用到机器能力的这个比例就算「紧」而非「稳」
+
+
+@dataclass(frozen=True)
+class FitVerdict:
+    """一个模型和这台机器的适配结果——resources 页的常驻标记、首运报告都读它。"""
+    level: str                  # fits / tight / too_big / unknown
+    needed_bytes: int
+    available_bytes: int | None
+    headroom_bytes: int | None  # available - needed；算不出机器能力时是 None，不是猜一个
+    shortfall_bytes: int        # 装不下时差多少；其余三态恒为 0
+
+
+def assess_fit(needed_bytes: int, available_bytes: int | None) -> FitVerdict:
+    """给一个模型的需求和机器的能力，判「fits / tight / too_big / unknown」四态之一。
+
+    纯函数：不读文件、不问机器，穷举组合就能测全。`available_bytes` 为 None
+    表示这台机器的重活能力问不出来（非 Apple 芯片、没装 mlx）——这种时候不许
+    拿别的数字（比如整机内存）顶替去猜一个结论，老老实实报「不知道」（R-budget-16
+    同一条纪律：`Budget.capacity_bytes()` 问不出就返回 None，这里原样接住）。
+    """
+    if available_bytes is None:
+        return FitVerdict(level="unknown", needed_bytes=needed_bytes,
+                           available_bytes=None, headroom_bytes=None, shortfall_bytes=0)
+    if needed_bytes > available_bytes:
+        return FitVerdict(level="too_big", needed_bytes=needed_bytes,
+                           available_bytes=available_bytes,
+                           headroom_bytes=available_bytes - needed_bytes,
+                           shortfall_bytes=needed_bytes - available_bytes)
+    # 「紧」还是「稳」是策略判断，边界本身（卡线吃满 FIT_TIGHT_FRACTION）算稳——
+    # 用严格大于，好让 FIT_TIGHT_FRACTION 本身就是最后一个仍算「fits」的比例。
+    level = "tight" if needed_bytes > available_bytes * FIT_TIGHT_FRACTION else "fits"
+    return FitVerdict(level=level, needed_bytes=needed_bytes, available_bytes=available_bytes,
+                       headroom_bytes=available_bytes - needed_bytes, shortfall_bytes=0)
+
 
 @dataclass(frozen=True)
 class ChatBudget:

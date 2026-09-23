@@ -13,8 +13,10 @@ from . import catalog
 from .catalog import CATALOG, ModelEntry
 from .disk import DiskUsage, dir_bytes, disk_usage
 from .downloader import DownloadProgress, Downloader
+from ..foundation.errors import ConfigCorruptError
 from .errors import ConfirmRequiredError, DownloadBusyError, ManifestUnavailableError, PathEscapeError
 from .events import ResourceEvents
+from .fit import model_fit
 from .manifest import ManifestStore, default_fetcher
 from .verify import ModelStatus, unknown_status, verify_tree
 
@@ -44,8 +46,13 @@ class ResourcesService:
     def __init__(self, resolve_paths: Callable, can_start_heavy: Callable,
                  fetcher: Callable = default_fetcher, executor=None,
                  clock=time.monotonic, sleep=time.sleep,
-                 sample_interval: float = 1.0, thread_factory=threading.Thread):
+                 sample_interval: float = 1.0, thread_factory=threading.Thread,
+                 budget=None):
         self._resolve_paths = resolve_paths
+        # 没有 budget 就是没有能力问机器——list_catalog_with_fit() 对每个模型都
+        # 老实报 unknown，不是没接线就悄悄不带这个字段（G8 同一条纪律：半接线比
+        # 不接线更危险，因为它看起来像接好了）。
+        self._budget = budget
         self.events = ResourceEvents()
         self._manifests = ManifestStore(
             cache_dir_provider=lambda: Path(self._resolve_paths().data_root) / "manifests",
@@ -65,6 +72,24 @@ class ResourcesService:
 
     def list_catalog(self) -> list[ModelEntry]:
         return catalog.list_catalog()
+
+    def list_catalog_with_fit(self) -> list[dict]:
+        """目录 + 每个模型的机型适配判定——resources 端点唯一回答"这个模型行不行"的地方。
+
+        不新增一个平行接口去问同一个问题（这个代码库已经被"两个入口两套答案"咬过）：
+        直接扩展 list_catalog() 本来就要给前端的那份数据。
+        """
+        try:
+            models_root = self._resolve_paths().models_root
+        except ConfigCorruptError:
+            # config.json 读不出来不该把目录端点也拖下水——降级成「模型都当没下载」，
+            # 而不是让本来零 IO 的目录列表也跟着 500（和网关配置读取同一条纪律：
+            # runtime.py 的 _gateway_config_reader 遇到同样的坏文件也是退默认值）。
+            models_root = None
+        return [
+            {**entry.to_json(), "fit": model_fit(entry, self._budget, models_root)}
+            for entry in catalog.list_catalog()
+        ]
 
     def verify_model(self, key: str, refresh: bool = False) -> ModelStatus:
         model = catalog.entry(key)

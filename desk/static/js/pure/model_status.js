@@ -1,5 +1,6 @@
 // data:modelStatus + data:modelEntry (+ data:downloadProgress) → 资源面板行视图（R-ui-05）。
 import { formatBytes, formatPercent } from "./format.js";
+import { fitBadge, fitDetail } from "./fit.js";
 
 // data:modelStatus → {badge, badgeKind} 短文案，present/partial/missing/unknown 四态。
 // 资源页（rowView）和聊天页下拉都用它，避免各自拼一套状态说法。
@@ -43,5 +44,9 @@ export function rowView(entry, status, download = null) {
     downloadDisabledReason: downloadDisabled ? "已有一个下载在进行（同时只允许一个）" : null,
     missing: status.gaps ?? [],
     note: notes.length ? notes.join("；") : null,
+    // 这台机器装不装得下——资源页的常驻标记，读的是目录端点自己带的判定
+    // （desk.budget.budget.assess_fit），不是本文件另拼一套。
+    fit: fitBadge(entry.fit),
+    fitDetail: fitDetail(entry.fit),
   };
 }

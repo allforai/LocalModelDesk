@@ -83,7 +83,13 @@ export function createResourcesPane(root, ctx = {}) {
     const badge = doc.createElement("span");
     badge.className = `badge badge-${view.badgeKind}`;
     badge.textContent = view.badge;
-    head.append(name, badge);
+    // 机型适配是常驻标记，和下载完整度并列，不是要点开才看得到（用户在这个
+    // 页面反复看的就是这个信息）。
+    const fitBadge = doc.createElement("span");
+    fitBadge.className = `badge badge-${view.fit.badgeKind}`;
+    fitBadge.textContent = view.fit.label;
+    fitBadge.title = view.fitDetail;
+    head.append(name, badge, fitBadge);
 
     const meta = doc.createElement("p");
     meta.className = "res-meta";
@@ -96,7 +102,7 @@ export function createResourcesPane(root, ctx = {}) {
         activeDownload.current_file,
       ].filter(Boolean).join(" · ");
     } else {
-      meta.textContent = [`预计 ${view.sizeText} · 占用 ${view.diskText}`, view.note].filter(Boolean).join(" · ");
+      meta.textContent = [`预计 ${view.sizeText} · 占用 ${view.diskText}`, view.note, view.fitDetail].filter(Boolean).join(" · ");
     }
     li.append(head, meta);
     if (entry.sources?.length) {

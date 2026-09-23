@@ -317,6 +317,7 @@ def launch_test_harness(
         executor=FakeDownloadExecutor(download_control),
         clock=clock,
         sleep=lambda _seconds: None,
+        budget=heavy_budget,
     )
     library = LibraryService(roots)
     skills = SkillsService(roots)

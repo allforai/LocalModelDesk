@@ -20,6 +20,10 @@ def test_first_run_hides_and_restores_desk_shell_with_selected_models_root(
         page.locator("[data-fr-models-root]").fill(str(selected_root))
         page.locator("[data-fr-complete]").click()
 
+        # 目录选好之后先看一屏「这台机器适合跑哪些模型」，不是直接回到台面。
+        expect(page.locator("#pane-firstrun [data-fr-report]")).to_be_visible()
+        page.locator("[data-fr-report-continue]").click()
+
         expect(page.locator("#pane-firstrun")).to_be_hidden()
         expect(page.locator("#statusbar")).to_be_visible()
         expect(page.locator("#tabs")).to_be_visible()
@@ -80,6 +84,9 @@ def test_reset_models_root_can_return_to_the_desk_unchanged(page, tmp_path, audi
         expect(page.locator("#pane-firstrun [data-fr-keep-note]")).to_contain_text("个模型")
         expect(page.locator("#pane-firstrun [data-fr-legacy]")).to_have_value("")
         page.locator("#pane-firstrun").get_by_role("button", name="返回台面").click()
+
+        expect(page.locator("#pane-firstrun [data-fr-report]")).to_be_visible()
+        page.locator("[data-fr-report-continue]").click()
 
         expect(page.locator("#pane-firstrun")).to_be_hidden()
         expect(page.locator("main")).to_be_visible()

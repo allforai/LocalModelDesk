@@ -1,12 +1,17 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+from desk.budget.budget import Budget
+from desk.budget.device import GpuCapacity
+from desk.budget.store import Measurements
+from desk.media.memory_estimate import estimate_bytes
 from desk.resources.catalog import CATALOG, entry
 from desk.resources.manifest import ManifestFile
 from desk.resources.service import ResourcesService
 
 
 GLM = entry("glm")
+GIB = 1024 ** 3
 
 
 class FakeExecutor:
@@ -119,3 +124,51 @@ def test_download_facade_injects_sampling_sleep_and_thread_factory(tmp_path):
     assert len(created) == 1
     assert created[0].daemon is True
     assert sleeps == [1.0]
+
+
+def make_budget(working_set_gib):
+    m = Measurements()
+    m.record_gpu_capacity(GpuCapacity("测试设备", 128 * GIB, working_set_gib * GIB, 80 * GIB), 0.0)
+    return Budget(measurements=m, memory_reader=None, media_estimate=estimate_bytes, now=lambda: 0.0)
+
+
+def test_list_catalog_with_fit_extends_every_entry_with_its_verdict(tmp_path):
+    """接线点：目录端点自己就该带上适配判定，不必另起一个问同一件事的接口。"""
+    service, holder = make_service(tmp_path)
+    service._budget = make_budget(200)
+
+    entries = service.list_catalog_with_fit()
+
+    assert len(entries) == len(CATALOG)
+    by_key = {e["key"]: e for e in entries}
+    assert by_key["glm"]["fit"]["level"] == "fits"
+    assert by_key["glm"]["fit"]["needed_bytes"] == int(GLM.gb * GIB)
+    # 媒体模型问的是作业峰值，不是下载体积——两条目录端点不能给出同一个数字。
+    assert by_key["h3"]["fit"]["needed_bytes"] == estimate_bytes("video", {})
+    assert by_key["h3"]["fit"]["needed_bytes"] != int(entry("h3").gb * GIB)
+
+
+def test_list_catalog_with_fit_is_unknown_without_a_budget(tmp_path):
+    """没接预算就老实说不知道，不拿别的数顶替（构造函数默认 budget=None）。"""
+    service, _ = make_service(tmp_path)
+    entries = service.list_catalog_with_fit()
+    assert all(e["fit"]["level"] == "unknown" for e in entries)
+
+
+def test_list_catalog_with_fit_survives_a_corrupt_config(tmp_path):
+    """config.json 读不出来不该把目录端点也拖下水——降级，不是 500。"""
+    from desk.foundation.errors import ConfigCorruptError
+
+    def broken_resolve_paths():
+        raise ConfigCorruptError("坏了", path="x", parse_error="boom", recoverable=True)
+
+    service = ResourcesService(
+        resolve_paths=broken_resolve_paths, can_start_heavy=lambda: {"ok": True},
+        fetcher=lambda _repo: [ManifestFile("a", 1)], executor=FakeExecutor(),
+        budget=make_budget(200),
+    )
+
+    entries = service.list_catalog_with_fit()
+
+    assert len(entries) == len(CATALOG)
+    assert next(e for e in entries if e["key"] == "glm")["fit"]["level"] == "fits"

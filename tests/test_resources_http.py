@@ -78,6 +78,16 @@ def test_get_catalog_returns_all_eight(tmp_path):
     json.dumps(payload)
 
 
+def test_get_catalog_carries_a_fit_verdict_per_model(tmp_path):
+    """目录端点本身就带适配判定——不新开一个接口回答同一个问题。"""
+    routes, *_ = make_routes(tmp_path)
+    status, payload = call(routes, "GET", "/api/resources/catalog")
+    assert status == 200
+    for model in payload["models"]:
+        assert model["fit"]["level"] in ("fits", "tight", "too_big", "unknown")
+    json.dumps(payload)
+
+
 def test_get_status_bundles_models_and_disk(tmp_path):
     routes, *_ = make_routes(tmp_path)
     status, payload = call(routes, "GET", "/api/resources/status")

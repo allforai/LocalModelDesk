@@ -189,6 +189,7 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
     resources = ResourcesService(
         resolve_paths=resolve_paths,
         can_start_heavy=lambda: arbiter.can_start_heavy("video"),
+        budget=budget,
     )
     library = LibraryService(roots)
     llm = LlmService(
