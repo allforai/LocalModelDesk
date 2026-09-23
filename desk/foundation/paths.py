@@ -5,7 +5,7 @@ import os
 import logging
 import shutil
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import config as config_mod
@@ -53,6 +53,8 @@ class PathRoots:
     history_path: Path
     models_root: Path
     outputs_root: Path
+    image_python: Path | None = None
+    image_env: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -112,6 +114,8 @@ def resolve_paths(*, data_root=None, resources_root=None, default_config_on_corr
         mlx_h3_cmd = (str(python), "-s", "-c", _MLX_H3_ENTRY)
         mlx_h3_env = {"PYTHONPATH": str(static.resources_root / "pylibs" / "h3")}
         music_env = {"PYTHONPATH": str(static.resources_root / "pylibs" / "music")}
+        image_python = python
+        image_env = {"PYTHONPATH": str(static.resources_root / "pylibs" / "image")}
         hf_cmd = (str(python), "-s", "-c", _HF_ENTRY)
         hf_env = {"PYTHONPATH": str(static.resources_root / "pylibs" / "desk")}
     else:
@@ -119,6 +123,9 @@ def resolve_paths(*, data_root=None, resources_root=None, default_config_on_corr
         mlx_h3_cmd = _mlx_h3_dev_cmd()
         mlx_h3_env = {}
         music_env = {}
+        image_python = Path(os.environ.get("LOCALMODELDESK_IMAGE_PYTHON") or
+                            static.resources_root / ".venv-image" / "bin" / "python")
+        image_env = {}
         hf_cmd = _hf_dev_cmd()
         hf_env = {}
 
@@ -141,6 +148,8 @@ def resolve_paths(*, data_root=None, resources_root=None, default_config_on_corr
         history_path=static.data_root / "history.jsonl",
         models_root=config.models_root,
         outputs_root=config.outputs_root,
+        image_python=image_python,
+        image_env=image_env,
     )
     roots.data_root.mkdir(parents=True, exist_ok=True)
     roots.logs_dir.mkdir(parents=True, exist_ok=True)

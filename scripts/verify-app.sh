@@ -94,6 +94,7 @@ if [[ ! -x "$PYBIN" ]]; then
   fail "V5 缺内嵌解释器或不可执行: $PYBIN"
 fi
 for path in "$RES/desk" "$RES/desk/resources/fetch_cli.py" "$RES/pylibs/desk" "$RES/pylibs/music" "$RES/pylibs/h3" \
+            "$RES/pylibs/image" "$RES/desk/media/image_cli.py" "$RES/desk/media/image_model.py" \
             "$RES/bundle.json" "$RES/AppIcon.icns"; do
   if [[ ! -e "$path" ]]; then
     fail "V5 缺结构项: $path"
@@ -112,6 +113,7 @@ if [[ -x "$PYBIN" ]]; then
   v6 "pylibs/desk" "import mlx_lm"
   v6 "pylibs/music" "import mlx_minimax_music3"
   v6 "pylibs/h3" "import mlx_h3.cli"
+  v6 "pylibs/image" "import mlx.core; from mflux.models.qwen21.variants.txt2img.qwen_image_21 import QwenImage21"
   v6 "pylibs/desk" "from huggingface_hub.cli.hf import main"
 fi
 

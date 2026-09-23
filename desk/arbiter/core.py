@@ -105,7 +105,7 @@ class Arbiter:
     def _cost(self, kind: str, params: dict | None, key: str | None):
         """Budget-mode cost of a request. Never called in legacy mode."""
         params = params or {}
-        if kind in ("video", "music"):
+        if kind in MEDIA_KINDS:
             return self._budget.cost(kind, key=key, params=params)
         return self._budget.cost(kind, key=key, config=params.get("config"),
                                   weights_gb=params.get("weights_gb"))

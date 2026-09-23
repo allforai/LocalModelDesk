@@ -5,6 +5,7 @@ from desk.resources.errors import UnknownModelError
 
 
 GOLDEN = [
+    ("qwen-image", "image", "Qwen/Qwen-Image-2.1", "image-models/qwen-image-2.1-heretic", 30.9),
     ("h3", "video", "appautomaton/minimax-h3-base-8bit-mlx", "minimax-h3", 103.0),
     ("music3", "music", "appautomaton/MiniMax-Music3-MLX", "minimax-music3", 27.0),
     ("glm", "chat", "mlx-community/glm-4.7-flash-abliterated-8bit", "llms/mlx-community/glm-4.7-flash-abliterated-8bit", 29.7),
@@ -16,16 +17,17 @@ GOLDEN = [
 ]
 
 
-def test_exactly_eight_entries_matching_golden_list():
+def test_exactly_nine_entries_matching_golden_list():
     assert [(e.key, e.group, e.hf_repo, e.relpath, e.gb) for e in CATALOG] == GOLDEN
 
 
 def test_keys_unique_and_group_distribution():
     keys = [e.key for e in CATALOG]
-    assert len(set(keys)) == 8
+    assert len(set(keys)) == 9
     groups = [e.group for e in CATALOG]
     assert groups.count("video") == 1
     assert groups.count("music") == 1
+    assert groups.count("image") == 1
     assert groups.count("chat") == 6
 
 
@@ -48,11 +50,11 @@ def test_list_catalog_returns_fresh_list():
     listed = list_catalog()
     assert listed == list(CATALOG)
     listed.append("junk")
-    assert len(CATALOG) == 8
+    assert len(CATALOG) == 9
 
 
 def test_entry_lookup_and_unknown_key():
-    assert entry("glm").hf_repo == GOLDEN[2][2]
+    assert entry("glm").hf_repo == GOLDEN[3][2]
     assert entry("glm").name == "GLM 4.7 Flash 越狱 8bit"
     with pytest.raises(UnknownModelError):
         entry("does-not-exist")

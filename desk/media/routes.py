@@ -50,6 +50,13 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
     def cancel(_body, _query):
         return _run(service.cancel_job)
 
+    def start_image(body, _query):
+        payload = body or {}
+        return _run(lambda: service.start_image_job(
+            prompt=payload.get("prompt"), width=payload.get("width", 1024),
+            height=payload.get("height", 1024), steps=payload.get("steps", 40),
+            seed=payload.get("seed", 42), force=payload.get("force", False)))
+
     def status(_body, query):
         def call():
             return service.job_status(
@@ -62,6 +69,7 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
             name=(body or {}).get("name"), data=(body or {}).get("data")))),
         ("POST", "/api/media/video", start_video),
         ("POST", "/api/media/music", start_music),
+        ("POST", "/api/media/image", start_image),
         ("POST", "/api/media/cancel", cancel),
         ("GET", "/api/media/job", status),
     ]

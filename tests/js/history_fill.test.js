@@ -13,7 +13,12 @@ test("music 参数 → music 表单三字段", () => {
 });
 
 test("未知 kind → null（不显示按钮）", () => {
-  assert.equal(fillPlan({ kind: "image", params: { prompt: "x" } }), null);
+  assert.equal(fillPlan({ kind: "unknown", params: { prompt: "x" } }), null);
+});
+
+test("image 参数完整回填，保留种子零", () => {
+  const params = { prompt: "猫", width: 768, height: 1024, steps: 40, seed: 0 };
+  assert.deepEqual(fillPlan({ kind: "image", params }), { pane: "image", fields: params });
 });
 
 test("无 params / 空条目 → null", () => {

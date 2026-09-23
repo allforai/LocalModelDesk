@@ -5,7 +5,7 @@ import { renderState } from "../pure/desk_state.js";
 import { budgetLabel } from "../pure/budget_label.js";
 import { setIcon } from "../icons.js";
 
-const MEDIA_HOLDER_LABEL = { video: "视频生成中", music: "音乐生成中" };
+const MEDIA_HOLDER_LABEL = { video: "视频生成中", music: "音乐生成中", image: "图片生成中" };
 
 // data:budgetSnapshot 的 chat 字段 → 追加在内存行后面的文案（R-budget-01：
 // 来源必须一眼分得开，所以永远带 budgetLabel，从不只写数字）。

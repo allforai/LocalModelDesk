@@ -8,6 +8,14 @@ from typing import Sequence
 H3_BUDGET_GB = 70
 
 
+def build_image_command(image_python: Path, image_cli: Path, model_root: Path, *,
+                        prompt: str, width: int, height: int, steps: int, seed: int,
+                        output: Path) -> list[str]:
+    return [str(image_python), "-s", str(image_cli), "--root", str(model_root),
+            "--prompt", prompt, "--width", str(width), "--height", str(height),
+            "--steps", str(steps), "--seed", str(seed), "--output", str(output)]
+
+
 def build_h3_command(
     mlx_h3_cmd: Sequence[str],
     h3_root: Path,

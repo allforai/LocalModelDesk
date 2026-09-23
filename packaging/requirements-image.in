@@ -1,0 +1,4 @@
+# Pin the Qwen Image 2.1 implementation used for the local validation.
+mflux @ git+https://github.com/mflux-community/mflux.git@bd6c908fea288ea40a4e01db56cc3d923d221613
+# Resolve/install with --excludes packaging/excludes-image.txt: this application
+# exposes only QwenImage21 txt2img, not MFLUX's OpenCV-dependent ControlNet/OpenPose.

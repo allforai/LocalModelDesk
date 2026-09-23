@@ -15,13 +15,14 @@ SKIP_DIRS = {
     ".git", ".claude", "__pycache__", ".pytest_cache", "node_modules", "docs",
     "dist", ".venv-desk", ".venv-music3", "llms", "minimax-h3", "minimax-music3",
     "outputs",
+    ".allforai", ".codex", ".venv-image", "image-models",
 }
 TEXT_SUFFIXES = {
     ".py", ".sh", ".js", ".mjs", ".html", ".css", ".swift", ".json",
     ".md", ".txt", ".plist", ".yml", ".yaml", ".toml",
 }
 
-ALLOWED = {"desk/resources/catalog.py"}
+ALLOWED = {"desk/resources/catalog.py", "desk/media/image_model.py"}
 LEGACY: set[str] = set()
 TESTS_PREFIX = "tests/"
 

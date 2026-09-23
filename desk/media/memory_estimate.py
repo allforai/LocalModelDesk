@@ -23,6 +23,11 @@ _MUSIC_PER_SECOND = 0.05 * GIB
 
 def estimate_bytes(kind: str, params: dict) -> int:
     """Peak resident bytes this job is expected to need."""
+    if kind == "image":
+        # Conservative prediction, not measured RSS: 1024² MLX allocations peaked
+        # at 42.7 GiB; allow CPU/loading overhead and larger latent activations.
+        pixels = (params.get("width") or 1024) * (params.get("height") or 1024)
+        return int((52 + 12 * max(pixels / 1024**2 - 1, 0)) * GIB)
     if kind == "music":
         duration = float(params.get("duration") or 10)
         return int(_MUSIC_BASE + _MUSIC_PER_SECOND * duration)

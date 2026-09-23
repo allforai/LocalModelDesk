@@ -8,7 +8,7 @@
 </head>
 <body>
   <header id="statusbar" data-tone="ok"><span class="status-part status-memory" data-icon-name="memory"><span data-mem>—</span></span><span class="status-part status-holder" data-icon-name="brain"><span data-holder>—</span></span><span class="status-part status-media" data-icon-name="activity"><span data-media>—</span></span><span class="status-part status-next" data-icon-name="check"><span data-next>—</span></span><button data-open-settings data-icon-name="settings">设置</button></header>
-  <nav id="tabs" aria-label="工作区"><button data-tab="chat" data-icon-name="chat" class="active">聊天</button><button data-tab="video" data-icon-name="video">视频</button><button data-tab="music" data-icon-name="music">音乐</button><button data-tab="resources" data-icon-name="drive">资源</button><button data-tab="library" data-icon-name="library">素材库</button></nav>
+  <nav id="tabs" aria-label="工作区"><button data-tab="chat" data-icon-name="chat" class="active">聊天</button><button data-tab="image" data-icon-name="image">图片</button><button data-tab="video" data-icon-name="video">视频</button><button data-tab="music" data-icon-name="music">音乐</button><button data-tab="resources" data-icon-name="drive">资源</button><button data-tab="library" data-icon-name="library">素材库</button></nav>
   <main>
     <section id="pane-chat" data-pane="chat"><aside class="sessions"><button data-session-new data-icon-name="plus" class="btn-primary">新会话</button><ul data-session-list></ul></aside><div class="chat-main"><div class="model-row"><select data-model-select></select><button data-load data-icon-name="power">加载</button><button data-unload data-icon-name="power"><span data-label>卸载</span></button><span class="hint" data-load-hint></span><span data-model-state data-status="idle">未加载</span></div><div class="messages" data-messages></div><p class="inline-error" data-chat-error></p><div class="composer"><textarea data-chat-input placeholder="输入消息，⌘Enter 发送"></textarea><button data-send data-icon-name="send" class="btn-primary"><span data-label>发送</span></button></div></div></section>
     <section id="pane-video" data-pane="video" hidden><div class="form">
@@ -28,6 +28,33 @@
       </div>
       <textarea data-video-prompt aria-label="视频提示词" placeholder="视频提示词（含环境声描述）"></textarea><div class="assist-row" data-video-assist></div><label>画幅 <select data-video-size></select></label><label>视频时长 <select data-video-frames></select></label><p class="hint hint-busy" data-video-cost-note></p><label>步数 <input data-video-steps type="number" value="16" min="4" max="50"></label><button data-video-start data-icon-name="sparkles" class="btn-primary">生成视频</button><p class="hint" data-video-upload-status role="status"></p><p class="hint hint-busy" data-video-hint></p><p class="inline-error" data-video-error role="alert"></p></div><div class="job"><p class="job-status" data-job-status data-state="idle">空闲</p><progress data-job-progress max="100" hidden></progress><button data-job-cancel data-icon-name="x" hidden>取消</button><div class="inline-error job-error" data-job-error></div><details class="job-log"><summary>日志</summary><pre data-job-log></pre></details><div data-job-player></div></div></section>
     <section id="pane-music" data-pane="music" hidden><div class="form" role="form" aria-label="生成歌曲"><label>风格描述（必填） <textarea data-music-caption required placeholder="例如：温柔的民谣，木吉他伴奏，女声轻唱，慢速"></textarea></label><label>歌词（必填） <textarea data-music-lyrics placeholder="歌词（必填）" required></textarea></label><div class="assist-row" data-music-assist></div><label>时长（秒） <input data-music-duration type="number" value="60" min="10" max="300"></label><p class="hint" data-music-duration-note>成品时长由模型按歌词决定，常短于所填时长；素材库会标注实际时长。</p><button data-music-start data-icon-name="sparkles" class="btn-primary">生成歌曲</button><p class="hint hint-busy" data-music-hint></p><p class="inline-error" data-music-error role="alert"></p></div><div class="job"><p class="job-status" data-job-status data-state="idle">空闲</p><progress data-job-progress max="100" hidden></progress><button data-job-cancel data-icon-name="x" hidden>取消</button><div class="inline-error job-error" data-job-error></div><details class="job-log"><summary>日志</summary><pre data-job-log></pre></details><div data-job-player></div></div></section>
+    <section id="pane-image" data-pane="image" hidden>
+      <div class="form" role="form" aria-label="生成图片">
+        <h2>生成图片</h2>
+        <p class="hint">Qwen-Image 2.1 + Heretic 编码器 · MLX 本机推理</p>
+        <p class="hint" data-image-model role="status">正在检查模型…</p>
+        <label>图片提示词 <textarea data-image-prompt required placeholder="例如：一只橘猫坐在窗边，午后阳光，细腻的水彩插画"></textarea></label>
+        <div class="image-params">
+          <label>宽度（像素） <input data-image-width type="number" value="1024" min="256" max="2048" step="16" required></label>
+          <label>高度（像素） <input data-image-height type="number" value="1024" min="256" max="2048" step="16" required></label>
+          <label>步数 <input data-image-steps type="number" value="40" min="1" max="100" step="1" required></label>
+          <label>种子 <input data-image-seed type="number" value="42" min="0" max="4294967295" step="1" required></label>
+        </div>
+        <p class="hint">建议从 1024×1024、40 步开始；更大图片需要更多时间与内存。</p>
+        <button data-image-start data-icon-name="sparkles" class="btn-primary" disabled>生成图片</button>
+        <p class="hint hint-busy" data-image-hint role="status"></p>
+        <p class="inline-error" data-image-error role="alert"></p>
+        <details><summary>模型说明</summary><p class="hint">Heretic 仅改造文本编码器，不代表完全无审查。中文绘字不保证准确。本页支持文生图，输出为 PNG。</p></details>
+      </div>
+      <div class="job">
+        <p class="job-status" data-job-status data-state="idle" role="status">空闲 · 填好左侧参数后点「生成」</p>
+        <progress data-job-progress max="100" aria-label="图片生成进度" hidden></progress>
+        <button data-job-cancel data-icon-name="x" hidden>取消</button>
+        <div class="inline-error job-error" data-job-error role="alert"></div>
+        <details class="job-log"><summary>日志</summary><pre data-job-log></pre></details>
+        <div data-job-player></div>
+      </div>
+    </section>
     <section id="pane-resources" data-pane="resources" hidden><div class="res-head"><span data-res-disk></span><button data-res-refresh data-icon-name="refresh"><span data-label>重新校验</span></button></div><p class="hint" data-res-root></p><p class="inline-error" data-res-error></p><ul data-res-list></ul></section>
     <section id="pane-library" data-pane="library" hidden><button data-lib-refresh data-icon-name="refresh">刷新</button><p class="inline-error" data-lib-error></p><div data-lib-player></div><ul data-lib-list></ul></section>
   </main>

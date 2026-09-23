@@ -18,6 +18,7 @@ class _Server:
 
     def __init__(self, *, ignore_range=False, cut_after=None):
         self.ranges = []
+        self.paths = []
         outer = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -25,6 +26,7 @@ class _Server:
                 pass
 
             def do_GET(self):
+                outer.paths.append(self.path)
                 header = self.headers.get("Range")
                 outer.ranges.append(header)
                 start = 0
@@ -54,6 +56,27 @@ def _manifest(tmp_path, files):
     path = tmp_path / "manifest.json"
     path.write_text(json.dumps({"repo": "org/repo", "files": [{"path": p, "size": s} for p, s in files]}))
     return path
+
+
+def test_composite_download_uses_each_pinned_source_and_marks_complete(tmp_path):
+    server = _Server()
+    try:
+        dest = tmp_path / "model"
+        manifest = tmp_path / "composite.json"
+        manifest.write_text(json.dumps({"files": [
+            {"path": "transformer/a.bin", "size": len(BLOB), "repo": "base/repo", "revision": "base-rev", "source_path": "a.bin"},
+            {"path": "text_encoder/b.bin", "size": len(BLOB), "repo": "heretic/repo", "revision": "encoder-rev", "source_path": "b.bin"}],
+            "image_provenance": {"base_revision": "base-rev", "text_encoder_revision": "encoder-rev"}}))
+        part = part_path(dest, "text_encoder/b.bin")
+        part.parent.mkdir(parents=True)
+        part.write_bytes(BLOB[:4000])
+        assert fetch_cli.main(["download", "ignored/repo", "--local-dir", str(dest),
+            "--manifest", str(manifest), "--endpoint", server.endpoint]) == 0
+        assert server.paths == ["/base/repo/resolve/base-rev/a.bin", "/heretic/repo/resolve/encoder-rev/b.bin"]
+        assert server.ranges == [None, "bytes=4000-"]
+        assert json.loads((dest / "localmodeldesk-image.json").read_text())["complete"] is True
+    finally:
+        server.close()
 
 
 def test_resume_sends_range_from_existing_part_and_moves_into_place(tmp_path):

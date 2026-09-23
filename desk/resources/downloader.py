@@ -69,6 +69,10 @@ class Downloader:
             model = entry(key)
             roots = self._resolve_paths()
             hf_cmd = tuple(roots.hf_cmd)
+            if model.key == "qwen-image":
+                # This fetcher is stdlib-only; image downloads do not require an
+                # installed HF CLI or the GPU image environment.
+                hf_cmd = (str(roots.venv_python),)
             if not hf_cmd or not Path(hf_cmd[0]).exists():
                 raise HfCliMissingError("下载所需的 Python 运行时不可用")
             try:
@@ -76,13 +80,22 @@ class Downloader:
             except Exception as exc:
                 raise ManifestUnavailableError(f"拿不到 {model.hf_repo} 的文件清单，检查网络后重试") from exc
             destination = Path(roots.models_root) / model.relpath
+            provenance = None
+            if model.key == "qwen-image":
+                from ..media.image_model import prepare_destination, PROVENANCE
+                try:
+                    prepare_destination(destination)
+                except (OSError, ValueError) as exc:
+                    raise ManifestUnavailableError(str(exc)) from exc
+                provenance = PROVENANCE
             self._model = model
             self._purge_incomplete()
             manifest_file = attempt_manifest_path(destination)
             manifest_file.parent.mkdir(parents=True, exist_ok=True)
             manifest_file.write_text(json.dumps({
                 "repo": manifest.repo,
-                "files": [{"path": f.path, "size": f.size} for f in manifest.files],
+                "files": [f.to_json() for f in manifest.files],
+                **({"image_provenance": provenance} if provenance else {}),
             }, ensure_ascii=False), encoding="utf-8")
             # -P: run by path, the script directory would lead sys.path and desk/resources/http.py
             # would shadow the stdlib http package the fetcher imports.
@@ -224,6 +237,9 @@ class Downloader:
             final_status: Any = None
             if self._manifest is not None:
                 final_status = verify_tree(self._model, self._manifest, Path(self._resolve_paths().models_root))
+                if not cancelled and code == 0 and self._model.key == "qwen-image" and final_status.state != "present":
+                    self._progress.state = "failed"
+                    self._progress.error = {"code": "verification_failed", "message": "图片模型文件校验未通过，请重试下载"}
             self._handle = None
             snapshot = self._progress.copy()
         self._events.emit_finished(snapshot, final_status)

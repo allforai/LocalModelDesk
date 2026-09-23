@@ -49,7 +49,14 @@ def test_get_paths_includes_capabilities(server):
     status, payload = http_call(server, "GET", "/api/paths")
     assert status == 200
     assert payload["mode"] == "dev"
-    assert set(payload["capabilities"]) == {"mlx_h3", "venv", "models_root", "music_runtime", "config"}
+    assert set(payload["capabilities"]) == {"mlx_h3", "venv", "models_root", "music_runtime", "image_runtime", "config"}
+
+
+def test_public_capabilities_does_not_expose_paths(server):
+    status, payload = http_call(server, "GET", "/api/capabilities")
+    assert status == 200
+    assert isinstance(payload["image_runtime"]["present"], bool)
+    assert all(set(value) == {"present", "detail"} for value in payload.values())
     assert payload["models_root"]
 
 

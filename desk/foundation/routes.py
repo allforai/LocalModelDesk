@@ -60,6 +60,8 @@ def get_paths(_req) -> dict:
         "mlx_h3_env": dict(roots.mlx_h3_env),
         "music_python": str(roots.music_python),
         "music_env": dict(roots.music_env),
+        "image_python": str(roots.image_python),
+        "image_env": dict(roots.image_env),
         "media_cli_dir": str(roots.media_cli_dir),
         "hf_cmd": list(roots.hf_cmd),
         "hf_env": dict(roots.hf_env),
@@ -72,6 +74,12 @@ def get_paths(_req) -> dict:
         "outputs_root": str(roots.outputs_root),
         "capabilities": {name: {"present": cap.present, "path": cap.path, "detail": cap.detail} for name, cap in caps.items()},
     }
+
+
+def get_capabilities(_req) -> dict:
+    roots = paths_mod.resolve_paths(default_config_on_corrupt=True)
+    return {name: {"present": cap.present, "detail": cap.detail}
+            for name, cap in caps_mod.probe_capabilities(roots).items()}
 
 
 def post_first_run(req) -> dict:
@@ -113,6 +121,7 @@ def build_routes() -> list:
         ("POST", "/api/config/reset", post_config_reset),
         # Diagnostic endpoint for support/scripts; the UI deliberately does not call it.
         ("GET", "/api/paths", get_paths),
+        ("GET", "/api/capabilities", get_capabilities),
         ("POST", "/api/first-run", post_first_run),
         ("POST", "/api/adopt", post_adopt),
         ("POST", "/api/models/discover", post_discover),

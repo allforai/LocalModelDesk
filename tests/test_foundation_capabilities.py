@@ -6,7 +6,7 @@ from desk.foundation import capabilities as caps_mod
 from desk.foundation import paths as paths_mod
 
 
-KEYS = {"mlx_h3", "venv", "models_root", "music_runtime", "config"}
+KEYS = {"mlx_h3", "venv", "models_root", "music_runtime", "image_runtime", "config"}
 
 
 @pytest.fixture()

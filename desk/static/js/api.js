@@ -7,7 +7,7 @@ const ROUTES = {
   budget: "/api/budget",
   llmLoad: "/api/llm/load", llmUnload: "/api/llm/unload", llmStatus: "/api/llm/status",
   chatStream: "/api/llm/chat/stream", promptAssist: "/api/llm/prompt-assist",
-  video: "/api/media/video", music: "/api/media/music",
+  video: "/api/media/video", music: "/api/media/music", image: "/api/media/image", capabilities: "/api/capabilities",
   cancelJob: "/api/media/cancel", job: "/api/media/job", outputs: "/api/outputs",
   history: "/api/history", sessions: "/api/sessions", gatewayConfig: "/api/gateway/config",
 };
@@ -93,6 +93,7 @@ export const diskUsage = () => request(ROUTES.disk);
 export const memorySnapshot = () => request(ROUTES.memory);
 export const deskState = () => request(ROUTES.deskState);
 export const budget = () => request(ROUTES.budget);
+export const capabilities = () => request(ROUTES.capabilities);
 
 export const loadLlm = (key) => json(ROUTES.llmLoad, "POST", { key });
 export const unloadLlm = () => json(ROUTES.llmUnload, "POST");
@@ -115,6 +116,7 @@ export async function uploadMediaInput(file) {
   return json("/api/media/inputs", "POST", { name: file.name, data });
 }
 export const startMusicJob = (params) => json(ROUTES.music, "POST", params);
+export const startImageJob = (params) => json(ROUTES.image, "POST", params);
 export const cancelJob = () => json(ROUTES.cancelJob, "POST");
 export const jobStatus = (logFrom = 0, jobId = null) =>
   request(`${ROUTES.job}?log_from=${logFrom}${jobId === null ? "" : `&job_id=${jobId}`}`);

@@ -80,6 +80,21 @@ def test_requirements_locks_are_pinned():
             assert banned not in text, f"{lock} contains {banned!r}"
 
 
+def test_image_runtime_explicitly_excludes_unused_opencv():
+    exclusions = (REPO / "packaging/excludes-image.txt").read_text()
+    packages = [line.strip() for line in exclusions.splitlines()
+                if line.strip() and not line.lstrip().startswith("#")]
+    assert packages == ["opencv-python"]
+    lock = (REPO / "packaging/requirements-image.txt").read_text()
+    assert "--excludes packaging/excludes-image.txt" in lock
+    assert not re.search(r"^opencv-", lock, re.MULTILINE)
+    assert "mlx==0.32.2" in lock
+    assert "mflux @ git+https://github.com/mflux-community/mflux.git@bd6c908fea288ea40a4e01db56cc3d923d221613" in lock
+    build = (REPO / "scripts/build-app.sh").read_text()
+    assert 'if [[ "$name" == image ]]' in build
+    assert '--excludes "$REPO/packaging/excludes-image.txt"' in build
+
+
 def test_build_verify_does_not_write_bytecode_after_signing():
     build = (REPO / "scripts" / "build-app.sh").read_text()
     verifier = (REPO / "scripts" / "verify-app.sh").read_text()
@@ -141,6 +156,19 @@ def verify(app, source_root):
                 "--source-root", source_root])
 
 
+def add_image_fixture(resources):
+    """Packaging validator fixture only; never image-runtime acceptance evidence."""
+    for relative, content in {
+        "desk/media/image_cli.py": "",
+        "desk/media/image_model.py": "",
+        "pylibs/image/mlx/core.py": "",
+        "pylibs/image/mflux/models/qwen21/variants/txt2img/qwen_image_21.py": "class QwenImage21: pass\n",
+    }.items():
+        path = resources / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content)
+
+
 def test_verify_passes_clean_fixture(tmp_path):
     app = make_fake_bundle(tmp_path, sign=False)
     resources = app / "Contents" / "Resources"
@@ -148,6 +176,7 @@ def test_verify_passes_clean_fixture(tmp_path):
     desk_init = resources / "desk" / "__init__.py"
     desk_init.parent.mkdir()
     desk_init.write_text("")
+    add_image_fixture(resources)
     fetch_cli = resources / "desk" / "resources" / "fetch_cli.py"
     fetch_cli.parent.mkdir()
     fetch_cli.write_text("")
@@ -307,6 +336,7 @@ def test_install_to_tmp_dest(tmp_path):
     resources = app / "Contents" / "Resources"
     (resources / "AppIcon.icns").write_bytes(b"icns-stub")
     (resources / "desk").mkdir()
+    add_image_fixture(resources)
     fetch_cli = resources / "desk" / "resources" / "fetch_cli.py"
     fetch_cli.parent.mkdir()
     fetch_cli.write_text("")

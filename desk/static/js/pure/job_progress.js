@@ -1,8 +1,18 @@
 // Pure helper: extract step-progress from a job's accumulated log text.
 export function parseStepProgress(logText) {
-  const all = [...String(logText ?? "").matchAll(/step\s+(\d+)\s*\/\s*(\d+)/g)];
-  if (!all.length) return null;
-  const [, s, t] = all.at(-1);
-  const step = Number(s), total = Number(t);
-  return total > 0 ? { step, total, pct: Math.round((step / total) * 100) } : null;
+  let result = null;
+  const matches = String(logText ?? "").matchAll(/step\s+(\d+)\s*\/\s*(\d+)|(\{[^\n]*\})/g);
+  for (const match of matches) {
+    let step, total;
+    if (match[3]) {
+      try {
+        const event = JSON.parse(match[3]);
+        if (event.event !== "progress") continue;
+        step = event.step; total = event.steps;
+      } catch { continue; }
+    } else { step = Number(match[1]); total = Number(match[2]); }
+    if (Number.isInteger(step) && Number.isInteger(total) && total > 0 && step >= 0 && step <= total)
+      result = { step, total, pct: Math.round(step / total * 100) };
+  }
+  return result;
 }

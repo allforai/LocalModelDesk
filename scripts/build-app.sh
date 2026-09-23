@@ -83,9 +83,14 @@ install_name_tool -id "@rpath/libpython3.13.dylib" "$LIBPYTHON"
 
 echo "==> [4/9] Install dependency libraries"
 mkdir -p "$RES/requirements"
-for name in desk music h3; do
+for name in desk music h3 image; do
+  dependency_args=()
+  if [[ "$name" == image ]]; then
+    dependency_args=(--excludes "$REPO/packaging/excludes-image.txt")
+    cp "$REPO/packaging/excludes-image.txt" "$RES/requirements/"
+  fi
   uv pip install --python "$RES/python/bin/python3.13" --target "$RES/pylibs/$name" \
-    --no-compile-bytecode -r "$REPO/packaging/requirements-$name.txt"
+    --no-compile-bytecode ${dependency_args[@]+"${dependency_args[@]}"} -r "$REPO/packaging/requirements-$name.txt"
   rm -rf "$RES/pylibs/$name/bin"
   find "$RES/pylibs/$name" -type d -name __pycache__ -prune -exec rm -rf {} +
   cp "$REPO/packaging/requirements-$name.txt" "$RES/requirements/"

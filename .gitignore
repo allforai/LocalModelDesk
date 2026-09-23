@@ -29,6 +29,7 @@ dist/
 llms/
 minimax-h3/
 minimax-music3/
+image-models/
 
 # Weight files if they ever land outside those trees
 *.safetensors
