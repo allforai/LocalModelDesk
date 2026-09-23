@@ -64,6 +64,16 @@ test("勾中的附件已经不在了，只丢这一份附件，不丢整个 skil
   assert.match(dropped[0].name, /GONE\.md/);
 });
 
+test("附件的 text 不是字符串时，只丢这一份附件，不丢整个 skill", () => {
+  // 后端可能产出 text: null（读取失败）或缺 text 字段（未来改动）；都要摘出来，不能流入消息
+  const available = [entry("a", "正文", [{ file: "X.md", chars: 0, text: null }])];
+  const { resolved, dropped } = resolveSelection([{ name: "a", attachments: ["X.md"] }], available);
+  assert.equal(resolved.length, 1);
+  assert.deepEqual(resolved[0].attachments, []);
+  assert.equal(dropped.length, 1);
+  assert.match(dropped[0].name, /X\.md/);
+});
+
 test("占用按拼出来的字符数算，含附件", () => {
   const available = [entry("a", "12345", [{ file: "X.md", chars: 3, text: "678" }])];
   const bare = resolveSelection([{ name: "a", attachments: [] }], available).resolved;
