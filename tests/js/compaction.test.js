@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { charsPerToken, needsCompaction, splitForCompaction } from "../../desk/static/js/pure/compaction.js";
+import { charsPerToken, needsCompaction, splitForCompaction, maybeCompact } from "../../desk/static/js/pure/compaction.js";
 
 const msg = (role, content) => ({ role, content });
 
@@ -111,4 +111,46 @@ test("没有 skill 时切分结果和以前一模一样", () => {
   const options = { compactAt: 800, charsPerToken: 4 };
   assert.deepEqual(splitForCompaction(messages, options),
                    splitForCompaction(messages, { ...options, skillChars: 0 }));
+});
+
+test("Math.max 防止负预算把所有历史扫进头部", () => {
+  // 空消息（如中断的助手回答）加超大 skill 时，预算是负数。
+  // 没有 Math.max 的话，used=0 时 0 > -999 成立，loop 立即 break，
+  // 所有历史都进头部交给摘要器——真实的不收敛问题。
+  // 用户看不到这些空消息（wireMessages 过滤掉了），但 session.messages 里有它们。
+  const messages = [
+    { role: "assistant", content: "" },
+    { role: "assistant", content: "" },
+  ];
+  const { head, tail } = splitForCompaction(messages, {
+    compactAt: 10, charsPerToken: 1, skillChars: 999,
+  });
+  assert.equal(tail.length, 2, "尾部应该有两条空消息");
+  assert.equal(head.length, 0, "头部应该为空，没有历史需要摘要");
+});
+
+test("maybeCompact 透传 skillChars 给 splitForCompaction", async () => {
+  // maybeCompact 若没有透传 skillChars，所有的 skill 防护都失效：
+  // 单测对 splitForCompaction 的验证在生产里无效。
+  const messages = Array.from({ length: 20 }, () => ({ role: "user", content: "x".repeat(100) }));
+
+  // 有 skill 时头部应该更多（更多历史需要压缩）
+  const withoutSkill = await maybeCompact(messages, {
+    promptTokens: 2000, sentChars: 4000, compactAt: 1000, pressure: "normal",
+    summarise: async (head) => head.length.toString(),
+  });
+
+  const withSkill = await maybeCompact(messages, {
+    promptTokens: 2000, sentChars: 4000, compactAt: 1000, pressure: "normal",
+    summarise: async (head) => head.length.toString(),
+    skillChars: 1500,
+  });
+
+  // 若没有透传 skillChars，两个结果中 head 大小相同（都没有扣掉 skill）。
+  // 若正确透传了，withSkill 的 head 更大（skill 吃掉了预算）。
+  if (withoutSkill.compacted && withSkill.compacted) {
+    // 都压缩了的情况
+    assert.ok(withSkill.messages[0].replaced_through > withoutSkill.messages[0].replaced_through,
+      "有 skill 时应该压缩更多消息（head 更大），说明 skillChars 被透传了");
+  }
 });
