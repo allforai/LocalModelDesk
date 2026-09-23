@@ -47,7 +47,7 @@ class Element {
 
 function makePane() {
   const controls = new Map();
-  for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error", "load-hint", "skill-bar", "skill-notice", "skill-cost"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
+  for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error", "load-hint", "skill-bar", "skill-notice", "skill-cost", "skill-rescan"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
   const doc = {
     body: new Element("body"),
     createElement: (tag) => new Element(tag),
@@ -763,9 +763,14 @@ function setupChat({ skills = [], charsPerToken, compactAt, sessionSkills = [], 
   const savedSession = { id: "s1", title: "t", messages: [...initialMessages], updated: "2026-01-01" };
   if (!omitSkillsKey) savedSession.skills = sessionSkills;
   let lastRequestMessages = null;
+  // 分开计数：重新扫描按钮点错接口（打到 list 而不是 rescan）跟按对了接口但
+  // 界面没刷新（新 skill 还是看不见）是两种不同的坏法，得能分别抓到。
+  let listCalls = 0;
+  let rescanCalls = 0;
 
   globalThis.fetch = async (path, options = {}) => {
-    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: skillsPayload });
+    if (path === "/api/skills") { listCalls += 1; return json({ skills: skillsPayload }); }
+    if (path === "/api/skills/rescan") { rescanCalls += 1; return json({ skills: skillsPayload }); }
     if (path === "/api/resources/catalog") return json([]);
     if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
     if (path === "/api/llm/status") return json({ state: { status: "idle" } });
@@ -823,6 +828,16 @@ function setupChat({ skills = [], charsPerToken, compactAt, sessionSkills = [], 
       skillsPayload = list;
       await pane.rescanSkills();
     },
+    // 只换服务端下次会答的内容，不触发任何请求——模拟「用户在编辑器里存了
+    // 新的 SKILL.md，但台面还没有人告诉它去看一眼」。
+    setSkillsPayload(list) {
+      skillsPayload = list;
+    },
+    async clickRescanButton() {
+      await ready;
+      await controls.get("[data-skill-rescan]").click();
+    },
+    skillCallCounts: () => ({ list: listCalls, rescan: rescanCalls }),
     currentSelection() {
       return savedSession.skills ?? [];
     },
@@ -842,13 +857,44 @@ test("选中 skill 后，发出去的消息第一条是它的正文", async () =
 });
 
 test("占用显示在芯片上；量不到比值时显示字符数而不是猜一个 token 数", async () => {
+  // R-skill-06 是两条独立的要求：芯片自己写明它占多少（brief 原来的断言），
+  // 加上输入框上方的聚合行（另一条测试已经在测）——两个都得有，不是二选一。
   const pane = setupChat({ skills: [
     { name: "review", description: "d", source: "user", overrides_bundled: false,
       body: "x".repeat(400), chars: 400, attachments: [], ok: true, error: null },
   ] });
   await pane.selectSkill("review");
+  const chipLabel = chipFor(pane.container, "review").textContent;
+  assert.ok(chipLabel.includes("字符"), `芯片自己没写占用，或量不到比值却显示了 token：${chipLabel}`);
   const costLabel = byData(pane.container, "skillCost").textContent;
-  assert.ok(costLabel.includes("字符"), `量不到比值却显示了 token：${costLabel}`);
+  assert.ok(costLabel.includes("字符"), `聚合行量不到比值却显示了 token：${costLabel}`);
+});
+
+test("重新扫描：按钮打的是 rescan 接口而不是普通列表接口，并且能看到点击前才出现的新 skill", async () => {
+  // R-skill-09：发现是显式的——没有文件监听，用户改完 SKILL.md 得靠这个按钮
+  // 才能让台面看见。这里刻意测两件不同的事：接口打没打对、界面刷没刷新——
+  // 一个是「问错了人」，一个是「问对了人但没把答案画出来」，谁坏了都不该被
+  // 另一个测试盖住。
+  const pane = setupChat({ skills: [
+    { name: "review", description: "d", source: "user", overrides_bundled: false,
+      body: "正文", chars: 2, attachments: [], ok: true, error: null },
+  ] });
+  await pane.ready;
+  assert.deepEqual(pane.skillCallCounts(), { list: 1, rescan: 0 }, "启动时该扫一次列表接口");
+  assert.equal(chipFor(pane.container, "newone"), null, "点击前不该看到还没扫到的新 skill");
+
+  pane.setSkillsPayload([
+    { name: "review", description: "d", source: "user", overrides_bundled: false,
+      body: "正文", chars: 2, attachments: [], ok: true, error: null },
+    { name: "newone", description: "d", source: "user", overrides_bundled: false,
+      body: "新正文", chars: 3, attachments: [], ok: true, error: null },
+  ]);
+  await pane.clickRescanButton();
+
+  const counts = pane.skillCallCounts();
+  assert.equal(counts.rescan, 1, "点『重新扫描』该打 rescan 接口");
+  assert.equal(counts.list, 1, "不该顺手又打一次普通列表接口");
+  assert.ok(chipFor(pane.container, "newone"), "点击后该能看到新出现的 skill");
 });
 
 test("skill 计入 sentChars，否则每 token 字符数会被悄悄带偏", async () => {

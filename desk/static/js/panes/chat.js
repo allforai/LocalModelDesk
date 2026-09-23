@@ -33,6 +33,7 @@ export function createChatPane(root, ctx = {}) {
     skillBar: root.querySelector("[data-skill-bar]"),
     skillNotice: root.querySelector("[data-skill-notice]"),
     skillCost: root.querySelector("[data-skill-cost]"),
+    skillRescan: root.querySelector("[data-skill-rescan]"),
   };
   let catalog = [];
   let sessions = [];
@@ -116,9 +117,23 @@ export function createChatPane(root, ctx = {}) {
   // 不是模型），坏条目 disabled 且 title 写 error（R-skill-08 后半）。
   // overrides_bundled 为真时标出「已覆盖自带」——覆盖必须看得见（R-skill-07）。
   // 附件在芯片展开后以勾选框列出，每个标明 file 与 chars（R-skill-10）。
+  // 一个 chip 自己要花多少：正文 + 当前勾中的附件（R-skill-06 前半，
+  // 「芯片上写明这个 skill 占多少 token」）——跟下面 renderSkillCost 算的
+  // 「选中的全部加在一起」是两件事，字段都直接用后端已经给出的 chars，
+  // 不用再拼一遍 system 消息去数。量不到比值就说字符数，不猜一个默认比值。
+  function chipCostText(entry, pickedAttachments, ratio) {
+    const attachChars = (entry.attachments ?? [])
+      .filter((att) => pickedAttachments.has(att.file))
+      .reduce((sum, att) => sum + (att.chars ?? 0), 0);
+    const chars = (entry.chars ?? 0) + attachChars;
+    if (chars === 0) return "";
+    const tokens = skillTokens(chars, ratio);
+    return tokens === null ? `${chars} 字符（还没量过 token）` : `${tokens} token`;
+  }
+
   function renderSkillChips() {
     for (const child of [...(els.skillBar.children ?? [])]) {
-      if (child === els.skillNotice || child === els.skillCost) continue;
+      if (child === els.skillNotice || child === els.skillCost || child === els.skillRescan) continue;
       child.remove();
     }
     const { resolved } = currentResolution();
@@ -131,13 +146,16 @@ export function createChatPane(root, ctx = {}) {
       chip.disabled = !entry.ok;
       chip.title = entry.ok ? (entry.description ?? "") : (entry.error ?? "");
       const isSelected = selectedNames.has(entry.name);
-      chip.textContent = entry.overrides_bundled ? `${entry.name} · 已覆盖自带` : entry.name;
+      const picked = (session?.skills ?? []).find((s) => s.name === entry.name);
+      const pickedAttachments = new Set(picked?.attachments ?? []);
+      const cost = entry.ok ? chipCostText(entry, pickedAttachments, lastCharsPerToken) : "";
+      chip.textContent = [
+        entry.name, entry.overrides_bundled ? "已覆盖自带" : null, cost || null,
+      ].filter(Boolean).join(" · ");
       chip.classList.toggle("active", isSelected);
       chip.addEventListener("click", () => toggleSkill(entry));
       els.skillBar.append(chip);
       if (entry.ok && (entry.attachments ?? []).length) {
-        const picked = (session?.skills ?? []).find((s) => s.name === entry.name);
-        const pickedAttachments = new Set(picked?.attachments ?? []);
         for (const att of entry.attachments) {
           const label = doc.createElement("label");
           label.className = "skill-attachment";
@@ -753,6 +771,9 @@ export function createChatPane(root, ctx = {}) {
   (ctx.window ?? globalThis).addEventListener?.("pagehide", saveLiveTurnOnPageHide);
 
   els.sendBtn.addEventListener("click", () => (streaming ? streamAbort?.abort() : send()));
+  // R-skill-09：发现是显式的——启动时扫一次，外加一个「重新扫描」按钮。没有文件
+  // 监听，用户在编辑器里改完 SKILL.md 要有办法让台面看见，不能只靠重启。
+  els.skillRescan?.addEventListener("click", () => refreshSkills(true).catch((error) => setError(`重新扫描失败：${error.message}`)));
   els.input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) send();
   });
