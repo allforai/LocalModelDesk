@@ -31,7 +31,16 @@ export function createChatPane(root, ctx = {}) {
     sendBtn: root.querySelector("[data-send]"),
     error: root.querySelector("[data-chat-error]"),
     loadHint: root.querySelector("[data-load-hint]"),
-    skillBar: root.querySelector("[data-skill-bar]"),
+    // 2026-09-23 反馈：常驻芯片栏太占心智，「不是高频行为不该这么浅的入口」——
+    // 折叠进 model-row 里一个按钮，展开才看到今天芯片栏里的全部内容。
+    // skillPanel 是静态写在 index.html 里的一个元素（不是每次打开都重建的
+    // 弹层），开关只是切它的 hidden；内容（列表/通知/占用）照旧持续渲染，
+    // 不受 hidden 影响——这样收起来的状态永远和实际选中一致，不会出现
+    // 「刚打开时内容是旧的」这种闪烁。
+    skillToggle: root.querySelector("[data-skill-toggle]"),
+    skillPanel: root.querySelector("[data-skill-panel]"),
+    skillPanelClose: root.querySelector("[data-skill-panel-close]"),
+    skillList: root.querySelector("[data-skill-list]"),
     skillNotice: root.querySelector("[data-skill-notice]"),
     skillCost: root.querySelector("[data-skill-cost]"),
     skillRescan: root.querySelector("[data-skill-rescan]"),
@@ -163,11 +172,20 @@ export function createChatPane(root, ctx = {}) {
     return tokens === null ? `${chars} 字符（还没量过 token）` : `${tokens} token`;
   }
 
+  // 折叠态必须随时说得出「现在生效的是谁」——这是唯一不能为了收进一个按钮而
+  // 牺牲掉的东西（R-skill-UI-collapse）：一个 skill 悄悄生效比一个显眼的芯片栏
+  // 更糟，因为模型的回答会不一样，用户却没地方看出原因。只报个数字不够：
+  // 「+2」不说明是哪两个，这里必须先点名第一个，再数其余的。
+  function renderSkillToggle() {
+    const { resolved } = currentResolution();
+    if (resolved.length === 0) { els.skillToggle.textContent = "指令"; return; }
+    const [first, ...rest] = resolved;
+    els.skillToggle.textContent = rest.length ? `指令：${first.name} +${rest.length}` : `指令：${first.name}`;
+  }
+
   function renderSkillChips() {
-    for (const child of [...(els.skillBar.children ?? [])]) {
-      if (child === els.skillNotice || child === els.skillCost || child === els.skillRescan || child === els.skillInstall) continue;
-      child.remove();
-    }
+    renderSkillToggle();
+    els.skillList.replaceChildren();
     const { resolved } = currentResolution();
     const selectedNames = new Set(resolved.map((s) => s.name));
     const session = current();
@@ -186,7 +204,7 @@ export function createChatPane(root, ctx = {}) {
       ].filter(Boolean).join(" · ");
       chip.classList.toggle("active", isSelected);
       chip.addEventListener("click", () => toggleSkill(entry));
-      els.skillBar.append(chip);
+      els.skillList.append(chip);
       // 只给「选中的」那个 skill 展开附件勾选框，不是给列表里每个 skill 都铺一遍——
       // 上面的注释一直这么写，代码之前却没照做：没选中的 skill 也会把它的附件铺成
       // 一排永远禁用的勾选框，多几个带附件的 skill，输入框上方就成了一堵灰色勾选框
@@ -211,7 +229,7 @@ export function createChatPane(root, ctx = {}) {
             ? `${att.file}（没有放进上下文：${att.reason ?? "不可用"}）`
             : `${att.file}（${att.chars} 字符）`;
           label.append(checkbox, span);
-          els.skillBar.append(label);
+          els.skillList.append(label);
         }
       }
     }
@@ -838,6 +856,21 @@ export function createChatPane(root, ctx = {}) {
     catch (error) { setError(`会话保存失败：${error.message}`); }
     if (currentId === session.id) renderMessages();
   }
+
+  // 展开/收起：跟 confirm.js 同一套关闭办法（点遮罩本身关、Esc 关），不另起
+  // 一套——面板是静态元素，开关只是切 hidden，不重建 DOM（见 els 里的注释）。
+  // 全用 `?.`：一些更早、只覆盖会话摘要渲染的测试用的是更简版的假 DOM，
+  // 压根没注册这几个控件，不该因为这次改动而被牵连报错（els.skillPanel 缺失
+  // 时这一整块什么都不做，跟原来 skillRescan/skillInstall 的写法一致）。
+  function openSkillPanel() { if (els.skillPanel) els.skillPanel.hidden = false; }
+  function closeSkillPanel() { if (els.skillPanel) els.skillPanel.hidden = true; }
+  els.skillToggle?.addEventListener("click", () => (els.skillPanel?.hidden ? openSkillPanel() : closeSkillPanel()));
+  els.skillPanelClose?.addEventListener("click", closeSkillPanel);
+  // 点在遮罩本身（不是点面板里的内容）才关——跟 confirmDialog 里
+  // `if (event.target === overlay) finish(false)` 是同一个判断。
+  els.skillPanel?.addEventListener("click", (event) => { if (event.target === els.skillPanel) closeSkillPanel(); });
+  doc.addEventListener?.("keydown", (event) => { if (event.key === "Escape" && !els.skillPanel?.hidden) closeSkillPanel(); });
+  closeSkillPanel(); // 起始态收起——不依赖调用方记得在 HTML 里写对 hidden
 
   els.loadBtn.addEventListener("click", loadSelected);
   els.unloadBtn.addEventListener("click", unload);

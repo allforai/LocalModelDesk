@@ -47,12 +47,17 @@ class Element {
 
 function makePane() {
   const controls = new Map();
-  for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error", "load-hint", "skill-bar", "skill-notice", "skill-cost", "skill-rescan", "skill-install"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
+  for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error", "load-hint", "skill-toggle", "skill-panel", "skill-panel-close", "skill-list", "skill-notice", "skill-cost", "skill-rescan", "skill-install"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
   const doc = {
     body: new Element("body"),
     createElement: (tag) => new Element(tag),
     createDocumentFragment: () => new Element("#fragment"),
     createTextNode: (text) => ({ tagName: "#text", textContent: text }),
+    // 指令面板的 Esc-关闭走 doc.addEventListener("keydown", …)（跟 confirm.js
+    // 同一个办法）——只有一个监听者，够用，照抄 confirm.test.js 的写法。
+    listeners: {},
+    addEventListener(type, listener) { this.listeners[type] = listener; },
+    removeEventListener(type) { delete this.listeners[type]; },
   };
   // 顶层控件走原来那条扁平表；skill 芯片是动态生成、名字不定的，找不到扁平项时
   // 退到在已知控件的子树里递归找 [data-x] / [data-x="y"]——真实 DOM 的 querySelector
@@ -771,7 +776,7 @@ const attachmentCheckbox = (root, name, file) => root.querySelector(`[data-skill
 // 额度分母和三成警告的分母（budget.for_chat(...).token_limit），compactAt 只
 // 喂给 maybeCompact 触发压缩（= token_limit × 0.75，两者不是同一个数）。
 function setupChat({ skills = [], charsPerToken, compactAt, tokenLimit, sessionSkills = [], omitSkillsKey = false, initialMessages = [] } = {}) {
-  const { root, controls } = makePane();
+  const { root, controls, doc } = makePane();
   let skillsPayload = skills;
   const savedSession = { id: "s1", title: "t", messages: [...initialMessages], updated: "2026-01-01" };
   if (!omitSkillsKey) savedSession.skills = sessionSkills;
@@ -819,6 +824,7 @@ function setupChat({ skills = [], charsPerToken, compactAt, tokenLimit, sessionS
   return {
     container: root,
     controls,
+    doc,
     ready,
     async selectSkill(name) {
       await ready;
@@ -1389,4 +1395,96 @@ test("未选中的 skill 不在芯片条上铺开附件勾选框，选中才展�
   await pane.selectSkill("review"); // 再点一次取消选中
   assert.equal(attachmentCheckbox(pane.container, "review", "A.md"), null,
     "取消选中后附件勾选框该收起来，不是留着变成一堆灰色的");
+});
+
+// ---- Task 14：常驻芯片栏收进 model-row 里的一个按钮（2026-09-23 用户反馈：
+// 「skill 放到普通会话，这样太占用心智了。不是高频行为不应该这么浅的入口」）----
+//
+// 不能牺牲的那条不变式：折叠态必须随时说得出「现在生效的是谁」，不能等打开
+// 面板才看见——一个 skill 悄悄生效比一个显眼的芯片栏更糟。
+
+test("折叠态默认安静：没有选中任何 skill 时按钮只写「指令」", async () => {
+  const pane = setupChat({ skills: [
+    { name: "review", description: "d", source: "user", overrides_bundled: false,
+      body: "正文", chars: 2, attachments: [], ok: true, error: null },
+  ] });
+  await pane.ready;
+  assert.equal(byData(pane.container, "skillToggle").textContent, "指令",
+    "没有选中任何 skill 时折叠态不该带任何成本/列表/通知的痕迹");
+});
+
+test("折叠态点名选中的 skill：选一个时写出它的名字，不是只给个数字", async () => {
+  const pane = setupChat({ skills: [
+    { name: "review", description: "d", source: "user", overrides_bundled: false,
+      body: "正文", chars: 2, attachments: [], ok: true, error: null },
+  ] });
+  await pane.selectSkill("review");
+  assert.equal(byData(pane.container, "skillToggle").textContent, "指令：review");
+});
+
+test("折叠态选中多个时点名第一个、数其余——一个「+N」不够，得先说出是谁", async () => {
+  const pane = setupChat({ skills: [
+    { name: "a", description: "d", source: "user", overrides_bundled: false, body: "x", chars: 1, attachments: [], ok: true, error: null },
+    { name: "b", description: "d", source: "user", overrides_bundled: false, body: "y", chars: 1, attachments: [], ok: true, error: null },
+    { name: "c", description: "d", source: "user", overrides_bundled: false, body: "z", chars: 1, attachments: [], ok: true, error: null },
+  ] });
+  await pane.selectSkill("a");
+  await pane.selectSkill("b");
+  await pane.selectSkill("c");
+  assert.equal(byData(pane.container, "skillToggle").textContent, "指令：a +2",
+    "该点名第一个选中的（a），数其余（+2），不是「指令：+3」这种光给数字的写法");
+});
+
+test("点『指令』按钮展开面板，再点一次收起", async () => {
+  const pane = setupChat({ skills: [] });
+  await pane.ready;
+  const panel = byData(pane.container, "skillPanel");
+  assert.equal(panel.hidden, true, "默认收起");
+  await byData(pane.container, "skillToggle").click();
+  assert.equal(panel.hidden, false, "点一下该展开");
+  await byData(pane.container, "skillToggle").click();
+  assert.equal(panel.hidden, true, "再点一下该收起——回到折叠态");
+});
+
+test("Esc 关闭面板——跟 confirm.js 同一个关闭办法，不是另起一套", async () => {
+  const pane = setupChat({ skills: [] });
+  await pane.ready;
+  const panel = byData(pane.container, "skillPanel");
+  await byData(pane.container, "skillToggle").click();
+  assert.equal(panel.hidden, false);
+  pane.doc.listeners.keydown({ key: "Escape" });
+  assert.equal(panel.hidden, true, "Esc 该关闭面板");
+});
+
+test("点面板外的遮罩关闭面板；点面板内容本身不关（跟 confirmDialog 同一个判断）", async () => {
+  const pane = setupChat({ skills: [] });
+  await pane.ready;
+  const panel = byData(pane.container, "skillPanel");
+  await byData(pane.container, "skillToggle").click();
+  assert.equal(panel.hidden, false);
+  panel.listeners.click({ target: byData(pane.container, "skillCost") });
+  assert.equal(panel.hidden, false, "点在面板内容上不该关闭");
+  panel.listeners.click({ target: panel });
+  assert.equal(panel.hidden, true, "点在遮罩本身（target === overlay）该关闭");
+});
+
+test("展开面板后，昔日常驻芯片栏里的东西都还在：重新扫描、装 skill、对账通知、聚合占用、坏条目理由、芯片本身", async () => {
+  const pane = setupChat({
+    skills: [
+      { name: "review", description: "d", source: "user", overrides_bundled: false,
+        body: "w".repeat(40), chars: 40, attachments: [], ok: true, error: null },
+      { name: "bad", description: "", source: "user", overrides_bundled: false,
+        body: "", chars: 0, attachments: [], ok: false, error: "frontmatter 缺 description" },
+    ],
+    charsPerToken: 4, tokenLimit: 1000,
+  });
+  await pane.selectSkill("review");
+  assert.ok(byData(pane.container, "skillRescan"), "重新扫描按钮该还在");
+  assert.ok(byData(pane.container, "skillInstall"), "从 GitHub 安装按钮该还在");
+  assert.ok(byData(pane.container, "skillCost").textContent.includes("skill 占用"), "聚合占用行该还在");
+  const chip = chipFor(pane.container, "review");
+  assert.ok(chip, "选中的芯片该还在");
+  const badChip = chipFor(pane.container, "bad");
+  assert.equal(badChip.disabled, true, "坏条目仍然列出来但点不动");
+  assert.ok(badChip.title.includes("缺 description"), "坏条目的理由该还在");
 });

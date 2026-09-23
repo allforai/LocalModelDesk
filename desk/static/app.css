@@ -60,10 +60,22 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .thinking .md p{margin:0 0 8px}
 .thinking .md ul,.thinking .md ol{margin:0 0 8px 18px}
 .md p{margin:0 0 12px}.md h3{font-size:16px;margin:12px 0 6px}.md h4{font-size:14px;margin:10px 0 4px}.md pre{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;overflow:auto}.md code{font:13px ui-monospace,Menlo,monospace}.md ul,.md ol{margin:0 0 12px 20px}
-.skill-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;max-width:var(--chat-col);width:calc(100% - 48px);margin:8px auto 0}
-.skill-bar [data-skill-notice]:not(:empty){color:var(--danger);flex-basis:100%}
-.skill-bar [data-skill-cost]{flex-basis:100%}
-.skill-bar [data-skill-cost][data-warn="1"]{color:var(--busy)}
+/* 折叠成 model-row 里的一个按钮之后（2026-09-23 反馈：常驻的芯片栏太占心智），
+   展开态的关闭手感复用 confirm.js 的遮罩/对话框骨架（点空白处关、Esc 关），
+   不另起一套关闭方式——但 CSS 类名故意不复用 .overlay/.dialog：skill-panel
+   是静态写在 index.html 里的一个元素（不像 confirm.js 那样开关时才创建/移除），
+   收起时也一直挂在 DOM 上，只是 hidden。e2e 测试里有好几处用 `.overlay .dialog`
+   这个通用选择器去抓「当前弹出的那个」确认框（删除会话/删除模型/回到首次运行），
+   如果 skill-panel 也顶着这两个类名，选择器会同时抓到两个元素、报
+   strict mode violation——这是真的在 e2e 里炸过的（2026-09-23）。样式改成
+   独立定义，跟 .overlay/.dialog 长得一样但互不相干。 */
+.skill-panel[hidden]{display:none}
+.skill-panel{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0009;z-index:30}
+.skill-panel-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:20px;min-width:320px;max-width:640px;width:calc(100% - 48px);display:flex;flex-direction:column;gap:8px;max-height:80vh;overflow:auto}
+.skill-panel-actions{display:flex;gap:8px}
+.skill-list{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+[data-skill-notice]:not(:empty){color:var(--danger)}
+[data-skill-cost][data-warn="1"]{color:var(--busy)}
 .skill-chip{padding:4px 10px;border-radius:999px;font-size:13px;background:var(--panel);border:1px solid var(--border);color:var(--muted);cursor:pointer}
 .skill-chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .skill-chip:disabled{opacity:.5;cursor:not-allowed}
