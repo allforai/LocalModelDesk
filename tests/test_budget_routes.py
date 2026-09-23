@@ -21,7 +21,9 @@ def _configured_data_root(tmp_path, monkeypatch):
         "first_run_done": False,
         "models_root": str(data_root / "models"),
         "outputs_root": str(data_root / "outputs"),
-        "gateway": {"enabled": False, "host": "127.0.0.1", "port": 0},
+        # port 0 是校验器明确拒绝的值（tests/test_foundation_config.py:184）——用一个
+        # 合法端口，这个 fixture 本来就不是在测「端口 0」这件事。
+        "gateway": {"enabled": False, "host": "127.0.0.1", "port": 8770},
     }), encoding="utf-8")
     monkeypatch.setenv("LOCALMODELDESK_DATA_ROOT", str(data_root))
     return data_root

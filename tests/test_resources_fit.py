@@ -81,3 +81,26 @@ def test_too_big_reports_the_shortfall():
     fit = model_fit(GLM, budget, models_root="/nope")
     assert fit["level"] == "too_big"
     assert fit["shortfall_bytes"] > 0
+
+
+def test_config_error_yields_unknown_context_not_absent_context(tmp_path):
+    """配置读不出来时 context 不能长得和"没下载"一样——两件事必须能分清（R-config-corrupt-01）。"""
+    budget = make_budget(200)
+    model_dir = tmp_path / GLM.relpath
+    model_dir.mkdir(parents=True)
+    (model_dir / "config.json").write_text(json.dumps({
+        "max_position_embeddings": 131072, "num_hidden_layers": 48,
+        "num_key_value_heads": 8, "head_dim": 128,
+    }), encoding="utf-8")
+
+    # 即便模型其实已经下载好了（config.json 就在磁盘上），调用方读不出 desk 自己
+    # 的 config.json 就没法知道 models_root，只能传 None + 一个理由——这时 context
+    # 必须是一个显式的"不知道"标记，和 test_not_downloaded_chat_model_reports_no_context_number
+    # 里那个朴素的 None 不能是同一个值。
+    fit = model_fit(GLM, budget, models_root=None, config_error="配置文件读不出来")
+    assert fit["context"] is not None
+    assert fit["context"] != model_fit(GLM, budget, models_root="/does/not/exist")["context"]
+    assert fit["context"]["unknown"] is True
+    assert fit["context"]["reason"] == "配置文件读不出来"
+    # 设备能力判定和 models_root 无关，config 读不出来不该连这个也一起说不知道。
+    assert fit["level"] == "fits"

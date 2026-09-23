@@ -147,3 +147,52 @@ def test_get_disk(tmp_path):
 def test_match_route_none_for_unknown_path(tmp_path):
     routes, *_ = make_routes(tmp_path)
     assert _match_route(routes, "GET", "/api/resources/nope") is None
+
+
+def make_broken_config_routes(tmp_path):
+    """跟 make_routes 一样，但 resolve_paths 老实报「配置读不出来」——三个受影响的
+    端点（status/disk/download）都该经过 build_routes() 的 _guarded 统一变成
+    config_corrupt，而不是让 ConfigCorruptError 原样穿到调用方（R-config-corrupt-01）。
+    """
+    from desk.foundation.errors import ConfigCorruptError
+
+    def broken_resolve_paths():
+        raise ConfigCorruptError("坏了", path="x", parse_error="boom", recoverable=True)
+
+    svc = ResourcesService(resolve_paths=broken_resolve_paths,
+                           can_start_heavy=lambda: {"ok": True},
+                           fetcher=lambda repo: [ManifestFile("a.bin", 10)],
+                           executor=FakeExecutor(), thread_factory=NoThread)
+    return build_routes(svc), svc
+
+
+def test_get_status_reports_config_corrupt_when_config_unreadable(tmp_path):
+    routes, _ = make_broken_config_routes(tmp_path)
+    status, payload = call(routes, "GET", "/api/resources/status")
+    assert status == 500
+    assert payload["error"]["code"] == "config_corrupt"
+
+
+def test_get_disk_reports_config_corrupt_when_config_unreadable(tmp_path):
+    routes, _ = make_broken_config_routes(tmp_path)
+    status, payload = call(routes, "GET", "/api/resources/disk")
+    assert status == 500
+    assert payload["error"]["code"] == "config_corrupt"
+
+
+def test_post_download_reports_config_corrupt_when_config_unreadable(tmp_path):
+    routes, _ = make_broken_config_routes(tmp_path)
+    status, payload = call(routes, "POST", "/api/resources/download", body={"key": "glm"})
+    assert status == 500
+    assert payload["error"]["code"] == "config_corrupt"
+
+
+def test_get_catalog_survives_config_corrupt_with_distinguishable_unknown(tmp_path):
+    """目录端点本来就该在配置坏时降级，不是这次改动的重点——但降级出来的
+    context 不能和"没下载"撞形状（R-config-corrupt-01）。"""
+    routes, _ = make_broken_config_routes(tmp_path)
+    status, payload = call(routes, "GET", "/api/resources/catalog")
+    assert status == 200
+    glm = next(m for m in payload["models"] if m["key"] == "glm")
+    assert glm["fit"]["context"] == {"unknown": True, "reason": glm["fit"]["context"]["reason"]}
+    assert glm["fit"]["context"]["reason"]

@@ -21,6 +21,9 @@ const store = createStore({ activeTab: "chat" });
 let activeTab = "chat";
 let panes; let statusbar; let settings; let failures = 0; let modelNames = {};
 let jobActive = false; let jobLogFrom = 0; let lastJobId = null; let mediaBusyReason = "";
+// tick() 每 2 秒都会刷新资源面板，配置坏掉可能在开机之后才发生（比如运行中被外部
+// 改坏）——一旦发现就只报一次致命屏，不要每个 tick 都重挂一遍「重新设置」监听器。
+let configBroken = false;
 
 async function boot() {
   let config;
@@ -49,6 +52,14 @@ function enterDesk() {
       music:createMusicPane($("#pane-music"), { onStarted }), image:createImagePane($("#pane-image"), { onStarted }),
       resources:createResourcesPane($("#pane-resources"), {
         onModels: (models) => panes.image.setModelStatus(models?.find((m) => m.key === "qwen-image")),
+        // 配置读不出来是整台机器级别的问题（不只是资源页），复用开机就有的那个
+        // fatal 屏和「重新设置」入口，不为资源页另起一个说法（R-config-corrupt-01）。
+        onConfigBroken: (error) => {
+          if (configBroken) return;
+          configBroken = true;
+          setDeskShellHidden(true);
+          showFatal($("#fatal"), error, { resetConfig: api.resetConfig, reload: () => globalThis.location.reload() });
+        },
       }), library:createLibraryPane($("#pane-library"), { applyFill }),
     };
     settings = createSettingsPane($("#pane-settings"), { onReset: () => globalThis.location.reload() });

@@ -44,7 +44,16 @@ export function createResourcesPane(root, ctx = {}) {
       render(catalog, statuses, downloadProgress, disk ?? statusPayload.disk);
     } catch (err) {
       ctx.onModels?.(null);
-      if (els.error) els.error.textContent = err.message;
+      if (err?.code === "config_corrupt") {
+        // 配置读不出来就不知道模型目录在哪——这时候绝不能把上一次成功拿到的目录
+        // 继续渲染下去（那会看着像"这些模型都没下载"），只能说config坏了，并把
+        // 用户引去台面已有的配置修复入口（fatal 屏 + 「重新设置」），不额外造一个
+        // 新屏（R-config-corrupt-01）。
+        if (els.error) els.error.textContent = "配置文件读不出来，不知道模型装在哪——请修复配置后再试";
+        ctx.onConfigBroken?.(err);
+      } else if (els.error) {
+        els.error.textContent = err.message;
+      }
     } finally {
       if (revalidate && els.refreshBtn) {
         els.refreshBtn.disabled = false;

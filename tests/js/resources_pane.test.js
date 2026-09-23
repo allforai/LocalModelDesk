@@ -245,6 +245,35 @@ test("downloading row names the current file and the rate (F11/W8)", async () =>
   } finally { globalThis.fetch = previous; }
 });
 
+test("配置读不出来：不渲染旧目录，报错指向修复配置，并通知外层去处理（R-config-corrupt-01）", async () => {
+  const { root, parts } = makePane();
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const path = String(url);
+    if (path.startsWith("/api/resources/status")) {
+      return { ok: false, status: 500, json: async () => ({ error: { code: "config_corrupt", message: "配置文件无法读取" } }) };
+    }
+    return { ok: true, status: 200, json: async () => {
+      if (path.startsWith("/api/config")) return { models_root: "/m" };
+      if (path.includes("catalog")) return [{ key: "glm", name: "GLM", gb: 1 }];
+      if (path === "/api/resources/download") return {};
+      return { free_bytes: 1, total_bytes: 2 };
+    } };
+  };
+  let broken = null;
+  try {
+    const pane = createResourcesPane(root, { onConfigBroken: (err) => { broken = err; } });
+    await pane.refresh();
+    // config_corrupt 时必须整体失败在 render() 之前——绝不能把「模型都没下载」
+    // 渲染出来（那是这次要修的根因：config_corrupt 和"没下载"不能长得一样）。
+    assert.equal(parts["res-list"].children.length, 0);
+    assert.match(parts["res-error"].textContent, /配置/);
+    assert.match(parts["res-error"].textContent, /修复/);
+    assert.ok(broken, "应该把错误交给 ctx.onConfigBroken，让台面去引导用户修复");
+    assert.equal(broken.code, "config_corrupt");
+  } finally { globalThis.fetch = previous; }
+});
+
 test("每行只渲染一次名称与状态", async () => {
   const { root, parts } = makePane();
   const previous = globalThis.fetch;

@@ -56,3 +56,14 @@ class ConfirmRequiredError(ResourceError):
 class PathEscapeError(ResourceError):
     code = "path_escape"
     http_status = 400
+
+
+class ConfigUnavailableError(ResourceError):
+    """config.json 读不出来——不知道模型目录在哪，这类问题答不出来，不是"没有"。
+
+    code 和 `desk.foundation.errors.ConfigCorruptError` 一样都是 "config_corrupt"：
+    同一个原因（配置坏了）不管从哪个接口冒出来，前端只用认一种 code 去判断"该不该
+    引导用户去修配置"，不必为 resources 这一片再单独学一套（R-config-corrupt-01）。
+    """
+    code = "config_corrupt"
+    http_status = 500

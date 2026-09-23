@@ -1,6 +1,8 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from desk.budget.budget import Budget
 from desk.budget.device import GpuCapacity
 from desk.budget.store import Measurements
@@ -171,4 +173,62 @@ def test_list_catalog_with_fit_survives_a_corrupt_config(tmp_path):
     entries = service.list_catalog_with_fit()
 
     assert len(entries) == len(CATALOG)
-    assert next(e for e in entries if e["key"] == "glm")["fit"]["level"] == "fits"
+    glm_fit = next(e for e in entries if e["key"] == "glm")["fit"]
+    assert glm_fit["level"] == "fits"
+    # "不知道下没下载"必须和"知道目录、看了一眼、确实没下载"长得不一样——否则一个
+    # 真的躺在磁盘上的模型会被当成没下载（R-config-corrupt-01，报告 2026-09-24 的根因）。
+    assert glm_fit["context"] is not None
+    assert glm_fit["context"]["unknown"] is True
+    assert glm_fit["context"]["reason"]
+
+
+def test_verify_model_reports_config_corrupt_not_a_raw_crash(tmp_path):
+    """config.json 读不出来时 verify_model 得回一个能认出来的 code，不能让异常裸奔。"""
+    from desk.foundation.errors import ConfigCorruptError
+    from desk.resources.errors import ConfigUnavailableError
+
+    def broken_resolve_paths():
+        raise ConfigCorruptError("坏了", path="x", parse_error="boom", recoverable=True)
+
+    service = ResourcesService(
+        resolve_paths=broken_resolve_paths, can_start_heavy=lambda: {"ok": True},
+        fetcher=lambda _repo: [ManifestFile("a", 1)], executor=FakeExecutor(),
+    )
+
+    with pytest.raises(ConfigUnavailableError) as excinfo:
+        service.verify_model("glm")
+    assert excinfo.value.code == "config_corrupt"
+
+
+def test_disk_usage_reports_config_corrupt_not_a_raw_crash(tmp_path):
+    from desk.foundation.errors import ConfigCorruptError
+    from desk.resources.errors import ConfigUnavailableError
+
+    def broken_resolve_paths():
+        raise ConfigCorruptError("坏了", path="x", parse_error="boom", recoverable=True)
+
+    service = ResourcesService(
+        resolve_paths=broken_resolve_paths, can_start_heavy=lambda: {"ok": True},
+        fetcher=lambda _repo: [ManifestFile("a", 1)], executor=FakeExecutor(),
+    )
+
+    with pytest.raises(ConfigUnavailableError) as excinfo:
+        service.disk_usage()
+    assert excinfo.value.code == "config_corrupt"
+
+
+def test_start_download_reports_config_corrupt_not_a_raw_crash(tmp_path):
+    from desk.foundation.errors import ConfigCorruptError
+    from desk.resources.errors import ConfigUnavailableError
+
+    def broken_resolve_paths():
+        raise ConfigCorruptError("坏了", path="x", parse_error="boom", recoverable=True)
+
+    service = ResourcesService(
+        resolve_paths=broken_resolve_paths, can_start_heavy=lambda: {"ok": True},
+        fetcher=lambda _repo: [ManifestFile("a", 1)], executor=FakeExecutor(),
+    )
+
+    with pytest.raises(ConfigUnavailableError) as excinfo:
+        service.start_download("glm")
+    assert excinfo.value.code == "config_corrupt"
