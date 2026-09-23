@@ -1,4 +1,7 @@
 """Shared shell-test helpers."""
+import os
+import re
+import signal
 import functools
 import pathlib
 import socket
@@ -90,3 +93,50 @@ def start_script(source: str, port: int) -> subprocess.Popen:
 
 def start_fake_desk(port: int) -> subprocess.Popen:
     return start_script(FAKE_DESK_SERVER, port)
+
+
+# 临时目录里的外壳二进制长这样：.../T/shellapp-<随机>/LocalModelDeskShell
+# 必须同时要求「在 shellapp- 目录下」和「叫 LocalModelDeskShell」：只匹配后者会
+# 连用户装着的那个 app 一起杀掉（dist/LocalModelDesk.app/Contents/MacOS/...），
+# 那是毁用户的东西，不是清理。
+_STALE_SHELL = re.compile(r"^\s*(\d+)\s+(\S*/shellapp-[^/\s]+/LocalModelDeskShell)\s*$")
+
+
+def stale_shell_app_pids(listing: str) -> list[int]:
+    """从 `ps -o pid,comm` 形状的文本里挑出遗留的临时外壳进程号。
+
+    纯解析，不杀任何东西——所以「该不该杀这一行」可以穷举着测，而不必真的
+    起一个 GUI 进程来验。
+
+    只认「整行就是 pid + 可执行文件路径」的形状：扫除命令自己的命令行里会出现
+    同样的模式（`ps ... | grep shellapp-...`），按整行匹配就不会匹配到自己。
+    今天真踩过同形的坑——一个等待循环 `until ! ps aux | grep -q "[p]ytest"`
+    因为 ps 列出了它自己而在等自己结束，跑了 7 小时 37 分。
+    """
+    pids = []
+    for line in (listing or "").splitlines():
+        found = _STALE_SHELL.match(line)
+        if found:
+            pids.append(int(found.group(1)))
+    return pids
+
+
+def sweep_stale_shell_apps() -> list[int]:
+    """杀掉上次遗留的外壳进程；返回杀掉的那些。
+
+    放在「跑之前」而不是「跑完清」：fixture 的 teardown 在 pytest 被 SIGKILL 时
+    一行都不执行，而那正是漏进程的场合。清理不能保证，清理前的自查可以。
+    """
+    try:
+        listing = subprocess.run(["ps", "-eo", "pid,comm"], capture_output=True,
+                                 text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return []
+    killed = []
+    for pid in stale_shell_app_pids(listing):
+        try:
+            os.kill(pid, signal.SIGKILL)      # GUI 程序会忽略 SIGTERM，今天实测过
+            killed.append(pid)
+        except OSError:
+            pass
+    return killed

@@ -10,7 +10,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from shell_helpers import ROOT, free_port, harness_path, port_listening, start_fake_desk
+from shell_helpers import (
+    ROOT, free_port, harness_path, port_listening, start_fake_desk,
+    sweep_stale_shell_apps,
+)
 
 
 ORCA = "orca"
@@ -18,6 +21,13 @@ ORCA = "orca"
 
 @functools.lru_cache(maxsize=1)
 def app_binary() -> str:
+    # 先扫掉上次遗留的外壳再编译新的：fixture 的 teardown 在 pytest 被 SIGKILL
+    # （超时、手工 kill）时不执行，漏下的外壳是 GUI 程序、会抢焦点，让这一批测试
+    # 报 window_not_focused——而失败又更容易招来中断，循环自我加重。
+    # lru_cache 让这一步每次会话只跑一次。
+    swept = sweep_stale_shell_apps()
+    if swept:
+        print(f"扫掉上次遗留的外壳进程：{swept}")
     scratch = tempfile.mkdtemp(prefix="shellapp-")
     proc = subprocess.run(
         [str(ROOT / "scripts" / "build-shell-app.sh"), scratch],
