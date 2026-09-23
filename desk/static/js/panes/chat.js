@@ -56,7 +56,12 @@ export function createChatPane(root, ctx = {}) {
   // 真实返回的 usage.prompt_tokens，相除即得（compaction.js 同一招）。没发生过
   // 请求之前就是 null——绝不套一个默认值（R-skill-06）。
   let lastCharsPerToken = null;
-  let lastCompactAt = null;
+  // 「额度」显示与三成警告的分母是 token_limit（驻留模型的窗口，R-skill-06），
+  // 不是 compact_at（触发压缩的那条线，= token_limit × 0.75）。两个数不同用途，
+  // 各存一份——不能拿其中一个顶替另一个：desk/static/js/widgets/statusbar.js
+  // 已经把 token_limit 叫「对话额度」，这里跟它保持同一个意思。compact_at 只喂
+  // 给 compactIfNeeded 里的 maybeCompact，跟这里的显示无关。
+  let lastTokenLimit = null;
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
   const current = () => sessions.find((s) => s.id === currentId) ?? null;
@@ -70,7 +75,10 @@ export function createChatPane(root, ctx = {}) {
 
   // 占用显示：量不到每 token 字符数就只报字符数，绝不套一个默认比值（R-skill-06）。
   // compaction.js 的房规是「量不到就返回 null，而不是套一个默认值」，这里沿用。
-  function renderSkillCost(ratio, compactAt) {
+  // tokenLimit 是驻留模型的窗口（budget.for_chat(...).token_limit），不是
+  // compact_at——没有加载模型时没有额度可比，只显示占用量，不显示分母，也不
+  // 发警告（不拿一个猜的分母顶替，同 R-budget-16 那条纪律）。
+  function renderSkillCost(ratio, tokenLimit) {
     const { resolved } = currentResolution();
     const chars = skillChars(resolved);
     if (chars === 0) { els.skillCost.textContent = ""; els.skillCost.dataset.warn = ""; return; }
@@ -80,11 +88,11 @@ export function createChatPane(root, ctx = {}) {
       els.skillCost.dataset.warn = "";
       return;
     }
-    els.skillCost.textContent = compactAt
-      ? `skill 占用 ${tokens} / 额度 ${compactAt}`
+    els.skillCost.textContent = tokenLimit
+      ? `skill 占用 ${tokens} / 额度 ${tokenLimit}`
       : `skill 占用 ${tokens}`;
     // 超过三成时警告而不禁止——是用户的机器，由他决定（R-skill-06）。
-    els.skillCost.dataset.warn = compactAt && tokens > compactAt * 0.3 ? "1" : "";
+    els.skillCost.dataset.warn = tokenLimit && tokens > tokenLimit * 0.3 ? "1" : "";
   }
 
   async function toggleSkill(entry) {
@@ -172,7 +180,7 @@ export function createChatPane(root, ctx = {}) {
         }
       }
     }
-    renderSkillCost(lastCharsPerToken, lastCompactAt);
+    renderSkillCost(lastCharsPerToken, lastTokenLimit);
   }
 
   // 扫描完成后的对账：会话里记的选中，对上刚扫描出来的可用列表。消失或变坏的
@@ -686,10 +694,10 @@ export function createChatPane(root, ctx = {}) {
   async function compactIfNeeded(session, promptTokens, sentChars) {
     const budget = await api.budget().catch(() => null);
     if (!budget) return; // 预算读不到就不压缩，不能替用户裁剪历史（同 R-budget-11 的保守纪律）
-    lastCompactAt = budget.chat?.compact_at ?? null;
+    lastTokenLimit = budget.chat?.token_limit ?? null;
     const ratio = charsPerToken(sentChars, promptTokens);
     if (ratio) lastCharsPerToken = ratio; // 量不到就保留上一次量到的值，不回退成猜的
-    if (currentId === session.id) renderSkillCost(lastCharsPerToken, lastCompactAt);
+    if (currentId === session.id) renderSkillCost(lastCharsPerToken, lastTokenLimit);
     const result = await maybeCompact(session.messages, {
       promptTokens, sentChars,
       compactAt: budget.chat?.compact_at,

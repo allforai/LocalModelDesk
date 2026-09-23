@@ -757,7 +757,10 @@ test("生成中「发送」变「停止」：点了中止请求，已出内容�
 // （compaction.js 的自校准），只是测试需要在断言前就把这个数吃到肚子里。
 const attachmentCheckbox = (root, name, file) => root.querySelector(`[data-skill-attachment="${name}/${file}"]`);
 
-function setupChat({ skills = [], charsPerToken, compactAt, sessionSkills = [], omitSkillsKey = false, initialMessages = [] } = {}) {
+// tokenLimit 与 compactAt 是两个不同的数，各喂各的用途——tokenLimit 是显示的
+// 额度分母和三成警告的分母（budget.for_chat(...).token_limit），compactAt 只
+// 喂给 maybeCompact 触发压缩（= token_limit × 0.75，两者不是同一个数）。
+function setupChat({ skills = [], charsPerToken, compactAt, tokenLimit, sessionSkills = [], omitSkillsKey = false, initialMessages = [] } = {}) {
   const { root, controls } = makePane();
   let skillsPayload = skills;
   const savedSession = { id: "s1", title: "t", messages: [...initialMessages], updated: "2026-01-01" };
@@ -779,7 +782,7 @@ function setupChat({ skills = [], charsPerToken, compactAt, sessionSkills = [], 
       Object.assign(savedSession, JSON.parse(options.body));
       return json({ ...savedSession });
     }
-    if (path === "/api/budget") return json({ chat: { compact_at: compactAt ?? null }, pressure: "normal" });
+    if (path === "/api/budget") return json({ chat: { compact_at: compactAt ?? null, token_limit: tokenLimit ?? null }, pressure: "normal" });
     if (path === "/api/llm/chat/stream") {
       const messages = JSON.parse(options.body).messages;
       lastRequestMessages = messages;
@@ -870,6 +873,18 @@ test("占用显示在芯片上；量不到比值时显示字符数而不是猜�
   assert.ok(costLabel.includes("字符"), `聚合行量不到比值却显示了 token：${costLabel}`);
 });
 
+test("零占用的 skill 芯片不该带一条空占用后缀", async () => {
+  // chipCostText 的 chars===0 早退：0 字符的 skill（正文为空但条目本身仍然
+  // ok）不该在芯片名字后面拖一条「0 字符（还没量过 token）」的尾巴。
+  const pane = setupChat({ skills: [
+    { name: "empty", description: "d", source: "user", overrides_bundled: false,
+      body: "", chars: 0, attachments: [], ok: true, error: null },
+  ] });
+  await pane.ready;
+  const chip = chipFor(pane.container, "empty");
+  assert.equal(chip.textContent, "empty", `零占用的芯片不该带占用后缀：${chip.textContent}`);
+});
+
 test("重新扫描：按钮打的是 rescan 接口而不是普通列表接口，并且能看到点击前才出现的新 skill", async () => {
   // R-skill-09：发现是显式的——没有文件监听，用户改完 SKILL.md 得靠这个按钮
   // 才能让台面看见。这里刻意测两件不同的事：接口打没打对、界面刷没刷新——
@@ -915,7 +930,7 @@ test("占用超过额度三成时警告，但不禁止发送", async () => {
   const pane = setupChat({
     skills: [{ name: "huge", description: "d", source: "user", overrides_bundled: false,
                body: "w".repeat(4000), chars: 4000, attachments: [], ok: true, error: null }],
-    charsPerToken: 4, compactAt: 1000,          // 4000 字符 ÷ 4 = 1000 token，远超三成
+    charsPerToken: 4, tokenLimit: 1000,          // 4000 字符 ÷ 4 = 1000 token，远超三成
   });
   await pane.selectSkill("huge");
   assert.equal(byData(pane.container, "skillCost").dataset.warn, "1");
@@ -926,7 +941,7 @@ test("占用不到三成时不警告", async () => {
   const pane = setupChat({
     skills: [{ name: "tiny", description: "d", source: "user", overrides_bundled: false,
                body: "w".repeat(40), chars: 40, attachments: [], ok: true, error: null }],
-    charsPerToken: 4, compactAt: 1000,          // 40 字符 ÷ 4 = 10 token，远低于三成
+    charsPerToken: 4, tokenLimit: 1000,          // 40 字符 ÷ 4 = 10 token，远低于三成
   });
   await pane.selectSkill("tiny");
   assert.equal(byData(pane.container, "skillCost").dataset.warn, "");
@@ -936,12 +951,43 @@ test("量到比值但还没量到额度上限时：只报 token 数，不编一�
   const pane = setupChat({
     skills: [{ name: "review", description: "d", source: "user", overrides_bundled: false,
                body: "w".repeat(40), chars: 40, attachments: [], ok: true, error: null }],
-    charsPerToken: 4, // compactAt 不传：额度还没量到
+    charsPerToken: 4, // tokenLimit 不传：额度还没量到
   });
   await pane.selectSkill("review");
   const text = byData(pane.container, "skillCost").textContent;
   assert.ok(!text.includes("额度"), `没有额度上限却编出了一个：${text}`);
   assert.equal(byData(pane.container, "skillCost").dataset.warn, "", "没有额度上限时不该警告");
+});
+
+test("额度的分母是 token_limit，不是 compact_at——两者是不同用途的两个数", async () => {
+  // R-skill-06：「额度取自驻留模型的 budget.for_chat(...).token_limit」。compact_at
+  // 是触发压缩的那条线（= token_limit × 0.75，只喂给 maybeCompact），拿它顶替
+  // token_limit 当分母会把额度算小、把警告算得过于敏感。这里 token_limit=1000、
+  // compact_at=300：200 token 的占用是 token_limit 的 20%（不该警告），但如果
+  // 错拿 300 当分母会变成 66.7%（会误警告）——两个门槛这条测试都过一遍。
+  const pane = setupChat({
+    skills: [{ name: "review", description: "d", source: "user", overrides_bundled: false,
+               body: "w".repeat(800), chars: 800, attachments: [], ok: true, error: null }],
+    charsPerToken: 4, tokenLimit: 1000, compactAt: 300, // 800 字符 ÷ 4 = 200 token
+  });
+  await pane.selectSkill("review");
+  const text = byData(pane.container, "skillCost").textContent;
+  assert.ok(text.includes("额度 1000"), `额度分母不是 token_limit：${text}`);
+  assert.ok(!text.includes("额度 300"), `额度分母混进了 compact_at：${text}`);
+  assert.equal(byData(pane.container, "skillCost").dataset.warn, "", "对 token_limit 算只占两成，不该警告");
+});
+
+test("没有选中任何 skill 时聚合占用行是空的——哪怕已经量过比值，不会卡在『skill 占用 0』", async () => {
+  // renderSkillCost 的 chars===0 早退不是边缘情况：这是「没选任何 skill」这个
+  // 最常见状态本身。没有它，热身一轮量到比值之后，这一行会卡成「skill 占用
+  // 0 / 额度 …」，永久挂着，哪怕用户从没选过任何 skill。
+  const pane = setupChat({
+    skills: [{ name: "review", description: "d", source: "user", overrides_bundled: false,
+               body: "正文", chars: 2, attachments: [], ok: true, error: null }],
+    charsPerToken: 4, tokenLimit: 1000, // 触发热身，量到比值；但故意不选中 review
+  });
+  await pane.ready;
+  assert.equal(byData(pane.container, "skillCost").textContent, "", "没选 skill 却显示了占用");
 });
 
 test("坏的 skill 列出来但点不动", async () => {
@@ -953,6 +999,19 @@ test("坏的 skill 列出来但点不动", async () => {
   const chip = chipFor(pane.container, "bad");
   assert.equal(chip.disabled, true);
   assert.ok(chip.title.includes("缺 description"));
+});
+
+test("坏的 skill 点了也不会被选中——守卫在 toggleSkill 自己身上，不只是 chip 的 disabled 属性", async () => {
+  // 上一条测的是 disabled 属性；伪 DOM 的 click() 不看 disabled，点了照样会
+  // 调到 toggleSkill(entry)——这条测的是 toggleSkill 自己那句
+  // `if (!entry.ok) return`，R-skill-08「坏的 skill 不可被选中」真正的强制点
+  // 在这里，不在 disabled 属性上（那只是给人看的提示，不是强制）。
+  const pane = setupChat({ skills: [
+    { name: "bad", description: "", source: "user", overrides_bundled: false,
+      body: "", chars: 0, attachments: [], ok: false, error: "frontmatter 缺 description" },
+  ] });
+  await pane.selectSkill("bad"); // 伪 DOM 的 click() 不管 disabled，这里确实点了下去
+  assert.deepEqual(pane.currentSelection(), [], "坏的 skill 被点一下就进了选中列表");
 });
 
 test("好的 skill 芯片 title 是给用户看的 description，不是 error", async () => {
