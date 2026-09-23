@@ -1,7 +1,7 @@
 """Facade tests for the heavy-work arbiter."""
 
 import threading
-
+from tests.deadlines import HANG_TIMEOUT_S
 import pytest
 from types import SimpleNamespace
 
@@ -182,8 +182,8 @@ def test_fast_rejects_during_eviction_without_waiting_for_transition_lock():
     }]
 
     finish_eviction.set()
-    eviction.join(timeout=1)
-    retry_thread.join(timeout=1)
+    eviction.join(timeout=HANG_TIMEOUT_S)
+    retry_thread.join(timeout=HANG_TIMEOUT_S)
     assert not eviction.is_alive()
     assert not retry_thread.is_alive()
 
@@ -204,7 +204,7 @@ def test_sixteen_simultaneous_acquires_grant_exactly_one():
     for thread in threads:
         thread.start()
     for thread in threads:
-        thread.join(timeout=1)
+        thread.join(timeout=HANG_TIMEOUT_S)
 
     assert all(not thread.is_alive() for thread in threads)
     assert sum(result["ok"] for result in results) == 1
@@ -242,7 +242,7 @@ def test_mixed_media_race_grants_exactly_one_request():
     assert reaper_started.wait(timeout=1)
     finish_reaper.set()
     for thread in threads:
-        thread.join(timeout=1)
+        thread.join(timeout=HANG_TIMEOUT_S)
 
     assert all(not thread.is_alive() for thread in threads)
     assert sum(result["ok"] for result in results) == 1

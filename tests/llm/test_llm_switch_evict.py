@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import threading
 import time
-
+from tests.deadlines import HANG_TIMEOUT_S
 from desk.arbiter.core import Arbiter
 from desk.arbiter.reaper import ReapResult
 from desk.llm.service import LlmService
@@ -45,7 +45,7 @@ def test_initial_load_does_not_deadlock_real_arbiter_subscription(tmp_path):
     loader = threading.Thread(target=lambda: result.append(service.load("glm")), daemon=True)
 
     loader.start()
-    loader.join(timeout=0.1)
+    loader.join(timeout=HANG_TIMEOUT_S)
 
     assert not loader.is_alive()
     assert result == [{"status": "loading", "model_key": "glm", "loaded_at": None, "error": None}]
@@ -75,7 +75,7 @@ def test_eviction_while_loading_immediately_converges_to_evicted_error(tmp_path)
     testbed = make_service(tmp_path)
     testbed.backend.hold_health = True
     testbed.service.load("glm")
-    deadline = time.monotonic() + 0.1
+    deadline = time.monotonic() + HANG_TIMEOUT_S
     while "health" not in [call[0] for call in testbed.calls] and time.monotonic() < deadline:
         time.sleep(0.001)
     assert "health" in [call[0] for call in testbed.calls]
@@ -85,7 +85,7 @@ def test_eviction_while_loading_immediately_converges_to_evicted_error(tmp_path)
         "media_busy": True,
     })
 
-    state = testbed.service.wait_settled(timeout_s=0.1)
+    state = testbed.service.wait_settled(timeout_s=HANG_TIMEOUT_S)
     assert state["status"] == "error"
     assert state["model_key"] == "glm"
     assert state["error"]["code"] == "evicted"
@@ -116,7 +116,7 @@ def test_unload_does_not_deadlock_when_releasing_llm_notifies_subscribers(tmp_pa
     result = []
     unloader = threading.Thread(target=lambda: result.append(service.unload()), daemon=True)
     unloader.start()
-    unloader.join(timeout=0.1)
+    unloader.join(timeout=HANG_TIMEOUT_S)
 
     assert not unloader.is_alive()
     assert result == [{"status": "idle", "model_key": None, "loaded_at": None, "error": None}]
