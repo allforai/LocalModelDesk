@@ -15,6 +15,12 @@ from .store import SkillStore
 
 _TARBALL = "https://codeload.github.com/{owner}/{repo}/tar/refs/heads/{branch}"
 
+# skill 是文本：这两个上限已经比任何真实的 skill 仓库宽出一个数量级，只用来挡住
+# 「粘一个链接就把内存耗光」——本产品的立身之本是资源管理，不能栽在一次没设防的下载上
+# （R-budget，见 2026-09-23 修复轮 1 finding 7）。
+_MAX_TARBALL_BYTES = 20 * 1024 * 1024      # 20 MB：整个仓库下载的上限
+_MAX_MEMBER_BYTES = 2 * 1024 * 1024        # 2 MB：单个 .md 文件的上限
+
 
 def _fetch_github(url: str) -> dict[str, str]:
     """把一个 GitHub 仓库 URL 取成 {文件名: 文本}，只收顶层的 `.md`。
@@ -22,34 +28,49 @@ def _fetch_github(url: str) -> dict[str, str]:
     不执行、不解压到磁盘：直接在内存里读 tar 成员，只认顶层 `.md`，别的一概不看
     （R-skill-01/11）。成员名带路径分隔符的跳过——不跟进子目录，也就不可能被
     `../` 写出去。
+
+    大小写只差一个字母的两个成员名（比如 `SKILL.md` 与 `skill.md`）在开发这台设备的
+    默认大小写不敏感文件系统上会写到同一个路径——先落盘的那份「赢」，而预览给用户看的
+    是另一份。这不是这份代码能悄悄挑一个赢家的问题：用户批准的文本和最终生效的文本
+    必须是同一份，所以整个仓库直接拒收（2026-09-23 修复轮 1 finding 1）。
     """
     parts = [p for p in urllib.parse.urlparse(url).path.split("/") if p]
     if len(parts) < 2:
         raise ValueError("不是一个仓库地址，形如 https://github.com/<owner>/<repo>")
     owner, repo = parts[0], parts[1].removesuffix(".git")
     last = None
+    blob = b""
     for branch in ("main", "master"):
         try:
             with urllib.request.urlopen(
-                    _TARBALL.format(owner=owner, repo=repo, branch=branch), timeout=30) as body:
-                blob = body.read()
+                    _TARBALL.format(owner=owner, repo=repo, branch=branch), timeout=30) as resp:
+                blob = resp.read(_MAX_TARBALL_BYTES + 1)
             break
         except Exception as exc:                  # 两个分支都试完才算失败
             last = exc
     else:
         raise ValueError(f"取不到仓库内容：{last}")
 
+    if len(blob) > _MAX_TARBALL_BYTES:
+        raise ValueError(f"仓库太大：超过 {_MAX_TARBALL_BYTES // (1024 * 1024)} MB 的下载上限")
+
     files: dict[str, str] = {}
+    seen_casefold: dict[str, str] = {}
     with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as tar:
         for member in tar.getmembers():
             # tarball 的成员都带一层 "<repo>-<branch>/" 前缀，剥掉之后只收顶层 .md
             name = member.name.split("/", 1)[-1] if "/" in member.name else ""
             if not member.isfile() or "/" in name or not name.endswith(".md"):
                 continue
-            handle = tar.extractfile(member)
-            if handle is None:
-                continue
-            files[name] = handle.read().decode("utf-8", errors="replace")
+            if member.size > _MAX_MEMBER_BYTES:
+                raise ValueError(f"{name} 超过单文件 {_MAX_MEMBER_BYTES // (1024 * 1024)} MB 的上限")
+            folded = name.casefold()
+            if folded in seen_casefold and seen_casefold[folded] != name:
+                raise ValueError(
+                    f"{seen_casefold[folded]} 和 {name} 只差大小写：装到这台设备上会写到"
+                    "同一个文件，没法确定该留哪个——整个仓库不装")
+            seen_casefold[folded] = name
+            files[name] = tar.extractfile(member).read().decode("utf-8", errors="replace")
     return files
 
 
