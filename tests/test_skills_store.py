@@ -103,3 +103,73 @@ def test_chars_counts_the_body_only(tmp_path):
     [entry] = store(tmp_path).scan()
     assert entry["chars"] == len(entry["body"])
     assert entry["chars"] >= 10
+
+
+def test_a_missing_name_is_listed_with_its_reason(tmp_path):
+    """缺 name 字段（镜像测试缺 description）——没有 name UI 无法指向这个坏 skill。"""
+    d = (tmp_path / "user" / "noname")
+    d.mkdir(parents=True)
+    (d / "SKILL.md").write_text("---\ndescription: 有描述\n---\n正文\n", encoding="utf-8")
+    [entry] = store(tmp_path).scan()
+    assert entry["ok"] is False
+    assert "name" in entry["error"]
+    assert entry["name"] == "noname"
+
+
+def test_directory_without_skill_md_exact_error_message(tmp_path):
+    """测试精确错误消息，区分「文件不存在」和「文件不可读」。"""
+    (tmp_path / "user" / "empty").mkdir(parents=True)
+    [entry] = store(tmp_path).scan()
+    assert entry["ok"] is False
+    assert entry["error"] == "目录里没有 SKILL.md"
+
+
+def test_invalid_utf8_in_skill_md(tmp_path):
+    """SKILL.md 包含无效 UTF-8 应被列为坏的。"""
+    d = (tmp_path / "user" / "badutf8")
+    d.mkdir(parents=True)
+    (d / "SKILL.md").write_bytes(b"---\nname: x\n---\n\xff\xfe")
+    [entry] = store(tmp_path).scan()
+    assert entry["ok"] is False
+    assert "读不出" in entry["error"]
+
+
+def test_invalid_utf8_in_attachment_is_skipped(tmp_path):
+    """附件包含无效 UTF-8 应被跳过，不会让扫描崩溃。"""
+    write_skill(tmp_path / "user", "badattach",
+                body="见 [坏的](BAD.md)。")
+    # 写入无效 UTF-8 到附件
+    (tmp_path / "user" / "badattach" / "BAD.md").write_bytes(b"\xff\xfe")
+    [entry] = store(tmp_path).scan()
+    assert entry["ok"] is True
+    assert entry["attachments"] == []
+
+
+def test_same_root_collision_marks_all_as_broken(tmp_path):
+    """同一个根内，两个目录声明同一个 name 时，两个都标记为坏的并列出对方。"""
+    write_skill(tmp_path / "user", "dir-a", name="dup")
+    write_skill(tmp_path / "user", "dir-b", name="dup")
+    entries = store(tmp_path).scan()
+    assert len(entries) == 2
+    assert all(e["ok"] is False for e in entries)
+    assert all("重复" in e["error"] for e in entries)
+    # 检查 dir-a 的错误提到了 dir-b
+    dir_a = [e for e in entries if e["dir"].endswith("dir-a")][0]
+    assert "dir-b" in dir_a["error"]
+    # 检查 dir-b 的错误提到了 dir-a
+    dir_b = [e for e in entries if e["dir"].endswith("dir-b")][0]
+    assert "dir-a" in dir_b["error"]
+
+
+def test_user_broken_entry_overrides_bundled(tmp_path):
+    """用户的坏 skill 仍然覆盖自带版本（因为用户已经在编辑它）。"""
+    write_skill(tmp_path / "bundled", "shared", body="自带正文")
+    # 用户版本缺少 description
+    d = (tmp_path / "user" / "shared")
+    d.mkdir(parents=True)
+    (d / "SKILL.md").write_text("---\nname: shared\n---\n用户正文\n", encoding="utf-8")
+    [entry] = store(tmp_path).scan()
+    assert entry["source"] == "user"
+    assert entry["ok"] is False
+    assert entry["overrides_bundled"] is True
+    assert "description" in entry["error"]
