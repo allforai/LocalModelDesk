@@ -48,3 +48,4 @@ docs/cross-exam/**/*.mov
 docs/cross-exam/**/*.webm
 .playwright-mcp/
 docs/superpowers/runs/
+.worktrees/
