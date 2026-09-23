@@ -87,3 +87,32 @@ def test_referenced_files_dedupes_and_keeps_order():
 
 def test_no_links_is_an_empty_list():
     assert referenced_files("没有任何链接") == []
+
+
+def test_referenced_files_rejects_colon_targets():
+    """冒号目标如 `mailto:x.md` 被拒绝——防止协议处理器被当作同目录文件。"""
+    body = "见 [邮件链接](mailto:x.md) 和 [正常](REAL.md)"
+    assert referenced_files(body) == ["REAL.md"]
+
+
+def test_referenced_files_rejects_backslash_targets():
+    """反斜杠目标如 `sub\\deep.md` 被拒绝——防止 Windows 路径逃逸。"""
+    body = "见 [windows路径](sub\\\\deep.md) 和 [正常](REAL.md)"
+    assert referenced_files(body) == ["REAL.md"]
+
+
+def test_parses_frontmatter_ending_with_folded_block():
+    """frontmatter 以折叠块结尾（description 是最后一个字段，没有其他字段在后面）——
+    现实中真实存在（.pi/agent/skills 里三个文件这样）。"""
+    text = """---
+name: orca-cli
+description: >
+  第一行。
+  第二行。
+---
+
+正文"""
+    fields, error = parse_frontmatter(text)
+    assert error is None
+    assert fields["name"] == "orca-cli"
+    assert fields["description"] == "第一行。 第二行。"

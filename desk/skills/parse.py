@@ -74,7 +74,8 @@ def referenced_files(body: str) -> list[str]:
     """
     found: list[str] = []
     for target in _LINK.findall(body or ""):
-        # 去掉开头的 ./
+        # 去掉开头的 ./ 才能用斜杠检查：./ 的目标是同目录文件（测试要求接受），
+        # 但 ./../x.md 仍会被不变的斜杠检查拒绝
         if target.startswith("./"):
             target = target[2:]
 
