@@ -11,7 +11,7 @@ import urllib.parse       # 必须显式导入：import urllib.request 不保证
 import urllib.request     # 而单测注入了 fetch、碰不到这一行——正是「单元绿、真机坏」的形状
 from pathlib import Path
 
-from .install import InstallError, discard as _discard, land, stage_from_url
+from .install import InstallError, discard as _discard, land, stage_from_url, sweep_stale_staging
 from .store import SkillStore
 
 _TARBALL = "https://codeload.github.com/{owner}/{repo}/tar/refs/heads/{branch}"
@@ -102,6 +102,10 @@ def _fetch_github(url: str) -> dict[str, str]:
 class SkillsService:
     def __init__(self, roots):
         self._roots = roots
+        # 只在这一刻扫：SkillsService 在 runtime.py 里于 app.start_background() 之前
+        # 构造——这是唯一能保证「不可能有 preview 正在写」的时刻，HTTP 服务器还没
+        # 开始接受请求（2026-09-23 finding 3，理由见 install.sweep_stale_staging）。
+        sweep_stale_staging(self._staging_root())
 
     def _store(self) -> SkillStore:
         # 自带的那批落在 resources_root/desk/skills/bundled：`build-app.sh:49` 已经把整个

@@ -165,16 +165,23 @@ export function createChatPane(root, ctx = {}) {
       els.skillBar.append(chip);
       if (entry.ok && (entry.attachments ?? []).length) {
         for (const att of entry.attachments) {
+          // available === false：引用的文件缺失或读不出（R-skill-10）。这份附件
+          // 不可能拼出东西，勾选框永远禁用，理由必须写在界面上而不是让它悄悄
+          // 从列表里消失（2026-09-23 finding 4）。旧数据没有这个字段时
+          // （att.available === undefined）按「可用」处理，行为不变。
+          const unavailable = att.available === false;
           const label = doc.createElement("label");
           label.className = "skill-attachment";
           const checkbox = doc.createElement("input");
           checkbox.type = "checkbox";
-          checkbox.disabled = !isSelected;
-          checkbox.checked = isSelected && pickedAttachments.has(att.file);
+          checkbox.disabled = !isSelected || unavailable;
+          checkbox.checked = isSelected && !unavailable && pickedAttachments.has(att.file);
           (checkbox.dataset ??= {}).skillAttachment = `${entry.name}/${att.file}`;
           checkbox.addEventListener("change", () => toggleAttachment(entry.name, att.file, checkbox.checked));
           const span = doc.createElement("span");
-          span.textContent = `${att.file}（${att.chars} 字符）`;
+          span.textContent = unavailable
+            ? `${att.file}（没有放进上下文：${att.reason ?? "不可用"}）`
+            : `${att.file}（${att.chars} 字符）`;
           label.append(checkbox, span);
           els.skillBar.append(label);
         }

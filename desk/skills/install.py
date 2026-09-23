@@ -10,6 +10,7 @@
 """
 from __future__ import annotations
 
+import re
 import shutil
 import threading
 import uuid
@@ -24,6 +25,66 @@ class InstallError(Exception):
 
 def _clear(path: Path) -> None:
     shutil.rmtree(path, ignore_errors=True)
+
+
+_STAGING_ID = re.compile(r"^[0-9a-f]{32}$")
+
+
+def _validate_staging_id(staging_id) -> None:
+    """`staging_id` 只可能是 `stage_from_url` 自己生成的 `uuid4().hex`——32 位小写
+    十六进制字符。它从 HTTP 请求体一路传进来，落地之前从来没被校验过就直接拼进
+    路径：`discard` 曾经因此把 `"../../llms"` 当成 staging_id，删掉了整个模型库
+    （2026-09-23 finding 1）。
+
+    按形状拒绝比按「../」这种黑名单更彻底：没有一种把 `..` 编码成 32 位十六进制
+    字符串的写法，这条校验从根上堵死任何路径穿越，不管穿越用的是哪种编码。
+    """
+    if not isinstance(staging_id, str) or not _STAGING_ID.fullmatch(staging_id):
+        raise InstallError(
+            f"staging_id 不合法：必须是 32 位小写十六进制字符，收到的是 {staging_id!r}")
+
+
+def _validate_skill_name(name: str) -> None:
+    """`name` 是要落盘成一层目录名的字符串，不是随便的文本。落盘时从来没被校验过就
+    直接拼进路径：声明 `name: ../../escaped` 能装到 `<models_root>/skills/` 之外，
+    声明 `name: /abs/path/pwned` 能写到 app 能写的任何地方（pathlib 里
+    `Path(...) / 绝对路径` 直接丢弃左边）（2026-09-23 finding 2）。
+
+    允许什么由这里一次性定下来：不含路径分隔符、不以 `.` 开头的任意非空名字——
+    含中文在内，自带的三个 skill 本身就用中文做目录名（`译成中文`、`代码审查`、
+    `写得清楚些`），「只许 ASCII」这种更严的规则会误伤它们。点开头单独给一条
+    消息：`.hidden` 会「装成功」，但扫描器把点开头的目录当成 `.staging` 这类
+    临时目录跳过，装了也永远列不出来，比直接拒绝更糟——而且这条顺带堵死了
+    `..`（本身就是点开头）这个不含斜杠、却能让 `target` 解析到 `user_root` 上一级
+    的名字。
+    """
+    if name.startswith("."):
+        raise InstallError(
+            f"skill 的 name 不能以 . 开头（{name!r}）：点开头的目录会被扫描器当成"
+            "安装用的临时目录跳过，装了也永远看不见，等于白装")
+    if "/" in name or "\\" in name:
+        raise InstallError(
+            f"skill 的 name 不能包含 / 或 \\（{name!r}）：name 要落盘成一层目录名，"
+            "不是一段路径")
+
+
+def sweep_stale_staging(staging_root: Path) -> None:
+    """清掉 `.staging` 下所有暂存目录：用户退出 app 时，没 install 也没 discard 的
+    预览就这样留在磁盘上（R-skill-17）。
+
+    **只能在这一刻调用**——`SkillsService.__init__` 里，`runtime.py` 把它挪到
+    `app.start_background()` 之前：这是唯一能保证「不可能有 preview 正在写」的
+    时刻，因为请求要真正被处理，先得等 HTTP 服务器起来。不靠时间戳之类的启发式
+    去猜一个暂存目录「应该」写完了没有——那是拿一个猜测替换一条清楚的不变量，
+    `land()` 顶部那条注释同一个道理：串行化窗口窄，直接把它挪到真正没有并发的
+    时刻，比拿年龄去猜谁写完了更简单也更对。上一次进程退出前没 install 也没
+    discard 的预览，从用户角度看已经作废——重新点一次 preview 不费事。
+    """
+    staging_root = Path(staging_root)
+    if not staging_root.is_dir():
+        return
+    for stale in staging_root.iterdir():
+        _clear(stale)
 
 
 # 台面用 ThreadingHTTPServer（desk/app.py），一个请求一个线程，land() 之前没有任何
@@ -54,6 +115,10 @@ def stage_from_url(url: str, staging_root: Path, fetch) -> dict:
     for required in ("name", "description"):
         if not (fields.get(required) or "").strip():
             raise InstallError(f"frontmatter 缺 {required}")
+    # name 校验必须在 staged.mkdir() 之前跑完：一个装不了的 name 要在预览阶段就
+    # 被拒绝，用户批准之前就该知道装不了，而不是批准之后才在 land() 里炸掉
+    # （2026-09-23 finding 2）。
+    _validate_skill_name(fields["name"].strip())
 
     try:
         staged.mkdir(parents=True, exist_ok=True)
@@ -89,18 +154,41 @@ def land(staging_id: str, staging_root: Path, user_root: Path) -> str:
     # 整个函数都在锁里：sweep、名字校验、拷贝、两次改名——没有一步是安全的部分执行，
     # 全部串行化（2026-09-23 修复轮 3 finding 1）。
     with _LAND_LOCK:
+        # staging_id 来自请求体，从没被校验过就直接拼进路径——discard 曾经因此把
+        # "../../llms" 当成 staging_id 删掉整个模型库；land 的路径拼接方式更弱但
+        # 洞是同一个洞（2026-09-23 finding 1）。
+        _validate_staging_id(staging_id)
         staged = Path(staging_root) / staging_id
         if not (staged / "SKILL.md").is_file():
             raise InstallError("暂存已经不在了，请重新预览")
         # 落盘前再读一遍暂存的 SKILL.md，不能假设预览之后它没被动过
-        # （2026-09-23 修复轮 1 finding 3）。
+        # （2026-09-23 修复轮 1 finding 3）。暂存文件是本地磁盘上的文本文件，理论上
+        # 谁都能在预览之后、确认之前手改它——name 也不例外，所以这里必须重新校验
+        # name，不能只信任 stage_from_url 在预览阶段做过的那一次（2026-09-23
+        # finding 2：校验是规则，下面的路径校验是证明，两者独立）。
         fields, _body, error = split_skill((staged / "SKILL.md").read_text(encoding="utf-8"))
         if error:
             _clear(staged)
             raise InstallError(error)
         name = fields["name"].strip()
+        try:
+            _validate_skill_name(name)
+        except InstallError:
+            _clear(staged)
+            raise
         user_root = Path(user_root)
         target = user_root / name
+
+        # 带背带的第二证明：name 校验是规则，这条路径校验是证明——一个校验函数
+        # 写错，不会连带让另一个也放行。跟 resources/service.py 的
+        # `_resolve_delete_target` 同一个做法：先 resolve，再用 is_relative_to
+        # 判断包含关系，不匹配就拒绝，而不是先动手再补救（2026-09-23 finding 2）。
+        resolved_root = user_root.resolve()
+        resolved_target = target.resolve()
+        if resolved_target == resolved_root or not resolved_target.is_relative_to(resolved_root):
+            _clear(staged)
+            raise InstallError(
+                f"{name!r} 解析出的路径 {resolved_target} 跑到 {resolved_root} 之外，拒绝安装")
 
         try:
             user_root.mkdir(parents=True, exist_ok=True)
@@ -197,4 +285,8 @@ def land(staging_id: str, staging_root: Path, user_root: Path) -> str:
 
 
 def discard(staging_id: str, staging_root: Path) -> None:
+    # 同一个洞、更短的路径：discard 一路走到 rmtree，staging_id 一步都没被校验过
+    # 就拼进要删的路径——{"staging_id": "../../llms"} 删掉了整个模型库
+    # （2026-09-23 finding 1，CRITICAL）。
+    _validate_staging_id(staging_id)
     _clear(Path(staging_root) / staging_id)

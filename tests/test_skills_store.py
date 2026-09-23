@@ -74,15 +74,20 @@ def test_attachments_are_listed_with_their_sizes_but_not_inlined(tmp_path):
                 extra={"DEEPENING.md": "附件正文"})
     [entry] = store(tmp_path).scan()
     assert entry["attachments"] == [
-        {"file": "DEEPENING.md", "chars": len("附件正文"), "text": "附件正文"}]
+        {"file": "DEEPENING.md", "chars": len("附件正文"), "text": "附件正文",
+         "available": True, "reason": None}]
     assert "附件正文" not in entry["body"], "附件被拼进正文了——拼不拼由用户勾选决定"
 
 
-def test_a_referenced_file_that_does_not_exist_is_not_listed(tmp_path):
-    """引用了但文件不在，就不该出现在可勾选清单里——勾了也拼不出东西。"""
+def test_a_referenced_file_that_does_not_exist_is_listed_as_unavailable(tmp_path):
+    """引用了但文件不在：正文里那句「见 [缺失](GONE.md)」还在，模型会被指去看一个
+    用户从没被告知不存在的东西——这份附件必须照样出现在列表里，标明放不进去，
+    而不是从 attachments 里悄悄消失（2026-09-23 finding 4，R-skill-10）。"""
     write_skill(tmp_path / "user", "dangling", body="见 [缺失](GONE.md)。")
     [entry] = store(tmp_path).scan()
-    assert entry["attachments"] == []
+    assert entry["attachments"] == [
+        {"file": "GONE.md", "chars": 0, "text": None,
+         "available": False, "reason": "引用的文件不存在"}]
 
 
 def test_a_dot_directory_is_not_a_skill(tmp_path):
@@ -134,15 +139,21 @@ def test_invalid_utf8_in_skill_md(tmp_path):
     assert "读不出" in entry["error"]
 
 
-def test_invalid_utf8_in_attachment_is_skipped(tmp_path):
-    """附件包含无效 UTF-8 应被跳过，不会让扫描崩溃。"""
+def test_invalid_utf8_in_attachment_is_listed_as_unavailable(tmp_path):
+    """附件包含无效 UTF-8 不会让扫描崩溃，但也不能悄悄从列表里消失——必须列出来
+    并说明读不出来，跟「文件缺失」用同一个 available/reason 形状
+    （2026-09-23 finding 4）。"""
     write_skill(tmp_path / "user", "badattach",
                 body="见 [坏的](BAD.md)。")
     # 写入无效 UTF-8 到附件
     (tmp_path / "user" / "badattach" / "BAD.md").write_bytes(b"\xff\xfe")
     [entry] = store(tmp_path).scan()
     assert entry["ok"] is True
-    assert entry["attachments"] == []
+    [attachment] = entry["attachments"]
+    assert attachment["file"] == "BAD.md"
+    assert attachment["available"] is False
+    assert attachment["text"] is None
+    assert "读不出" in attachment["reason"]
 
 
 def test_same_root_collision_marks_all_as_broken(tmp_path):
@@ -173,3 +184,22 @@ def test_user_broken_entry_overrides_bundled(tmp_path):
     assert entry["ok"] is False
     assert entry["overrides_bundled"] is True
     assert "description" in entry["error"]
+
+
+def test_attachment_entries_have_the_same_shape_whether_available_or_not(tmp_path):
+    """一个引用了三种附件（正常、缺失、读不出）的 skill：三条 attachments 记录必须
+    有一样的键集合——某条分支少一个键，消费者（前端 resolveSelection、chat.js）
+    按另一条分支写的代码就会 KeyError（2026-09-23 finding 4）。"""
+    write_skill(tmp_path / "user", "mixed",
+                body="见 [好](OK.md)、[缺](GONE.md)、[坏](BAD.md)。",
+                extra={"OK.md": "好附件"})
+    (tmp_path / "user" / "mixed" / "BAD.md").write_bytes(b"\xff\xfe")
+    [entry] = store(tmp_path).scan()
+    by_file = {a["file"]: a for a in entry["attachments"]}
+    assert set(by_file) == {"OK.md", "GONE.md", "BAD.md"}
+    expected_keys = {"file", "chars", "text", "available", "reason"}
+    for filename, attachment in by_file.items():
+        assert set(attachment) == expected_keys, f"{filename} 的键集合不一样：{set(attachment)}"
+    assert by_file["OK.md"]["available"] is True
+    assert by_file["GONE.md"]["available"] is False
+    assert by_file["BAD.md"]["available"] is False

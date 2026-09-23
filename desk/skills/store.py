@@ -34,16 +34,27 @@ def _read_one(directory: Path, source: str) -> dict:
     attachments = []
     for filename in referenced_files(body):
         path = directory / filename
+        # 引用了但文件不在、或者读不出来：正文里说的「见 [细则](RULES.md)」这句话
+        # 还在，模型会被指去看一个用户从没被告知不存在的东西——「没放进去」这件事
+        # 必须写在界面明处，而不是让这个文件从 attachments 里悄悄消失
+        # （2026-09-23 finding 4，R-skill-10）。三条分支落的字典形状必须一样：
+        # file/chars/text/available/reason 五个键每条都有，缺一个键在某条分支上
+        # 会变成消费者（前端 resolveSelection、chat.js 渲染）里的 KeyError。
         if not path.is_file():
-            continue          # 引用了但文件不在：勾了也拼不出东西，不进可勾选清单
+            attachments.append({"file": filename, "chars": 0, "text": None,
+                                 "available": False, "reason": "引用的文件不存在"})
+            continue
         try:
             text = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
+        except (OSError, UnicodeDecodeError) as exc:
+            attachments.append({"file": filename, "chars": 0, "text": None,
+                                 "available": False, "reason": f"读不出：{exc}"})
             continue
         # 原文随列表一起给出：勾选时前端直接拼，不必再问一次。
         # 「同一个问题只许有一个入口」（R-skill-16）——再开一个取附件的接口，
         # 两边迟早对不上，而先被问到的那个说了算。
-        attachments.append({"file": filename, "chars": len(text), "text": text})
+        attachments.append({"file": filename, "chars": len(text), "text": text,
+                             "available": True, "reason": None})
     return {"name": fields["name"].strip(), "description": fields["description"].strip(),
             "source": source, "overrides_bundled": False, "body": body, "chars": len(body),
             "attachments": attachments, "ok": True, "error": None, "dir": str(directory)}

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from desk.skills.install import InstallError, discard, land, stage_from_url
+from desk.skills.install import InstallError, discard, land, stage_from_url, sweep_stale_staging
 from desk.skills.parse import split_skill
 
 SKILL = "---\nname: fetched\ndescription: 来自网上\n---\n\n正文 [附](A.md)\n"
@@ -421,3 +421,159 @@ def test_reinstalling_over_a_corrupted_target_gives_a_clear_message(tmp_path):
     assert "fetched" in message
     assert list(staging.glob("*")) == []
     assert (user / "fetched").is_dir(), "没读懂的目录也不能被动"
+
+
+# ---------------------------------------------------------------------------
+# Finding 1（CRITICAL）：staging_id 直接来自请求体，discard/land 落盘前都要按
+# 「32 位小写十六进制」的形状校验，不能靠黑名单挡「../」这种写法。
+# ---------------------------------------------------------------------------
+
+def test_discard_refuses_a_traversal_staging_id_and_touches_nothing(tmp_path):
+    """{"staging_id": "../../llms"} 曾经把 `.staging/../../llms` 解析成
+    `<models_root>/llms`——整个模型库——直接删掉（2026-09-23 finding 1）。"""
+    staging_root = tmp_path / "models" / "skills" / ".staging"
+    staging_root.mkdir(parents=True)
+    llms = tmp_path / "models" / "llms"
+    llms.mkdir()
+    (llms / "weights.bin").write_bytes(b"pretend model weights")
+
+    with pytest.raises(InstallError):
+        discard("../../llms", staging_root)
+
+    assert (llms / "weights.bin").is_file(), "模型库被删了——finding 1 没修好"
+
+
+@pytest.mark.parametrize("bad_id", [
+    "../../llms", "..", "", "not-hex", "a" * 31, "a" * 33, "A" * 32, "g" * 32,
+])
+def test_discard_refuses_every_malformed_staging_id(tmp_path, bad_id):
+    staging_root = tmp_path / "staging"
+    staging_root.mkdir()
+    with pytest.raises(InstallError):
+        discard(bad_id, staging_root)
+
+
+@pytest.mark.parametrize("bad_id", [
+    "../../llms", "..", "", "not-hex", "a" * 31, "a" * 33, "A" * 32, "g" * 32,
+])
+def test_land_refuses_every_malformed_staging_id_before_touching_user_root(tmp_path, bad_id):
+    staging, user = tmp_path / "staging", tmp_path / "user"
+    staging.mkdir(parents=True)
+    with pytest.raises(InstallError):
+        land(bad_id, staging, user)
+    assert not user.exists(), "校验必须在碰 user_root 之前就拦下来"
+
+
+def test_discard_accepts_a_real_staging_id(tmp_path):
+    """健全性检查：校验不能误伤正常的 uuid4().hex——这不是「越严越好」，装不上的
+    也不该被拒绝。"""
+    staging = tmp_path / "staging"
+    staged = stage_from_url("https://example.com/x", staging, fetch_ok)
+    discard(staged["staging_id"], staging)
+    assert list(staging.glob("*")) == []
+
+
+# ---------------------------------------------------------------------------
+# Finding 2（HIGH）：declared name 落盘前要按「能不能当一层目录名用」校验，
+# 预览阶段（stage_from_url）就要挡住，land() 里再校验一遍并做路径包含检查。
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("bad_name", ["../../escaped", "/abs/path/pwned", "a/b", "a\\b"])
+def test_staging_refuses_a_dangerous_declared_name(tmp_path, bad_name):
+    """坏 name 必须在预览阶段就被拒绝——用户批准之前就该知道装不了，而不是批准
+    之后才在 land() 里炸掉（2026-09-23 finding 2）。"""
+    staging = tmp_path / "staging"
+
+    def fetch(_url):
+        return {"SKILL.md": f"---\nname: {bad_name}\ndescription: d\n---\n\n正文\n"}
+
+    with pytest.raises(InstallError):
+        stage_from_url("https://example.com/x", staging, fetch)
+    assert list(staging.glob("*")) == [], "拒绝之后不该留下任何暂存"
+
+
+def test_staging_refuses_a_dot_leading_name_with_its_own_message(tmp_path):
+    """`.hidden` 会「装成功」，但扫描器把点开头的目录当成 .staging 这类临时目录跳过，
+    装了也永远看不见——必须单独给一条消息，而不是被当成普通的坏 name 拒绝
+    （2026-09-23 finding 2）。"""
+    staging = tmp_path / "staging"
+
+    def fetch(_url):
+        return {"SKILL.md": "---\nname: .hidden\ndescription: d\n---\n\n正文\n"}
+
+    with pytest.raises(InstallError) as excinfo:
+        stage_from_url("https://example.com/x", staging, fetch)
+    assert "点" in str(excinfo.value)
+
+
+def test_land_refuses_an_escaping_name_even_if_the_staged_file_was_tampered_with(tmp_path):
+    """带背带的证明：预览阶段的校验可能被绕过（暂存文件是本地磁盘上的文本文件，
+    预览之后、确认之前谁都能手改）——land() 自己必须再校验一遍 name，并且在写盘
+    之前再做一次路径包含检查，双保险缺一个都不行（2026-09-23 finding 2）。"""
+    staging, user = tmp_path / "staging", tmp_path / "user"
+    staged = stage_from_url("https://example.com/x", staging, fetch_ok)
+    (staging / staged["staging_id"] / "SKILL.md").write_text(
+        "---\nname: ../../escaped\ndescription: d\n---\n\n正文\n", encoding="utf-8")
+
+    with pytest.raises(InstallError):
+        land(staged["staging_id"], staging, user)
+
+    assert not (user.parent / "escaped").exists(), "跑到 user_root 之外去了"
+    assert list(staging.glob("*")) == [], "校验失败之后暂存要清掉，不能留下半成品"
+
+
+def test_land_containment_check_catches_what_the_name_check_alone_would_miss(tmp_path, monkeypatch):
+    """belt and braces：就算 `_validate_skill_name` 本身被写坏、放行了一个会逃出
+    `user_root` 的 name，land() 末尾那条 `is_relative_to` 检查也要独立挡住它——
+    两条防线各自成立，不是同一个 bug 的两个症状（2026-09-23 finding 2）。"""
+    import desk.skills.install as install_mod
+    monkeypatch.setattr(install_mod, "_validate_skill_name", lambda _name: None)
+
+    staging, user = tmp_path / "staging", tmp_path / "user"
+
+    def fetch(_url):
+        return {"SKILL.md": "---\nname: ../../escaped\ndescription: d\n---\n\n正文\n"}
+
+    staged = stage_from_url("https://example.com/x", staging, fetch)
+    with pytest.raises(InstallError):
+        land(staged["staging_id"], staging, user)
+    assert not (user.parent / "escaped").exists()
+
+
+# ---------------------------------------------------------------------------
+# Finding 3（MEDIUM）：quit 前没 install 也没 discard 的预览，下次启动要被清掉。
+# ---------------------------------------------------------------------------
+
+def test_sweep_stale_staging_removes_every_abandoned_preview(tmp_path):
+    staging = tmp_path / "staging"
+    stage_from_url("https://example.com/a", staging, fetch_ok)
+    stage_from_url("https://example.com/a", staging, fetch_ok)
+    assert len(list(staging.glob("*"))) == 2, "这个测试本身要求至少两个暂存目录"
+
+    sweep_stale_staging(staging)
+
+    assert list(staging.glob("*")) == []
+
+
+def test_sweep_stale_staging_on_a_missing_root_is_a_noop(tmp_path):
+    sweep_stale_staging(tmp_path / "does" / "not" / "exist")  # 不该抛异常
+
+
+def test_service_construction_sweeps_stale_staging_left_by_a_previous_process(tmp_path):
+    """`SkillsService.__init__` 是唯一安全调用 `sweep_stale_staging` 的时刻（Task 11
+    finding 3）：这里直接在磁盘上伪造「上一次进程退出前留下的暂存」，构造一个新
+    `SkillsService`（等价于重启一次 app），确认它被扫掉了。"""
+    from types import SimpleNamespace
+
+    from desk.skills.service import SkillsService
+
+    (tmp_path / "res").mkdir()
+    roots = SimpleNamespace(resources_root=tmp_path / "res", models_root=tmp_path / "m")
+    stale_staging = tmp_path / "m" / "skills" / ".staging" / "deadbeef"
+    stale_staging.mkdir(parents=True)
+    (stale_staging / "SKILL.md").write_text(
+        "---\nname: abandoned\ndescription: d\n---\n\n正文\n", encoding="utf-8")
+
+    SkillsService(roots)
+
+    assert list((tmp_path / "m" / "skills" / ".staging").glob("*")) == []

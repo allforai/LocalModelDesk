@@ -1062,6 +1062,31 @@ test("勾中的附件原文进入发出去的消息，没勾的不进去（R-ski
   assert.ok(!sent[0].content.includes("附件B原文"), "没勾的附件原文不该进去");
 });
 
+test("放不进上下文的附件（缺失或读不出）勾选框禁用，理由写在界面上（finding 4）", async () => {
+  // 后端（store.py）现在把缺失/读不出的附件也列进 attachments，用 available: false
+  // 和 reason 标出来——这份附件不可能拼出东西，勾选框必须永远禁用，且「没放进去」
+  // 这件事必须写在明处，不能只在 chars 上体现（2026-09-23 finding 4，R-skill-10）。
+  const pane = setupChat({ skills: [
+    { name: "review", description: "d", source: "user", overrides_bundled: false, body: "正文", chars: 2,
+      attachments: [
+        { file: "OK.md", chars: 5, text: "好附件", available: true, reason: null },
+        { file: "GONE.md", chars: 0, text: null, available: false, reason: "引用的文件不存在" },
+      ],
+      ok: true, error: null },
+  ] });
+  await pane.selectSkill("review");
+
+  const boxOk = attachmentCheckbox(pane.container, "review", "OK.md");
+  assert.equal(boxOk.disabled, false, "可用的附件不该被这个改动误伤");
+
+  const boxGone = attachmentCheckbox(pane.container, "review", "GONE.md");
+  assert.equal(boxGone.disabled, true, "放不进上下文的附件，勾选框必须禁用");
+  const label = boxGone.parentNode;
+  const reasonText = label.children.map((c) => c.textContent ?? "").join("");
+  assert.match(reasonText, /没有放进上下文/, "「没放进去」这件事必须写在界面明处");
+  assert.match(reasonText, /引用的文件不存在/, "具体原因也要显示出来");
+});
+
 test("旧会话没有 skills 这个键时不报错，芯片照常渲染（这个功能上线前存的会话）", async () => {
   const pane = setupChat({
     skills: [{ name: "review", description: "d", source: "user", overrides_bundled: false,
