@@ -58,13 +58,16 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["gatewayConfig", [true], "/api/gateway/config", "POST"],
     ["listSkills", [], "/api/skills", "GET"],
     ["rescanSkills", [], "/api/skills/rescan", "POST", {}],
+    ["previewSkill", ["https://github.com/o/r"], "/api/skills/preview", "POST", { url: "https://github.com/o/r" }],
+    ["installSkill", ["abc123"], "/api/skills/install", "POST", { staging_id: "abc123" }],
+    ["discardSkill", ["abc123"], "/api/skills/discard", "POST", { staging_id: "abc123" }],
   ];
   const names = [
     "readConfig", "writeConfig", "resetConfig", "completeFirstRun", "adoptLegacyModels", "discoverModels", "listCatalog", "verifyAllModels",
     "startDownload", "cancelDownload", "deleteModel", "diskUsage", "memorySnapshot", "deskState", "budget", "loadLlm", "unloadLlm",
     "llmStatus", "chatStream", "promptAssist", "startVideoJob", "startMusicJob", "cancelJob", "jobStatus", "listOutputs",
     "serveOutput", "revealOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
-    "listSkills", "rescanSkills",
+    "listSkills", "rescanSkills", "previewSkill", "installSkill", "discardSkill",
   ];
   assert.deepEqual(Object.keys(api).sort(), [...names, "uploadMediaInput", "DeskApiError"].sort());
   await withFetch({}, async (calls) => {

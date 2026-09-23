@@ -11,6 +11,7 @@ import { formatBytes } from "../pure/format.js";
 import { statusBadge } from "../pure/model_status.js";
 import { sortSessions, displayTitle } from "../pure/sessions.js";
 import { confirmDialog } from "../widgets/confirm.js";
+import { skillInstallDialog } from "../widgets/skill_install.js";
 import { addIcon } from "../icons.js";
 import { renderMarkdown } from "../pure/markdown.js";
 import { formatTimestamp } from "../pure/format.js";
@@ -34,6 +35,7 @@ export function createChatPane(root, ctx = {}) {
     skillNotice: root.querySelector("[data-skill-notice]"),
     skillCost: root.querySelector("[data-skill-cost]"),
     skillRescan: root.querySelector("[data-skill-rescan]"),
+    skillInstall: root.querySelector("[data-skill-install]"),
   };
   let catalog = [];
   let sessions = [];
@@ -163,7 +165,7 @@ export function createChatPane(root, ctx = {}) {
 
   function renderSkillChips() {
     for (const child of [...(els.skillBar.children ?? [])]) {
-      if (child === els.skillNotice || child === els.skillCost || child === els.skillRescan) continue;
+      if (child === els.skillNotice || child === els.skillCost || child === els.skillRescan || child === els.skillInstall) continue;
       child.remove();
     }
     const { resolved } = currentResolution();
@@ -856,6 +858,15 @@ export function createChatPane(root, ctx = {}) {
   // R-skill-09：发现是显式的——启动时扫一次，外加一个「重新扫描」按钮。没有文件
   // 监听，用户在编辑器里改完 SKILL.md 要有办法让台面看见，不能只靠重启。
   els.skillRescan?.addEventListener("click", () => refreshSkills(true).catch((error) => setError(`重新扫描失败：${error.message}`)));
+  // 装完不启用（R-skill-11 第 3 条）：弹层自己只落盘，这里只负责在成功之后把
+  // 列表刷出新条目——不用碰任何会话的 skills 字段，新装的 skill 天生就是没被
+  // 任何会话选中的状态，芯片自然渲染成未选中。取消（弹层里已经调过 discard）
+  // 或预览失败都会 resolve(null)，这里什么都不用做。
+  els.skillInstall?.addEventListener("click", async () => {
+    const result = await skillInstallDialog(doc, api);
+    if (!result) return;
+    try { await refreshSkills(); } catch (error) { setError(`已装好 ${result.installed}，但刷新列表失败：${error.message}`); }
+  });
   els.input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) send();
   });

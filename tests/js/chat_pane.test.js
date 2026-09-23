@@ -47,7 +47,7 @@ class Element {
 
 function makePane() {
   const controls = new Map();
-  for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error", "load-hint", "skill-bar", "skill-notice", "skill-cost", "skill-rescan"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
+  for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error", "load-hint", "skill-bar", "skill-notice", "skill-cost", "skill-rescan", "skill-install"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
   const doc = {
     body: new Element("body"),
     createElement: (tag) => new Element(tag),
@@ -87,6 +87,16 @@ const stream = (lines) => new Response(new ReadableStream({ start(controller) {
 // name → 属性值的映射进 data-skill-chip 这种属性的值里，不拼进属性名（R-skill-08 附近的实现要求）。
 const chipFor = (root, name) => root.querySelector(`[data-skill-chip="${name}"]`);
 const byData = (root, name) => root.querySelector(`[data-${name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}]`);
+// 装 skill 的弹层是动态 append 到 doc.body 的，不在 makePane() 的固定控件表里，
+// controls/byData 那条走 querySelector 的路够不到它——这里单独递归找一遍。
+const findByData = (node, key) => {
+  for (const child of node.children ?? []) {
+    if (child.dataset && key in child.dataset) return child;
+    const found = findByData(child, key);
+    if (found) return found;
+  }
+  return null;
+};
 
 test("chat 面板初始化、加载和卸载模型会调用对应 API 并更新可见状态", async () => {
   const oldFetch = globalThis.fetch;
@@ -913,6 +923,61 @@ test("重新扫描：按钮打的是 rescan 接口而不是普通列表接口，
   assert.equal(counts.rescan, 1, "点『重新扫描』该打 rescan 接口");
   assert.equal(counts.list, 1, "不该顺手又打一次普通列表接口");
   assert.ok(chipFor(pane.container, "newone"), "点击后该能看到新出现的 skill");
+});
+
+test("从 GitHub 安装：预览先于任何落盘，确认后台面自动刷新——新芯片是未选中状态（R-skill-11）", async () => {
+  const oldFetch = globalThis.fetch;
+  const calls = [];
+  const preview = { staging_id: "stg1", name: "newskill", description: "d", body: "正文", attachments: [] };
+  let installed = false;
+  globalThis.fetch = async (path, options = {}) => {
+    calls.push([path, options.method ?? "GET"]);
+    if (path === "/api/skills") {
+      return json({ skills: installed
+        ? [{ name: "newskill", description: "d", source: "user", overrides_bundled: false, body: "正文", chars: 2, attachments: [], ok: true, error: null }]
+        : [] });
+    }
+    if (path === "/api/resources/catalog") return json([]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    if (path === "/api/sessions") return json([{ id: "s1", title: "t", messages: [], updated: "2026-01-01", skills: [] }]);
+    if (path === "/api/skills/preview" && options.method === "POST") {
+      assert.deepEqual(JSON.parse(options.body), { url: "https://github.com/o/r" });
+      return json(preview);
+    }
+    if (path === "/api/skills/install" && options.method === "POST") {
+      assert.deepEqual(JSON.parse(options.body), { staging_id: "stg1" });
+      installed = true;
+      return json({ installed: "newskill", enabled: false });
+    }
+    throw new Error(`unexpected request ${path} ${options.method ?? "GET"}`);
+  };
+  try {
+    const { root, controls, doc } = makePane();
+    const pane = createChatPane(root);
+    await pane.init();
+    assert.equal(chipFor(root, "newskill"), null, "装之前不该看到这个 skill");
+
+    // 点开按钮的处理函数要等弹层里走完一整套预览→确认才会返回——先拿住这个
+    // promise，晚点再等它，不能在这一步就 await（会卡死，因为弹层还没人去操作）。
+    const flow = controls.get("[data-skill-install]").click();
+    const overlay = doc.body.children.at(-1);
+    findByData(overlay, "skillInstallUrl").value = "https://github.com/o/r";
+    await findByData(overlay, "skillInstallSubmit").click();
+
+    assert.ok(calls.some(([p, m]) => p === "/api/skills/preview" && m === "POST"), "该调用 preview");
+    assert.equal(calls.some(([p]) => p === "/api/skills/install"), false, "看完预览、确认之前不该调用 install");
+    assert.ok(findByData(overlay, "skillInstallBody").textContent.includes("正文"), "确认之前用户必须能看到完整正文");
+
+    await findByData(overlay, "skillInstallConfirm").click();
+    await flow;
+
+    assert.ok(calls.some(([p, m]) => p === "/api/skills/install" && m === "POST"), "确认该调用 install");
+    assert.equal(calls.filter(([p, m]) => p === "/api/skills" && m === "GET").length, 2, "装完要自动刷新列表，不用手动点重新扫描");
+    const chip = chipFor(root, "newskill");
+    assert.ok(chip, "安装成功后新 skill 该自己出现在芯片栏");
+    assert.equal(chip.className.includes("active"), false, "装完默认是关的——不能自动选中（R-skill-11）");
+  } finally { globalThis.fetch = oldFetch; }
 });
 
 test("skill 计入 sentChars，否则每 token 字符数会被悄悄带偏", async () => {
