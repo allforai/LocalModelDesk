@@ -24,7 +24,7 @@ export function needsCompaction({ promptTokens, compactAt, pressure } = {}) {
 
 const lengthOf = (message) => (message.content ?? "").length;
 
-export function splitForCompaction(messages, { compactAt, charsPerToken: ratio } = {}) {
+export function splitForCompaction(messages, { compactAt, charsPerToken: ratio, skillChars = 0 } = {}) {
   const list = [...(messages ?? [])];
   if (!compactAt || !ratio) return { head: [], tail: list };
 
@@ -35,7 +35,10 @@ export function splitForCompaction(messages, { compactAt, charsPerToken: ratio }
   }
   const mustKeepFrom = lastUser === -1 ? list.length : lastUser;
 
-  const tailBudgetChars = compactAt * TAIL_FRACTION * ratio;
+  // skill 占着同一个窗口却不在 messages 里（R-skill-12）：先从整个提示的预算里扣掉它，
+  // 剩下的才按 TAIL_FRACTION 分给历史原文。不扣的话压完仍然超，下一轮接着压。
+  const promptBudgetChars = Math.max(0, compactAt * ratio - skillChars);
+  const tailBudgetChars = promptBudgetChars * TAIL_FRACTION;
   // 强制保留区间（最近一轮问答）自身的字符数先算进预算里：它已经不可摘除，
   // 若它本身就已经超出预算，就不该再把更早的短消息也顺手拉进尾部
   // （测试「至少保留最近一轮完整问答，哪怕它超预算」验的正是这一点）。
@@ -62,13 +65,13 @@ export function splitForCompaction(messages, { compactAt, charsPerToken: ratio }
  * 失败时一个字都不写：绝不能留下「老消息被标成已替代、摘要却没生成」的
  * 中间态——那会静默丢掉上下文，而且用户看不出来。
  */
-export async function maybeCompact(messages, { promptTokens, sentChars, compactAt, pressure, summarise } = {}) {
+export async function maybeCompact(messages, { promptTokens, sentChars, compactAt, pressure, summarise, skillChars = 0 } = {}) {
   const list = [...(messages ?? [])];
   const ratio = charsPerToken(sentChars, promptTokens);
   if (!ratio || !needsCompaction({ promptTokens, compactAt, pressure })) {
     return { compacted: false, messages: list };
   }
-  const { head } = splitForCompaction(list, { compactAt, charsPerToken: ratio });
+  const { head } = splitForCompaction(list, { compactAt, charsPerToken: ratio, skillChars });
   if (head.length === 0) return { compacted: false, messages: list };
 
   let text;

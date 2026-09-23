@@ -116,3 +116,24 @@ test("中断且无内容的助手消息仍然被丢掉", () => {
   ]);
   assert.equal(wired.length, 1);
 });
+
+test("skill 消息排在最前，且不受摘要替换影响", () => {
+  // R-skill-05：skill 是「当前的指令」，不是「当时说过的话」。它不存进 session.messages，
+  // 所以 replaced_through 的跳过逻辑天然碰不到它。
+  const messages = [
+    { role: "user", content: "老问题" },
+    { role: "summary", content: "摘要", replaced_through: 0 },
+    { role: "user", content: "新问题" },
+  ];
+  const skill = { role: "system", content: "指令正文" };
+  const wired = wireMessages(messages, skill);
+  assert.equal(wired[0].content, "指令正文");
+  assert.ok(wired.some((m) => m.content.includes("摘要")));
+  assert.ok(wired.some((m) => m.content === "新问题"));
+  assert.ok(!wired.some((m) => m.content === "老问题"));
+});
+
+test("没有 skill 时 wireMessages 的结果和以前一模一样", () => {
+  const messages = [{ role: "user", content: "问" }];
+  assert.deepEqual(wireMessages(messages), wireMessages(messages, null));
+});

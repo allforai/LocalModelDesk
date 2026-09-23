@@ -27,6 +27,8 @@ from .media.routes import build_routes as build_media_routes
 from .media.service import MediaService
 from .resources.http import build_routes as build_resource_routes
 from .resources.service import ResourcesService
+from .skills.routes import build_routes as build_skills_routes
+from .skills.service import SkillsService
 from .ui import StaticAssets
 
 log = logging.getLogger(__name__)
@@ -131,6 +133,13 @@ def _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway, 
             status, payload = handler(req.body, req.query)
             return Response(status, payload)
         app.add_routes([(method, pattern, media_adapter)])
+
+    skills = SkillsService(roots)
+    for method, pattern, handler in build_skills_routes(skills):
+        def skills_adapter(req, handler=handler):
+            status, payload = handler(req.body, req.query)
+            return Response(status, payload)
+        app.add_routes([(method, pattern, skills_adapter)])
 
     for method, pattern, handler in library_http.routes(library):
         def library_adapter(req, handler=handler):

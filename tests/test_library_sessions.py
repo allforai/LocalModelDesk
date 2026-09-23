@@ -167,3 +167,30 @@ def test_the_write_temp_file_is_not_named_like_a_session(tmp_path):
     assert seen, "create 没有走 mkstemp"
     assert not any(name.endswith(".json") for name in seen), \
         f"临时文件名以 .json 结尾，会被任何 glob('*.json') 的读取方当成会话：{seen}"
+
+
+def test_a_new_session_starts_with_no_skills_selected(tmp_path):
+    from desk.library.sessions import SessionStore
+    session = SessionStore(tmp_path).create()
+    assert session["skills"] == []
+
+
+def test_selection_survives_a_patch_and_a_reload(tmp_path):
+    """选中状态是会话级的（R-skill-15）：附件勾选不写回 skill 目录——自带目录是只读的。"""
+    from desk.library.sessions import SessionStore
+    store = SessionStore(tmp_path)
+    session = store.create()
+    picked = [{"name": "code-review", "attachments": ["DEEPENING.md"]}]
+    store.update(session["id"], {"skills": picked})
+    reloaded = next(x for x in SessionStore(tmp_path).list() if x["id"] == session["id"])
+    assert reloaded["skills"] == picked
+
+
+def test_skills_must_be_a_list(tmp_path):
+    import pytest
+    from desk.library.errors import ValidationError
+    from desk.library.sessions import SessionStore
+    store = SessionStore(tmp_path)
+    session = store.create()
+    with pytest.raises(ValidationError):
+        store.update(session["id"], {"skills": "code-review"})

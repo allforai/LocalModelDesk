@@ -182,3 +182,16 @@ def test_file_inputs_stay_in_the_tab_order():
     for tag in inputs:
         assert " hidden" not in tag
         assert 'class="visually-hidden"' in tag
+
+
+def test_skill_bar_states_editing_skill_md_takes_effect_next_turn():
+    """R-skill-05：skill 是「当前的指令」，不是「当时说过的话」——改了 SKILL.md，
+    老会话的下一轮就用新版本。这个后果 spec 要求「必须在界面上说明」，但一直
+    只活在 spec 文字里，desk/static/ 下找不到这句话（2026-09-23 finding 4）。
+    放在 skill-bar（重新扫描按钮）旁边，是用户唯一会去看这一块的地方。
+    """
+    assert "data-skill-effect-hint" in HTML
+    bar_and_after = HTML.split("data-skill-bar", 1)[1]
+    hint = bar_and_after.split("data-skill-effect-hint", 1)[1].split("</span>", 1)[0]
+    assert "SKILL.md" in hint
+    assert "下一轮" in hint and "新版本" in hint

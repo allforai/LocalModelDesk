@@ -36,7 +36,11 @@ const SUMMARY_PREFIX = "以下是本次对话更早部分的摘要，供你理�
 // 模型的 chat template，模板只认 system/user/assistant，原样发 summary 会炸在
 // 模板里。它 replaced_through 的那一段只是不发送（R-context-03），并未被删除：
 // 会话文件与界面上一个字都不少。
-export function wireMessages(messages) {
+// skillMessage 由调用方在**测量 sentChars 之前**拼进来（R-skill-13）：
+// 每 token 字符数由 sentChars / promptTokens 反推，而 skill 必然计入上游返回的
+// promptTokens。它若没计入 sentChars，比值偏小，之后所有由它换算的字符预算跟着偏小——
+// 而且没有任何迹象。所以它必须进这一层，不得在更下游追加。
+export function wireMessages(messages, skillMessage = null) {
   const list = messages ?? [];
   let skipThrough = -1;
   for (let i = 0; i < list.length; i += 1) {
@@ -44,10 +48,11 @@ export function wireMessages(messages) {
       skipThrough = Math.max(skipThrough, list[i].replaced_through);
     }
   }
-  return list
+  const history = list
     .filter((message, index) => !(index <= skipThrough && message.role !== "summary"))
     .filter((message) => !(message.role === "assistant" && message.interrupted && !(message.content ?? "").trim()))
     .map((message) => message.role === "summary"
       ? { role: "system", content: SUMMARY_PREFIX + (message.content ?? "") }
       : { role: message.role, content: message.content ?? "" });
+  return skillMessage ? [skillMessage, ...history] : history;
 }
