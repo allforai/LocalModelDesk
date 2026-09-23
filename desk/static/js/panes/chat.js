@@ -50,7 +50,10 @@ export function createChatPane(root, ctx = {}) {
   let heavyReason = "";
   let compactingBanner = null; // 「正在压缩较早的对话…」提示条，压缩期间显示（R-context-04）
   // 可用列表与选中状态分开存：列表来自扫描（唯一一份已解析列表，R-skill-16），
-  // 选中来自会话（R-skill-15）。两者每次扫描后对账一次（refreshSkills）。
+  // 选中来自会话（R-skill-15）。两者每次扫描后、以及每次切换到别的会话时都要
+  // 对账一次（reconcileSkills）——只在扫描时对账的话，消失的 skill 只会在恰好
+  // 打开着的那个会话上被发现，切到别的会话看不到通知也不会取消选中
+  // （2026-09-23 finding 1）。
   let availableSkills = [];
   // 每 token 字符数前端量不出来，只能从上一轮真实请求里量：sentChars 配那次
   // 真实返回的 usage.prompt_tokens，相除即得（compaction.js 同一招）。没发生过
@@ -62,6 +65,15 @@ export function createChatPane(root, ctx = {}) {
   // 已经把 token_limit 叫「对话额度」，这里跟它保持同一个意思。compact_at 只喂
   // 给 compactIfNeeded 里的 maybeCompact，跟这里的显示无关。
   let lastTokenLimit = null;
+  // lastTokenLimit/lastCharsPerToken 都只在「驻留的还是量出它们时那个模型」这个
+  // 前提下才可信——这个变量只记「上一次侦测到的驻留模型 key 是谁」，用来判断
+  // 这个前提有没有被打破。首次从「还不知道」变成「知道是谁」不算打破前提（这时候
+  // 已经测到的值，如果有，没理由被这一步牵连）；但只要曾经知道驻留的是某个具体
+  // 模型，之后驻留变成别的（换模型、卸载、加载失败），哪怕这次轮询根本不是因为
+  // 发消息触发的，也要立刻把两个数字都清空——没有加载模型时没有额度可比，只显示
+  // 占用量，不显示分母，也不发警告，不能拿上一个模型的数字顶替（R-skill-06，
+  // 2026-09-23 finding 2）。见 renderLlm 里对它的读写。
+  let lastResidentModelKey = null;
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
   const current = () => sessions.find((s) => s.id === currentId) ?? null;
@@ -103,6 +115,10 @@ export function createChatPane(root, ctx = {}) {
     session.skills = picked.some((s) => s.name === entry.name)
       ? picked.filter((s) => s.name !== entry.name)
       : [...picked, { name: entry.name, attachments: [] }];
+    // 用户刚手动改了选中，屏幕上留着的对账通知（可能说的是另一个 skill、甚至
+    // 是切会话之前那个会话的事）已经跟这次操作对不上了，不能留着误导
+    // （2026-09-23 finding 1）。
+    els.skillNotice.textContent = "";
     renderSkillChips();
     try { await saveSession(session); } catch (error) { setError(`会话保存失败：${error.message}`); }
   }
@@ -117,6 +133,7 @@ export function createChatPane(root, ctx = {}) {
         : (s.attachments ?? []).filter((f) => f !== file);
       return { ...s, attachments };
     });
+    els.skillNotice.textContent = ""; // 同上：这是用户当下的动作，旧通知别再留着
     renderSkillChips();
     try { await saveSession(session); } catch (error) { setError(`会话保存失败：${error.message}`); }
   }
@@ -129,6 +146,11 @@ export function createChatPane(root, ctx = {}) {
   // 「芯片上写明这个 skill 占多少 token」）——跟下面 renderSkillCost 算的
   // 「选中的全部加在一起」是两件事，字段都直接用后端已经给出的 chars，
   // 不用再拼一遍 system 消息去数。量不到比值就说字符数，不猜一个默认比值。
+  // 这里的 chars（后端 Python len，码点数）与 pure/skills.js 里 skillChars()
+  // 加总的是同一份数字（同一处 finding 5 的修法），聚合行与单个芯片报的数字
+  // 因此天然对得上，不会因为口径不同而各说各话——per-chip 必须只算「当前勾中」
+  // 的附件，删掉下面这行 filter 会让每个芯片都把全部附件算进去，这是这段代码
+  // 唯一没有被任何既有测试盯住的地方（2026-09-23 finding 3）。
   function chipCostText(entry, pickedAttachments, ratio) {
     const attachChars = (entry.attachments ?? [])
       .filter((att) => pickedAttachments.has(att.file))
@@ -163,7 +185,11 @@ export function createChatPane(root, ctx = {}) {
       chip.classList.toggle("active", isSelected);
       chip.addEventListener("click", () => toggleSkill(entry));
       els.skillBar.append(chip);
-      if (entry.ok && (entry.attachments ?? []).length) {
+      // 只给「选中的」那个 skill 展开附件勾选框，不是给列表里每个 skill 都铺一遍——
+      // 上面的注释一直这么写，代码之前却没照做：没选中的 skill 也会把它的附件铺成
+      // 一排永远禁用的勾选框，多几个带附件的 skill，输入框上方就成了一堵灰色勾选框
+      // 墙。isSelected 已经算过了，直接拿来当展开条件（2026-09-23 finding 6）。
+      if (entry.ok && isSelected && (entry.attachments ?? []).length) {
         for (const att of entry.attachments) {
           // available === false：引用的文件缺失或读不出（R-skill-10）。这份附件
           // 不可能拼出东西，勾选框永远禁用，理由必须写在界面上而不是让它悄悄
@@ -174,8 +200,8 @@ export function createChatPane(root, ctx = {}) {
           label.className = "skill-attachment";
           const checkbox = doc.createElement("input");
           checkbox.type = "checkbox";
-          checkbox.disabled = !isSelected || unavailable;
-          checkbox.checked = isSelected && !unavailable && pickedAttachments.has(att.file);
+          checkbox.disabled = unavailable; // 走到这里 isSelected 必为真，不必再判一次
+          checkbox.checked = !unavailable && pickedAttachments.has(att.file);
           (checkbox.dataset ??= {}).skillAttachment = `${entry.name}/${att.file}`;
           checkbox.addEventListener("change", () => toggleAttachment(entry.name, att.file, checkbox.checked));
           const span = doc.createElement("span");
@@ -190,14 +216,18 @@ export function createChatPane(root, ctx = {}) {
     renderSkillCost(lastCharsPerToken, lastTokenLimit);
   }
 
-  // 扫描完成后的对账：会话里记的选中，对上刚扫描出来的可用列表。消失或变坏的
-  // 摘出来在界面上说明，并把会话里的选中写回成对账后的结果——不静默丢弃
-  // （R-skill-14）。
-  async function refreshSkills(rescan = false) {
-    const payload = rescan ? await api.rescanSkills() : await api.listSkills();
-    availableSkills = payload.skills ?? [];
-    const session = current();
-    if (!session) { renderSkillChips(); return; }
+  // 某个会话的选中，对上当前可用列表。消失或变坏的摘出来在界面上说明，并把
+  // 会话里的选中写回成对账后的结果——不静默丢弃（R-skill-14）。这段单独拆出来
+  // 而不是塞在 refreshSkills 里，是因为「扫描完之后对账当前会话」和「切到别的
+  // 会话时对账目标会话」是两条不同的调用路径，只有前者做这件事的话，消失的
+  // skill 只在恰好打开着的那个会话上被发现（2026-09-23 finding 1）：会话 B
+  // 存着一个已经从磁盘删掉的 skill，用户正开着会话 A，切到 B 时如果没有这一步，
+  // 界面不提示、不发 PATCH，B.skills 里那个已经不存在的选中原样留着，磁盘上的
+  // 目录哪天恢复了它就会悄悄重新生效。通知本身也要跟着会话走：调用方必须在
+  // 切到目标会话、且这里跑完之后再画面，不能让 A 会话的通知留在屏幕上误导
+  // 用户以为说的是 B。
+  async function reconcileSkills(session) {
+    if (!session) { els.skillNotice.textContent = ""; return; }
     const { resolved, dropped } = resolveSelection(session.skills ?? [], availableSkills);
     if (dropped.length) {
       els.skillNotice.textContent = dropped.map((d) => `${d.name}：${d.reason}`).join("；");
@@ -208,6 +238,25 @@ export function createChatPane(root, ctx = {}) {
     } else {
       els.skillNotice.textContent = "";
     }
+  }
+
+  // 只取列表，不做对账、不碰任何会话——init() 里先靠它把 availableSkills 填上，
+  // 再去 refreshSessions()，这样 refreshSessions 对账当前会话时手里已经有一份
+  // 真实列表，不会拿一个还没扫描过的空列表把会话里的选中当「已不存在」全部
+  // 摘掉（这正是把对账挪到 refreshSessions 里之后新引入的一个坑：调用顺序一旦
+  // 颠倒，第一次启动就会静默清空所有会话的 skills，被
+  // 「skillChars 没被传进 maybeCompact…」那条测试的赋值场景意外测出来了）。
+  async function refreshAvailableSkills(rescan = false) {
+    const payload = rescan ? await api.rescanSkills() : await api.listSkills();
+    availableSkills = payload.skills ?? [];
+  }
+
+  // 重新扫描（或用户点了「重新扫描」按钮）之后，对账当前正显示的会话。
+  // init() 首次加载走的是 refreshAvailableSkills + refreshSessions 那条路径
+  // （见下），不经过这里——原因见上面 refreshAvailableSkills 的注释。
+  async function refreshSkills(rescan = false) {
+    await refreshAvailableSkills(rescan);
+    await reconcileSkills(current());
     renderSkillChips();
   }
 
@@ -289,6 +338,18 @@ export function createChatPane(root, ctx = {}) {
     els.unloadBtn.disabled = state.status === "idle";
     setButtonLabel(els.unloadBtn, state.status === "loading" ? "取消加载" : "卸载");
     modelName = payload.loaded_model?.name ?? state.model_key ?? modelName;
+    // 驻留模型是不是变了：只在「上次已经知道是某个具体模型」而这次不再是同一个
+    // 时才清掉 lastTokenLimit/lastCharsPerToken——首次从「还不知道」变成「知道」
+    // 不算变化，不牵连早先可能已经测到的值。这条判断跑在每次轮询（main.js 定时
+    // 拉 /api/llm/status 就会调到这里），不用等用户再发一轮消息才发现自己在看
+    // 上一个模型的数字（2026-09-23 finding 2）。
+    const residentKey = state.status === "loaded" ? state.model_key : null;
+    if (lastResidentModelKey !== null && residentKey !== lastResidentModelKey) {
+      lastTokenLimit = null;
+      lastCharsPerToken = null;
+      renderSkillCost(lastCharsPerToken, lastTokenLimit);
+    }
+    lastResidentModelKey = residentKey;
   }
 
   async function pollUntilSettled() {
@@ -456,7 +517,10 @@ export function createChatPane(root, ctx = {}) {
     currentId = sessions.some((session) => session.id === wanted) ? wanted : sessions[0].id;
     renderSessionList();
     renderMessages();
-    renderSkillChips(); // 切到别的会话，芯片的选中态、占用显示都得跟着换
+    // 切到别的会话：先对账这个会话自己的选中（finding 1），通知和写回都要
+    // 落在它身上，再画芯片——芯片的选中态、占用显示都得跟着换。
+    await reconcileSkills(current());
+    renderSkillChips();
   }
 
   function beginRename(li, session) {
@@ -518,10 +582,13 @@ export function createChatPane(root, ctx = {}) {
         } catch (error) { setError(error.message); }
       });
       actions.append(rename, remove);
-      const select = () => {
+      const select = async () => {
         currentId = session.id;
         renderSessionList();
         renderMessages();
+        // 点会话卡片切换跟 refreshSessions 是两条不同的路径，同样要对账目标会话
+        // 自己（finding 1）——不能只有列表刷新那条路径做这件事。
+        await reconcileSkills(session);
         renderSkillChips();
         [...(els.sessionList.children ?? [])].find((node) => node.dataset?.sessionId === session.id)?.focus?.();
       };
@@ -801,8 +868,10 @@ export function createChatPane(root, ctx = {}) {
 
   async function init() {
     try { await refreshModels(); } catch (error) { setError(error.message); }
+    // 先把 availableSkills 填上，refreshSessions 对账当前会话时才有真实列表可比
+    // （顺序不能反：见 refreshAvailableSkills 上面的注释）。
+    try { await refreshAvailableSkills(); } catch (error) { setError(error.message); }
     try { await refreshSessions(); } catch (error) { setError(error.message); }
-    try { await refreshSkills(); } catch (error) { setError(error.message); }
   }
 
   function syncLoadButton() {

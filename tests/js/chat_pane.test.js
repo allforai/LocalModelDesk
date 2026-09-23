@@ -845,6 +845,9 @@ function setupChat({ skills = [], charsPerToken, compactAt, tokenLimit, sessionS
       return savedSession.skills ?? [];
     },
     savedSession: () => ({ ...savedSession }),
+    // finding 2 的测试要在一轮真实测量之后模拟模型驻留状态变化（卸载/换模型），
+    // 直接把 createChatPane 的 applyLlmStatus 递出去，不用另起一套 llm/status mock。
+    applyLlmStatus: (...args) => pane.applyLlmStatus(...args),
   };
 }
 
@@ -1136,4 +1139,189 @@ test("skillChars 没被传进 maybeCompact 的话，该触发的压缩会悄悄�
   const saved = pane.savedSession();
   assert.ok(saved.messages.some((m) => m.role === "summary"),
     `skill 占用没有挤压尾部预算，压缩没有被触发：${JSON.stringify(saved.messages)}`);
+});
+
+// ---- 2026-09-23 全分支复审：finding 1/2/3/6 ----
+
+test("切到另一个会话也要对账：消失的 skill 在目标会话上被发现，通知和写回都跟着切换（finding 1）", async () => {
+  // 会话 A 正开着；会话 B 存的 skill 已经从磁盘删掉。之前的实现只在扫描时
+  // 对账「当前」会话，切到 B 时既不提示也不发 PATCH，B.skills 里那个已经不存在
+  // 的选中原样留着——磁盘上的目录哪天恢复了它就会悄悄重新生效。
+  const oldFetch = globalThis.fetch;
+  const sessions = [
+    { id: "s1", title: "一", messages: [], updated: "2026-01-02", skills: [{ name: "keep", attachments: [] }] },
+    { id: "s2", title: "二", messages: [], updated: "2026-01-01", skills: [{ name: "gone", attachments: [] }] },
+  ];
+  globalThis.fetch = async (path, options = {}) => {
+    // 「gone」已经不在扫描结果里——文件夹里被删掉了。
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [
+      { name: "keep", description: "d", source: "user", overrides_bundled: false,
+        body: "正文", chars: 2, attachments: [], ok: true, error: null },
+    ] });
+    if (path === "/api/resources/catalog") return json([]);
+    if (String(path).startsWith("/api/resources/status")) return json({ models: [] });
+    if (path === "/api/llm/status") return json({ state: { status: "idle" } });
+    if (path === "/api/sessions" && (options.method ?? "GET") === "GET") return json(sessions);
+    if (String(path).startsWith("/api/sessions/") && options.method === "PATCH") {
+      const id = path.split("/").pop();
+      const idx = sessions.findIndex((s) => s.id === id);
+      sessions[idx] = { ...sessions[idx], ...JSON.parse(options.body) };
+      return json({ ...sessions[idx] });
+    }
+    throw new Error(`unexpected request ${path}`);
+  };
+  try {
+    const { root, controls } = makePane();
+    const pane = createChatPane(root);
+    await pane.init();
+    // s1（更新时间更晚）是启动后默认打开的会话，它自己的选中没问题，通知该是空的。
+    assert.equal(byData(root, "skillNotice").textContent, "", "s1 没有消失的 skill，不该带通知");
+
+    const s2Item = [...controls.get("[data-session-list]").children].find((li) => li.dataset.sessionId === "s2");
+    await s2Item.click();
+
+    assert.match(byData(root, "skillNotice").textContent, /已不存在/, "切到 s2 后该看到 s2 自己的对账通知，不是空着或留着 s1 的");
+    assert.deepEqual(sessions.find((s) => s.id === "s2").skills, [], "s2 消失的选中该被摘掉并写回磁盘，不是静默留着");
+    assert.deepEqual(sessions.find((s) => s.id === "s1").skills, [{ name: "keep", attachments: [] }],
+      "对账 s2 不该牵连 s1 的选中");
+  } finally { globalThis.fetch = oldFetch; }
+});
+
+test("选中一个 skill 会清掉屏幕上留着的旧对账通知，不用等下一次扫描才消失（finding 1）", async () => {
+  const pane = setupChat({
+    skills: [{ name: "good", description: "d", source: "user", overrides_bundled: false,
+               body: "正文", chars: 2, attachments: [], ok: true, error: null }],
+    sessionSkills: [{ name: "gone", attachments: [] }], // 启动对账就会先炸出一条通知
+  });
+  await pane.ready;
+  assert.match(byData(pane.container, "skillNotice").textContent, /已不存在/, "启动时该有一条对账通知打底");
+
+  await pane.selectSkill("good"); // 用户接着手动选中另一个 skill
+  assert.equal(byData(pane.container, "skillNotice").textContent, "",
+    "选中动作发生之后，旧通知（说的是另一个 skill）不该继续挂在屏幕上");
+});
+
+test("勾选附件也会清掉屏幕上留着的旧对账通知（finding 1）", async () => {
+  const pane = setupChat({
+    skills: [{ name: "good", description: "d", source: "user", overrides_bundled: false, body: "正文", chars: 2,
+      attachments: [{ file: "A.md", chars: 5, text: "附件原文", available: true, reason: null }],
+      ok: true, error: null }],
+  });
+  await pane.selectSkill("good");
+  // 手动塞回一条通知，模拟它由别的路径（比如另一次扫描）留下——跟上一条测试
+  // 分开验证 toggleAttachment 自己的清空逻辑，不跟 toggleSkill 那条混在一起。
+  byData(pane.container, "skillNotice").textContent = "手动塞回去模拟的旧通知";
+  const boxA = attachmentCheckbox(pane.container, "good", "A.md");
+  boxA.checked = true;
+  await boxA.listeners.change();
+  assert.equal(byData(pane.container, "skillNotice").textContent, "",
+    "勾选附件之后，旧通知不该继续挂在屏幕上");
+});
+
+test("卸载模型后，芯片占用的额度分母和上一次量到的比值都清空，不留着上一个模型的数字（finding 2）", async () => {
+  const pane = setupChat({
+    skills: [{ name: "review", description: "d", source: "user", overrides_bundled: false,
+               body: "w".repeat(400), chars: 400, attachments: [], ok: true, error: null }],
+    charsPerToken: 4, tokenLimit: 1000,
+  });
+  // 先等 setupChat 内部的 init()+热身彻底跑完，再开始摆弄驻留状态——不然下面
+  // 手动喂的 applyLlmStatus 会跟仍在飞行中的初始化异步操作赛跑，谁的状态后到
+  // 谁说了算，测试就变得不可靠。
+  await pane.ready;
+  // 先让驻留模型「已知」是 chat-a，再让warm-up 之后的测量落在这个已知模型上——
+  // 从「不知道」变成「知道是谁」不算变化，不该牵连这一步；之后从「chat-a」变
+  // 成别的才算（见 chat.js renderLlm 里的注释）。
+  pane.applyLlmStatus({ state: { status: "loaded", model_key: "chat-a" }, loaded_model: { name: "模型 A" } });
+  await pane.selectSkill("review");
+  const before = byData(pane.container, "skillCost").textContent;
+  assert.ok(before.includes("额度 1000"), `加载中该显示额度：${before}`);
+
+  pane.applyLlmStatus({ state: { status: "idle" } }); // 卸载
+  const after = byData(pane.container, "skillCost").textContent;
+  assert.ok(!after.includes("额度"), `卸载后不该继续显示上一个模型的额度：${after}`);
+  assert.equal(byData(pane.container, "skillCost").dataset.warn, "", "分母清空后不该继续用旧数字判警告");
+});
+
+test("换成另一个模型后，上一个模型量到的每 token 字符数也要清空（finding 2）", async () => {
+  const pane = setupChat({
+    skills: [{ name: "review", description: "d", source: "user", overrides_bundled: false,
+               body: "w".repeat(400), chars: 400, attachments: [], ok: true, error: null }],
+    charsPerToken: 4, tokenLimit: 1000,
+  });
+  await pane.ready; // 理由同上一条测试：先让内部初始化彻底落定
+  pane.applyLlmStatus({ state: { status: "loaded", model_key: "chat-a" }, loaded_model: { name: "模型 A" } });
+  await pane.selectSkill("review");
+  const before = byData(pane.container, "skillCost").textContent;
+  assert.ok(!before.includes("字符"), `该用已经量到的比值换算成 token，不是回退成字符数：${before}`);
+
+  pane.applyLlmStatus({ state: { status: "loaded", model_key: "chat-b" }, loaded_model: { name: "模型 B" } });
+  const after = byData(pane.container, "skillCost").textContent;
+  assert.ok(after.includes("字符"),
+    `换模型后不该再用旧模型量到的比值把字符数换算成 token：${after}`);
+});
+
+test("芯片自己的占用只算已勾选的附件，没勾的不计入（finding 3）", async () => {
+  const pane = setupChat({ skills: [
+    { name: "review", description: "d", source: "user", overrides_bundled: false, body: "", chars: 0,
+      attachments: [
+        { file: "A.md", chars: 100, text: "A原文", available: true, reason: null },
+        { file: "B.md", chars: 300, text: "B原文", available: true, reason: null },
+      ], ok: true, error: null },
+  ] });
+  await pane.selectSkill("review");
+  assert.equal(chipFor(pane.container, "review").textContent, "review", "还没勾任何附件，芯片不该带占用后缀");
+
+  const boxA = attachmentCheckbox(pane.container, "review", "A.md");
+  boxA.checked = true;
+  await boxA.listeners.change();
+  const onlyA = chipFor(pane.container, "review").textContent;
+  assert.ok(onlyA.includes("100 字符"), `只勾 A 后芯片该显示 100 字符：${onlyA}`);
+  assert.ok(!onlyA.includes("400"), `不该把没勾的 B 也算进这个芯片的占用：${onlyA}`);
+
+  const boxB = attachmentCheckbox(pane.container, "review", "B.md");
+  boxB.checked = true;
+  await boxB.listeners.change();
+  const both = chipFor(pane.container, "review").textContent;
+  assert.ok(both.includes("400 字符"), `两个都勾了之后芯片该显示 400 字符：${both}`);
+});
+
+test("单个芯片报的字符数与输入框上方聚合行报的字符数口径一致（finding 5）", async () => {
+  // 附件的 text 原文故意跟声明的 chars 字段对不上（现实里也是这样：chars 是
+  // Python len，text 是给模型看的原文）——如果聚合行悄悄改回去数
+  // skillSystemMessage(...).content.length（拼出来的 system 消息，JS 字符串），
+  // 它量到的会是 text 的真实长度加上 HEADER/`##`/`###` 框架字，跟芯片用的
+  // chars 字段对不上，这条测试就会抓到。
+  const pane = setupChat({ skills: [
+    { name: "review", description: "d", source: "user", overrides_bundled: false,
+      body: "x".repeat(400), chars: 400,
+      attachments: [{ file: "A.md", chars: 100, text: "短", available: true, reason: null }],
+      ok: true, error: null },
+  ] });
+  await pane.selectSkill("review");
+  const boxA = attachmentCheckbox(pane.container, "review", "A.md");
+  boxA.checked = true;
+  await boxA.listeners.change();
+
+  const chipChars = Number(chipFor(pane.container, "review").textContent.match(/(\d+) 字符/)[1]);
+  const aggChars = Number(byData(pane.container, "skillCost").textContent.match(/skill 占用 (\d+) 字符/)[1]);
+  assert.equal(chipChars, 500, `芯片本身该是 400（正文）+100（勾中的附件）：${chipChars}`);
+  assert.equal(aggChars, chipChars, `聚合行和芯片自己报的字符数口径对不上：芯片=${chipChars}，聚合=${aggChars}`);
+});
+
+test("未选中的 skill 不在芯片条上铺开附件勾选框，选中才展开，取消选中就收起（finding 6）", async () => {
+  const pane = setupChat({ skills: [
+    { name: "review", description: "d", source: "user", overrides_bundled: false, body: "正文", chars: 2,
+      attachments: [{ file: "A.md", chars: 5, text: "附件A原文", available: true, reason: null }],
+      ok: true, error: null },
+  ] });
+  await pane.ready;
+  assert.equal(attachmentCheckbox(pane.container, "review", "A.md"), null,
+    "没选中就不该看到这个 skill 的附件勾选框（哪怕永远禁用）");
+
+  await pane.selectSkill("review");
+  assert.ok(attachmentCheckbox(pane.container, "review", "A.md"), "选中后该展开这个 skill 的附件勾选框");
+
+  await pane.selectSkill("review"); // 再点一次取消选中
+  assert.equal(attachmentCheckbox(pane.container, "review", "A.md"), null,
+    "取消选中后附件勾选框该收起来，不是留着变成一堆灰色的");
 });
