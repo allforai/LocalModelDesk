@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import io
 import tarfile
+import unicodedata
 import urllib.parse       # 必须显式导入：import urllib.request 不保证 urllib.parse 可用，
 import urllib.request     # 而单测注入了 fetch、碰不到这一行——正是「单元绿、真机坏」的形状
 from pathlib import Path
@@ -15,11 +16,13 @@ from .store import SkillStore
 
 _TARBALL = "https://codeload.github.com/{owner}/{repo}/tar/refs/heads/{branch}"
 
-# skill 是文本：这两个上限已经比任何真实的 skill 仓库宽出一个数量级，只用来挡住
-# 「粘一个链接就把内存耗光」——本产品的立身之本是资源管理，不能栽在一次没设防的下载上
-# （R-budget，见 2026-09-23 修复轮 1 finding 7）。
-_MAX_TARBALL_BYTES = 20 * 1024 * 1024      # 20 MB：整个仓库下载的上限
-_MAX_MEMBER_BYTES = 2 * 1024 * 1024        # 2 MB：单个 .md 文件的上限
+# skill 是文本：这三个上限已经比任何真实的 skill 仓库宽出一个数量级，只用来挡住
+# 「粘一个链接就把内存或者时间耗光」——本产品的立身之本是资源管理，不能栽在一次没设防
+# 的下载或解压上（R-budget，见 2026-09-23 修复轮 1 finding 7、修复轮 2 finding 4）。
+_MAX_TARBALL_BYTES = 20 * 1024 * 1024              # 20 MB：整个仓库下载（压缩后）的上限
+_MAX_MEMBER_BYTES = 2 * 1024 * 1024                # 2 MB：单个 .md 文件（解压后）的上限
+_MAX_TOTAL_DECOMPRESSED_BYTES = 50 * 1024 * 1024   # 50 MB：解压总量上限——压缩包本身不大，
+                                                    # 解压出来的内容（不管收不收）可能是炸弹
 
 
 def _fetch_github(url: str) -> dict[str, str]:
@@ -33,6 +36,17 @@ def _fetch_github(url: str) -> dict[str, str]:
     默认大小写不敏感文件系统上会写到同一个路径——先落盘的那份「赢」，而预览给用户看的
     是另一份。这不是这份代码能悄悄挑一个赢家的问题：用户批准的文本和最终生效的文本
     必须是同一份，所以整个仓库直接拒收（2026-09-23 修复轮 1 finding 1）。
+
+    `casefold()`本身不做 Unicode 规范化：NFC 的 `café.md`（é 是一个码点）和 NFD 的
+    `café.md`（e 加一个组合重音符，两个码点）是两个不同的 Python 字符串、casefold
+    之后也不同，但 APFS 认为是同一个路径——所以比较之前先 `unicodedata.normalize("NFC",
+    ...)`，比的是文件系统会认成同一个路径的那个形式，不是 Python 字符串本身
+    （2026-09-23 修复轮 2 finding 1）。
+
+    `tar.getmembers()`会在返回前解压整份归档来枚举所有成员头；改用 `for member in tar`
+    逐个取成员，边取边把见到的（不管收不收）decompressed size 累加起来，一超过总量上限
+    就地放弃——压缩包本身不大不代表解压出来的东西不大，这条防线管的是解压这段时间，
+    不是下载那段流量（2026-09-23 修复轮 2 finding 4）。
     """
     parts = [p for p in urllib.parse.urlparse(url).path.split("/") if p]
     if len(parts) < 2:
@@ -52,23 +66,34 @@ def _fetch_github(url: str) -> dict[str, str]:
         raise ValueError(f"取不到仓库内容：{last}")
 
     if len(blob) > _MAX_TARBALL_BYTES:
-        raise ValueError(f"仓库太大：超过 {_MAX_TARBALL_BYTES // (1024 * 1024)} MB 的下载上限")
+        raise ValueError(
+            f"仓库太大：超过 {_MAX_TARBALL_BYTES // (1024 * 1024)} MB 的下载上限"
+            "（skill 应该是纯文本，不该这么大）")
 
     files: dict[str, str] = {}
     seen_casefold: dict[str, str] = {}
+    total_decompressed = 0
     with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as tar:
-        for member in tar.getmembers():
+        for member in tar:                       # 流式取成员，不像 getmembers() 那样先
+                                                   # 解压整份归档（finding 4）
+            total_decompressed += member.size
+            if total_decompressed > _MAX_TOTAL_DECOMPRESSED_BYTES:
+                raise ValueError(
+                    f"仓库解压后的内容超过 {_MAX_TOTAL_DECOMPRESSED_BYTES // (1024 * 1024)} "
+                    "MB 的上限（压缩包不大不代表解压出来的东西不大）")
             # tarball 的成员都带一层 "<repo>-<branch>/" 前缀，剥掉之后只收顶层 .md
             name = member.name.split("/", 1)[-1] if "/" in member.name else ""
             if not member.isfile() or "/" in name or not name.endswith(".md"):
                 continue
             if member.size > _MAX_MEMBER_BYTES:
-                raise ValueError(f"{name} 超过单文件 {_MAX_MEMBER_BYTES // (1024 * 1024)} MB 的上限")
-            folded = name.casefold()
+                raise ValueError(
+                    f"{name} 超过单文件 {_MAX_MEMBER_BYTES // (1024 * 1024)} MB 的上限"
+                    "（skill 应该是纯文本，不该这么大）")
+            folded = unicodedata.normalize("NFC", name).casefold()
             if folded in seen_casefold and seen_casefold[folded] != name:
                 raise ValueError(
-                    f"{seen_casefold[folded]} 和 {name} 只差大小写：装到这台设备上会写到"
-                    "同一个文件，没法确定该留哪个——整个仓库不装")
+                    f"{seen_casefold[folded]} 和 {name} 只差大小写或 Unicode 规范化：装到这台"
+                    "设备上会写到同一个文件，没法确定该留哪个——整个仓库不装")
             seen_casefold[folded] = name
             files[name] = tar.extractfile(member).read().decode("utf-8", errors="replace")
     return files

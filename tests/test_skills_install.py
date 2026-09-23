@@ -27,18 +27,34 @@ def test_preview_returns_the_full_text_before_anything_lands(tmp_path):
     assert list(tmp_path.glob("**/skills/fetched")) == [], "还没确认就落盘了"
 
 
-def test_the_previewed_body_matches_the_bytes_landed_on_disk(tmp_path):
-    """预览看到的正文，和真正落盘之后能读到的正文，必须逐字节一致——这条防线一旦被
-    大小写、规范化或顺序问题绕过，用户批准的文本和实际生效的文本就不是同一份了
-    （2026-09-23 修复轮 1 finding 1：防的是这一类问题，不只是这一次攻击）。"""
+def test_every_previewed_file_matches_the_bytes_landed_on_disk(tmp_path):
+    """预览看到的每一个文件——正文和每一份附件——落盘后都必须逐字节一致。防线原本
+    只查了 SKILL.md 的正文（2026-09-23 修复轮 1 finding 1 的原始范围），但「用户批准
+    的是什么，落地生效的就该是什么」这条不变量覆盖的是预览时给用户看过的一切，
+    所以这里连附件都查，并且用一个非 ASCII 文件名的附件——Unicode 正是修复轮 2
+    finding 1 发现的缺口所在（2026-09-23 修复轮 2：范围问法本身就问窄了，这里补全）。
+    """
     staging, user = tmp_path / "staging", tmp_path / "user"
-    staged = stage_from_url("https://example.com/x", staging, fetch_ok)
+    files = {
+        "SKILL.md": "---\nname: fetched\ndescription: 来自网上\n---\n\n正文 [附](café.md)\n",
+        "café.md": "带重音符号文件名的附件正文",
+    }
+    staged = stage_from_url("https://example.com/x", staging, lambda _u: dict(files))
     previewed_body = staged["body"]
+    previewed_attachments = list(staged["attachments"])
+    assert previewed_attachments, "这个测试本身要求至少一个附件，不然没测到附件这一半"
+
     land(staged["staging_id"], staging, user)
+
     landed_text = (user / "fetched" / "SKILL.md").read_text(encoding="utf-8")
     _, landed_body, error = split_skill(landed_text)
     assert error is None
     assert landed_body == previewed_body
+
+    for attachment_name in previewed_attachments:
+        landed_path = user / "fetched" / attachment_name
+        assert landed_path.is_file(), f"预览时列出的附件 {attachment_name} 落盘后找不到了"
+        assert landed_path.read_text(encoding="utf-8") == files[attachment_name]
 
 
 def test_only_md_lands_scripts_and_binaries_do_not(tmp_path):
@@ -216,3 +232,78 @@ def test_a_failed_reinstall_leaves_the_previous_version_intact(tmp_path, monkeyp
         "重装失败，用户丢了原本能用的旧版本"
     assert list(staging.glob("*")) == []
     assert sorted(p.name for p in user.iterdir()) == ["fetched"], "挪开的旧版本副本没清干净"
+
+
+def test_a_name_collision_with_a_different_existing_skill_is_refused(tmp_path):
+    """`Foo` 已经装了；现在装一个声明 name: foo 的不同仓库——文件系统认为路径相同
+    （这台设备大小写不敏感），但两者不是同一个 skill。必须拒绝，不能因为路径撞了
+    就把 Foo 悄悄换成 foo（2026-09-23 修复轮 2 finding 2：修复轮 1 的整体替换逻辑,
+    靠 target.exists() 判断「是不是重装」，这个判断本身就是这个洞）。"""
+    staging, user = tmp_path / "staging", tmp_path / "user"
+    staged1 = stage_from_url(
+        "https://example.com/x", staging,
+        lambda _u: {"SKILL.md": "---\nname: Foo\ndescription: 第一个\n---\n\n第一个 skill 的正文\n"})
+    land(staged1["staging_id"], staging, user)
+    assert (user / "Foo" / "SKILL.md").is_file()
+
+    staged2 = stage_from_url(
+        "https://example.com/x", staging,
+        lambda _u: {"SKILL.md": "---\nname: foo\ndescription: 第二个，不同的仓库\n---\n\n完全不同的正文\n"})
+    with pytest.raises(InstallError):
+        land(staged2["staging_id"], staging, user)
+
+    # 原来的 Foo 必须原封不动：既没被删，也没被换成第二个仓库的内容。
+    assert (user / "Foo" / "SKILL.md").is_file()
+    assert "第一个" in (user / "Foo" / "SKILL.md").read_text(encoding="utf-8")
+    assert list(staging.glob("*")) == []
+
+
+def test_land_cleans_up_stale_incoming_and_replacing_directories_from_a_crash(tmp_path):
+    """上一次崩溃（断电、被杀）留在两次改名之间，留下 .incoming-*/.replacing-*——
+    下一次 land() 起步时 best-effort 清掉，不需要一个全局的扫描式 sweep
+    （2026-09-23 修复轮 2 finding 3）。"""
+    staging, user = tmp_path / "staging", tmp_path / "user"
+    user.mkdir(parents=True)
+    stale_incoming = user / ".incoming-deadbeef"
+    stale_incoming.mkdir()
+    (stale_incoming / "leftover.md").write_text("崩溃留下的半成品", encoding="utf-8")
+    stale_replacing = user / ".replacing-deadbeef"
+    stale_replacing.mkdir()
+    (stale_replacing / "SKILL.md").write_text(
+        "---\nname: fetched\ndescription: 崩溃前的旧版本\n---\n\n旧\n", encoding="utf-8")
+
+    staged = stage_from_url("https://example.com/x", staging, fetch_ok)
+    land(staged["staging_id"], staging, user)
+
+    remaining = sorted(p.name for p in user.iterdir())
+    assert remaining == ["fetched"], "崩溃留下的临时目录没被清掉"
+
+
+def test_a_failed_final_swap_restores_the_previous_version(tmp_path, monkeypatch):
+    """两次改名中的第二次（incoming → target）失败：必须把挪开的旧版本换回来，
+    不能让用户丢了能用的版本——窗口收窄之后（finding 3）依然要保证 all-or-nothing。
+    """
+    staging, user = tmp_path / "staging", tmp_path / "user"
+    staged1 = stage_from_url("https://example.com/x", staging, fetch_ok)
+    land(staged1["staging_id"], staging, user)
+    original = (user / "fetched" / "SKILL.md").read_text(encoding="utf-8")
+
+    staged2 = stage_from_url(
+        "https://example.com/x", staging,
+        lambda _u: {"SKILL.md": "---\nname: fetched\ndescription: v2\n---\n\n第二版\n"})
+
+    original_rename = Path.rename
+
+    def flaky_rename(self, target):
+        if self.name.startswith(".incoming-"):
+            raise OSError("disk full during final swap")
+        return original_rename(self, target)
+
+    monkeypatch.setattr(Path, "rename", flaky_rename)
+    with pytest.raises(InstallError):
+        land(staged2["staging_id"], staging, user)
+
+    assert (user / "fetched" / "SKILL.md").read_text(encoding="utf-8") == original, \
+        "第二次改名失败，用户丢了原本能用的旧版本"
+    assert sorted(p.name for p in user.iterdir()) == ["fetched"], "残留的临时目录没清干净"
+    assert list(staging.glob("*")) == []

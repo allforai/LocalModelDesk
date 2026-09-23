@@ -60,6 +60,21 @@ def stage_from_url(url: str, staging_root: Path, fetch) -> dict:
             "attachments": sorted(p.name for p in staged.iterdir() if p.name != "SKILL.md")}
 
 
+def _declared_name(skill_md: Path) -> str | None:
+    """读一个已经落盘的 SKILL.md，返回它 frontmatter 里声明的 name；读不出、解析不出
+    就返回 None——调用方把 None 当成「不能确认是同一个 skill」处理。"""
+    if not skill_md.is_file():
+        return None
+    try:
+        text = skill_md.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    fields, _body, error = split_skill(text)
+    if error or not fields:
+        return None
+    return (fields.get("name") or "").strip()
+
+
 def land(staging_id: str, staging_root: Path, user_root: Path) -> str:
     staged = Path(staging_root) / staging_id
     if not (staged / "SKILL.md").is_file():
@@ -80,33 +95,63 @@ def land(staging_id: str, staging_root: Path, user_root: Path) -> str:
         _clear(staged)
         raise InstallError(f"落盘失败：{exc}") from exc
 
-    # 重装是整体替换，不是合并（R-skill-11/17）：旧版本先挪到一个点开头的名字——
-    # 扫描器跳过点开头目录，换的中途不会被当成一个 skill 列出来——新版本落地成功之后
-    # 才删掉旧的。落的必须是刚看过的那一份，不能是「新旧文件的并集」
-    # （2026-09-23 修复轮 1 finding 2，替代原先 dirs_exist_ok=True 的合并写法）。
-    moved_aside = None
+    # 起步先清掉上一次崩溃（断电、被杀）留下的痕迹：崩溃窗口只可能落在下面两次改名
+    # 之间，留下的只会是 .incoming-*/.replacing-* 这两类点开头的目录。只清这两类前缀，
+    # 不做全局扫描式的 sweep——那会有清到正在进行中的操作的风险
+    # （2026-09-23 修复轮 2 finding 3）。
+    for stale in user_root.glob(".incoming-*"):
+        _clear(stale)
+    for stale in user_root.glob(".replacing-*"):
+        _clear(stale)
+
+    # 「路径撞了」不等于「是同一个 skill」：这台设备的文件系统既不区分大小写、也不做
+    # Unicode 规范化，`Foo` 和 `foo`、NFC 的 `café` 和 NFD 的 `café` 都会落在同一个路径。
+    # 只有已存在的目录声明的 name 和这次要装的 name 完全一样，才当成「重装同一个
+    # skill」去替换；否则拒绝，绝不能把用户认识的另一个 skill 悄悄换掉——桌面猜不出
+    # 用户想要哪个，猜错了不可挽回（2026-09-23 修复轮 2 finding 2，是修复轮 1
+    # 引入的整体替换逻辑本身造出来的洞）。
     if target.exists():
-        moved_aside = user_root / f".replacing-{uuid.uuid4().hex}"
+        existing_name = _declared_name(target / "SKILL.md")
+        if existing_name != name:
+            _clear(staged)
+            raise InstallError(
+                f"{target.name!r} 已经是另一个 skill（叫 {existing_name!r}），这次装的是 "
+                f"{name!r}：文件系统认为路径相同，但不是同一个 skill——先给其中一个改名再装")
+
+    # 新版本先整个拷到一个点开头的临时目录——这一步最耗时，但 target 此刻完全没被动过，
+    # 拷贝失败也好、进程被杀也好，target 都还是原样。真正有风险的窗口收窄成下面两次
+    # 改名之间那一小段，而不是整个拷贝的时长（2026-09-23 修复轮 2 finding 3，
+    # 取代修复轮 1「先挪旧的、再拷新的」的顺序）。
+    incoming = user_root / f".incoming-{uuid.uuid4().hex}"
+    try:
+        shutil.copytree(staged, incoming)
+    except OSError as exc:
+        _clear(incoming)
+        _clear(staged)
+        raise InstallError(f"落盘失败：{exc}") from exc
+
+    aside = None
+    if target.exists():
+        aside = user_root / f".replacing-{uuid.uuid4().hex}"
         try:
-            target.rename(moved_aside)
+            target.rename(aside)
         except OSError as exc:
-            # 挪都没挪成功：目标还是原来那份，什么都不用恢复，只清暂存。
+            # 挪都没挪成功：目标还是原来那份，新版本的临时拷贝清掉，只清暂存。
+            _clear(incoming)
             _clear(staged)
             raise InstallError(f"落盘失败：{exc}") from exc
 
     try:
-        shutil.copytree(staged, target)
+        incoming.rename(target)
     except OSError as exc:
-        _clear(target)                      # 不管是全新安装半途而废，还是替换阶段失败，
-                                             # 目标都不许留半个（target 此刻要么本就不存在
-                                             # 要么是这次失败的拷贝留下的残迹，清了安全）
-        if moved_aside is not None:
-            moved_aside.rename(target)      # 换回旧版本：重装失败不能让用户连能用的版本都丢了
+        if aside is not None:
+            aside.rename(target)        # 换回旧版本：重装失败不能让用户连能用的版本都丢了
+        _clear(incoming)
         _clear(staged)
         raise InstallError(f"落盘失败：{exc}") from exc
 
-    if moved_aside is not None:
-        _clear(moved_aside)
+    if aside is not None:
+        _clear(aside)
     _clear(staged)
     return name
 
