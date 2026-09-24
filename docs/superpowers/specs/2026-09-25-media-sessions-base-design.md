@@ -115,6 +115,8 @@ desk/library/http.py            /api/media-sessions/{kind}[/{id}]（取代 /api/
 desk/foundation/paths.py        PathRoots.media_sessions_dirs
 desk/media/compose.py           新增：ffmpeg 原语（§6）
 desk/media/commands.py          build_h3_command 加 seed；build_music_command 加 seed
+desk/media/routes.py            生成路由透传 session_id / seed / continues / refs；新增 POST /api/media/compose
+desk/library/history.py         by_output() 同时索引 joined_output（B-43）
 desk/media/music3_cli.py        新增 --seed 参数，去掉写死的 seed=0
 desk/media/service.py           MediaService(media_sessions=…)：所有 kind 挂会话；continues/refs 解析；
                                  作业内拼接；compose 作业
@@ -135,6 +137,7 @@ desk/static/js/pure/history_fill.js  fillPlan 对所有 kind 带出 session_id/a
 | `find_done(id, attempt_id) -> dict` | 返回该会话中的该尝试；会话/尝试不存在 → `NotFoundError`；未完成或文件不在 → `SegmentMissing`（§7 映射错误码） |
 | `chain(id, attempt_id) -> list[dict]` | 沿 `continues` 回溯，返回从链首到该尝试的有序列表（含自身）；遇到环或缺环返回到断点为止并标记 `broken=True` |
 | `settle_attempt(…, joined_output=None, joined_error=None)` | 增加两个可选参数，按 B-08 写入 |
+| `record_output(id, attempt_id, output) -> bool` | 仅对 running 尝试写 `output`（B-38a）；不存在返回 False |
 
 - [B-22] `chain` 防御环：回溯时记录已访问 id，重复即停（正常数据不会有环，因为 `continues` 只能指向已存在的更早尝试）。
 
@@ -153,7 +156,7 @@ desk/static/js/pure/history_fill.js  fillPlan 对所有 kind 带出 session_id/a
 
 | 字段 | 规则 |
 |---|---|
-| `session_id` | 必填，规则同 IS D-18（`session_required` 400 / `session_not_found` 404），对三种 kind 都生效 |
+| `session_id` | image：必填，规则同 IS D-18。video/music：**本块内可省略**——省略时作业照旧运行、不挂会话（`attempt_id` 为 null），保证第 2、3 块上线前现有视频页、音乐页不坏；给了就按 IS D-18 校验。第 2、3 块各自把本 kind 改为必填。带 `continues` 或 `refs` 时必填（它们只在会话内有意义） |
 | `seed` | 可省略；省略时后端 `secrets.randbelow(2**32)`；给了须为 0–4294967295 的整数（IS D-19，推广到 video/music） |
 | `continues` | 可选，尝试 id 字符串；仅 video/music（image 带 → 400） |
 | `refs` | 可选对象；名称与允许的 kind 由各 kind 的 spec 注册，未注册的名称 → 400 `invalid_params` |
@@ -172,13 +175,17 @@ desk/static/js/pure/history_fill.js  fillPlan 对所有 kind 带出 session_id/a
 
 ### 3.4 自动拼接成片
 
-- [B-38] `continues != null` 的作业：模型子进程成功产出后，**同一个工作线程**继续执行拼接，再落定。拼接期间作业仍是 `running`，日志追加一行 `[join] 正在拼接成片…`；取消在此阶段同样有效（终止 ffmpeg、删临时文件、落定为 `cancelled`）。
+- [B-38] `continues != null` 的作业：模型子进程成功产出后，**同一个工作线程**继续执行拼接，再落定。拼接期间作业仍是 `running`，日志追加一行 `[join] 正在拼接成片…`。
+- [B-38a] 模型产出后、开始拼接前，先调用 `store.record_output(session_id, attempt_id, output)` 把单段文件名写进仍为 running 的尝试。之后任何中断都不丢这一段：
+  - 拼接阶段用户取消或应用退出：终止 ffmpeg、删临时文件，尝试落定为 **`done`**（单段已生成），`joined_error = {"code": "join_cancelled", "message": "成片拼接被中止"}`。取消在模型阶段仍按 IS D-24 落定为 `cancelled`。
+  - 拼接阶段进程崩溃：`recover_running()` 对「running 且 `output` 非空」的尝试落定为 `done` + `joined_error = {"code": "interrupted", "message": "应用在拼接成片时关闭"}`；`output` 为空的仍按 IS D-25 落定为 `failed` + `interrupted`。
+- [B-38b] 重活许可在**模型子进程退出时**释放（拼接只用 ffmpeg，不该继续占着 arbiter 的内存额度挡住聊天加载）；`_finalize` 对已释放的许可不再释放（只释放一次）。compose 作业没有许可（B-45）。
 - [B-39] 拼接的片段 = `chain(本尝试)` 中每一项的「单段文件」按顺序；**不使用**上一段的 `joined_output` 再加一段。理由：片段各自独立，任何一次拼接都能只从单段文件重建。
   - 例外：链中某项为 `compose` 尝试时，它的 `output` 视为一个整段（合成成品本身就是整段）。
 - [B-40] 链断（某项文件不在、或 `broken`）→ 本尝试 `done`，`joined_output = null`，`joined_error = {"code": "segment_missing", "message": "第 N 段的文件已不在，无法拼成成片"}`（N 为链中序号，从 1 起）。
 - [B-41] 拼接命令失败 → 本尝试 `done`，`joined_error = {"code": "join_failed", "message": "拼接成片失败", "log_tail": …}`。
 - [B-42] 成片文件名：视频 `h3-joined-<stamp>-<8hex>.mp4`，音乐 `music3-joined-<stamp>-<8hex>.wav`，写在 `outputs_root`。
-- [B-43] history：拼接成功时，该作业的 history 条目加 `joined_output` 字段（素材库可列出成片）；单段 `output` 照常记录。
+- [B-43] history：所有 kind 的条目都带 `session_id`、`attempt_id`；拼接成功时再加 `joined_output`。`HistoryStore.by_output()` 同时按 `output` 与 `joined_output` 建索引，使素材库列出成片时带上它的 history（不显示为孤儿文件）。
 
 ### 3.5 手动合成 `POST /api/media/compose`
 
@@ -247,7 +254,9 @@ desk/static/js/pure/history_fill.js  fillPlan 对所有 kind 带出 session_id/a
 - [B-70] `panes/media_session.js` 导出一个工厂：参数为 `kind`、输入区与卡片内容的渲染回调；负责会话列表四种状态（IS §7.2）、自动新建首个会话（IS D-62）、当前会话恢复（IS D-63）、时间线骨架与选中展开（IS D-71、D-72）、running 卡片与轮询挂接（IS D-81、D-82）、改名删除（IS D-89、D-90）、忙碌原因中「别的会话在生成」（IS §7.6）。
 - [B-71] 图片页改用该模块后，IS 全部 D-xx 仍成立；图片页 DOM 文本、按钮、文案逐字不变。
 - [B-72] 删除确认正文中的「图片」按 kind 替换为「视频 / 音乐」由工厂参数提供；本文只要求 image 的文案不变。
-- [B-73] 本文不改 `panes/video.js`、`panes/music.js`。
+- [B-73] 本文不改 `panes/video.js`、`panes/music.js`。它们不传 `session_id`，按 §3.2 照旧能生成；`main.js` 的 `tickJob` 对 video/music 作业（含 compose）仍交给它们的 jobView 显示。
+- [B-74] `fillPlan`：video/music 条目带出 `session_id`、`attempt_id`（同 IS D-93）；`params.op == "compose"` 的条目返回 `null`（没有可回填的参数，素材库不显示「回填参数」）。
+- [B-75] 给下游的约束（第 2、3 块界面必须实现，本文后端已备好）：卡片的 `joined_error.code ∈ {join_failed, join_cancelled, interrupted}` 时提供「重新拼接」，行为是发起 `compose`，`parts = chain(该尝试)` 各项 id，结果作为新的成片卡片追加；`segment_missing` 不提供（缺的文件补不回来），只显示原因。
 
 ---
 
@@ -267,6 +276,20 @@ desk/static/js/pure/history_fill.js  fillPlan 对所有 kind 带出 session_id/a
 
 ---
 
-## 10. 待决问题
+## 10. 自审闭环（2026-09-25）
+
+| 环 | 检查 | 落点 |
+|---|---|---|
+| 生产 ↔ 消费 | 成片文件进素材库时带 history，不成孤儿 | B-43 |
+| | compose 条目在素材库不给坏的「回填参数」 | B-74 |
+| | `joined_error` 有出路（重新拼接） | B-75 |
+| | 截出的末帧写在 `.inputs/`（点目录，素材库不列），与上传素材同生命周期 | B-36 |
+| 中断 ↔ 恢复 | 拼接阶段取消/退出/崩溃都不丢已生成的单段 | B-38a |
+| 资源 获取 ↔ 释放 | 重活许可在模型退出时释放、只释放一次；compose 不拿许可 | B-38b、B-45 |
+| 分步上线 | 本块上线后、第 2/3 块上线前视频页音乐页仍可用 | §3.2 `session_id` 行、B-73 |
+| 接通 | 路由、runtime、harness、routes.py 都接上；旧名字清零 | B-21、§2 |
+| 删除 | 删会话只删分组；成片、单段、截帧都保留在 outputs | B-02（继承 IS D-30）、B-57 |
+
+## 11. 待决问题
 
 无。以下细节由本文决定并写明理由：B-39 拼接只从单段文件重建（可重现、断链可诊断）；B-44 允许重复片段（用户手动合成的自由，无害）；B-45 compose 不做内存与 arbiter 检查（ffmpeg 开销小，遵循「不要太严格」）；B-50 仅在真实续写关系上丢首帧；B-51 短段不淡化（避免 1.5 秒淡化吃掉大半段）。
