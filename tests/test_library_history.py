@@ -113,6 +113,14 @@ def test_by_output_maps_filename_to_entry_and_skips_null(tmp_path):
     assert mapping["h3-a.mp4"]["id"] == entry["id"]
 
 
+def test_by_output_also_indexes_joined_output(tmp_path):
+    history = store(tmp_path)
+    entry = history.append({"kind": "video", "status": "done", "params": {}, "output": "h3-seg.mp4",
+                            "joined_output": "h3-joined.mp4", "duration_s": 1.0, "error": None})
+    mapping = history.by_output()
+    assert mapping["h3-seg.mp4"]["id"] == entry["id"] and mapping["h3-joined.mp4"]["id"] == entry["id"]
+
+
 def test_service_wires_stores_end_to_end(tmp_path):
     roots = FakeRoots(tmp_path)
     roots.outputs_root.mkdir()
