@@ -16,7 +16,7 @@ def test_help_runs_without_mlx_pipeline():
         timeout=30,
     )
     assert res.returncode == 0
-    for flag in ("--root", "--caption", "--lyrics", "--duration", "--output"):
+    for flag in ("--root", "--caption", "--lyrics", "--duration", "--output", "--seed"):
         assert flag in res.stdout
 
 

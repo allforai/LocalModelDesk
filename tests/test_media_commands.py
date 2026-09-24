@@ -76,6 +76,17 @@ def test_build_music_command_full_argv_equality():
     ]
 
 
+def test_seed_flags_are_appended_only_when_given(tmp_path):
+    base = dict(prompt="p", width=512, height=288, frames=49, steps=12, output=tmp_path / "o.mp4")
+    without = build_h3_command(("mlx-h3",), tmp_path, **base)
+    with_seed = build_h3_command(("mlx-h3",), tmp_path, **base, seed=7)
+    assert "--seed" not in without
+    assert with_seed[with_seed.index("--seed") + 1] == "7"
+    music = build_music_command(Path("py"), Path("cli.py"), tmp_path, caption="c", lyrics="l", duration=20.0,
+                                output=tmp_path / "o.wav", seed=9)
+    assert music[music.index("--seed") + 1] == "9"
+
+
 def test_h3_fixed_flags_have_one_definition_within_desk():
     desk_root = Path(__file__).parents[1] / "desk"
     sources = list(desk_root.rglob("*.py"))

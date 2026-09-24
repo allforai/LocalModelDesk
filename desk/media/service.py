@@ -44,6 +44,18 @@ def _positive_int(name: str, value: Any) -> None:
         raise MediaError("invalid_params", f"{name} must be a positive integer", 400)
 
 
+SEED_MESSAGE = "种子须为 0–4294967295 的整数"
+
+
+def _check_seed(seed) -> int:
+    """The seed to use: a given one validated, or a fresh random one (IS D-19, B §3.2)."""
+    if seed is None:
+        return secrets.randbelow(2**32)
+    if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < 2**32:
+        raise MediaError("invalid_params", SEED_MESSAGE, 400)
+    return seed
+
+
 class MediaService:
     def __init__(self, *, resolve_paths, probe_capabilities, arbiter, list_catalog,
                  append_history, executor, media_sessions, clock: Callable[[], float] = time.time,
@@ -86,10 +98,11 @@ class MediaService:
 
     def start_video_job(self, *, prompt, width, height, frames, steps,
                         mode="text", first_frame=None, last_frame=None, ref_video=None,
-                        use_audio=True, force=False) -> dict:
+                        use_audio=True, seed=None, force=False) -> dict:
         _nonempty("prompt", prompt, code="prompt_required", message="请填写视频提示词")
         for name, value in (("width", width), ("height", height), ("frames", frames), ("steps", steps)):
             _positive_int(name, value)
+        seed = _check_seed(seed)
         if mode not in ("text", "image", "reference") or not isinstance(use_audio, bool):
             raise MediaError("invalid_params", "生成模式或音轨选项无效", 400)
         assets = {}
@@ -107,18 +120,19 @@ class MediaService:
                 resolve_input(self._resolve_paths().outputs_root, asset_id, kind)
         except ValueError as exc:
             raise MediaError("invalid_input", str(exc), 400) from exc
-        params = {"prompt": prompt, "width": width, "height": height, "frames": frames, "steps": steps}
+        params = {"prompt": prompt, "width": width, "height": height, "frames": frames, "steps": steps, "seed": seed}
         if mode != "text":
             params.update(mode=mode, use_audio=use_audio, **{key: value[0] for key, value in assets.items()})
         return self._start("video", params, force=force)
 
-    def start_music_job(self, *, caption, lyrics, duration, force=False) -> dict:
+    def start_music_job(self, *, caption, lyrics, duration, seed=None, force=False) -> dict:
         _nonempty("caption", caption, code="caption_required", message="请填写风格描述")
         if not isinstance(lyrics, str) or isinstance(duration, bool) or not isinstance(duration, (int, float)) or duration <= 0:
             raise MediaError("invalid_params", "lyrics must be a string and duration must be positive", 400)
         if not lyrics.strip():
             raise MediaError("lyrics_required", "请填写歌词：Music 3 需要歌词才能生成", 400)
-        return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration}, force=force)
+        seed = _check_seed(seed)
+        return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration, "seed": seed}, force=force)
 
     def start_image_job(self, *, session_id=None, prompt, width=1024, height=1024, steps=40,
                         seed=None, force=False, base=None) -> dict:
@@ -135,8 +149,7 @@ class MediaService:
                 raise MediaError("invalid_params", "宽高须为 256–2048 范围内的 16 的倍数", 400)
         if isinstance(steps, bool) or not isinstance(steps, int) or not 1 <= steps <= 100:
             raise MediaError("invalid_params", "步数须为 1–100 的整数", 400)
-        if seed is not None and (isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < 2**32):
-            raise MediaError("invalid_params", "种子须为 0–4294967295 的整数", 400)
+        seed = _check_seed(seed)
         if not isinstance(force, bool):
             raise MediaError("invalid_params", "force 必须为布尔值", 400)
         if not isinstance(session_id, str):
@@ -149,8 +162,6 @@ class MediaService:
             # The base image fixes the canvas: img2img redraws it, so its size wins.
             params.update(width=source["params"]["width"], height=source["params"]["height"],
                           base={"attempt_id": source["id"], "strength": base["strength"], "output": source["output"]})
-        if seed is None:
-            seed = secrets.randbelow(2**32)
         params["seed"] = seed
         return self._start("image", params, force=force, session_id=session_id)
 
