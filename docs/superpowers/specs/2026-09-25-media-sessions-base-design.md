@@ -228,7 +228,7 @@ desk/static/js/pure/history_fill.js  fillPlan 对所有 kind 带出 session_id/a
 | `ffmpeg_path() -> str | None` | 复用 `desk/media/inputs.py` 的 `_tool` 查找规则（`LOCALMODELDESK_FF*` 覆盖，再 PATH） |
 
 - [B-60] ffmpeg 不可用：只有**需要拼接或截帧**的请求返回 503 `capability_missing`「需要 ffmpeg 才能拼接成片」；普通生成不检查。
-- [B-61] 拼接与截帧的子进程经 `MediaService` 现有 executor 运行，日志进作业日志，取消走同一套 `terminate/kill`。
+- [B-61] 拼接（自动与手动合成）的子进程经 `MediaService` 现有 executor 运行，日志进作业日志，取消走同一套 `terminate/kill`。截末帧在请求内同步执行（不到 1 秒，超时 60 秒），失败按 B-37 返回。
 - [B-62] 内存：这些作业不接 `estimate_bytes`、不做内存提醒（B-45）。
 
 ---
