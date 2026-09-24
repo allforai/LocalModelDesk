@@ -46,7 +46,7 @@ def _positive_int(name: str, value: Any) -> None:
 
 class MediaService:
     def __init__(self, *, resolve_paths, probe_capabilities, arbiter, list_catalog,
-                 append_history, executor, image_sessions, clock: Callable[[], float] = time.time,
+                 append_history, executor, media_sessions, clock: Callable[[], float] = time.time,
                  term_grace_s: float = 5.0, log_limit: int = DEFAULT_LOG_LIMIT):
         """`measurements`/`measurements_path`/`available_bytes` are Task 7's media
         calibration seam (R-budget-06): optional, off by default. When all three
@@ -58,15 +58,16 @@ class MediaService:
         today — see Task 7 deviations, desk/runtime.py has not been updated to
         build and pass these in), behaviour is unchanged from before this task.
 
-        `image_sessions` is where image jobs record their attempts. MediaService
-        only calls three methods on it and never touches the session file format:
-        `exists(session_id) -> bool`, `begin_attempt(session_id, {"id", "job_id",
-        "params"}) -> bool` once the job is really running, and
+        `media_sessions` is `dict[kind, store]`, one `MediaSessionStore` per media
+        kind, where jobs of that kind record their attempts. MediaService only
+        calls three methods on a kind's store and never touches the session file
+        format: `exists(session_id) -> bool`, `begin_attempt(session_id, {"id",
+        "job_id", "params"}) -> bool` once the job is really running, and
         `settle_attempt(session_id, attempt_id, status, output, error) -> bool`
         when it ends (status one of done / failed / cancelled)."""
         self._resolve_paths, self._probe_capabilities, self._arbiter = resolve_paths, probe_capabilities, arbiter
         self._list_catalog, self._append_history, self._executor = list_catalog, append_history, executor
-        self._image_sessions = image_sessions
+        self._sessions = media_sessions
         self._clock, self._term_grace_s, self._log_limit = clock, term_grace_s, log_limit
         self._lock = threading.RLock()
         self._state: dict[str, Any] = {"job_id": 0, "status": "idle", "kind": None, "params": None,
@@ -140,7 +141,7 @@ class MediaService:
             raise MediaError("invalid_params", "force 必须为布尔值", 400)
         if not isinstance(session_id, str):
             raise MediaError("session_required", SESSION_REQUIRED_MESSAGE, 400)
-        if not self._image_sessions.exists(session_id):
+        if not self._sessions["image"].exists(session_id):
             raise MediaError("session_not_found", SESSION_NOT_FOUND_MESSAGE, 404)
         params = dict(prompt=prompt, width=width, height=height, steps=steps)
         if base is not None:
@@ -158,7 +159,7 @@ class MediaService:
         if (not isinstance(base, dict) or not isinstance(base.get("attempt_id"), str)
                 or base.get("strength") not in BASE_STRENGTHS or isinstance(base.get("strength"), bool)):
             raise MediaError("invalid_params", "底稿参数有误：需要尝试 id 和预设的变化幅度", 400)
-        session = self._image_sessions.get(session_id)
+        session = self._sessions["image"].get(session_id)
         source = next((a for a in session.get("attempts", [])
                        if isinstance(a, dict) and a.get("id") == base["attempt_id"]), None)
         if source is None:
@@ -273,7 +274,7 @@ class MediaService:
         attempt_id = uuid.uuid4().hex
         try:
             base = params.get("base")
-            attached = self._image_sessions.begin_attempt(session_id, {
+            attached = self._sessions["image"].begin_attempt(session_id, {
                 "id": attempt_id, "job_id": job_id, "params": dict(params),
                 "base": {"attempt_id": base["attempt_id"], "strength": base["strength"]} if base else None})
         except Exception:
@@ -322,7 +323,7 @@ class MediaService:
         elif status == "cancelled":
             error = dict(CANCEL_ERRORS[cancel_origin])
         try:
-            settled = self._image_sessions.settle_attempt(
+            settled = self._sessions["image"].settle_attempt(
                 snap["session_id"], snap["attempt_id"], status, snap["output"], error)
             if not settled:
                 log.info("image attempt %s not settled: its session is gone", snap["attempt_id"])

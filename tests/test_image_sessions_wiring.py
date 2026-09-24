@@ -59,10 +59,10 @@ def test_production_runtime_mounts_image_sessions_and_hands_the_store_to_media(t
     runtime = build_runtime(port=0)
     runtime.start_background()
     try:
-        assert runtime.media._image_sessions is not None
+        assert runtime.media._sessions["image"] is not None
         status, created = http_call(runtime, "POST", "/api/image-sessions", {})
         assert status == 200 and (data_root / "image-sessions" / f"{created['id']}.json").is_file()
-        assert runtime.media._image_sessions.exists(created["id"])
+        assert runtime.media._sessions["image"].exists(created["id"])
 
         status, body = http_call(runtime, "POST", "/api/media/image", {"prompt": "cat"})
         assert status == 400 and body["error"]["code"] == "session_required"

@@ -1,6 +1,6 @@
 """Image sessions in a real browser (design docs/superpowers/specs/2026-09-24-image-sessions-design.md).
 
-Runs against launch_test_harness: real DeskApp / LibraryService / ImageSessionStore / MediaService,
+Runs against launch_test_harness: real DeskApp / LibraryService / MediaSessionStore / MediaService,
 with the scripted media executor writing a small PNG instead of running Qwen-Image. Every visual
 state is checked at 1280×800 and 900×700 for: no 「种子」 in the main flow, no blank or broken
 images, no horizontal scroll, no clipped buttons and no overlapping regions. When
@@ -477,7 +477,7 @@ def test_restart_keeps_sessions_and_marks_interrupted_and_missing_files(page, tm
         _generate(pane, "重启前的第二张")
         _wait_status(pane, 2, "done")
         before = _session(page, harness, session_id)
-        sessions_dir = harness.roots.image_sessions_dir
+        sessions_dir = harness.roots.media_sessions_dirs["image"]
         outputs_root = harness.outputs_root
 
     # Simulate a crash mid-generation: the file still says running when the app starts again.
@@ -522,10 +522,10 @@ def test_restart_keeps_sessions_and_marks_interrupted_and_missing_files(page, tm
 def test_corrupt_session_and_list_load_failure(page, tmp_path):
     """§7.2: a corrupt file only offers delete; a failing list explains itself and offers retry."""
     with _harness(tmp_path, []) as harness:
-        sessions_dir = harness.roots.image_sessions_dir
+        sessions_dir = harness.roots.media_sessions_dirs["image"]
         sessions_dir.mkdir(parents=True, exist_ok=True)
         (sessions_dir / ("c" * 32 + ".json")).write_text("{ not json", encoding="utf-8")
-        healthy = harness.library.image_sessions.create()["id"]
+        healthy = harness.library.media_sessions["image"].create()["id"]
         page.route("**/api/image-sessions", lambda route: route.fulfill(
             status=500, content_type="application/json", body=json.dumps({"error": "磁盘读不出来"}))
             if route.request.method == "GET" else route.continue_())

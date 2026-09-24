@@ -12,7 +12,7 @@ class FakeRoots:
         self.data_root = base
         self.history_path = base / "history.jsonl"
         self.sessions_dir = base / "sessions"
-        self.image_sessions_dir = base / "image-sessions"
+        self.media_sessions_dirs = {k: base / f"{k}-sessions" for k in ("image", "video", "music")}
         self.outputs_root = base / "outputs"
 
 

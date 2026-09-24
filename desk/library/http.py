@@ -137,29 +137,29 @@ def _only_keys(payload: dict, allowed: set) -> None:
 
 
 def handle_list_image_sessions(service, request: LibRequest) -> Response:
-    return _json_response(200, service.list_image_sessions())
+    return _json_response(200, service.sessions_of("image").list())
 
 
 def handle_create_image_session(service, request: LibRequest) -> Response:
     _only_keys(_json_body(request) if request.body else {}, set())
-    return _json_response(200, service.create_image_session())
+    return _json_response(200, service.sessions_of("image").create())
 
 
 def handle_get_image_session(service, request: LibRequest) -> Response:
-    return _json_response(200, service.get_image_session(request.path_params["id"]))
+    return _json_response(200, service.sessions_of("image").get(request.path_params["id"]))
 
 
 def handle_rename_image_session(service, request: LibRequest) -> Response:
     payload = _json_body(request)
     _only_keys(payload, {"title"})
     return _json_response(
-        200, service.rename_image_session(request.path_params["id"], payload.get("title"))
+        200, service.sessions_of("image").rename(request.path_params["id"], payload.get("title"))
     )
 
 
 def handle_delete_image_session(service, request: LibRequest) -> Response:
     session_id = request.path_params["id"]
-    service.delete_image_session(session_id)
+    service.sessions_of("image").delete(session_id)
     return _json_response(200, {"deleted": session_id})
 
 

@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from types import SimpleNamespace
 
-from desk.library.image_sessions import ImageSessionStore
+from desk.library.media_sessions import KINDS, MediaSessionStore
 from desk.media.service import MediaService
 
 FIXED_TIME = 1756600000.0
@@ -107,20 +107,21 @@ class FakeHistory:
     def append(self, entry): self.entries.append(entry); return entry
 
 
-def make_service(tmp_path: Path, *, executor=None, memory_warning=None, image_sessions=None):
-    """The image-session store is the real file store under ``tmp_path`` unless one is given."""
+def make_service(tmp_path: Path, *, executor=None, memory_warning=None, media_sessions=None):
+    """The session stores are real file stores under ``tmp_path`` unless given."""
     executor = executor or FakeExecutor()
-    image_sessions = image_sessions or ImageSessionStore(tmp_path / "image-sessions", tmp_path / "outputs")
+    media_sessions = media_sessions or {kind: MediaSessionStore(kind, tmp_path / f"{kind}-sessions", tmp_path / "outputs")
+                                        for kind in KINDS}
     arbiter, history = FakeArbiter(memory_warning=memory_warning), FakeHistory()
     roots = SimpleNamespace(outputs_root=tmp_path / "outputs", models_root=tmp_path / "models",
         mlx_h3_cmd=("/fake/bin/mlx-h3",), mlx_h3_env={"PYTHONPATH": "/fake/pylibs/h3"})
     caps = {"mlx_h3": SimpleNamespace(present=True, detail="")}
     service = MediaService(resolve_paths=lambda: roots, probe_capabilities=lambda: caps,
         arbiter=arbiter, list_catalog=lambda: [SimpleNamespace(key="h3", relpath="minimax-h3", gb=103.0)],
-        append_history=history.append, executor=executor, image_sessions=image_sessions,
+        append_history=history.append, executor=executor, media_sessions=media_sessions,
         clock=lambda: FIXED_TIME)
     return service, SimpleNamespace(executor=executor, arbiter=arbiter, history=history,
-                                    image_sessions=image_sessions)
+                                    media_sessions=media_sessions, image_sessions=media_sessions["image"])
 
 
 def service_factory(tmp_path: Path):

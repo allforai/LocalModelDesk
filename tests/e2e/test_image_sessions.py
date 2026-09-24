@@ -3,7 +3,7 @@
 Falsification pass owned by image-session-verify. Each test states the acceptance it tries to break
 and asserts on what the backend settled (GET /api/image-sessions/{id}, /api/history, /api/outputs),
 not on what the form happened to hold. Runs against launch_test_harness — real DeskApp,
-LibraryService, ImageSessionStore, MediaService and desk/static in real Chromium — with the scripted
+LibraryService, MediaSessionStore, MediaService and desk/static in real Chromium — with the scripted
 media executor writing a small PNG instead of running Qwen-Image; the real-model journey is proved
 separately against a built app bundle.
 
@@ -496,7 +496,7 @@ def test_ac3_restart_on_the_same_data_root_keeps_sessions_attempts_and_images(pa
 def test_first_entry_without_sessions_creates_exactly_one(page, tmp_path):
     """D-62: no 「请先新建」 — one empty 新会话 is made and selected, and only once."""
     with _harness(tmp_path) as harness:
-        assert not harness.roots.image_sessions_dir.exists() or not any(harness.roots.image_sessions_dir.iterdir())
+        assert not harness.roots.media_sessions_dirs["image"].exists() or not any(harness.roots.media_sessions_dirs["image"].iterdir())
         pane = _open(page, harness)
         expect(pane.locator(SESSION_ITEMS)).to_have_count(1)
         expect(pane.locator(CURRENT_ITEM).locator(".session-title")).to_have_text("新会话")

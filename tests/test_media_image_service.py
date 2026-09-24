@@ -5,7 +5,7 @@ import threading
 
 import pytest
 
-from desk.library.image_sessions import ImageSessionStore
+from desk.library.media_sessions import KINDS, MediaSessionStore
 from desk.media import service as service_mod
 from desk.media.service import MediaError
 from desk.media.routes import build_routes
@@ -290,14 +290,16 @@ def test_image_memory_warning_requires_explicit_force(tmp_path):
 # ---- the session disappears (D-23, D-31) ------------------------------------
 
 def test_session_deleted_before_begin_runs_job_unattached(tmp_path):
-    class VanishingStore(ImageSessionStore):
+    class VanishingStore(MediaSessionStore):
         def exists(self, session_id):
             found = super().exists(session_id)
             self.delete(session_id)  # deleted between the check and the job start
             return found
 
-    store = VanishingStore(tmp_path / "image-sessions", tmp_path / "outputs")
-    service, deps = image_service(tmp_path, image_sessions=store)
+    store = VanishingStore("image", tmp_path / "image-sessions", tmp_path / "outputs")
+    stores = {kind: MediaSessionStore(kind, tmp_path / f"{kind}-sessions", tmp_path / "outputs") for kind in KINDS}
+    stores["image"] = store
+    service, deps = image_service(tmp_path, media_sessions=stores)
     session_id = store.create()["id"]
     snap = finished_snapshot(service, lambda: start(service, session_id))
     assert snap["status"] == "done" and (tmp_path / "outputs" / snap["output"]).is_file()
@@ -328,12 +330,14 @@ def test_session_deleted_while_running_drops_settle_and_keeps_image(tmp_path):
 
 
 def test_store_failures_never_break_the_job(tmp_path):
-    class BrokenStore(ImageSessionStore):
+    class BrokenStore(MediaSessionStore):
         def settle_attempt(self, *args, **kwargs):
             raise OSError("disk full")
 
-    store = BrokenStore(tmp_path / "image-sessions", tmp_path / "outputs")
-    service, deps = image_service(tmp_path, image_sessions=store)
+    store = BrokenStore("image", tmp_path / "image-sessions", tmp_path / "outputs")
+    stores = {kind: MediaSessionStore(kind, tmp_path / f"{kind}-sessions", tmp_path / "outputs") for kind in KINDS}
+    stores["image"] = store
+    service, deps = image_service(tmp_path, media_sessions=stores)
     fired = []
     service.on_job_finished(fired.append)
     snap = finished_snapshot(service, lambda: start(service, store.create()["id"]))
