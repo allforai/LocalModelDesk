@@ -152,5 +152,9 @@ async function tick() {
   }
 }
 
+// issue #15: WebKit opens a file dropped where nothing handles it, replacing the desk. Upload rows
+// handle their own drops; everywhere else a dropped file is swallowed.
+for (const type of ["dragover", "drop"]) document.addEventListener(type, (event) => event.preventDefault());
+
 hydrateIcons(document);
 boot();
