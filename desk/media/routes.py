@@ -51,6 +51,12 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
             session_id=payload.get("session_id"), continues=payload.get("continues"), refs=payload.get("refs"),
             force=bool(payload.get("force", False))))
 
+    def start_compose(body, _query):
+        payload = body or {}
+        return _run(lambda: service.start_compose_job(
+            kind=payload.get("kind"), session_id=payload.get("session_id"),
+            parts=payload.get("parts"), force=payload.get("force", False)))
+
     def cancel(_body, _query):
         return _run(service.cancel_job)
 
@@ -76,6 +82,7 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
         ("POST", "/api/media/video", start_video),
         ("POST", "/api/media/music", start_music),
         ("POST", "/api/media/image", start_image),
+        ("POST", "/api/media/compose", start_compose),
         ("POST", "/api/media/cancel", cancel),
         ("GET", "/api/media/job", status),
     ]

@@ -33,6 +33,7 @@ def test_media_routes_adapter_and_error_envelopes(tmp_path):
         ("POST", "/api/media/video"),
         ("POST", "/api/media/music"),
         ("POST", "/api/media/image"),
+        ("POST", "/api/media/compose"),
         ("POST", "/api/media/cancel"),
         ("GET", "/api/media/job"),
     ]

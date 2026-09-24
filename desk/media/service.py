@@ -282,6 +282,25 @@ class MediaService:
             if params.get("base") else {}
         return self._start("image", params, force=force, session_id=session_id, attempt_extra=extra)
 
+    def start_compose_job(self, *, kind, session_id, parts, force=False) -> dict:
+        """Join chosen segments into one file (B-44–B-48): ffmpeg only, no arbiter, no memory check.
+
+        `force` is accepted and ignored so the page can resend every job the same way (B-45)."""
+        if kind not in ("video", "music"):
+            raise MediaError("invalid_params", "只有视频和音乐可以合成成片", 400)
+        if not isinstance(parts, list) or len(parts) < 2 or not all(isinstance(p, str) for p in parts):
+            raise MediaError("invalid_params", "至少选两段来合成", 400)
+        if not isinstance(force, bool):
+            raise MediaError("invalid_params", "force 必须为布尔值", 400)
+        session_id = self._check_session(kind, session_id, required=True)
+        items = [self._segment(kind, session_id, part) for part in parts]
+        root = Path(self._resolve_paths().outputs_root)
+        paths = [root / item["output"] for item in items]   # each segment's own file, never its joined one (B-48)
+        drops = [False] + [items[i].get("continues") == items[i - 1]["id"] for i in range(1, len(items))]
+        return self._start(kind, {"op": "compose", "parts": list(parts)}, session_id=session_id,
+                           attempt_extra={"op": "compose", "params": {"parts": list(parts)}},
+                           compose_parts=list(zip(paths, drops)))
+
     def _base_attempt(self, session_id: str, base) -> dict:
         """The done attempt of this session an img2img job redraws from (its file must still exist)."""
         if (not isinstance(base, dict) or not isinstance(base.get("attempt_id"), str)
@@ -311,60 +330,37 @@ class MediaService:
         return estimate_bytes(kind, params), "predicted"
 
     def _start(self, kind: str, params: dict, *, force: bool = False, session_id: str | None = None,
-              attempt_extra: dict | None = None, join: dict | None = None) -> dict:
-        """`join` (from `_join_plan`) makes the job join the chain into a finished file after the model (B-38)."""
+              attempt_extra: dict | None = None, join: dict | None = None,
+              compose_parts: list | None = None) -> dict:
+        """`join` (from `_join_plan`) makes the job join the chain into a finished file after the model (B-38).
+
+        `compose_parts` ([(path, drop_first_frame)]) makes it a compose job instead: only ffmpeg runs,
+        so arbiter, capability/model checks and the memory estimate are skipped (B-45)."""
+        heavy = compose_parts is None
         with self._lock:
             if self._state["status"] == "running":
                 raise MediaError("media_busy", "a media job is already running", 409)
-            cap_key = {"video": "mlx_h3", "music": "music_runtime", "image": "image_runtime"}[kind]
-            cap = self._probe_capabilities().get(cap_key)
-            if cap is None or not cap.present:
-                raise MediaError("capability_missing", f"{cap_key} is unavailable: {getattr(cap, 'detail', '')}", 503)
             roots = self._resolve_paths()
-
-            catalog_key = {"video": "h3", "music": "music3", "image": "qwen-image"}[kind]
-            catalog = list(self._list_catalog())
-            model_root = Path(roots.models_root) / {e.key: e.relpath for e in catalog}[catalog_key]
-            if kind == "image":
-                from .image_model import validate_model
-                try:
-                    validate_model(model_root)
-                except (OSError, ValueError) as exc:
-                    raise MediaError("model_incomplete", str(exc), 409) from exc
-            estimated, source = self._estimate(kind, params)
-            # 预算按作业参数算峰值（memory_estimate 就是这么设计的：分辨率×帧数决定体积项）。
-            # 只从 legacy 的 estimated_bytes 通道递过去，预算路径读不到，会退回草稿档默认值——
-            # 和 llm 侧「不传 config 就把聊天算成 0 字节」是同一类漏。
-            pre = self._arbiter.can_start_heavy(kind, params=params, key=catalog_key,
-                                                estimated_bytes=estimated)
-            if not pre.get("ok"):
-                reason = pre.get("reason") or {}
-                raise MediaError(reason.get("code", "refused"), reason.get("message", "arbiter refused"), 409, reason)
-            warning = pre.get("memory_warning")
-            if warning and not force:
-                required = warning["required_bytes"] / 1024 ** 3
-                available = warning["available_bytes"] / 1024 ** 3
-                label = "已实测" if source == "measured" else "估算"
-                raise MediaError("insufficient_memory",
-                                  f"生成约需 {required:.1f} GiB 内存（{label}），当前可用 {available:.1f} GiB，可能失败或拖慢整机",
-                                  409, {**warning, "source": source})
-            if join and "parts" in join and compose.ffmpeg_path() is None:
-                raise MediaError("capability_missing", compose.FFMPEG_MISSING, 503)
             job_id = self._state["job_id"] + 1
-            display = {"video": "视频生成中", "music": "音乐生成中", "image": "图片生成中"}[kind]
-            grant = self._arbiter.acquire_heavy(kind, f"job-{job_id}", display,
-                                                params=params, key=catalog_key)
-            if not grant.get("ok"):
-                reason = grant.get("reason") or {}
-                raise MediaError(reason.get("code", "acquire_refused"), reason.get("message", "arbiter refused"), 409, reason)
-            permit, now = grant["token"], self._clock()
+            if heavy:
+                model_root, permit = self._admit_heavy(kind, params, force, join, roots, job_id)
+            else:
+                if compose.ffmpeg_path() is None:
+                    raise MediaError("capability_missing", compose.FFMPEG_MISSING, 503)
+                model_root, permit = None, None
+            now = self._clock()
             # Per-job state: a later `_start` must never change what this job's finalize releases or records.
-            job = {"permit": permit, "released": False, "join": join,
+            job = {"permit": permit, "released": False, "join": join, "compose": not heavy,
                    "joined": {"joined_output": None, "joined_error": None}}
             try:
                 stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(now))
                 root = Path(roots.outputs_root); root.mkdir(parents=True, exist_ok=True)
-                if kind == "video":
+                if not heavy:
+                    suffix, prefix = (".mp4", "h3") if kind == "video" else (".wav", "music3")
+                    output = root / f"{prefix}-compose-{stamp}-{uuid.uuid4().hex[:8]}{suffix}"
+                    command = self._join_command(kind, compose_parts, output)
+                    extra_env = {}
+                elif kind == "video":
                     output = root / f"h3-{stamp}.mp4"
                     command_params = dict(params)
                     command_params.pop("mode", None)
@@ -401,6 +397,49 @@ class MediaService:
             self._worker_thread.start()
             return self.job_status()
 
+    def _admit_heavy(self, kind: str, params: dict, force: bool, join: dict | None, roots, job_id: int):
+        """Capability, model, memory and arbiter gates for a model job; returns (model_root, permit)."""
+        cap_key = {"video": "mlx_h3", "music": "music_runtime", "image": "image_runtime"}[kind]
+        cap = self._probe_capabilities().get(cap_key)
+        if cap is None or not cap.present:
+            raise MediaError("capability_missing", f"{cap_key} is unavailable: {getattr(cap, 'detail', '')}", 503)
+
+        catalog_key = {"video": "h3", "music": "music3", "image": "qwen-image"}[kind]
+        catalog = list(self._list_catalog())
+        model_root = Path(roots.models_root) / {e.key: e.relpath for e in catalog}[catalog_key]
+        if kind == "image":
+            from .image_model import validate_model
+            try:
+                validate_model(model_root)
+            except (OSError, ValueError) as exc:
+                raise MediaError("model_incomplete", str(exc), 409) from exc
+        estimated, source = self._estimate(kind, params)
+        # 预算按作业参数算峰值（memory_estimate 就是这么设计的：分辨率×帧数决定体积项）。
+        # 只从 legacy 的 estimated_bytes 通道递过去，预算路径读不到，会退回草稿档默认值——
+        # 和 llm 侧「不传 config 就把聊天算成 0 字节」是同一类漏。
+        pre = self._arbiter.can_start_heavy(kind, params=params, key=catalog_key,
+                                            estimated_bytes=estimated)
+        if not pre.get("ok"):
+            reason = pre.get("reason") or {}
+            raise MediaError(reason.get("code", "refused"), reason.get("message", "arbiter refused"), 409, reason)
+        warning = pre.get("memory_warning")
+        if warning and not force:
+            required = warning["required_bytes"] / 1024 ** 3
+            available = warning["available_bytes"] / 1024 ** 3
+            label = "已实测" if source == "measured" else "估算"
+            raise MediaError("insufficient_memory",
+                              f"生成约需 {required:.1f} GiB 内存（{label}），当前可用 {available:.1f} GiB，可能失败或拖慢整机",
+                              409, {**warning, "source": source})
+        if join and "parts" in join and compose.ffmpeg_path() is None:
+            raise MediaError("capability_missing", compose.FFMPEG_MISSING, 503)
+        display = {"video": "视频生成中", "music": "音乐生成中", "image": "图片生成中"}[kind]
+        grant = self._arbiter.acquire_heavy(kind, f"job-{job_id}", display,
+                                            params=params, key=catalog_key)
+        if not grant.get("ok"):
+            reason = grant.get("reason") or {}
+            raise MediaError(reason.get("code", "acquire_refused"), reason.get("message", "arbiter refused"), 409, reason)
+        return model_root, grant["token"]
+
     def _begin_attempt(self, kind: str, session_id: str, job_id: int, params: dict, extra: dict) -> None:
         """Attach the now-running job to its session (IS D-20 step 5, B-32).
 
@@ -409,7 +448,7 @@ class MediaService:
         attempt_id = uuid.uuid4().hex
         try:
             attached = self._sessions[kind].begin_attempt(session_id, {
-                "id": attempt_id, "job_id": job_id, "params": dict(params),
+                "id": attempt_id, "job_id": job_id, "params": dict(extra.get("params", params)),
                 "op": extra.get("op", "generate"), "continues": extra.get("continues"),
                 "refs": extra.get("refs") or {}, "base": extra.get("base")})
         except Exception:
@@ -432,6 +471,8 @@ class MediaService:
                 elif code == 0 and output.is_file(): status, error = "done", None
                 elif code == 0: status, error = "error", {"code": "no_output", "message": "exit 0 but output file missing"}
                 else: status, error = "error", {"code": "exit_nonzero", "message": f"exit {code}", "log_tail": self._log_tail(5)}
+                if job["compose"] and status == "error":   # B-47: a compose job fails as a join
+                    error = {"code": "join_failed", "message": "拼接成片失败", "log_tail": self._log_tail(5)}
                 join = job["join"] if status == "done" else None
                 session_id, attempt_id = self._state["session_id"], self._state["attempt_id"]
                 if join is None:
@@ -481,14 +522,7 @@ class MediaService:
             ffmpeg = compose.ffmpeg_path()
             if ffmpeg is None:
                 raise RuntimeError(compose.FFMPEG_MISSING)
-            if kind == "video":
-                parts = [*join["parts"], (segment, True)]
-                size = compose.probe_size(compose.ffprobe_path() or "ffprobe", parts[0][0])
-                command = compose.concat_video_command(ffmpeg, parts, size, target)
-            else:
-                parts = [(path, wav_seconds(path) or 0.0) for path, _drop in join["parts"]]
-                parts.append((segment, wav_seconds(segment) or 0.0))
-                command = compose.crossfade_audio_command(ffmpeg, parts, target)
+            command = self._join_command(kind, [*join["parts"], (segment, True)], target, ffmpeg)
             with self._lock:
                 if self._cancel_requested:
                     return {"joined_output": None, "joined_error": dict(JOIN_CANCELLED)}
@@ -511,6 +545,15 @@ class MediaService:
             return {"joined_output": None, "joined_error": {"code": "join_failed", "message": "拼接成片失败",
                                                             "log_tail": self._log_tail(5)}}
         return {"joined_output": target.name, "joined_error": None}
+
+    @staticmethod
+    def _join_command(kind: str, parts: list, target: Path, ffmpeg: str | None = None) -> list[str]:
+        """ffmpeg argv joining [(path, drop_first_frame)] into `target` (B-50 video / B-51 music)."""
+        ffmpeg = ffmpeg or compose.ffmpeg_path()
+        if kind == "video":
+            size = compose.probe_size(compose.ffprobe_path() or "ffprobe", parts[0][0])
+            return compose.concat_video_command(ffmpeg, parts, size, target)
+        return compose.crossfade_audio_command(ffmpeg, [(path, wav_seconds(path) or 0.0) for path, _drop in parts], target)
 
     def _finalize(self, job: dict, final: tuple) -> None:
         snap, callbacks, origin, joined = final
