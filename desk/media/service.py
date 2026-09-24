@@ -110,8 +110,6 @@ class MediaService:
         self._log = ""; self._log_dropped = 0; self._log_truncated = False
         self._cancel_requested = False; self._cancel_origin = "user"
         self._handle = None; self._worker_thread: threading.Thread | None = None
-        self._join: dict | None = None; self._permit_released = False
-        self._joined: dict = {"joined_output": None, "joined_error": None}
         self._callbacks: list[Callable[[dict], None]] = []
 
     def upload_input(self, *, name=None, data=None) -> dict:
@@ -360,6 +358,9 @@ class MediaService:
                 reason = grant.get("reason") or {}
                 raise MediaError(reason.get("code", "acquire_refused"), reason.get("message", "arbiter refused"), 409, reason)
             permit, now = grant["token"], self._clock()
+            # Per-job state: a later `_start` must never change what this job's finalize releases or records.
+            job = {"permit": permit, "released": False, "join": join,
+                   "joined": {"joined_output": None, "joined_error": None}}
             try:
                 stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(now))
                 root = Path(roots.outputs_root); root.mkdir(parents=True, exist_ok=True)
@@ -389,17 +390,14 @@ class MediaService:
                 self._state = {"job_id": job_id, "status": "error", "kind": kind, "params": dict(params), "output": None,
                     "error": {"code": "spawn_failed", "message": str(exc)}, "started_at": now, "finished_at": self._clock(),
                     "session_id": None, "attempt_id": None}
-                self._joined = {"joined_output": None, "joined_error": None}; self._permit_released = False
-                self._reset_log(); self._finalize(permit)
+                self._reset_log(); self._finalize(job, self._final_snapshot(job))
                 raise MediaError("spawn_failed", str(exc), 500) from exc
             self._state = {"job_id": job_id, "status": "running", "kind": kind, "params": dict(params), "output": None,
                 "error": None, "started_at": now, "finished_at": None, "session_id": None, "attempt_id": None}
             self._reset_log(); self._cancel_requested = False; self._cancel_origin = "user"; self._handle = handle
-            self._join, self._permit_released = join, False
-            self._joined = {"joined_output": None, "joined_error": None}
             if session_id is not None:
                 self._begin_attempt(kind, session_id, job_id, params, attempt_extra or {})
-            self._worker_thread = threading.Thread(target=self._worker, args=(handle, permit, output, kind), daemon=True)
+            self._worker_thread = threading.Thread(target=self._worker, args=(handle, job, output, kind), daemon=True)
             self._worker_thread.start()
             return self.job_status()
 
@@ -420,7 +418,8 @@ class MediaService:
         if attached:
             self._state.update(session_id=session_id, attempt_id=attempt_id)
 
-    def _worker(self, handle, permit: str | None, output: Path, kind: str) -> None:
+    def _worker(self, handle, job: dict, output: Path, kind: str) -> None:
+        final = None
         try:
             try:
                 for line in handle.iter_output(): self._append_log(line)
@@ -433,33 +432,42 @@ class MediaService:
                 elif code == 0 and output.is_file(): status, error = "done", None
                 elif code == 0: status, error = "error", {"code": "no_output", "message": "exit 0 but output file missing"}
                 else: status, error = "error", {"code": "exit_nonzero", "message": f"exit {code}", "log_tail": self._log_tail(5)}
-                join = self._join if status == "done" else None
+                join = job["join"] if status == "done" else None
                 session_id, attempt_id = self._state["session_id"], self._state["attempt_id"]
                 if join is None:
                     self._state.update(status=status, output=output.name if status == "done" else None,
                                        error=error, finished_at=self._clock())
                     self._handle = None
+                    final = self._final_snapshot(job)
             if join is not None:
-                self._release_permit(permit)   # the model has exited; joining only needs ffmpeg (B-38b)
+                self._release_permit(job)   # the model has exited; joining only needs ffmpeg (B-38b)
                 if session_id:
                     try:
                         self._sessions[kind].record_output(session_id, attempt_id, output.name)   # B-38a
                     except Exception:
                         log.exception("record_output failed")
-                self._joined = self._run_join(kind, join, output)
+                job["joined"] = self._run_join(kind, join, output)
                 with self._lock:
                     self._state.update(status="done", output=output.name, error=None, finished_at=self._clock())
                     self._handle = None
+                    final = self._final_snapshot(job)
         finally:
-            self._finalize(permit)
+            if final is None:   # the worker itself failed before the job reached a terminal state
+                with self._lock: final = self._final_snapshot(job)
+            self._finalize(job, final)
 
-    def _release_permit(self, permit: str | None) -> None:
-        """Release the heavy-job permit at most once (B-38b)."""
+    def _final_snapshot(self, job: dict) -> tuple:
+        """What finalize reports, taken (under the lock) in the same step that ends the job:
+        once the status is terminal a new `_start` may run and replace the service's state."""
+        return self.job_status(), list(self._callbacks), self._cancel_origin, dict(job["joined"])
+
+    def _release_permit(self, job: dict) -> None:
+        """Release this job's heavy permit at most once (B-38b)."""
         with self._lock:
-            if permit is None or self._permit_released:
+            if job["permit"] is None or job["released"]:
                 return
-            self._permit_released = True
-        try: self._arbiter.release_heavy(permit)
+            job["released"] = True
+        try: self._arbiter.release_heavy(job["permit"])
         except Exception: log.exception("release_heavy failed")
 
     def _run_join(self, kind: str, join: dict, segment: Path) -> dict:
@@ -504,11 +512,9 @@ class MediaService:
                                                             "log_tail": self._log_tail(5)}}
         return {"joined_output": target.name, "joined_error": None}
 
-    def _finalize(self, permit: str | None) -> None:
-        with self._lock:
-            snap, callbacks, origin = self.job_status(), list(self._callbacks), self._cancel_origin
-            joined = dict(self._joined)
-        self._release_permit(permit)
+    def _finalize(self, job: dict, final: tuple) -> None:
+        snap, callbacks, origin, joined = final
+        self._release_permit(job)
         try: self._append_history(self._history_entry(snap, joined))
         except Exception as exc: self._append_log(f"[media] append_history failed: {exc}")
         self._settle_attempt(snap, origin, joined)

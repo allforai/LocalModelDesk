@@ -182,3 +182,31 @@ def test_frame_extraction_failure_is_500_and_writes_nothing(tmp_path, monkeypatc
         video(service, session_id=sid, continues=first)
     assert (exc.value.code, exc.value.http_status) == ("frame_extract_failed", 500)
     assert len(attempts(deps, "video", sid)) == 1
+
+
+def test_a_job_started_before_the_previous_finalize_cannot_steal_its_permit_or_join(tmp_path):
+    """Job 2 ends (status done) → job 3 starts and finishes → only then does job 2's finalize run."""
+    service, deps = make_service(tmp_path)
+    sid, first = first_segment(service, deps)
+    finished = {}
+    service.on_job_finished(lambda snap: finished[snap["job_id"]].set() if snap["job_id"] in finished else None)
+    original, delayed = service._finalize, []
+
+    def finalize(*args, **kwargs):
+        if not delayed:                       # job 2's finalize: squeeze job 3 in before it
+            delayed.append(True)
+            finished[3] = threading.Event()
+            video(service)
+            assert finished[3].wait(5)
+        original(*args, **kwargs)
+
+    service._finalize = finalize
+    finished[2] = threading.Event()
+    video(service, session_id=sid, continues=first)
+    assert finished[2].wait(5)
+    assert deps.arbiter.released.count("permit-2") == 1
+    assert deps.arbiter.released.count("permit-3") == 1
+    second = attempts(deps, "video", sid)[1]
+    assert second["joined_output"].startswith("h3-joined-") and second["joined_error"] is None
+    entry = next(e for e in deps.history.entries if e.get("attempt_id") == second["id"])
+    assert entry["joined_output"] == second["joined_output"]
