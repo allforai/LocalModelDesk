@@ -473,6 +473,8 @@ class MediaService:
                 else: status, error = "error", {"code": "exit_nonzero", "message": f"exit {code}", "log_tail": self._log_tail(5)}
                 if job["compose"] and status == "error":   # B-47: a compose job fails as a join
                     error = {"code": "join_failed", "message": "拼接成片失败", "log_tail": self._log_tail(5)}
+                if job["compose"] and status != "done":   # B-45: no half-written *-compose-* left behind
+                    output.unlink(missing_ok=True)
                 join = job["join"] if status == "done" else None
                 session_id, attempt_id = self._state["session_id"], self._state["attempt_id"]
                 if join is None:
