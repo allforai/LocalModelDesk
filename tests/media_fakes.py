@@ -64,13 +64,16 @@ class FakeHandle:
 
 
 class FakeExecutor:
-    def __init__(self, script="success", lines=("line-1", "line-2"), *, ignore_term=False):
-        self.script, self.lines, self.ignore_term = script, lines, ignore_term
+    def __init__(self, script="success", lines=("line-1", "line-2"), *, ignore_term=False, join_script="success"):
+        """`script` drives model runs (they carry `--output`); `join_script` drives ffmpeg joins (output last)."""
+        self.script, self.lines, self.ignore_term, self.join_script = script, lines, ignore_term, join_script
         self.spawned: list[dict] = []
 
     def spawn(self, cmd, *, extra_env=None):
         self.spawned.append({"cmd": list(cmd), "extra_env": dict(extra_env or {})})
-        return FakeHandle(self.script, Path(cmd[cmd.index("--output") + 1]), self.lines, ignore_term=self.ignore_term)
+        output = Path(cmd[cmd.index("--output") + 1]) if "--output" in cmd else Path(cmd[-1])
+        script = self.join_script if "--output" not in cmd else self.script
+        return FakeHandle(script, output, self.lines, ignore_term=self.ignore_term)
 
 
 class FakeArbiter:

@@ -229,7 +229,7 @@ class FakeMediaExecutor:
     def spawn(self, cmd: list[str], *, log_path=None, extra_env=None) -> FakeMediaHandle:
         argv = list(cmd)
         self.script.spawned_argvs.append(argv)
-        output_path = Path(argv[argv.index("--output") + 1])
+        output_path = Path(argv[argv.index("--output") + 1]) if "--output" in argv else Path(argv[-1])
         return FakeMediaHandle(self.script.next_job(), output_path, _declared_png(argv))
 
 
