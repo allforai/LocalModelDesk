@@ -98,10 +98,15 @@ function showTab(name) {
   if (name === "library") panes.library.refresh();
   if (name === "video") panes.video.jobView.sync({ busyReason: mediaBusyReason });
   if (name === "music") panes.music.jobView.sync({ busyReason: mediaBusyReason });
-  if (name === "image") panes.image.jobView.sync({ busyReason: mediaBusyReason });
+  if (name === "image") panes.image.refresh();
 }
 
-function applyFill(plan) { if (plan) { panes[plan.pane].fill(plan.fields); showTab(plan.pane); } }
+// 图片条目的回填要先找回它所在的会话（设计 D-94/D-95），由图片页自己处理。
+function applyFill(plan) {
+  if (!plan) return;
+  if (plan.pane === "image") { showTab("image"); panes.image.applyFill(plan); return; }
+  panes[plan.pane].fill(plan.fields); showTab(plan.pane);
+}
 
 function applyHeavyAvailability(deskState) {
   const llm = heavyAvailability(deskState, "llm");
@@ -116,15 +121,16 @@ function applyHeavyAvailability(deskState) {
   mediaBusyReason = media.allowed ? "" : media.reason;
   panes.video.jobView.setBusyReason(mediaBusyReason);
   panes.music.jobView.setBusyReason(mediaBusyReason);
-  panes.image.jobView.setBusyReason(mediaBusyReason);
 }
 
 async function tickJob() {
   const payload = await api.jobStatus(jobLogFrom, lastJobId);
-  const pane = panes[payload.kind] ?? panes.video;
   const changed = payload.job_id !== lastJobId;
   if (changed) { lastJobId = payload.job_id; jobLogFrom = 0; }
-  pane.jobView.apply(payload, { replaceLog: changed, busyReason: mediaBusyReason }); jobLogFrom = payload.next_log_from ?? jobLogFrom;
+  // 图片作业不再有固定的作业区：交给图片页按 attempt_id 找到对应卡片（设计 D-82/D-92）。
+  if (payload.kind === "image") panes.image.applyJob(payload, { replaceLog: changed });
+  else (panes[payload.kind] ?? panes.video).jobView.apply(payload, { replaceLog: changed, busyReason: mediaBusyReason });
+  jobLogFrom = payload.next_log_from ?? jobLogFrom;
   if (payload.status !== "running") jobActive = false;
 }
 
@@ -146,6 +152,7 @@ async function tick() {
     await panes.chat.refreshSessionsIfStale();
     if (deskState.media_busy) jobActive = true;
     if (jobActive) await tickJob();
+    await panes.image.poll(deskState);
   } catch (error) {
     panes.image.setHeavyAllowed(false, "服务状态暂不可用，请稍后重试");
     failures += 1; if (failures >= 3) statusbar.offline(true);

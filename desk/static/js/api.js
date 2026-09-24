@@ -9,7 +9,7 @@ const ROUTES = {
   chatStream: "/api/llm/chat/stream", promptAssist: "/api/llm/prompt-assist",
   video: "/api/media/video", music: "/api/media/music", image: "/api/media/image", capabilities: "/api/capabilities",
   cancelJob: "/api/media/cancel", job: "/api/media/job", outputs: "/api/outputs",
-  history: "/api/history", sessions: "/api/sessions", gatewayConfig: "/api/gateway/config",
+  history: "/api/history", sessions: "/api/sessions", imageSessions: "/api/image-sessions", gatewayConfig: "/api/gateway/config",
   skills: "/api/skills", skillsRescan: "/api/skills/rescan",
   skillsPreview: "/api/skills/preview", skillsInstall: "/api/skills/install", skillsDiscard: "/api/skills/discard",
 };
@@ -31,6 +31,8 @@ async function toError(response) {
   try {
     const payload = await response.json();
     const error = payload && typeof payload.error === "object" ? payload.error : null;
+    // library 路由（会话、图片会话）的错误是 {"error": "<中文原因>"}，不是对象信封。
+    if (payload && typeof payload.error === "string" && payload.error) message = payload.error;
     if (error) {
       code = error.code || code;
       message = error.message || message;
@@ -133,6 +135,12 @@ export const createChatSession = (init = {}) => json(ROUTES.sessions, "POST", in
 export const updateChatSession = (id, patch, { keepalive = false } = {}) =>
   request(`${ROUTES.sessions}/${encoded(id)}`, { method: "PATCH", body: patch, keepalive });
 export const deleteChatSession = (id) => json(`${ROUTES.sessions}/${encoded(id)}`, "DELETE");
+// 图片会话（设计 §3）：尝试只由后端写，前端只列、建、读、改名、删。
+export const listImageSessions = () => request(ROUTES.imageSessions);
+export const createImageSession = () => json(ROUTES.imageSessions, "POST", {});
+export const getImageSession = (id) => request(`${ROUTES.imageSessions}/${encoded(id)}`);
+export const renameImageSession = (id, title) => json(`${ROUTES.imageSessions}/${encoded(id)}`, "PATCH", { title });
+export const deleteImageSession = (id) => json(`${ROUTES.imageSessions}/${encoded(id)}`, "DELETE");
 export const gatewayConfig = (apply = false) => request(ROUTES.gatewayConfig, { method: apply ? "POST" : "GET" });
 
 export const listSkills = () => request(ROUTES.skills);

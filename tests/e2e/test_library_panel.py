@@ -104,3 +104,50 @@ def test_history_refill_and_playback(page, tmp_path, audit_violations):
         assert page.request.get(f"{harness.base_url}{src}").status in (200, 206)
 
     assert audit_violations == []
+
+
+def test_image_refill_returns_to_its_session_or_stays_put(page, tmp_path):
+    """D-94 / D-95: 回填参数 on an image reopens its session and attempt; a deleted session falls back."""
+    from desk.testing.scripts import MediaScript
+
+    with launch_test_harness(tmp_path, model_states={"qwen-image": "present"}, image_runtime=True,
+                             media_script=MediaScript([fast_media_steps()])) as harness:
+        page.goto(harness.base_url + "#tab=image")
+        image = page.locator("#pane-image")
+        image.locator("[data-image-prompt]").fill("回填用的橘猫")
+        start = image.locator("[data-image-start]")
+        expect(start).to_be_enabled()
+        start.click()
+        expect(image.locator(".attempt").first).to_have_attribute("data-attempt-status", "done", timeout=15_000)
+        image.locator("[data-image-session-new]").click()
+        expect(image.locator("[data-image-session-list] [data-session-id]")).to_have_count(2)
+        image.locator("[data-image-prompt]").fill("")
+
+        page.locator("#tabs [data-tab='library']").click()
+        library = page.locator("#pane-library")
+        entry = library.locator("li").filter(has_text="回填用的橘猫")
+        entry.get_by_role("button", name="回填参数").click()
+        expect(image).to_be_visible()
+        current = image.locator("[data-image-session-list] li[aria-current='true']")
+        expect(current.locator(".session-title")).to_have_text("回填用的橘猫")
+        expect(image.locator(".attempt").first).to_have_attribute("aria-expanded", "true")
+        expect(image.locator("[data-image-prompt]")).to_have_value("回填用的橘猫")
+        expect(image.locator("[data-image-refine-text]")).to_have_text("沿用第 1 次的构图")
+
+        # Delete that session: the image stays in the library and refill falls back to the current session.
+        current.hover()
+        current.get_by_role("button", name="删除会话：回填用的橘猫").click()
+        page.locator(".overlay .dialog").get_by_role("button", name="删除").click()
+        expect(image.locator("[data-image-session-list] [data-session-id]")).to_have_count(1)
+        remaining = image.locator("[data-image-session-list] li[aria-current='true']").get_attribute("data-session-id")
+        image.locator("[data-image-prompt]").fill("")
+
+        page.locator("#tabs [data-tab='library']").click()
+        entry.get_by_role("button", name="回填参数").click()
+        expect(image).to_be_visible()
+        expect(image.locator("[data-image-prompt]")).to_have_value("回填用的橘猫")
+        expect(image.locator("[data-image-refine-text]")).to_have_text("沿用素材库里这张的构图")
+        expect(image.locator("[data-image-session-list] [data-session-id]")).to_have_count(1)
+        expect(image.locator("[data-image-session-list] li[aria-current='true']")).to_have_attribute(
+            "data-session-id", remaining)
+        expect(image.locator("[data-image-empty]")).to_be_visible()

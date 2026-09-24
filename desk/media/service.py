@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import secrets
 import threading
 import time
 import uuid
@@ -14,6 +15,14 @@ from .inputs import save_input, resolve_input
 
 log = logging.getLogger(__name__)
 DEFAULT_LOG_LIMIT = 1024 * 1024
+
+
+SESSION_REQUIRED_MESSAGE = "请先选择或新建一个会话"
+SESSION_NOT_FOUND_MESSAGE = "这个会话已被删除，请选择或新建一个会话"
+CANCEL_ERRORS = {
+    "user": {"code": "cancelled", "message": "已取消：这次生成被手动停止"},
+    "quit": {"code": "cancelled_on_quit", "message": "应用退出时停止了这次生成"},
+}
 
 
 class MediaError(Exception):
@@ -34,7 +43,7 @@ def _positive_int(name: str, value: Any) -> None:
 
 class MediaService:
     def __init__(self, *, resolve_paths, probe_capabilities, arbiter, list_catalog,
-                 append_history, executor, clock: Callable[[], float] = time.time,
+                 append_history, executor, image_sessions, clock: Callable[[], float] = time.time,
                  term_grace_s: float = 5.0, log_limit: int = DEFAULT_LOG_LIMIT):
         """`measurements`/`measurements_path`/`available_bytes` are Task 7's media
         calibration seam (R-budget-06): optional, off by default. When all three
@@ -44,15 +53,26 @@ class MediaService:
         so the next job of that kind gets a `measured` estimate instead of the
         parameter-based `predicted` one. With none wired (the production default
         today — see Task 7 deviations, desk/runtime.py has not been updated to
-        build and pass these in), behaviour is unchanged from before this task."""
+        build and pass these in), behaviour is unchanged from before this task.
+
+        `image_sessions` is where image jobs record their attempts. MediaService
+        only calls three methods on it and never touches the session file format:
+        `exists(session_id) -> bool`, `begin_attempt(session_id, {"id", "job_id",
+        "params"}) -> bool` once the job is really running, and
+        `settle_attempt(session_id, attempt_id, status, output, error) -> bool`
+        when it ends (status one of done / failed / cancelled)."""
         self._resolve_paths, self._probe_capabilities, self._arbiter = resolve_paths, probe_capabilities, arbiter
         self._list_catalog, self._append_history, self._executor = list_catalog, append_history, executor
+        self._image_sessions = image_sessions
         self._clock, self._term_grace_s, self._log_limit = clock, term_grace_s, log_limit
         self._lock = threading.RLock()
         self._state: dict[str, Any] = {"job_id": 0, "status": "idle", "kind": None, "params": None,
-            "output": None, "error": None, "started_at": None, "finished_at": None}
+            "output": None, "error": None, "started_at": None, "finished_at": None,
+            "session_id": None, "attempt_id": None}
         self._log = ""; self._log_dropped = 0; self._log_truncated = False
-        self._cancel_requested = False; self._handle = None; self._callbacks: list[Callable[[dict], None]] = []
+        self._cancel_requested = False; self._cancel_origin = "user"
+        self._handle = None; self._worker_thread: threading.Thread | None = None
+        self._callbacks: list[Callable[[dict], None]] = []
 
     def upload_input(self, *, name=None, data=None) -> dict:
         try:
@@ -96,7 +116,14 @@ class MediaService:
             raise MediaError("lyrics_required", "请填写歌词：Music 3 需要歌词才能生成", 400)
         return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration}, force=force)
 
-    def start_image_job(self, *, prompt, width=1024, height=1024, steps=40, seed=42, force=False) -> dict:
+    def start_image_job(self, *, session_id=None, prompt, width=1024, height=1024, steps=40,
+                        seed=None, force=False) -> dict:
+        """Start an image job inside a session.
+
+        Order (design D-20): parameters → session → the shared `_start` gates.
+        A running attempt is appended only once the job really runs; any refusal
+        before that leaves the session file untouched (D-21). `seed=None` means
+        "pick one": the value actually used is what the attempt records (D-19)."""
         _nonempty("prompt", prompt, code="prompt_required", message="请填写图片提示词")
         for name, value in (("width", width), ("height", height)):
             _positive_int(name, value)
@@ -104,11 +131,18 @@ class MediaService:
                 raise MediaError("invalid_params", "宽高须为 256–2048 范围内的 16 的倍数", 400)
         if isinstance(steps, bool) or not isinstance(steps, int) or not 1 <= steps <= 100:
             raise MediaError("invalid_params", "步数须为 1–100 的整数", 400)
-        if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < 2**32:
+        if seed is not None and (isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < 2**32):
             raise MediaError("invalid_params", "种子须为 0–4294967295 的整数", 400)
         if not isinstance(force, bool):
             raise MediaError("invalid_params", "force 必须为布尔值", 400)
-        return self._start("image", dict(prompt=prompt, width=width, height=height, steps=steps, seed=seed), force=force)
+        if not isinstance(session_id, str):
+            raise MediaError("session_required", SESSION_REQUIRED_MESSAGE, 400)
+        if not self._image_sessions.exists(session_id):
+            raise MediaError("session_not_found", SESSION_NOT_FOUND_MESSAGE, 404)
+        if seed is None:
+            seed = secrets.randbelow(2**32)
+        params = dict(prompt=prompt, width=width, height=height, steps=steps, seed=seed)
+        return self._start("image", params, force=force, session_id=session_id)
 
     def _estimate(self, kind: str, params: dict) -> tuple[int, str]:
         """(bytes, source) —— 按作业参数估算的峰值。
@@ -124,7 +158,7 @@ class MediaService:
         from .memory_estimate import estimate_bytes
         return estimate_bytes(kind, params), "predicted"
 
-    def _start(self, kind: str, params: dict, *, force: bool = False) -> dict:
+    def _start(self, kind: str, params: dict, *, force: bool = False, session_id: str | None = None) -> dict:
         with self._lock:
             if self._state["status"] == "running":
                 raise MediaError("media_busy", "a media job is already running", 409)
@@ -191,14 +225,33 @@ class MediaService:
                 handle = self._executor.spawn(command, extra_env=extra_env)
             except Exception as exc:
                 self._state = {"job_id": job_id, "status": "error", "kind": kind, "params": dict(params), "output": None,
-                    "error": {"code": "spawn_failed", "message": str(exc)}, "started_at": now, "finished_at": self._clock()}
+                    "error": {"code": "spawn_failed", "message": str(exc)}, "started_at": now, "finished_at": self._clock(),
+                    "session_id": None, "attempt_id": None}
                 self._reset_log(); self._finalize(permit)
                 raise MediaError("spawn_failed", str(exc), 500) from exc
             self._state = {"job_id": job_id, "status": "running", "kind": kind, "params": dict(params), "output": None,
-                "error": None, "started_at": now, "finished_at": None}
-            self._reset_log(); self._cancel_requested = False; self._handle = handle
-            threading.Thread(target=self._worker, args=(handle, permit, output, kind), daemon=True).start()
+                "error": None, "started_at": now, "finished_at": None, "session_id": None, "attempt_id": None}
+            self._reset_log(); self._cancel_requested = False; self._cancel_origin = "user"; self._handle = handle
+            if kind == "image":
+                self._begin_attempt(session_id, job_id, params)
+            self._worker_thread = threading.Thread(target=self._worker, args=(handle, permit, output, kind), daemon=True)
+            self._worker_thread.start()
             return self.job_status()
+
+    def _begin_attempt(self, session_id: str, job_id: int, params: dict) -> None:
+        """Attach the now-running job to its session (D-20 step 5).
+
+        A session deleted since the check, or a store failure, leaves the job
+        running unattached (D-23): the image still reaches outputs and history."""
+        attempt_id = uuid.uuid4().hex
+        try:
+            attached = self._image_sessions.begin_attempt(
+                session_id, {"id": attempt_id, "job_id": job_id, "params": dict(params)})
+        except Exception:
+            log.exception("begin_attempt failed; image job runs without a session")
+            attached = False
+        if attached:
+            self._state.update(session_id=session_id, attempt_id=attempt_id)
 
     def _worker(self, handle, permit: str, output: Path, kind: str) -> None:
         try:
@@ -219,27 +272,52 @@ class MediaService:
             self._finalize(permit)
 
     def _finalize(self, permit: str) -> None:
-        with self._lock: snap, callbacks = self.job_status(), list(self._callbacks)
+        with self._lock: snap, callbacks, origin = self.job_status(), list(self._callbacks), self._cancel_origin
         try: self._arbiter.release_heavy(permit)
         except Exception: log.exception("release_heavy failed")
         try: self._append_history(self._history_entry(snap))
         except Exception as exc: self._append_log(f"[media] append_history failed: {exc}")
+        self._settle_attempt(snap, origin)
         for callback in callbacks:
             try: callback(snap)
             except Exception: log.exception("jobFinished subscriber failed")
+
+    def _settle_attempt(self, snap: dict, cancel_origin: str) -> None:
+        """Write the job's outcome into its session attempt (D-24); never raises."""
+        if not snap.get("attempt_id"):
+            return
+        status = {"done": "done", "error": "failed", "cancelled": "cancelled"}[snap["status"]]
+        error = None
+        if status == "failed":
+            error = snap["error"]
+        elif status == "cancelled":
+            error = dict(CANCEL_ERRORS[cancel_origin])
+        try:
+            settled = self._image_sessions.settle_attempt(
+                snap["session_id"], snap["attempt_id"], status, snap["output"], error)
+            if not settled:
+                log.info("image attempt %s not settled: its session is gone", snap["attempt_id"])
+        except Exception:
+            log.exception("settle_attempt failed")
 
     def _history_entry(self, snap: dict) -> dict:
         error = snap["error"]
         entry = {"kind": snap["kind"], "status": {"done": "done", "error": "failed", "cancelled": "cancelled"}[snap["status"]],
             "params": snap["params"], "output": snap["output"], "duration_s": snap["finished_at"] - snap["started_at"],
             "error": f"{error['code']}: {error['message']}" if error else None}
+        if snap["kind"] == "image":
+            entry.update(session_id=snap.get("session_id"), attempt_id=snap.get("attempt_id"))
         if snap["kind"] == "music" and snap["status"] == "done" and snap["output"]:
             entry["audio_seconds"] = wav_seconds(Path(self._resolve_paths().outputs_root) / snap["output"])
         return entry
 
     def cancel_job(self) -> dict:
+        return self._cancel("user")
+
+    def _cancel(self, origin: str) -> dict:
         with self._lock:
             if self._state["status"] != "running": raise MediaError("no_running_job", "no media job is running", 409)
+            if not self._cancel_requested: self._cancel_origin = origin
             self._cancel_requested = True; handle = self._handle
         handle.terminate()
         deadline = time.monotonic() + self._term_grace_s
@@ -248,21 +326,21 @@ class MediaService:
         return self.job_status()
 
     def close(self) -> None:
-        """Cancel any running job on shutdown so its worker never outlives the service."""
+        """Cancel any running job on shutdown so its worker never outlives the service.
+
+        Waits for the worker's finalize too, not just the status flip: the
+        session attempt is settled there (as `cancelled_on_quit`), and returning
+        earlier would let the process exit with the attempt still running."""
         with self._lock:
             running = self._state["status"] == "running"
-        if not running:
-            return
-        try:
-            self.cancel_job()
-        except MediaError:
-            return  # finished between the check and the cancel
-        deadline = time.monotonic() + self._term_grace_s + 2.0
-        while time.monotonic() < deadline:
-            with self._lock:
-                if self._state["status"] != "running":
-                    return
-            time.sleep(0.02)
+            worker = self._worker_thread
+        if running:
+            try:
+                self._cancel("quit")
+            except MediaError:
+                pass  # finished between the check and the cancel
+        if worker is not None and worker is not threading.current_thread():
+            worker.join(self._term_grace_s + 2.0)
 
     def job_status(self, *, log_from: int = 0, job_id: int | None = None) -> dict:
         with self._lock:

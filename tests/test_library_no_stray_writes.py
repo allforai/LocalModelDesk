@@ -13,6 +13,7 @@ class FakeRoots:
         self.data_root = base
         self.history_path = base / "history.jsonl"
         self.sessions_dir = base / "sessions"
+        self.image_sessions_dir = base / "image-sessions"
         self.outputs_root = base / "outputs"
 
 

@@ -53,9 +53,10 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
     def start_image(body, _query):
         payload = body or {}
         return _run(lambda: service.start_image_job(
+            session_id=payload.get("session_id"),
             prompt=payload.get("prompt"), width=payload.get("width", 1024),
             height=payload.get("height", 1024), steps=payload.get("steps", 40),
-            seed=payload.get("seed", 42), force=payload.get("force", False)))
+            seed=payload.get("seed"), force=payload.get("force", False)))
 
     def status(_body, query):
         def call():
