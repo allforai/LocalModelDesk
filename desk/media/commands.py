@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Sequence
 
 
-H3_BUDGET_GB = 70
+H3_BUDGET_GB = 40
 
 
 def build_image_command(image_python: Path, image_cli: Path, model_root: Path, *,

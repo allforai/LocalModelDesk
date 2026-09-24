@@ -5,7 +5,10 @@ from desk.media.commands import H3_BUDGET_GB, build_h3_command, build_music_comm
 
 
 def test_h3_budget_constant():
-    assert H3_BUDGET_GB == 70
+    # mlx_h3 pins the whole budget as wired memory and refuses to start when it exceeds the
+    # system's GPU working-set limit. 70 GiB held that much for jobs measured at 27–34 GiB and
+    # could not start on 64 GiB machines (#15's reporter edited it to 48); 40 runs fine.
+    assert H3_BUDGET_GB == 40
 
 
 def test_build_h3_command_full_argv_equality():
@@ -32,7 +35,7 @@ def test_build_h3_command_full_argv_equality():
         "--height", "288",
         "--frames", "73",
         "--steps", "10",
-        "--budget", "70",
+        "--budget", "40",
         "--output", "/out/h3-20260831-101500.mp4",
     ]
 
