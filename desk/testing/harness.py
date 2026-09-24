@@ -184,6 +184,7 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, skills, a
             "config_path": str(roots.config_path),
             "logs_dir": str(roots.logs_dir),
             "sessions_dir": str(roots.sessions_dir),
+            "image_sessions_dir": str(roots.image_sessions_dir),
             "history_path": str(roots.history_path),
             "models_root": str(roots.models_root),
             "outputs_root": str(roots.outputs_root),
@@ -265,14 +266,20 @@ def launch_test_harness(
     download_control: DownloadControl | None = None,
     memory_script: MemoryScript | None = None,
     budget: dict | None = None,
+    image_runtime: bool = False,
 ) -> TestHarness:
     """Launch real desk services against seeded files and deterministic fakes.
 
     Both HTTP listeners use port ``0`` so parallel test workers never contend
     for a fixed port.  Call :meth:`TestHarness.close` when the test is done.
+
+    Image jobs need ``model_states={"qwen-image": "present", ...}`` and
+    ``image_runtime=True``; the fake executor then writes a small PNG. Launching
+    again on the same ``tmp_path`` after ``close()`` reuses the data root —
+    image sessions, history and outputs survive, as across an app restart.
     """
     tmp_path = Path(tmp_path)
-    resources_root = build_bundle_resources(tmp_path)
+    resources_root = build_bundle_resources(tmp_path, image_runtime=image_runtime)
     data_root = tmp_path / "data"
     initial_roots = paths.resolve_paths(data_root=data_root, resources_root=resources_root)
     seeded = seed_models(initial_roots.models_root, list_catalog(), model_states)
@@ -337,6 +344,7 @@ def launch_test_harness(
         list_catalog=resources.list_catalog,
         append_history=library.append_history,
         executor=FakeMediaExecutor(media_script),
+        image_sessions=library.image_sessions,
         clock=clock,
     )
     app = DeskApp("127.0.0.1", 0)

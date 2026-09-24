@@ -1,9 +1,10 @@
-"""Local persistence for outputs, job history, and chat sessions."""
+"""Local persistence for outputs, job history, chat sessions and image sessions."""
 import os
 import tempfile
 
 from .errors import LibraryError, NotFoundError, ValidationError
 from .history import HistoryStore
+from .image_sessions import ImageSessionStore
 from .outputs import OutputsStore
 from .sessions import SessionStore
 
@@ -18,6 +19,9 @@ class LibraryService:
         self.history = HistoryStore(roots.history_path)
         self.outputs = OutputsStore(roots.outputs_root, self.history)
         self.sessions = SessionStore(roots.sessions_dir)
+        self.image_sessions = ImageSessionStore(roots.image_sessions_dir, roots.outputs_root)
+        # 上次进程被杀时还在跑的尝试不会再有人落定；启动时一次性改成「应用在生成途中关闭」。
+        self.image_sessions.recover_running()
 
     def append_history(self, entry: dict) -> dict:
         return self.history.append(entry)
@@ -44,6 +48,21 @@ class LibraryService:
 
     def delete_chat_session(self, session_id: str) -> None:
         self.sessions.delete(session_id)
+
+    def list_image_sessions(self) -> list[dict]:
+        return self.image_sessions.list()
+
+    def create_image_session(self) -> dict:
+        return self.image_sessions.create()
+
+    def get_image_session(self, session_id: str) -> dict:
+        return self.image_sessions.get(session_id)
+
+    def rename_image_session(self, session_id: str, title) -> dict:
+        return self.image_sessions.rename(session_id, title)
+
+    def delete_image_session(self, session_id: str) -> None:
+        self.image_sessions.delete(session_id)
 
 
 def _adopt_legacy_history(roots) -> None:

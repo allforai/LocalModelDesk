@@ -56,6 +56,12 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["createChatSession", [{ title: "Draft" }], "/api/sessions", "POST", { title: "Draft" }],
     ["updateChatSession", ["a/b", { title: "Named" }], "/api/sessions/a%2Fb", "PATCH", { title: "Named" }],
     ["deleteChatSession", ["a/b"], "/api/sessions/a%2Fb", "DELETE"],
+    ["listImageSessions", [], "/api/image-sessions", "GET"],
+    ["createImageSession", [], "/api/image-sessions", "POST", {}],
+    ["getImageSession", ["ab/c"], "/api/image-sessions/ab%2Fc", "GET"],
+    ["renameImageSession", ["s1", "橘猫"], "/api/image-sessions/s1", "PATCH", { title: "橘猫" }],
+    ["deleteImageSession", ["s1"], "/api/image-sessions/s1", "DELETE"],
+    ["startImageJob", [{ session_id: "s1", prompt: "cat" }], "/api/media/image", "POST", { session_id: "s1", prompt: "cat" }],
     ["gatewayConfig", [], "/api/gateway/config", "GET"],
     ["gatewayConfig", [true], "/api/gateway/config", "POST"],
     ["listSkills", [], "/api/skills", "GET"],
@@ -70,6 +76,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     "llmStatus", "chatStream", "promptAssist", "startVideoJob", "startMusicJob", "startImageJob", "capabilities", "cancelJob", "jobStatus", "listOutputs",
     "serveOutput", "revealOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
     "listSkills", "rescanSkills", "previewSkill", "installSkill", "discardSkill",
+    "listImageSessions", "createImageSession", "getImageSession", "renameImageSession", "deleteImageSession",
   ];
   assert.deepEqual(Object.keys(api).sort(), [...names, "uploadMediaInput", "DeskApiError"].sort());
   await withFetch({}, async (calls) => {
@@ -121,6 +128,18 @@ test("DeskApiError 保留 HTTP 状态与服务端 error 信封", async () => {
       assert.equal(error.code, "media_busy");
       assert.equal(error.message, "媒体作业进行中");
       assert.deepEqual(error.detail, { holder: "video" });
+      return true;
+    });
+  });
+});
+
+test("library 路由的字符串错误 {error: \"原因\"} 作为 message 透出，保留 HTTP 状态", async () => {
+  await withFetch({ ok: false, status: 404, statusText: "Not Found", body: { error: "会话不存在：abc" } }, async () => {
+    await assert.rejects(api.getImageSession("abc"), (error) => {
+      assert.ok(error instanceof api.DeskApiError);
+      assert.equal(error.status, 404);
+      assert.equal(error.code, "http_404");
+      assert.equal(error.message, "会话不存在：abc");
       return true;
     });
   });

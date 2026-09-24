@@ -69,6 +69,7 @@ def get_paths(_req) -> dict:
         "config_path": str(roots.config_path),
         "logs_dir": str(roots.logs_dir),
         "sessions_dir": str(roots.sessions_dir),
+        "image_sessions_dir": str(roots.image_sessions_dir),
         "history_path": str(roots.history_path),
         "models_root": str(roots.models_root),
         "outputs_root": str(roots.outputs_root),

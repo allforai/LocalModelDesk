@@ -238,7 +238,7 @@ test("没有成品时显示引导语", async (t) => {
 test("图片成品用 img 预览并支持全部参数回填", async (t) => {
   const previous = globalThis.fetch; t.after(() => { globalThis.fetch = previous; });
   const params = { prompt: "橘猫", width: 1024, height: 768, steps: 40, seed: 0 };
-  const { root, parts } = makeLibrary([{ name: "cat.png", kind: "image", bytes: 10 }], [{ kind: "image", status: "done", output: "cat.png", params }]);
+  const { root, parts } = makeLibrary([{ name: "cat.png", kind: "image", bytes: 10 }], [{ kind: "image", status: "done", output: "cat.png", params, session_id: "s1", attempt_id: "a1" }]);
   const fills = [];
   await createLibraryPane(root, { applyFill: (p) => fills.push(p) }).refresh();
   const row = parts["lib-list"].children[0];
@@ -248,7 +248,7 @@ test("图片成品用 img 预览并支持全部参数回填", async (t) => {
   assert.equal(img.alt, "橘猫");
   assert.match(parts["lib-player"].children[1].textContent, /正在预览/);
   find(row, (e) => e.tagName === "button" && e.textContent === "回填参数").click();
-  assert.deepEqual(fills, [{ pane: "image", fields: params }]);
+  assert.deepEqual(fills, [{ pane: "image", session_id: "s1", attempt_id: "a1", fields: params }]);
   assert.match(find(row, (e) => e.className === "lib-meta").textContent, /1024×768.*40步.*种子 0/);
 });
 

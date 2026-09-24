@@ -65,6 +65,7 @@ def test_derived_paths_and_config_roots(fake_repo, data_root):
     roots = paths_mod.resolve_paths(resources_root=fake_repo)
     assert roots.logs_dir == roots.data_root / "logs"
     assert roots.sessions_dir == roots.data_root / "sessions"
+    assert roots.image_sessions_dir == roots.data_root / "image-sessions"
     assert roots.history_path == roots.data_root / "history.jsonl"
     assert roots.models_root == roots.data_root / "models"
     assert roots.outputs_root == roots.data_root / "outputs"

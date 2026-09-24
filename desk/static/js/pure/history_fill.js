@@ -28,10 +28,14 @@ export function fillPlan(entry) {
     };
   }
   if (entry.kind === "image") {
-    return { pane: "image", fields: {
-      prompt: params.prompt ?? "", width: params.width ?? 1024, height: params.height ?? 1024,
-      steps: params.steps ?? 40, seed: params.seed ?? 42,
-    } };
+    // 设计 D-93：带上会话与尝试，素材库回填据此回到原会话（D-94）；种子缺失为 null，不再补默认值。
+    return {
+      pane: "image", session_id: entry.session_id ?? null, attempt_id: entry.attempt_id ?? null,
+      fields: {
+        prompt: params.prompt ?? "", width: params.width ?? 1024, height: params.height ?? 1024,
+        steps: params.steps ?? 40, seed: Number.isInteger(params.seed) ? params.seed : null,
+      },
+    };
   }
   return null;
 }

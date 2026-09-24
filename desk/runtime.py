@@ -203,6 +203,7 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
         list_catalog=resources.list_catalog,
         append_history=library.append_history,
         executor=SubprocessExecutor(),
+        image_sessions=library.image_sessions,
     )
     gateway = GatewayService(DeskGatewayBackend(llm, arbiter), _gateway_config_reader())
     gateway.on_rollback = lambda cfg: config.update_config(roots, gateway=cfg)

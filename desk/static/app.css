@@ -118,6 +118,7 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .res-row>*,.lib-row>*{grid-column:1}
 .res-row>.res-actions,.lib-row>.lib-actions{grid-column:2;grid-row:1/-1;margin-top:0}
 [data-res-list],[data-lib-list]{margin-top:16px}
+[data-lib-player]:not(:empty){margin-top:16px}
 .res-name{margin:0;font-size:16px;font-weight:600}
 .res-meta,.lib-meta{color:var(--muted);font-size:13px;margin:4px 0 0}
 .res-actions,.lib-actions{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
@@ -136,8 +137,8 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 /* empty states (plan task 10) */
 .empty{color:var(--muted);padding:24px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius-card)}
 /* 8. media panes: form left, job right */
-#pane-video,#pane-music,#pane-image{display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:var(--margin);align-items:start}
-@media (max-width:899px){#pane-video,#pane-music,#pane-image{grid-template-columns:1fr}}
+#pane-video,#pane-music{display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:var(--margin);align-items:start}
+@media (max-width:899px){#pane-video,#pane-music{grid-template-columns:1fr}}
 .image-params{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .image-params input{width:100%;box-sizing:border-box}
 [data-job-player] img,[data-lib-player] img{display:block;max-width:100%;max-height:70vh;object-fit:contain;border-radius:var(--radius);background:var(--panel)}
@@ -171,6 +172,8 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .dialog{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:20px;min-width:320px;max-width:480px}
 .dialog h3{font-size:20px;margin:0 0 8px}.dialog p{margin:0 0 16px}
 .dialog-actions{display:flex;justify-content:flex-end;gap:8px}
+/* 确认框打开时焦点由脚本放在「取消」上（D-90）；:focus-visible 对脚本聚焦不一定成立，所以用 :focus 画出焦点环。 */
+.dialog-actions button:focus{outline:2px solid var(--accent);outline-offset:2px}
 /* 装 skill 的确认弹层要放得下一整篇 SKILL.md 正文，480px 太窄（R-skill-11）。 */
 .dialog-wide{max-width:640px;width:calc(100% - 48px)}
 .skill-install-body{max-height:320px;overflow-y:auto;white-space:pre-wrap;border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13px;background:var(--bg);margin:0 0 16px}
@@ -205,3 +208,79 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 ::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 ::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+
+/* 12. image sessions (设计 §7.1)：与 #pane-chat 同构——左栏会话列表，右侧时间线 + 底部输入区 */
+#pane-image{display:flex;gap:var(--margin);height:calc(100vh - 94px);min-height:0;overflow:hidden}
+.image-main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.image-head,.image-timeline,.image-composer{max-width:var(--chat-col);width:calc(100% - 48px);margin:0 auto}
+.image-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;flex:none}
+.image-head h2{margin:0}
+.image-model-note{font-size:13px;color:var(--muted)}.image-model-note summary{cursor:pointer}
+.image-model-note[open]{flex-basis:100%}.image-model-note p{margin:4px 0 0}
+.image-timeline{flex:1;min-height:0;overflow:auto;padding:16px 4px 4px}
+.image-attempts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.image-empty{height:100%;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;color:var(--muted);padding:24px}
+.image-empty p{margin:0;max-width:36em}.image-empty-title{color:var(--text);font-size:16px;font-weight:600}
+.keep-together{white-space:nowrap}
+.attempt{padding:12px;cursor:pointer;display:flex;flex-direction:column;gap:12px}
+.attempt.selected,.attempt-running{border-color:var(--accent);cursor:default}
+.attempt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.attempt-row{display:flex;gap:12px;align-items:flex-start;min-width:0}
+.attempt-thumb{flex:none;width:96px;height:96px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.attempt-thumb img{width:100%;height:100%;object-fit:contain;display:block}
+.attempt-icon{border:1px solid var(--border);background:var(--bg)}
+.attempt-icon .icon{width:28px;height:28px}
+.tone-danger{color:var(--danger)}.tone-muted{color:var(--muted)}.tone-busy{color:var(--busy)}
+.attempt-icon.tone-danger{border-color:rgba(229,83,75,.5);background:rgba(229,83,75,.08)}
+.attempt-summary{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.attempt-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.attempt-label{font-weight:600}
+.attempt-running .attempt-label{color:var(--busy)}
+.attempt-badge.tone-danger{background:rgba(229,83,75,.15)}.attempt-badge.tone-muted{background:rgba(154,163,178,.15)}
+.attempt-prompt{margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.attempt-spec,.attempt-reason-sub{margin:0;font-size:13px;color:var(--muted)}
+.attempt-reason{margin:0;font-weight:600}
+.attempt-detail{display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-width:0}
+.attempt-image{display:block;max-width:100%;max-height:60vh;object-fit:contain;border-radius:var(--radius);background:var(--bg)}
+.attempt-full-prompt{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.attempt-advanced,.attempt-error-details{font-size:13px;color:var(--muted)}
+.attempt-advanced summary,.attempt-error-details summary,.image-advanced summary{cursor:pointer}
+.attempt-error-details pre{white-space:pre-wrap;margin:4px 0 0;font:12px ui-monospace,Menlo,monospace}
+.attempt-params{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:2px 12px;margin:6px 0 0}
+.attempt-params dt{color:var(--muted)}.attempt-params dd{margin:0;color:var(--text)}
+.attempt-actions{display:flex;flex-wrap:wrap;gap:8px}
+.attempt-actions button,.image-input-row button,.image-hint button{white-space:nowrap}
+.attempt-action-hint{margin:0}
+.attempt-action-hint:empty{display:none}
+/* 展开的 done 卡片：完整提示词就在大图下面，标题行不再重复摘要（§7.1 草图；B-01：把高度让给大图）。
+   失败、取消、文件不在的卡片没有大图，摘要照旧。 */
+.attempt-done[aria-expanded=true] .attempt-prompt{display:none}
+/* 同理，标题行「第 N 次 · HH:MM」与「宽×高 · N 步」并在一行（放不下再换行），展开区内的间距收紧一些 */
+.attempt-done[aria-expanded=true] .attempt-summary{flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.attempt-progress{width:100%;height:6px;accent-color:var(--busy)}
+.attempt-log{width:100%}
+.attempt-log pre{max-height:200px;overflow:auto;white-space:pre-wrap;font:13px ui-monospace,Menlo,monospace;color:var(--muted);margin:8px 0 0}
+.image-composer{flex:none;display:flex;flex-direction:column;gap:8px;padding-top:12px}
+.image-composer>p{margin:0}
+.refine-chip{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;padding:2px 4px 2px 12px;border:1px solid var(--accent);border-radius:999px;font-size:13px;color:var(--accent);max-width:100%}
+.refine-chip button{padding:2px 6px}
+.image-input-row{display:flex;gap:var(--gap);align-items:flex-end}
+.image-input-row textarea{flex:1;min-width:0;background:var(--panel);border-radius:16px;padding:12px 16px}
+.image-advanced{font-size:13px;color:var(--muted)}
+.image-advanced .image-params{margin-top:8px}
+.image-advanced label{display:grid;gap:4px}
+.image-advanced input{color:var(--text)}
+.image-advanced>p{margin:8px 0 0}
+.image-hint{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.session-title-row{grid-column:1;display:flex;align-items:center;gap:6px;min-width:0}
+.session-title-row .session-title{flex:1;min-width:0}
+.session-running{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--busy)}
+.session-running::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--busy)}
+.session-rename{width:100%;min-width:0;grid-column:1/-1}
+.sessions-state{padding:8px 4px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.sessions-state p{margin:0}
+/* 「新会话」按钮与第一项之间留出与列表项相同的间距（N-03） */
+#pane-image .sessions ul{margin-top:12px}
+/* 图片会话项：改名/删除按钮不悬停时不占宽度，标题与「生成中」标记用满整行；悬停或聚焦时按钮仍占自己的一列，不压标题（N-02） */
+.image-session .session-actions{display:none}
+.image-session:hover .session-actions,.image-session:focus-within .session-actions{display:flex}

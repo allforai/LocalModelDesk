@@ -24,7 +24,7 @@ from .scripts import (
     ScriptStall,
     WRITE_OUTPUT,
 )
-from .seed import TINY_MP4, TINY_WAV
+from .seed import TINY_MP4, TINY_PNG, TINY_WAV, gradient_png
 
 
 FIXED_CLOCK_AT = 1_756_600_000.0
@@ -159,9 +159,10 @@ class FakeLlmBackend:
 
 
 class FakeMediaHandle:
-    def __init__(self, steps: list, output_path: Path):
+    def __init__(self, steps: list, output_path: Path, png: bytes = TINY_PNG):
         self._steps = steps
         self._output_path = output_path
+        self._png = png
         self._code: int | None = None
         self._cancel = threading.Event()
         self.terminated = False
@@ -174,7 +175,7 @@ class FakeMediaHandle:
                 yield step.text
             elif step is WRITE_OUTPUT:
                 self._output_path.parent.mkdir(parents=True, exist_ok=True)
-                output = TINY_MP4 if self._output_path.suffix == ".mp4" else TINY_WAV
+                output = {".mp4": TINY_MP4, ".png": self._png}.get(self._output_path.suffix, TINY_WAV)
                 self._output_path.write_bytes(output)
             elif isinstance(step, Exit):
                 self._code = step.code
@@ -207,6 +208,18 @@ class FakeMediaHandle:
             self._code = -9
 
 
+def _declared_png(argv: list[str]) -> bytes:
+    """An image job's PNG at the --width/--height it was started with (image_cli's own flags)."""
+    try:
+        width = int(argv[argv.index("--width") + 1])
+        height = int(argv[argv.index("--height") + 1])
+    except (ValueError, IndexError):
+        return TINY_PNG
+    if not (0 < width <= 4096 and 0 < height <= 4096):
+        return TINY_PNG
+    return gradient_png(width, height)
+
+
 class FakeMediaExecutor:
     """Media executor that records argv and produces scripted tiny artifacts."""
 
@@ -217,7 +230,7 @@ class FakeMediaExecutor:
         argv = list(cmd)
         self.script.spawned_argvs.append(argv)
         output_path = Path(argv[argv.index("--output") + 1])
-        return FakeMediaHandle(self.script.next_job(), output_path)
+        return FakeMediaHandle(self.script.next_job(), output_path, _declared_png(argv))
 
 
 class FakeDownloadHandle:

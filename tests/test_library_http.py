@@ -12,6 +12,7 @@ class FakeRoots:
         self.data_root = base
         self.history_path = base / "history.jsonl"
         self.sessions_dir = base / "sessions"
+        self.image_sessions_dir = base / "image-sessions"
         self.outputs_root = base / "outputs"
 
 
@@ -82,6 +83,11 @@ def test_route_table_covers_module_contract(tmp_path):
         ("POST", "/api/sessions"),
         ("PATCH", "/api/sessions/{id}"),
         ("DELETE", "/api/sessions/{id}"),
+        ("GET", "/api/image-sessions"),
+        ("POST", "/api/image-sessions"),
+        ("GET", "/api/image-sessions/{id}"),
+        ("PATCH", "/api/image-sessions/{id}"),
+        ("DELETE", "/api/image-sessions/{id}"),
     }
 
 

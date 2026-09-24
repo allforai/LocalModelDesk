@@ -130,6 +130,39 @@ def handle_delete_session(service, request: LibRequest) -> Response:
     return _json_response(200, {"deleted": session_id})
 
 
+def _only_keys(payload: dict, allowed: set) -> None:
+    unknown = set(payload) - allowed
+    if unknown:
+        raise ValidationError(f"不认识的字段：{sorted(unknown)}")
+
+
+def handle_list_image_sessions(service, request: LibRequest) -> Response:
+    return _json_response(200, service.list_image_sessions())
+
+
+def handle_create_image_session(service, request: LibRequest) -> Response:
+    _only_keys(_json_body(request) if request.body else {}, set())
+    return _json_response(200, service.create_image_session())
+
+
+def handle_get_image_session(service, request: LibRequest) -> Response:
+    return _json_response(200, service.get_image_session(request.path_params["id"]))
+
+
+def handle_rename_image_session(service, request: LibRequest) -> Response:
+    payload = _json_body(request)
+    _only_keys(payload, {"title"})
+    return _json_response(
+        200, service.rename_image_session(request.path_params["id"], payload.get("title"))
+    )
+
+
+def handle_delete_image_session(service, request: LibRequest) -> Response:
+    session_id = request.path_params["id"]
+    service.delete_image_session(session_id)
+    return _json_response(200, {"deleted": session_id})
+
+
 def dispatch(service, handler, request: LibRequest) -> Response:
     """Map expected library errors; let unexpected failures reach the host."""
     try:
@@ -159,4 +192,9 @@ def routes(service) -> list[tuple[str, str, object]]:
         ("POST", "/api/sessions", bind(handle_create_session)),
         ("PATCH", "/api/sessions/{id}", bind(handle_update_session)),
         ("DELETE", "/api/sessions/{id}", bind(handle_delete_session)),
+        ("GET", "/api/image-sessions", bind(handle_list_image_sessions)),
+        ("POST", "/api/image-sessions", bind(handle_create_image_session)),
+        ("GET", "/api/image-sessions/{id}", bind(handle_get_image_session)),
+        ("PATCH", "/api/image-sessions/{id}", bind(handle_rename_image_session)),
+        ("DELETE", "/api/image-sessions/{id}", bind(handle_delete_image_session)),
     ]

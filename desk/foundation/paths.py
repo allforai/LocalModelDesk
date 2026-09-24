@@ -50,6 +50,7 @@ class PathRoots:
     config_path: Path
     logs_dir: Path
     sessions_dir: Path
+    image_sessions_dir: Path
     history_path: Path
     models_root: Path
     outputs_root: Path
@@ -145,6 +146,7 @@ def resolve_paths(*, data_root=None, resources_root=None, default_config_on_corr
         config_path=static.config_path,
         logs_dir=static.data_root / "logs",
         sessions_dir=static.data_root / "sessions",
+        image_sessions_dir=static.data_root / "image-sessions",
         history_path=static.data_root / "history.jsonl",
         models_root=config.models_root,
         outputs_root=config.outputs_root,
