@@ -99,10 +99,10 @@ function fakeBackend() {
     const method = options.method ?? "GET";
     const body = options.body ? JSON.parse(options.body) : undefined;
     state.calls.push({ url, method, body });
-    if (url === "/api/image-sessions" && method === "GET")
+    if (url === "/api/media-sessions/image" && method === "GET")
       return reply(200, [...state.sessions].sort((a, b) => b.updated.localeCompare(a.updated)).map(summary));
-    if (url === "/api/image-sessions" && method === "POST") return reply(200, state.addSession());
-    const one = url.match(/^\/api\/image-sessions\/(\w+)$/);
+    if (url === "/api/media-sessions/image" && method === "POST") return reply(200, state.addSession());
+    const one = url.match(/^\/api\/media-sessions\/image\/(\w+)$/);
     if (one) {
       const s = state.sessions.find((item) => item.id === one[1]);
       if (!s) return reply(404, { error: `会话不存在：${one[1]}` });
@@ -411,11 +411,11 @@ test("坏文件会话：只有删除按钮，点开说明损坏，「生成图�
     backend.addSession("正常", []);
     const inner = backend.fetch;
     backend.fetch = async (url, options = {}) => {
-      if (url === "/api/image-sessions" && (options.method ?? "GET") === "GET") {
+      if (url === "/api/media-sessions/image" && (options.method ?? "GET") === "GET") {
         const list = await (await inner(url, options)).json();
         return { ok: true, status: 200, json: async () => [...list, { id: "deadbeef", corrupt: true }] };
       }
-      if (url === "/api/image-sessions/deadbeef") return { ok: false, status: 400, statusText: "", json: async () => ({ error: "会话文件已损坏，无法读取" }) };
+      if (url === "/api/media-sessions/image/deadbeef") return { ok: false, status: 400, statusText: "", json: async () => ({ error: "会话文件已损坏，无法读取" }) };
       return inner(url, options);
     };
     globalThis.fetch = backend.fetch;
@@ -436,7 +436,7 @@ test("会话列表读不出来：说明原因并给重试；「生成图片」�
   const previous = globalThis.fetch;
   let fail = true;
   const backend = fakeBackend();
-  globalThis.fetch = async (url, options) => (fail && url === "/api/image-sessions"
+  globalThis.fetch = async (url, options) => (fail && url === "/api/media-sessions/image"
     ? { ok: false, status: 500, statusText: "Internal Server Error", json: async () => ({ error: "磁盘读不出来" }) }
     : backend.fetch(url, options));
   try {

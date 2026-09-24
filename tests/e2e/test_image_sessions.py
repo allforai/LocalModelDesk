@@ -1,7 +1,7 @@
 """Verification of image sessions against the confirmed acceptance (image-sessions rev 1).
 
 Falsification pass owned by image-session-verify. Each test states the acceptance it tries to break
-and asserts on what the backend settled (GET /api/image-sessions/{id}, /api/history, /api/outputs),
+and asserts on what the backend settled (GET /api/media-sessions/image/{id}, /api/history, /api/outputs),
 not on what the form happened to hold. Runs against launch_test_harness — real DeskApp,
 LibraryService, MediaSessionStore, MediaService and desk/static in real Chromium — with the scripted
 media executor writing a small PNG instead of running Qwen-Image; the real-model journey is proved
@@ -72,7 +72,7 @@ def _get(page, harness, path):
 
 
 def _session(page, harness, session_id):
-    return _get(page, harness, f"/api/image-sessions/{session_id}")
+    return _get(page, harness, f"/api/media-sessions/image/{session_id}")
 
 
 def _timeline_snapshot(pane):
@@ -315,8 +315,8 @@ def test_ac5_deleting_a_session_keeps_its_images_in_the_library(page, tmp_path):
         expect(pane.locator(f"{SESSION_ITEMS}[data-session-id='{doomed}']")).to_have_count(0)
         expect(pane.locator(CURRENT_ITEM)).to_have_attribute("data-session-id", keeper)
         expect(_cards(pane)).to_have_count(1)
-        assert page.request.get(f"{harness.base_url}/api/image-sessions/{doomed}").status == 404
-        assert [s["id"] for s in _get(page, harness, "/api/image-sessions")] == [keeper]
+        assert page.request.get(f"{harness.base_url}/api/media-sessions/image/{doomed}").status == 404
+        assert [s["id"] for s in _get(page, harness, "/api/media-sessions/image")] == [keeper]
         assert _get(page, harness, "/api/outputs") == outputs_before
         assert _get(page, harness, "/api/history") == history_before
         _check_state(page, "verify-after-delete", harness=harness)
@@ -396,7 +396,7 @@ def test_deleting_a_session_while_it_generates_sends_the_image_to_the_library_on
         output = entry["output"]
         assert output and output in [o["name"] for o in _get(page, harness, "/api/outputs")], entry
         assert page.request.get(f"{harness.base_url}/api/outputs/{output}").status == 200
-        for summary in _get(page, harness, "/api/image-sessions"):
+        for summary in _get(page, harness, "/api/media-sessions/image"):
             attempts = _session(page, harness, summary["id"])["attempts"]
             assert all(a["params"]["prompt"] != "生成中被删的会话" for a in attempts)
 
@@ -477,12 +477,12 @@ def test_ac3_restart_on_the_same_data_root_keeps_sessions_attempts_and_images(pa
         expect(pane.locator(SESSION_ITEMS)).to_have_count(2)
         _generate(pane, "重启：乙一")
         _settled(pane, 1)
-        listing = _get(page, harness, "/api/image-sessions")
+        listing = _get(page, harness, "/api/media-sessions/image")
         full = {s["id"]: _session(page, harness, s["id"]) for s in listing}
 
     with _harness(tmp_path) as harness:
         pane = _open(page, harness)
-        assert _get(page, harness, "/api/image-sessions") == listing
+        assert _get(page, harness, "/api/media-sessions/image") == listing
         for session_id, before in full.items():
             assert _session(page, harness, session_id) == before
             pane.locator(f"{SESSION_ITEMS}[data-session-id='{session_id}']").click()
@@ -511,7 +511,7 @@ def test_first_entry_without_sessions_creates_exactly_one(page, tmp_path):
             assert all(n["lines"] == 1 for n in names), (width, names)
         page.reload()
         expect(pane.locator(SESSION_ITEMS)).to_have_count(1)
-        assert len(_get(page, harness, "/api/image-sessions")) == 1
+        assert len(_get(page, harness, "/api/media-sessions/image")) == 1
 
 
 def test_runtime_unavailable_blocks_generation_with_its_reason(page, tmp_path):

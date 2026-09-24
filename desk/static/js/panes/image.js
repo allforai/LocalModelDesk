@@ -13,6 +13,7 @@ import {
 } from "../pure/image_session.js";
 
 export function createImagePane(root, ctx = {}) {
+  const KIND = "image";
   const doc = root.ownerDocument;
   const q = (name) => root.querySelector(`[data-image-${name}]`);
   const els = {
@@ -121,7 +122,7 @@ export function createImagePane(root, ctx = {}) {
     renaming = true;
     beginRenameItem(doc, li, summary, async (title) => {
       if (title && title !== summary.title) {
-        try { await api.renameImageSession(summary.id, title); }
+        try { await api.renameMediaSession(KIND, summary.id, title); }
         catch (error) { setError(error.message); }
       }
       renaming = false;
@@ -134,14 +135,14 @@ export function createImagePane(root, ctx = {}) {
     const go = await confirm(doc, { title: "删除会话", message: deleteMessage(summary), confirmLabel: "删除" });
     if (!go) return;
     try {
-      await api.deleteImageSession(summary.id);
+      await api.deleteMediaSession(KIND, summary.id);
     } catch (error) { setError(error.message); return; }
     if (summary.id === currentId) { currentId = null; current = null; currentCorrupt = false; }
     await refresh();
   }
 
   async function reloadList() {
-    try { sessions = orderSessions(await api.listImageSessions(), freshId); }
+    try { sessions = orderSessions(await api.listMediaSessions(KIND), freshId); }
     catch { return; } // 后台刷新失败时保留已显示的列表，下次轮询再取
     renderList(); updateAvailability();
   }
@@ -306,7 +307,7 @@ export function createImagePane(root, ctx = {}) {
   async function loadSession(id, { scroll = false } = {}) {
     const token = ++viewToken;
     try {
-      const session = await api.getImageSession(id);
+      const session = await api.getMediaSession(KIND, id);
       if (token !== viewToken || id !== currentId) return "stale";
       const before = current?.id === id ? (current.attempts ?? []).map((a) => a.status).join() : null;
       const after = (session.attempts ?? []).map((a) => a.status).join();
@@ -354,8 +355,8 @@ export function createImagePane(root, ctx = {}) {
       if (!loadedOnce) { listState = "loading"; renderList(); updateAvailability(); }
       try {
         for (let round = 0; round < 3; round += 1) {
-          let list = await api.listImageSessions();
-          if (!list.length) { await api.createImageSession(); list = await api.listImageSessions(); }
+          let list = await api.listMediaSessions(KIND);
+          if (!list.length) { await api.createMediaSession(KIND); list = await api.listMediaSessions(KIND); }
           sessions = orderSessions(list, freshId); listState = "ready"; loadedOnce = true;
           switchTo(pickCurrent(sessions, currentId));
           if (!currentId) return;
@@ -377,9 +378,9 @@ export function createImagePane(root, ctx = {}) {
   async function createSession() {
     setError("");
     try {
-      const created = await api.createImageSession();
+      const created = await api.createMediaSession(KIND);
       freshId = created.id;
-      sessions = orderSessions(await api.listImageSessions(), freshId);
+      sessions = orderSessions(await api.listMediaSessions(KIND), freshId);
       listState = "ready"; loadedOnce = true;
       switchTo(created.id);
       await loadSession(created.id, { scroll: true });
@@ -507,7 +508,7 @@ export function createImagePane(root, ctx = {}) {
     await refresh();
     if (plan?.session_id && plan.attempt_id) {
       try {
-        const session = await api.getImageSession(plan.session_id);
+        const session = await api.getMediaSession(KIND, plan.session_id);
         const index = (session.attempts ?? []).findIndex((a) => a.id === plan.attempt_id);
         if (index >= 0) {
           setError("");

@@ -83,11 +83,11 @@ def test_route_table_covers_module_contract(tmp_path):
         ("POST", "/api/sessions"),
         ("PATCH", "/api/sessions/{id}"),
         ("DELETE", "/api/sessions/{id}"),
-        ("GET", "/api/image-sessions"),
-        ("POST", "/api/image-sessions"),
-        ("GET", "/api/image-sessions/{id}"),
-        ("PATCH", "/api/image-sessions/{id}"),
-        ("DELETE", "/api/image-sessions/{id}"),
+        ("GET", "/api/media-sessions/{kind}"),
+        ("POST", "/api/media-sessions/{kind}"),
+        ("GET", "/api/media-sessions/{kind}/{id}"),
+        ("PATCH", "/api/media-sessions/{kind}/{id}"),
+        ("DELETE", "/api/media-sessions/{kind}/{id}"),
     }
 
 

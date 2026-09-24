@@ -146,7 +146,7 @@ def _current_id(pane):
 
 
 def _session(page, harness, session_id):
-    response = page.request.get(f"{harness.base_url}/api/image-sessions/{session_id}")
+    response = page.request.get(f"{harness.base_url}/api/media-sessions/image/{session_id}")
     assert response.status == 200, response.status
     return response.json()
 
@@ -526,7 +526,7 @@ def test_corrupt_session_and_list_load_failure(page, tmp_path):
         sessions_dir.mkdir(parents=True, exist_ok=True)
         (sessions_dir / ("c" * 32 + ".json")).write_text("{ not json", encoding="utf-8")
         healthy = harness.library.media_sessions["image"].create()["id"]
-        page.route("**/api/image-sessions", lambda route: route.fulfill(
+        page.route("**/api/media-sessions/image", lambda route: route.fulfill(
             status=500, content_type="application/json", body=json.dumps({"error": "磁盘读不出来"}))
             if route.request.method == "GET" else route.continue_())
         page.goto(harness.base_url + "#tab=image")
@@ -535,7 +535,7 @@ def test_corrupt_session_and_list_load_failure(page, tmp_path):
         expect(pane.locator("[data-image-start]")).to_be_disabled()
         expect(pane.locator("[data-image-hint-text]")).to_have_text("会话还没加载好")
         _check_state(page, "session-list-load-failed", harness=harness)
-        page.unroute("**/api/image-sessions")
+        page.unroute("**/api/media-sessions/image")
         pane.get_by_role("button", name="重试").click()
 
         items = pane.locator("[data-image-session-list] [data-session-id]")

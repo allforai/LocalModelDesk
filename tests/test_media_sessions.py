@@ -1,4 +1,4 @@
-"""Media sessions: the file store and its /api/image-sessions routes, on a real filesystem."""
+"""Media sessions: the file store and its /api/media-sessions/{kind} routes, on a real filesystem."""
 import json
 import re
 import threading
@@ -356,53 +356,56 @@ def test_concurrent_appends_from_two_writers_all_land(tmp_path):
 def call(library, method, path, *, session_id=None, body=None):
     handler = {(m, p): h for m, p, h in routes(library)}[(method, path)]
     raw_body = b"" if body is None else (body if isinstance(body, bytes) else json.dumps(body).encode())
-    response = handler(LibRequest(path_params={"id": session_id} if session_id else {}, body=raw_body))
+    path_params = {"kind": "image"}
+    if session_id:
+        path_params["id"] = session_id
+    response = handler(LibRequest(path_params=path_params, body=raw_body))
     return response.status, json.loads(response.body.decode("utf-8"))
 
 
 def test_http_round_trip(tmp_path):
     library, _ = make_library(tmp_path)
-    assert call(library, "GET", "/api/image-sessions") == (200, [])
-    status, created = call(library, "POST", "/api/image-sessions")
+    assert call(library, "GET", "/api/media-sessions/{kind}") == (200, [])
+    status, created = call(library, "POST", "/api/media-sessions/{kind}")
     assert status == 200 and created["attempts"] == [] and created["title"] == "新会话"
-    assert call(library, "POST", "/api/image-sessions", body={})[0] == 200
-    status, listed = call(library, "GET", "/api/image-sessions")
+    assert call(library, "POST", "/api/media-sessions/{kind}", body={})[0] == 200
+    status, listed = call(library, "GET", "/api/media-sessions/{kind}")
     assert status == 200 and len(listed) == 2
     assert set(listed[0]) == {"id", "title", "created", "updated", "attempt_count", "running", "cover"}
-    status, got = call(library, "GET", "/api/image-sessions/{id}", session_id=created["id"])
+    status, got = call(library, "GET", "/api/media-sessions/{kind}/{id}", session_id=created["id"])
     assert status == 200 and got == created
-    status, renamed = call(library, "PATCH", "/api/image-sessions/{id}", session_id=created["id"],
+    status, renamed = call(library, "PATCH", "/api/media-sessions/{kind}/{id}", session_id=created["id"],
                            body={"title": "猫"})
     assert status == 200 and renamed["title"] == "猫" and renamed["title_auto"] is False
-    assert call(library, "DELETE", "/api/image-sessions/{id}", session_id=created["id"]) == (
+    assert call(library, "DELETE", "/api/media-sessions/{kind}/{id}", session_id=created["id"]) == (
         200, {"deleted": created["id"]})
-    assert len(call(library, "GET", "/api/image-sessions")[1]) == 1
+    assert len(call(library, "GET", "/api/media-sessions/{kind}")[1]) == 1
 
 
 def test_http_errors(tmp_path):
     library, roots = make_library(tmp_path)
     session_id = library.sessions_of("image").create()["id"]
     missing = "e" * 32
-    assert call(library, "POST", "/api/image-sessions", body={"title": "x"}) == (
+    assert call(library, "POST", "/api/media-sessions/{kind}", body={"title": "x"}) == (
         400, {"error": "不认识的字段：['title']"})
-    assert call(library, "POST", "/api/image-sessions", body=b"not json")[0] == 400
-    assert call(library, "GET", "/api/image-sessions/{id}", session_id=missing) == (
+    assert call(library, "POST", "/api/media-sessions/{kind}", body=b"not json")[0] == 400
+    assert call(library, "GET", "/api/media-sessions/{kind}/{id}", session_id=missing) == (
         404, {"error": f"会话不存在：{missing}"})
-    assert call(library, "GET", "/api/image-sessions/{id}", session_id="../x") == (
+    assert call(library, "GET", "/api/media-sessions/{kind}/{id}", session_id="../x") == (
         404, {"error": "会话不存在：../x"})
-    assert call(library, "PATCH", "/api/image-sessions/{id}", session_id=session_id,
+    assert call(library, "PATCH", "/api/media-sessions/{kind}/{id}", session_id=session_id,
                 body={"title": "x", "attempts": []}) == (400, {"error": "不认识的字段：['attempts']"})
-    assert call(library, "PATCH", "/api/image-sessions/{id}", session_id=session_id,
+    assert call(library, "PATCH", "/api/media-sessions/{kind}/{id}", session_id=session_id,
                 body={"title": " "}) == (400, {"error": "标题须为 1–80 个字"})
-    assert call(library, "PATCH", "/api/image-sessions/{id}", session_id=missing,
+    assert call(library, "PATCH", "/api/media-sessions/{kind}/{id}", session_id=missing,
                 body={"title": "ok"})[0] == 404
-    assert call(library, "DELETE", "/api/image-sessions/{id}", session_id=missing)[0] == 404
+    assert call(library, "DELETE", "/api/media-sessions/{kind}/{id}", session_id=missing)[0] == 404
     (roots.media_sessions_dirs["image"] / ("c" * 32 + ".json")).write_text("{", "utf-8")
-    assert call(library, "GET", "/api/image-sessions/{id}", session_id="c" * 32) == (
+    assert call(library, "GET", "/api/media-sessions/{kind}/{id}", session_id="c" * 32) == (
         400, {"error": "会话文件已损坏，无法读取"})
-    assert call(library, "PATCH", "/api/image-sessions/{id}", session_id="c" * 32,
+    assert call(library, "PATCH", "/api/media-sessions/{kind}/{id}", session_id="c" * 32,
                 body={"title": "ok"})[0] == 400
-    assert call(library, "GET", "/api/image-sessions")[1][-1] == {"id": "c" * 32, "corrupt": True}
+    assert call(library, "GET", "/api/media-sessions/{kind}")[1][-1] == {"id": "c" * 32, "corrupt": True}
 
 
 # ---- media-sessions base (B-03, B-04, B-06–B-08, B-12, B-22, B-38a) ---------
@@ -567,3 +570,30 @@ def test_chain_marks_broken_on_dangling_link_and_on_cycles(tmp_path):
     path.write_text(json.dumps(data), encoding="utf-8")
     items, broken = sessions.chain(sid, "b" * 32)
     assert broken is True and len(items) == 2
+
+
+# ---- HTTP: /api/media-sessions/{kind} routes -------------------------------------
+
+@pytest.mark.parametrize("kind", ["image", "video", "music"])
+def test_media_session_routes_round_trip_per_kind(tmp_path, kind):
+    library, roots = make_library(tmp_path)
+    table = {(m, p): h for m, p, h in routes(library)}
+    created = json.loads(table[("POST", "/api/media-sessions/{kind}")](
+        LibRequest(path_params={"kind": kind}, body=b"{}")).body)
+    assert created["kind"] == kind
+    listed = json.loads(table[("GET", "/api/media-sessions/{kind}")](LibRequest(path_params={"kind": kind})).body)
+    assert [s["id"] for s in listed] == [created["id"]]
+    other = "music" if kind != "music" else "video"
+    assert json.loads(table[("GET", "/api/media-sessions/{kind}")](LibRequest(path_params={"kind": other})).body) == []
+    renamed = table[("PATCH", "/api/media-sessions/{kind}/{id}")](
+        LibRequest(path_params={"kind": kind, "id": created["id"]}, body=json.dumps({"title": "新名字"}).encode()))
+    assert renamed.status == 200 and json.loads(renamed.body)["title"] == "新名字"
+    deleted = table[("DELETE", "/api/media-sessions/{kind}/{id}")](LibRequest(path_params={"kind": kind, "id": created["id"]}))
+    assert json.loads(deleted.body) == {"deleted": created["id"]}
+
+
+def test_unknown_media_kind_is_404(tmp_path):
+    library, _ = make_library(tmp_path)
+    table = {(m, p): h for m, p, h in routes(library)}
+    response = table[("GET", "/api/media-sessions/{kind}")](LibRequest(path_params={"kind": "gif"}))
+    assert response.status == 404 and json.loads(response.body) == {"error": "不认识的媒体类型：gif"}
