@@ -86,12 +86,40 @@ export function randomSeed(cryptoImpl = globalThis.crypto) {
   return buffer[0];
 }
 
-// D-46：「换个构图」——提示词、宽高、步数取该尝试，种子换一个与原值不同的新随机数。
+// 以图生图的两档强度（2026-09-24 可行性测试）：mflux 里强度越高越接近底稿。
+// 0.6 保留构图、重画细节；0.35 保留主体与色调、换构图。只允许这两个值，后端同样校验。
+export const REFINE_STRENGTH = 0.6;
+export const RECOMPOSE_STRENGTH = 0.35;
+export const NO_IMAGE_REASON = "这一次没有图片，不能以它为底稿换个构图";
+
+// 这一次能不能当底稿：生成完成、有文件名、文件还在。
+export function hasImage(attempt) {
+  return attempt?.status === "done" && typeof attempt.output === "string" && !!attempt.output && !attempt.output_missing;
+}
+
+// D-46：「换个构图」——提示词、宽高、步数取该尝试，种子换一个与原值不同的新随机数；
+// 有图时以这张为底稿重绘（强度 0.35）。
 export function recomposeParams(attempt, sessionId, draw = randomSeed) {
   const fields = refineFields(attempt);
   let seed = draw();
   while (seed === fields.seed) seed = draw();
-  return { session_id: sessionId, prompt: fields.prompt, width: fields.width, height: fields.height, steps: fields.steps, seed };
+  const params = { session_id: sessionId, prompt: fields.prompt, width: fields.width, height: fields.height, steps: fields.steps, seed };
+  if (hasImage(attempt)) params.base = { attempt_id: attempt.id, strength: RECOMPOSE_STRENGTH };
+  return params;
+}
+
+// 「在这张基础上改」之后按「生成图片」：提示条还在（种子框没被改）且那一次有图，就以它为底稿（强度 0.6）。
+export function submitBase(seedInputValue, ref) {
+  if (!ref?.attemptId || !ref.image || !refineChipVisible(seedInputValue, ref)) return null;
+  return { attempt_id: ref.attemptId, strength: REFINE_STRENGTH };
+}
+
+// 卡片上的「基于第 N 次」：底稿还在这个会话的列表里才标。
+export function baseLabel(attempt, attempts) {
+  const id = attempt?.base?.attempt_id;
+  if (!id || !Array.isArray(attempts)) return "";
+  const index = attempts.findIndex((a) => a?.id === id);
+  return index < 0 ? "" : `基于第 ${index + 1} 次`;
 }
 
 // D-41/D-42：提示条只在种子框的值等于被引用尝试的种子时显示。
@@ -101,6 +129,7 @@ export function refineChipVisible(seedInputValue, ref) {
 }
 
 export function refineChipText(ref) {
+  if (Number.isInteger(ref?.index) && ref.attemptId && ref.image) return `以第 ${ref.index + 1} 次为底稿`;
   return Number.isInteger(ref?.index) ? `沿用第 ${ref.index + 1} 次的构图` : "沿用素材库里这张的构图";
 }
 

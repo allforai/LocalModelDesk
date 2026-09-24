@@ -132,7 +132,7 @@ def test_image_refill_returns_to_its_session_or_stays_put(page, tmp_path):
         expect(current.locator(".session-title")).to_have_text("回填用的橘猫")
         expect(image.locator(".attempt").first).to_have_attribute("aria-expanded", "true")
         expect(image.locator("[data-image-prompt]")).to_have_value("回填用的橘猫")
-        expect(image.locator("[data-image-refine-text]")).to_have_text("沿用第 1 次的构图")
+        expect(image.locator("[data-image-refine-text]")).to_have_text("以第 1 次为底稿")
 
         # Delete that session: the image stays in the library and refill falls back to the current session.
         current.hover()

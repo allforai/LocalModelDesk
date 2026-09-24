@@ -4,6 +4,7 @@ import {
   attemptLabel, attemptView, autoTitle, availability, deleteMessage, orderSessions, pickCurrent, randomSeed,
   readImageParams, recomposeParams, refineChipText, refineChipVisible, refineFields, runningLabel,
   runningSessionId, sessionMeta, sessionTitle, specLine, startErrorText,
+  hasImage, submitBase, baseLabel, NO_IMAGE_REASON,
 } from "../../desk/static/js/pure/image_session.js";
 
 const SEED = "种子"; // 「种子」
@@ -160,4 +161,42 @@ test("列表顺序：updated 降序、坏文件最后；同一秒并列时刚新
   ];
   assert.deepEqual(orderSessions(list, "fresh").map((s) => s.id), ["fresh", "a", "old", "x"]);
   assert.deepEqual(orderSessions(list).map((s) => s.id), ["a", "fresh", "old", "x"]);
+});
+
+
+// ---- 以图生图（2026-09-24）：两个按钮以这张为底稿重绘 ----
+
+const DONE = { id: "a1", status: "done", output: "x.png", params: { prompt: "猫", width: 512, height: 768, steps: 16, seed: 7 } };
+
+test("有图才能当底稿：done、有文件名、文件还在", () => {
+  assert.equal(hasImage(DONE), true);
+  assert.equal(hasImage({ ...DONE, output_missing: true }), false);
+  assert.equal(hasImage({ ...DONE, status: "failed" }), false);
+  assert.equal(hasImage({ ...DONE, output: null }), false);
+  assert.equal(hasImage(null), false);
+});
+
+test("「换个构图」以这张为底稿、强度 0.35（保留主体与色调，换构图）", () => {
+  const params = recomposeParams(DONE, "s1", () => 99);
+  assert.deepEqual(params.base, { attempt_id: "a1", strength: 0.35 });
+  assert.equal(params.prompt, "猫");
+  assert.equal(params.seed, 99);
+});
+
+test("「在这张基础上改」后提示条还在时，「生成图片」以那张为底稿、强度 0.6", () => {
+  const ref = { seed: 7, index: 0, attemptId: "a1", image: true };
+  assert.deepEqual(submitBase("7", ref), { attempt_id: "a1", strength: 0.6 });
+  assert.equal(submitBase("8", ref), null);              // 改了种子：提示条消失，退回文生图
+  assert.equal(submitBase("7", { ...ref, image: false }), null); // 没图的尝试只回填
+  assert.equal(submitBase("7", { seed: 7, index: null }), null);  // 素材库回填（无会话尝试）
+  assert.equal(refineChipText(ref), "以第 1 次为底稿");
+  assert.equal(refineChipText({ ...ref, image: false }), "沿用第 1 次的构图");
+});
+
+test("卡片标「基于第 N 次」；底稿不在列表里或没有底稿时不标", () => {
+  const attempts = [DONE, { id: "a2", base: { attempt_id: "a1", strength: 0.6 } }, { id: "a3", base: { attempt_id: "gone", strength: 0.35 } }];
+  assert.equal(baseLabel(attempts[1], attempts), "基于第 1 次");
+  assert.equal(baseLabel(attempts[2], attempts), "");
+  assert.equal(baseLabel(DONE, attempts), "");
+  assert.ok(NO_IMAGE_REASON.length > 0 && !NO_IMAGE_REASON.includes(SEED));
 });

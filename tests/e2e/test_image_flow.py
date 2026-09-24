@@ -231,7 +231,7 @@ def test_three_rounds_refine_keep_order_seed_and_recompose(page, tmp_path):
             expect(source).to_have_attribute("aria-expanded", "true")
             source.get_by_role("button", name="在这张基础上改").click()
             expect(pane.locator("[data-image-refine]")).to_be_visible()
-            expect(pane.locator("[data-image-refine-text]")).to_have_text(f"沿用第 {round_index} 次的构图")
+            expect(pane.locator("[data-image-refine-text]")).to_have_text(f"以第 {round_index} 次为底稿")
             expect(pane.locator("[data-image-prompt]")).to_be_focused()
             expect(pane.locator("details[data-image-advanced]")).not_to_have_attribute("open", "")
             expect(_cards(pane)).to_have_count(round_index)  # nothing submitted yet (D-40)
@@ -513,7 +513,9 @@ def test_restart_keeps_sessions_and_marks_interrupted_and_missing_files(page, tm
         expect(missing.locator("img")).to_have_count(0)
         missing.click()
         expect(missing.get_by_role("button", name="在这张基础上改")).to_be_enabled()
-        expect(missing.get_by_role("button", name="换个构图")).to_be_enabled()
+        # 以图生图：文件不在的尝试不能当底稿，「换个构图」不可用并写明原因（D-47a）。
+        expect(missing.get_by_role("button", name="换个构图")).to_be_disabled()
+        expect(missing.locator(".attempt-action-hint")).to_have_text("这一次没有图片，不能以它为底稿换个构图")
         _check_state(page, "attempt-file-missing", harness=harness)
 
 

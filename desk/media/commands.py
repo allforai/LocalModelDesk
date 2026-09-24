@@ -10,10 +10,14 @@ H3_BUDGET_GB = 40
 
 def build_image_command(image_python: Path, image_cli: Path, model_root: Path, *,
                         prompt: str, width: int, height: int, steps: int, seed: int,
-                        output: Path) -> list[str]:
-    return [str(image_python), "-s", str(image_cli), "--root", str(model_root),
-            "--prompt", prompt, "--width", str(width), "--height", str(height),
-            "--steps", str(steps), "--seed", str(seed), "--output", str(output)]
+                        output: Path, init_image: Path | None = None,
+                        image_strength: float | None = None) -> list[str]:
+    command = [str(image_python), "-s", str(image_cli), "--root", str(model_root),
+               "--prompt", prompt, "--width", str(width), "--height", str(height),
+               "--steps", str(steps), "--seed", str(seed), "--output", str(output)]
+    if init_image is not None:
+        command += ["--init-image", str(init_image), "--image-strength", str(image_strength)]
+    return command
 
 
 def build_h3_command(

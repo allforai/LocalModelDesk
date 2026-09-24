@@ -154,7 +154,7 @@ def test_attempts_append_in_order_with_complete_fields(tmp_path):
     a1 = begin(sessions, session_id, seed=11, job_id=1)
     running = sessions.get(session_id)["attempts"][0]
     assert running == {"id": a1, "job_id": 1, "ts": running["ts"], "finished": None, "status": "running",
-                       "params": params(seed=11), "output": None, "error": None}
+                       "params": params(seed=11), "output": None, "error": None, "base": None}
     assert sessions.settle_attempt(session_id, a1, "done", "one.png")
     a2 = begin(sessions, session_id, seed=11, job_id=2)
     assert sessions.settle_attempt(session_id, a2, "failed", error={"code": "exit_nonzero", "message": "exit 1",

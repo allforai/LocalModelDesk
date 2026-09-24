@@ -405,3 +405,90 @@ def test_image_manifest_is_pinned_offline_and_describes_two_sources(tmp_path):
     assert verify_tree(model, manifest, tmp_path).state == "present"
     (tmp_path / model.relpath / "localmodeldesk-image.json").unlink()
     assert verify_tree(model, manifest, tmp_path).state == "partial"
+
+
+# ---- image-to-image from an earlier attempt (base) -------------------------
+
+def _done_attempt(service, deps, session_id, **kwargs):
+    snap = finished_snapshot(service, lambda: start(service, session_id, **kwargs))
+    assert snap["status"] == "done"
+    return next(a for a in attempts(deps, session_id) if a["id"] == snap["attempt_id"])
+
+
+@pytest.mark.parametrize("strength", [0.6, 0.35])
+def test_base_redraws_from_the_attempt_image_at_its_size(tmp_path, strength):
+    service, deps = image_service(tmp_path)
+    session_id = new_session(deps)
+    source = _done_attempt(service, deps, session_id, width=512, height=768, seed=5)
+    snap = finished_snapshot(service, lambda: start(
+        service, session_id, prompt="夜晚的猫", width=1024, height=1024,
+        base={"attempt_id": source["id"], "strength": strength}))
+    cmd = deps.executor.spawned[-1]["cmd"]
+    assert cmd[cmd.index("--init-image") + 1] == str(tmp_path / "outputs" / source["output"])
+    assert cmd[cmd.index("--image-strength") + 1] == str(strength)
+    # The base image fixes the canvas: its size wins over whatever the request carried.
+    assert cmd[cmd.index("--width") + 1] == "512" and cmd[cmd.index("--height") + 1] == "768"
+    attempt = attempts(deps, session_id)[-1]
+    assert attempt["id"] == snap["attempt_id"]
+    assert attempt["base"] == {"attempt_id": source["id"], "strength": strength}
+    assert attempt["params"]["width"] == 512 and attempt["params"]["prompt"] == "夜晚的猫"
+
+
+def test_plain_generation_records_no_base_and_no_init_args(tmp_path):
+    service, deps = image_service(tmp_path)
+    session_id = new_session(deps)
+    _done_attempt(service, deps, session_id)
+    assert "--init-image" not in deps.executor.spawned[-1]["cmd"]
+    assert attempts(deps, session_id)[-1].get("base") is None
+
+
+@pytest.mark.parametrize("base,code,status", [
+    ("abc", "invalid_params", 400),
+    ({"attempt_id": "0" * 32}, "invalid_params", 400),
+    ({"attempt_id": "0" * 32, "strength": 0.5}, "invalid_params", 400),
+    ({"attempt_id": "0" * 32, "strength": 0.6}, "base_not_found", 404),
+])
+def test_bad_base_is_refused_before_anything_starts(tmp_path, base, code, status):
+    service, deps = image_service(tmp_path)
+    session_id = new_session(deps)
+    before = session_file(tmp_path, session_id).read_bytes()
+    with pytest.raises(MediaError) as caught:
+        start(service, session_id, base=base)
+    assert (caught.value.code, caught.value.http_status) == (code, status)
+    assert deps.executor.spawned == []
+    assert session_file(tmp_path, session_id).read_bytes() == before
+
+
+def test_base_whose_image_file_is_gone_is_refused(tmp_path):
+    service, deps = image_service(tmp_path)
+    session_id = new_session(deps)
+    source = _done_attempt(service, deps, session_id)
+    (tmp_path / "outputs" / source["output"]).unlink()
+    spawned = len(deps.executor.spawned)
+    with pytest.raises(MediaError) as caught:
+        start(service, session_id, base={"attempt_id": source["id"], "strength": 0.6})
+    assert (caught.value.code, caught.value.http_status) == ("base_missing", 404)
+    assert "底稿" in caught.value.message
+    assert len(deps.executor.spawned) == spawned
+
+
+def test_base_must_belong_to_the_same_session(tmp_path):
+    service, deps = image_service(tmp_path)
+    other = new_session(deps)
+    source = _done_attempt(service, deps, other)
+    session_id = new_session(deps)
+    with pytest.raises(MediaError) as caught:
+        start(service, session_id, base={"attempt_id": source["id"], "strength": 0.6})
+    assert caught.value.code == "base_not_found"
+
+
+def test_image_route_passes_base_through(tmp_path):
+    service, deps = image_service(tmp_path)
+    session_id = new_session(deps)
+    source = _done_attempt(service, deps, session_id)
+    done = threading.Event()
+    service.on_job_finished(lambda _snap: done.set())
+    status, _body = image_route(service)({"session_id": session_id, "prompt": "cat",
+                                          "base": {"attempt_id": source["id"], "strength": 0.35}}, {})
+    assert status == 200 and done.wait(5)
+    assert "--init-image" in deps.executor.spawned[-1]["cmd"]

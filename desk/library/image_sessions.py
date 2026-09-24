@@ -133,6 +133,7 @@ class ImageSessionStore:
             "params": {key: params.get(key) for key in PARAM_KEYS},
             "output": None,
             "error": None,
+            "base": attempt.get("base"),
         }
         with self._lock:
             session = self._load_quiet(session_id)

@@ -214,7 +214,7 @@ test("「在这张基础上改」回填并沿用种子、不提交、高级参�
     assert.equal(parts.prompt.value, "橘猫一");
     assert.equal(parts.seed.value, "11");
     assert.equal(parts.refine.hidden, false);
-    assert.equal(parts["refine-text"].textContent, "沿用第 1 次的构图");
+    assert.equal(parts["refine-text"].textContent, "以第 1 次为底稿"); // 以图生图：有图的尝试当底稿
     assert.equal(parts.advanced.open, false);
     assert.ok(parts.prompt.focused > 0);
     assert.deepEqual(parts.prompt.selection, [3, 3]);
@@ -244,7 +244,8 @@ test("「换个构图」立即提交同参数与不同的新种子，不改输�
     await button(cards(parts)[0], "换个构图").click();
     await flush();
     const call = backend.calls.find((c) => c.url === "/api/media/image");
-    assert.deepEqual(call.body, { session_id: backend.sessions[0].id, prompt: "橘猫一", width: 1024, height: 1024, steps: 40, seed: 42 });
+    assert.deepEqual(call.body, { session_id: backend.sessions[0].id, prompt: "橘猫一", width: 1024, height: 1024, steps: 40, seed: 42,
+      base: { attempt_id: "a1", strength: 0.35 } }); // 以图生图：以这张为底稿换构图
     assert.equal(parts.prompt.value, "别的草稿");
     assert.equal(cards(parts).length, 2);
     assert.equal(cards(parts)[1].dataset.attemptStatus, "running");
@@ -476,7 +477,7 @@ test("素材库回填：会话还在就打开并选中那张、执行「在这�
     await pane.applyFill({ pane: "image", session_id: a.id, attempt_id: "a1", fields: { prompt: "甲一", width: 1024, height: 1024, steps: 40, seed: 11 } });
     assert.equal(parts["session-list"].children.find((li) => li.attrs["aria-current"] === "true").dataset.sessionId, a.id);
     assert.equal(cards(parts)[0].attrs["aria-expanded"], "true");
-    assert.equal(parts["refine-text"].textContent, "沿用第 1 次的构图");
+    assert.equal(parts["refine-text"].textContent, "以第 1 次为底稿");
     assert.equal(parts.seed.value, "11");
     const sessionsBefore = backend.sessions.length;
     await pane.applyFill({ pane: "image", session_id: "gone", attempt_id: "x", fields: { prompt: "旧图", width: 512, height: 768, steps: 20, seed: 5 } });

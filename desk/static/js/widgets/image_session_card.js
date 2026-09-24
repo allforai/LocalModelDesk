@@ -64,6 +64,11 @@ export function renderAttemptCard(doc, opts) {
   const label = el(doc, "span", "attempt-label", running ? runningLabel(index, opts.elapsed) : attemptLabel(index, attempt));
   head.append(label);
   if (view.badge && !running) head.append(el(doc, "span", `badge attempt-badge tone-${view.tone}`, view.badge));
+  if (opts.baseText) {
+    const based = el(doc, "span", "attempt-base hint", opts.baseText);
+    based.dataset.attemptBase = "";
+    head.append(based);
+  }
   summary.append(head);
   const promptLine = el(doc, "p", "attempt-prompt", prompt);
   promptLine.title = prompt;
@@ -127,6 +132,7 @@ export function renderAttemptCard(doc, opts) {
   hint.setAttribute("role", "status");
   detail.append(actions, hint);
   card.append(detail);
-  result.recompose = { button: recompose, hint };
+  // 没图的尝试不能当底稿（以图生图）：「换个构图」不可用并写明原因；面板更新可用性时保留这条原因。
+  result.recompose = { button: recompose, hint, noImageReason: opts.noImageReason || "" };
   return result;
 }

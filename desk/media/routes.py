@@ -56,7 +56,7 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
             session_id=payload.get("session_id"),
             prompt=payload.get("prompt"), width=payload.get("width", 1024),
             height=payload.get("height", 1024), steps=payload.get("steps", 40),
-            seed=payload.get("seed"), force=payload.get("force", False)))
+            seed=payload.get("seed"), force=payload.get("force", False), base=payload.get("base")))
 
     def status(_body, query):
         def call():

@@ -131,7 +131,7 @@ def test_ac1_ac2_three_refine_rounds_stay_ordered_with_their_params_and_seeds(pa
             expect(source).to_have_attribute("aria-expanded", "true")
             source.get_by_role("button", name="在这张基础上改").click()
             expect(pane.locator("[data-image-prompt]")).to_have_value(prompts[round_index - 1])
-            expect(pane.locator("[data-image-refine-text]")).to_have_text(f"沿用第 {round_index} 次的构图")
+            expect(pane.locator("[data-image-refine-text]")).to_have_text(f"以第 {round_index} 次为底稿")
             expect(_cards(pane)).to_have_count(round_index)
             _generate(pane, prompts[round_index])
             _settled(pane, round_index + 1)
@@ -145,6 +145,10 @@ def test_ac1_ac2_three_refine_rounds_stay_ordered_with_their_params_and_seeds(pa
                 {"width": 768, "height": 512, "steps": 20}
         seeds = [a["params"]["seed"] for a in attempts]
         assert seeds[0] == seeds[1] == seeds[2], seeds
+        # Each refine redraws from the attempt before it (image-to-image, strength 0.6).
+        assert attempts[0]["base"] is None
+        assert [a["base"] for a in attempts[1:]] == [
+            {"attempt_id": attempts[0]["id"], "strength": 0.6}, {"attempt_id": attempts[1]["id"], "strength": 0.6}]
         assert len({a["output"] for a in attempts}) == 3
         for attempt in attempts:
             assert page.request.get(f"{harness.base_url}/api/outputs/{attempt['output']}").status == 200
@@ -419,7 +423,7 @@ def test_library_refill_reopens_the_session_and_selects_that_attempt(page, tmp_p
         expect(card).to_have_attribute("aria-expanded", "true")
         expect(pane.locator(".attempt[aria-expanded='true']")).to_have_count(1)
         expect(pane.locator("[data-image-prompt]")).to_have_value("回填：第一张")
-        expect(pane.locator("[data-image-refine-text]")).to_have_text("沿用第 1 次的构图")
+        expect(pane.locator("[data-image-refine-text]")).to_have_text("以第 1 次为底稿")
         expect(pane.locator("[data-image-seed]")).to_have_value(str(first["params"]["seed"]))
 
 
@@ -687,7 +691,7 @@ def test_selected_attempt_with_a_full_size_image_shows_header_image_and_actions_
             assert g["card"]["height"] <= g["timeline_inner"] + 1, (name, "whole card should fit here", g)
 
             first.get_by_role("button", name="在这张基础上改").click()
-            expect(pane.locator("[data-image-refine-text]")).to_have_text("沿用第 1 次的构图")
+            expect(pane.locator("[data-image-refine-text]")).to_have_text("以第 1 次为底稿")
             _assert_expanded_card_in_view(page, f"{name}: after 在这张基础上改 (composer grew)")
             _check_state(page, "verify-selected-full-size", harness=harness, viewports=(name,))
 
@@ -728,3 +732,59 @@ def test_session_list_gives_the_running_title_its_room_and_spaces_the_new_button
             harness.media_script.step()
             harness.media_script.step()
             expect(pane.locator("[data-image-start]")).to_be_enabled(timeout=15_000)
+
+
+
+def _argv_value(argv, flag):
+    return argv[argv.index(flag) + 1] if flag in argv else None
+
+
+def test_both_actions_redraw_from_the_chosen_image_and_label_the_new_card(page, tmp_path):
+    """Image-to-image (2026-09-24): 「在这张基础上改」 redraws at 0.6, 「换个构图」 at 0.35, both from
+    that attempt's file; the new card says which attempt it is based on."""
+    with _harness(tmp_path, [fast_media_steps() for _ in range(3)]) as harness:
+        pane = _open(page, harness)
+        session_id = _current_id(pane)
+        _generate(pane, "一座海边灯塔，黄昏")
+        _settled(pane, 1)
+        first = _session(page, harness, session_id)["attempts"][0]
+
+        _cards(pane).nth(0).click()
+        _cards(pane).nth(0).get_by_role("button", name="在这张基础上改").click()
+        expect(pane.locator("[data-image-refine-text]")).to_have_text("以第 1 次为底稿")
+        _generate(pane, "一座海边灯塔，黄昏，加几只海鸥")
+        _settled(pane, 2)
+        argv = harness.media_script.spawned_argvs[-1]
+        assert _argv_value(argv, "--init-image").endswith(first["output"])
+        assert _argv_value(argv, "--image-strength") == "0.6"
+        expect(_cards(pane).nth(1).locator("[data-attempt-base]")).to_have_text("基于第 1 次")
+
+        _cards(pane).nth(0).click()
+        _cards(pane).nth(0).get_by_role("button", name="换个构图").click()
+        _settled(pane, 3)
+        argv = harness.media_script.spawned_argvs[-1]
+        assert _argv_value(argv, "--init-image").endswith(first["output"])
+        assert _argv_value(argv, "--image-strength") == "0.35"
+        stored = _session(page, harness, session_id)["attempts"]
+        assert stored[2]["base"] == {"attempt_id": first["id"], "strength": 0.35}
+        assert stored[2]["params"]["prompt"] == "一座海边灯塔，黄昏"
+        expect(_cards(pane).nth(2).locator("[data-attempt-base]")).to_have_text("基于第 1 次")
+        expect(_cards(pane).nth(0).locator("[data-attempt-base]")).to_have_count(0)
+
+
+def test_an_attempt_without_an_image_cannot_recompose_and_refine_only_refills(page, tmp_path):
+    failing = [Line("step 1/10"), Line("RuntimeError: boom"), Exit(1)]
+    with _harness(tmp_path, [failing, fast_media_steps()]) as harness:
+        pane = _open(page, harness)
+        _generate(pane, "会失败的一张")
+        _settled(pane, 1, "failed")
+        card = _cards(pane).nth(0)
+        card.click()
+        recompose = card.get_by_role("button", name="换个构图")
+        expect(recompose).to_be_disabled()
+        expect(card.locator(".attempt-action-hint")).to_have_text("这一次没有图片，不能以它为底稿换个构图")
+        card.get_by_role("button", name="在这张基础上改").click()
+        expect(pane.locator("[data-image-prompt]")).to_have_value("会失败的一张")
+        _generate(pane)
+        _settled(pane, 2)
+        assert "--init-image" not in harness.media_script.spawned_argvs[-1]

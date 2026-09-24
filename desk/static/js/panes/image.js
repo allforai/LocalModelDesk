@@ -9,6 +9,7 @@ import { parseStepProgress } from "../pure/job_progress.js";
 import {
   availability, deleteMessage, orderSessions, pickCurrent, randomSeed, readImageParams, recomposeParams,
   refineChipText, refineChipVisible, refineFields, runningLabel, sessionTitle, startErrorText,
+  hasImage, submitBase, baseLabel, NO_IMAGE_REASON,
 } from "../pure/image_session.js";
 
 export function createImagePane(root, ctx = {}) {
@@ -56,9 +57,10 @@ export function createImagePane(root, ctx = {}) {
     els.hint.hidden = !state.reason;
     els.model.textContent = modelReason || "模型文件完整 · 可离线生成";
     if (recomposeRefs) {
-      recomposeRefs.button.disabled = state.disabled;
-      recomposeRefs.button.title = state.reason;
-      recomposeRefs.hint.textContent = state.disabled ? state.reason : "";
+      const reason = recomposeRefs.noImageReason || (state.disabled ? state.reason : "");
+      recomposeRefs.button.disabled = state.disabled || !!recomposeRefs.noImageReason;
+      recomposeRefs.button.title = reason;
+      recomposeRefs.hint.textContent = reason;
     }
   }
   function setModelStatus(status) {
@@ -190,6 +192,7 @@ export function createImagePane(root, ctx = {}) {
       const card = renderAttemptCard(doc, {
         attempt, index, selected: attempt.id === selectedId, broken: broken.has(attempt.id),
         elapsed: ours ? job.elapsed_s : undefined, serveOutput: api.serveOutput,
+        baseText: baseLabel(attempt, attempts), noImageReason: hasImage(attempt) ? "" : NO_IMAGE_REASON,
         onBroken: (a) => { if (!broken.has(a.id)) { broken.add(a.id); renderTimeline(); } },
         onImageLoad: settleView, onRefine: refine, onRecompose: recompose, onCancel: cancelJob,
       });
@@ -430,7 +433,8 @@ export function createImagePane(root, ctx = {}) {
       else setError(error.message);
       return;
     }
-    await startGeneration({ session_id: currentId, ...params }, { fromInputs: true });
+    const base = submitBase(els.seed.value, refineRef);
+    await startGeneration({ session_id: currentId, ...params, ...(base ? { base } : {}) }, { fromInputs: true });
   }
 
   // D-40–D-43：回填、沿用种子、不提交；高级参数保持原折叠状态。
@@ -449,7 +453,7 @@ export function createImagePane(root, ctx = {}) {
   function refine(attempt, index) {
     const fields = refineFields(attempt);
     if (attempt.id === selectedId) scrollIntent = "selected";
-    prefill(fields, { seed: fields.seed, index });
+    prefill(fields, { seed: fields.seed, index, attemptId: attempt.id, image: hasImage(attempt) });
     settleView(); // 提示条出现、输入区变高后，被点的这张仍整张可见（ResizeObserver 之外的同步一次）
   }
 

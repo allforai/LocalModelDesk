@@ -17,6 +17,9 @@ log = logging.getLogger(__name__)
 DEFAULT_LOG_LIMIT = 1024 * 1024
 
 
+# Image-to-image presets (design D-40/D-46 rev. 2026-09-24): 「在这张基础上改」 keeps the composition,
+# 「换个构图」 keeps subject and colour. Higher strength = closer to the base (mflux convention).
+BASE_STRENGTHS = (0.6, 0.35)
 SESSION_REQUIRED_MESSAGE = "请先选择或新建一个会话"
 SESSION_NOT_FOUND_MESSAGE = "这个会话已被删除，请选择或新建一个会话"
 CANCEL_ERRORS = {
@@ -117,7 +120,7 @@ class MediaService:
         return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration}, force=force)
 
     def start_image_job(self, *, session_id=None, prompt, width=1024, height=1024, steps=40,
-                        seed=None, force=False) -> dict:
+                        seed=None, force=False, base=None) -> dict:
         """Start an image job inside a session.
 
         Order (design D-20): parameters → session → the shared `_start` gates.
@@ -139,10 +142,30 @@ class MediaService:
             raise MediaError("session_required", SESSION_REQUIRED_MESSAGE, 400)
         if not self._image_sessions.exists(session_id):
             raise MediaError("session_not_found", SESSION_NOT_FOUND_MESSAGE, 404)
+        params = dict(prompt=prompt, width=width, height=height, steps=steps)
+        if base is not None:
+            source = self._base_attempt(session_id, base)
+            # The base image fixes the canvas: img2img redraws it, so its size wins.
+            params.update(width=source["params"]["width"], height=source["params"]["height"],
+                          base={"attempt_id": source["id"], "strength": base["strength"], "output": source["output"]})
         if seed is None:
             seed = secrets.randbelow(2**32)
-        params = dict(prompt=prompt, width=width, height=height, steps=steps, seed=seed)
+        params["seed"] = seed
         return self._start("image", params, force=force, session_id=session_id)
+
+    def _base_attempt(self, session_id: str, base) -> dict:
+        """The done attempt of this session an img2img job redraws from (its file must still exist)."""
+        if (not isinstance(base, dict) or not isinstance(base.get("attempt_id"), str)
+                or base.get("strength") not in BASE_STRENGTHS or isinstance(base.get("strength"), bool)):
+            raise MediaError("invalid_params", "底稿参数有误：需要尝试 id 和预设的变化幅度", 400)
+        session = self._image_sessions.get(session_id)
+        source = next((a for a in session.get("attempts", [])
+                       if isinstance(a, dict) and a.get("id") == base["attempt_id"]), None)
+        if source is None:
+            raise MediaError("base_not_found", "找不到作为底稿的那一次生成", 404)
+        if source.get("status") != "done" or source.get("output_missing") or not source.get("output"):
+            raise MediaError("base_missing", "底稿图片已不在，无法以它为底稿重绘", 404)
+        return source
 
     def _estimate(self, kind: str, params: dict) -> tuple[int, str]:
         """(bytes, source) —— 按作业参数估算的峰值。
@@ -220,7 +243,11 @@ class MediaService:
                     extra_env = dict(roots.music_env)
                 else:
                     output = root / f"qwen-image-{stamp}-{uuid.uuid4().hex[:8]}.png"
-                    command = build_image_command(Path(roots.image_python), Path(roots.media_cli_dir) / "image_cli.py", model_root, output=output, **params)
+                    command_params = {key: params[key] for key in ("prompt", "width", "height", "steps", "seed")}
+                    if params.get("base"):
+                        command_params.update(init_image=root / params["base"]["output"],
+                                              image_strength=params["base"]["strength"])
+                    command = build_image_command(Path(roots.image_python), Path(roots.media_cli_dir) / "image_cli.py", model_root, output=output, **command_params)
                     extra_env = dict(roots.image_env)
                 handle = self._executor.spawn(command, extra_env=extra_env)
             except Exception as exc:
@@ -245,8 +272,10 @@ class MediaService:
         running unattached (D-23): the image still reaches outputs and history."""
         attempt_id = uuid.uuid4().hex
         try:
-            attached = self._image_sessions.begin_attempt(
-                session_id, {"id": attempt_id, "job_id": job_id, "params": dict(params)})
+            base = params.get("base")
+            attached = self._image_sessions.begin_attempt(session_id, {
+                "id": attempt_id, "job_id": job_id, "params": dict(params),
+                "base": {"attempt_id": base["attempt_id"], "strength": base["strength"]} if base else None})
         except Exception:
             log.exception("begin_attempt failed; image job runs without a session")
             attached = False
