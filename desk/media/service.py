@@ -12,9 +12,12 @@ from typing import Any, Callable
 from .audio import wav_seconds
 from .commands import build_h3_command, build_music_command, build_image_command
 from .inputs import save_input, resolve_input
+from desk.library.errors import NotFoundError
+from desk.library.media_sessions import SegmentMissing
 
 log = logging.getLogger(__name__)
 DEFAULT_LOG_LIMIT = 1024 * 1024
+KIND_NAMES = {"image": "图片", "video": "视频", "music": "音乐"}
 
 
 # Image-to-image presets (design D-40/D-46 rev. 2026-09-24): 「在这张基础上改」 keeps the composition,
@@ -58,7 +61,8 @@ def _check_seed(seed) -> int:
 
 class MediaService:
     def __init__(self, *, resolve_paths, probe_capabilities, arbiter, list_catalog,
-                 append_history, executor, media_sessions, clock: Callable[[], float] = time.time,
+                 append_history, executor, media_sessions, ref_slots: dict | None = None,
+                 clock: Callable[[], float] = time.time,
                  term_grace_s: float = 5.0, log_limit: int = DEFAULT_LOG_LIMIT):
         """`measurements`/`measurements_path`/`available_bytes` are Task 7's media
         calibration seam (R-budget-06): optional, off by default. When all three
@@ -80,6 +84,7 @@ class MediaService:
         self._resolve_paths, self._probe_capabilities, self._arbiter = resolve_paths, probe_capabilities, arbiter
         self._list_catalog, self._append_history, self._executor = list_catalog, append_history, executor
         self._sessions = media_sessions
+        self._ref_slots = ref_slots or {}
         self._clock, self._term_grace_s, self._log_limit = clock, term_grace_s, log_limit
         self._lock = threading.RLock()
         self._state: dict[str, Any] = {"job_id": 0, "status": "idle", "kind": None, "params": None,
@@ -96,9 +101,40 @@ class MediaService:
         except ValueError as exc:
             raise MediaError("invalid_input", str(exc), 400) from exc
 
+    def _check_session(self, kind: str, session_id, *, required: bool) -> str | None:
+        if session_id is None and not required:
+            return None
+        if not isinstance(session_id, str):
+            raise MediaError("session_required", SESSION_REQUIRED_MESSAGE, 400)
+        if not self._sessions[kind].exists(session_id):
+            raise MediaError("session_not_found", SESSION_NOT_FOUND_MESSAGE, 404)
+        return session_id
+
+    def _resolve_refs(self, kind: str, refs) -> tuple[dict, dict]:
+        """Validate cross-session references (B-55): pointers to store, files to use."""
+        if refs is None:
+            return {}, {}
+        if not isinstance(refs, dict):
+            raise MediaError("invalid_params", "引用参数有误", 400)
+        slots = self._ref_slots.get(kind, {})
+        stored, paths = {}, {}
+        for name, ref in refs.items():
+            target = slots.get(name)
+            if target is None or not isinstance(ref, dict) or ref.get("kind") != target \
+                    or not isinstance(ref.get("session_id"), str) or not isinstance(ref.get("attempt_id"), str):
+                raise MediaError("invalid_params", f"引用参数有误：{name}", 400)
+            try:
+                attempt = self._sessions[target].find_done(ref["session_id"], ref["attempt_id"])
+            except (NotFoundError, SegmentMissing):
+                raise MediaError("ref_missing", f"引用的{KIND_NAMES[target]}已不在", 404) from None
+            stored[name] = {"kind": target, "session_id": ref["session_id"], "attempt_id": ref["attempt_id"]}
+            paths[name] = Path(self._resolve_paths().outputs_root) / attempt["output"]
+        return stored, paths
+
     def start_video_job(self, *, prompt, width, height, frames, steps,
                         mode="text", first_frame=None, last_frame=None, ref_video=None,
-                        use_audio=True, seed=None, force=False) -> dict:
+                        use_audio=True, seed=None, session_id=None, continues=None, refs=None,
+                        force=False) -> dict:
         _nonempty("prompt", prompt, code="prompt_required", message="请填写视频提示词")
         for name, value in (("width", width), ("height", height), ("frames", frames), ("steps", steps)):
             _positive_int(name, value)
@@ -115,6 +151,10 @@ class MediaService:
         if any(value and key not in expected for key, value in
                (("first_frame", first_frame), ("last_frame", last_frame), ("ref_video", ref_video))):
             raise MediaError("invalid_params", "素材与生成模式不匹配", 400)
+        if continues is not None:
+            raise MediaError("invalid_params", "暂不支持续写", 400)   # Task 6 replaces this
+        session_id = self._check_session("video", session_id, required=refs is not None)
+        stored_refs, _ref_paths = self._resolve_refs("video", refs)
         try:
             for asset_id, kind in assets.values():
                 resolve_input(self._resolve_paths().outputs_root, asset_id, kind)
@@ -123,25 +163,33 @@ class MediaService:
         params = {"prompt": prompt, "width": width, "height": height, "frames": frames, "steps": steps, "seed": seed}
         if mode != "text":
             params.update(mode=mode, use_audio=use_audio, **{key: value[0] for key, value in assets.items()})
-        return self._start("video", params, force=force)
+        return self._start("video", params, force=force, session_id=session_id, attempt_extra={"refs": stored_refs})
 
-    def start_music_job(self, *, caption, lyrics, duration, seed=None, force=False) -> dict:
+    def start_music_job(self, *, caption, lyrics, duration, seed=None, session_id=None, continues=None,
+                        refs=None, force=False) -> dict:
         _nonempty("caption", caption, code="caption_required", message="请填写风格描述")
         if not isinstance(lyrics, str) or isinstance(duration, bool) or not isinstance(duration, (int, float)) or duration <= 0:
             raise MediaError("invalid_params", "lyrics must be a string and duration must be positive", 400)
         if not lyrics.strip():
             raise MediaError("lyrics_required", "请填写歌词：Music 3 需要歌词才能生成", 400)
         seed = _check_seed(seed)
-        return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration, "seed": seed}, force=force)
+        if continues is not None:
+            raise MediaError("invalid_params", "暂不支持续写", 400)   # Task 6 replaces this
+        session_id = self._check_session("music", session_id, required=refs is not None)
+        stored_refs, _ref_paths = self._resolve_refs("music", refs)
+        return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration, "seed": seed},
+                           force=force, session_id=session_id, attempt_extra={"refs": stored_refs})
 
     def start_image_job(self, *, session_id=None, prompt, width=1024, height=1024, steps=40,
-                        seed=None, force=False, base=None) -> dict:
+                        seed=None, force=False, base=None, continues=None, refs=None) -> dict:
         """Start an image job inside a session.
 
         Order (design D-20): parameters → session → the shared `_start` gates.
         A running attempt is appended only once the job really runs; any refusal
         before that leaves the session file untouched (D-21). `seed=None` means
         "pick one": the value actually used is what the attempt records (D-19)."""
+        if continues is not None or refs is not None:
+            raise MediaError("invalid_params", "图片不支持续写或引用", 400)   # B-00b
         _nonempty("prompt", prompt, code="prompt_required", message="请填写图片提示词")
         for name, value in (("width", width), ("height", height)):
             _positive_int(name, value)
@@ -152,10 +200,7 @@ class MediaService:
         seed = _check_seed(seed)
         if not isinstance(force, bool):
             raise MediaError("invalid_params", "force 必须为布尔值", 400)
-        if not isinstance(session_id, str):
-            raise MediaError("session_required", SESSION_REQUIRED_MESSAGE, 400)
-        if not self._sessions["image"].exists(session_id):
-            raise MediaError("session_not_found", SESSION_NOT_FOUND_MESSAGE, 404)
+        session_id = self._check_session("image", session_id, required=True)
         params = dict(prompt=prompt, width=width, height=height, steps=steps)
         if base is not None:
             source = self._base_attempt(session_id, base)
@@ -163,7 +208,9 @@ class MediaService:
             params.update(width=source["params"]["width"], height=source["params"]["height"],
                           base={"attempt_id": source["id"], "strength": base["strength"], "output": source["output"]})
         params["seed"] = seed
-        return self._start("image", params, force=force, session_id=session_id)
+        extra = {"base": {"attempt_id": params["base"]["attempt_id"], "strength": params["base"]["strength"]}} \
+            if params.get("base") else {}
+        return self._start("image", params, force=force, session_id=session_id, attempt_extra=extra)
 
     def _base_attempt(self, session_id: str, base) -> dict:
         """The done attempt of this session an img2img job redraws from (its file must still exist)."""
@@ -193,7 +240,8 @@ class MediaService:
         from .memory_estimate import estimate_bytes
         return estimate_bytes(kind, params), "predicted"
 
-    def _start(self, kind: str, params: dict, *, force: bool = False, session_id: str | None = None) -> dict:
+    def _start(self, kind: str, params: dict, *, force: bool = False, session_id: str | None = None,
+              attempt_extra: dict | None = None) -> dict:
         with self._lock:
             if self._state["status"] == "running":
                 raise MediaError("media_busy", "a media job is already running", 409)
@@ -271,25 +319,25 @@ class MediaService:
             self._state = {"job_id": job_id, "status": "running", "kind": kind, "params": dict(params), "output": None,
                 "error": None, "started_at": now, "finished_at": None, "session_id": None, "attempt_id": None}
             self._reset_log(); self._cancel_requested = False; self._cancel_origin = "user"; self._handle = handle
-            if kind == "image":
-                self._begin_attempt(session_id, job_id, params)
+            if session_id is not None:
+                self._begin_attempt(kind, session_id, job_id, params, attempt_extra or {})
             self._worker_thread = threading.Thread(target=self._worker, args=(handle, permit, output, kind), daemon=True)
             self._worker_thread.start()
             return self.job_status()
 
-    def _begin_attempt(self, session_id: str, job_id: int, params: dict) -> None:
-        """Attach the now-running job to its session (D-20 step 5).
+    def _begin_attempt(self, kind: str, session_id: str, job_id: int, params: dict, extra: dict) -> None:
+        """Attach the now-running job to its session (IS D-20 step 5, B-32).
 
         A session deleted since the check, or a store failure, leaves the job
-        running unattached (D-23): the image still reaches outputs and history."""
+        running unattached (IS D-23): the output still reaches outputs and history."""
         attempt_id = uuid.uuid4().hex
         try:
-            base = params.get("base")
-            attached = self._sessions["image"].begin_attempt(session_id, {
+            attached = self._sessions[kind].begin_attempt(session_id, {
                 "id": attempt_id, "job_id": job_id, "params": dict(params),
-                "base": {"attempt_id": base["attempt_id"], "strength": base["strength"]} if base else None})
+                "op": extra.get("op", "generate"), "continues": extra.get("continues"),
+                "refs": extra.get("refs") or {}, "base": extra.get("base")})
         except Exception:
-            log.exception("begin_attempt failed; image job runs without a session")
+            log.exception("begin_attempt failed; %s job runs without a session", kind)
             attached = False
         if attached:
             self._state.update(session_id=session_id, attempt_id=attempt_id)
@@ -334,10 +382,10 @@ class MediaService:
         elif status == "cancelled":
             error = dict(CANCEL_ERRORS[cancel_origin])
         try:
-            settled = self._sessions["image"].settle_attempt(
+            settled = self._sessions[snap["kind"]].settle_attempt(
                 snap["session_id"], snap["attempt_id"], status, snap["output"], error)
             if not settled:
-                log.info("image attempt %s not settled: its session is gone", snap["attempt_id"])
+                log.info("%s attempt %s not settled: its session is gone", snap["kind"], snap["attempt_id"])
         except Exception:
             log.exception("settle_attempt failed")
 
@@ -346,8 +394,7 @@ class MediaService:
         entry = {"kind": snap["kind"], "status": {"done": "done", "error": "failed", "cancelled": "cancelled"}[snap["status"]],
             "params": snap["params"], "output": snap["output"], "duration_s": snap["finished_at"] - snap["started_at"],
             "error": f"{error['code']}: {error['message']}" if error else None}
-        if snap["kind"] == "image":
-            entry.update(session_id=snap.get("session_id"), attempt_id=snap.get("attempt_id"))
+        entry.update(session_id=snap.get("session_id"), attempt_id=snap.get("attempt_id"))
         if snap["kind"] == "music" and snap["status"] == "done" and snap["output"]:
             entry["audio_seconds"] = wav_seconds(Path(self._resolve_paths().outputs_root) / snap["output"])
         return entry

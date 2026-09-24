@@ -395,7 +395,7 @@ def test_non_image_jobs_carry_null_session_fields(tmp_path):
     snap = finished_snapshot(service, lambda: service.start_video_job(
         prompt="rain", width=512, height=288, frames=73, steps=10))
     assert snap["session_id"] is None and snap["attempt_id"] is None
-    assert "session_id" not in deps.history.entries[-1]
+    assert deps.history.entries[-1]["session_id"] is None and deps.history.entries[-1]["attempt_id"] is None
 
 
 def test_image_manifest_is_pinned_offline_and_describes_two_sources(tmp_path):

@@ -78,7 +78,8 @@ def test_start_video_job_success_path(tmp_path):
     assert deps.arbiter.acquired == [("video", "job-1", "permit-1")]
     assert deps.arbiter.released == ["permit-1"]
     assert deps.history.entries == [{"kind": "video", "status": "done", "params": snap["params"],
-        "output": f"h3-{STAMP}.mp4", "duration_s": 0.0, "error": None}]
+        "output": f"h3-{STAMP}.mp4", "duration_s": 0.0, "error": None,
+        "session_id": None, "attempt_id": None}]
 
 
 def test_video_argv_and_running_state(tmp_path):

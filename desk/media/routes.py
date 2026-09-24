@@ -40,6 +40,7 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
             first_frame=payload.get("first_frame"), last_frame=payload.get("last_frame"),
             ref_video=payload.get("ref_video"), use_audio=payload.get("use_audio", True),
             seed=payload.get("seed"),
+            session_id=payload.get("session_id"), continues=payload.get("continues"), refs=payload.get("refs"),
             force=bool(payload.get("force", False))))
 
     def start_music(body, _query):
@@ -47,6 +48,7 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
         return _run(lambda: service.start_music_job(
             caption=payload.get("caption"), lyrics=payload.get("lyrics"),
             duration=payload.get("duration"), seed=payload.get("seed"),
+            session_id=payload.get("session_id"), continues=payload.get("continues"), refs=payload.get("refs"),
             force=bool(payload.get("force", False))))
 
     def cancel(_body, _query):
@@ -58,7 +60,8 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
             session_id=payload.get("session_id"),
             prompt=payload.get("prompt"), width=payload.get("width", 1024),
             height=payload.get("height", 1024), steps=payload.get("steps", 40),
-            seed=payload.get("seed"), force=payload.get("force", False), base=payload.get("base")))
+            seed=payload.get("seed"), force=payload.get("force", False), base=payload.get("base"),
+            continues=payload.get("continues"), refs=payload.get("refs")))
 
     def status(_body, query):
         def call():
