@@ -139,6 +139,33 @@ def test_server_death_shows_error_text(shell_app):
     assert shell_app.proc.poll() is None
 
 
+def test_clicking_a_file_input_opens_the_system_open_panel(shell_app):
+    """issue #15: WKWebView on macOS shows no file panel for <input type=file> unless its
+    uiDelegate implements runOpenPanelWith — without it the click does nothing, so image-to-video
+    could not pick a frame. Chromium (e2e) has its own panel and never caught this."""
+    pid = shell_app.proc.pid
+    tree = wait_for_window(pid)
+    deadline = time.time() + 20
+    while "file upload button" not in tree and time.time() < deadline:
+        time.sleep(1.5)
+        tree = tree_text(pid)
+    index = next((line.split()[0] for line in tree.splitlines() if "file upload button" in line), None)
+    assert index is not None, f"page has no file input; tree:\n{tree[-2000:]}"
+    code, obj = orca_json("click", "--app", f"pid:{pid}", "--element-index", index,
+                          "--restore-window", "--no-screenshot")
+    assert code == 0, f"orca click failed: {obj}"
+    tree = ""
+    deadline = time.time() + 20
+    while time.time() < deadline:
+        tree = tree_text(pid)
+        if ("取消" in tree and "打开" in tree) or ("Cancel" in tree and "Open" in tree):
+            break
+        time.sleep(1.5)
+    else:
+        pytest.fail(f"no open panel after clicking the file input; last tree:\n{tree[-2000:]}")
+    orca_json("press-key", "--app", f"pid:{pid}", "--key", "Escape", "--no-screenshot")
+
+
 def test_main_window_disallows_tab_bar():
     """未拉的线 #8: 应用不支持多标签窗口，别让系统在窗口菜单里塞「显示标签页」。"""
     source = (ROOT / "macos" / "MainWindowController.swift").read_text()

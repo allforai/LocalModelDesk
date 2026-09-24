@@ -3,7 +3,7 @@ import WebKit
 
 /// ui:mainWindow — hosts ui:deskShell in a WKWebView and provides a local error page.
 final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelegate,
-                                  WKScriptMessageHandler {
+                                  WKUIDelegate, WKScriptMessageHandler {
   private let window: NSWindow
   private var webView: WKWebView!
   private let baseURL: URL
@@ -36,6 +36,7 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
     window.isReleasedWhenClosed = false
     window.delegate = self
     webView.navigationDelegate = self
+    webView.uiDelegate = self
   }
 
   func showWindow() {
@@ -71,6 +72,21 @@ final class MainWindowController: NSObject, NSWindowDelegate, WKNavigationDelega
     lastFragment = webView.url?.fragment
     webView.loadHTMLString(errorPageHTML(reason: reason, logPath: logPath, logTail: logTail), baseURL: nil)
     showWindow()
+  }
+
+  /// issue #15: macOS WKWebView shows no file panel for <input type="file"> on its own — the
+  /// click does nothing until the UI delegate presents one. Cancelling must still answer nil so
+  /// the page's input stays usable for the next click.
+  func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters,
+               initiatedByFrame frame: WKFrameInfo,
+               completionHandler: @escaping ([URL]?) -> Void) {
+    let panel = NSOpenPanel()
+    panel.canChooseFiles = true
+    panel.canChooseDirectories = parameters.allowsDirectories
+    panel.allowsMultipleSelection = parameters.allowsMultipleSelection
+    panel.beginSheetModal(for: window) { response in
+      completionHandler(response == .OK ? panel.urls : nil)
+    }
   }
 
   func userContentController(_ userContentController: WKUserContentController,

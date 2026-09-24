@@ -44,7 +44,11 @@ FAKE_DESK_SERVER = textwrap.dedent("""\
     class H(http.server.BaseHTTPRequestHandler):
         def do_GET(self):
             if self.path == "/":
-                body = b"<!doctype html><meta charset=utf-8><title>fake desk</title><h1>fake desk shell</h1>"
+                # A file input filling the rest of the window: a click anywhere below the heading
+                # lands on it, so the open-panel test (issue #15) needs no element lookup.
+                body = ("<!doctype html><meta charset=utf-8><title>fake desk</title><h1>fake desk shell</h1>"
+                        "<input type=file aria-label=pick-file style='position:fixed;left:0;top:80px;"
+                        "width:100%;height:calc(100% - 80px);opacity:0.01'>").encode()
                 ctype = "text/html; charset=utf-8"; code = 200
             elif self.path in PAYLOADS:
                 body = json.dumps(PAYLOADS[self.path]).encode(); ctype = "application/json"; code = 200

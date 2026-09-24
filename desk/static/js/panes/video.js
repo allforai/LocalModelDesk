@@ -7,6 +7,10 @@ import { videoCostNote } from "../pure/video_cost.js";
 const SIZES = [["512x288", "草稿 512×288"], ["768x448", "标准 768×448"], ["1024x576", "清晰 1024×576"]];
 const DURATIONS = [[49, "约 2 秒（快速）"], [73, "约 3 秒"], [124, "约 5 秒（常用）"], [192, "约 8 秒"], [243, "约 10 秒"], [362, "约 15 秒（最长）"]];
 
+function acceptsType(accept, type) {
+  return !accept || accept.split(",").map((item) => item.trim()).includes(type);
+}
+
 export function createVideoPane(root, ctx = {}) {
   const els = {
     prompt: root.querySelector("[data-video-prompt]"), size: root.querySelector("[data-video-size]"),
@@ -54,6 +58,25 @@ export function createVideoPane(root, ctx = {}) {
       if (tag === "video") media.controls = true;
       else media.alt = file.name;
       preview.append(media);
+    });
+    // issue #15: the input is visually hidden, so a dragged file has to be accepted by its row.
+    // `accept` only filters the picker, never a drop, hence the explicit type check.
+    const row = input?.closest(".file-row");
+    row?.addEventListener("dragover", (event) => { event.preventDefault(); row.classList.add("drag-over"); });
+    row?.addEventListener("dragleave", () => row.classList.remove("drag-over"));
+    row?.addEventListener("drop", (event) => {
+      event.preventDefault();
+      row.classList.remove("drag-over");
+      const file = event.dataTransfer?.files?.[0];
+      if (!file) return;
+      if (!acceptsType(input.accept, file.type)) {
+        els.error.textContent = tag === "img" ? "这里只支持 PNG、JPEG、WebP 图片" : "这里只支持 MP4、MOV、WebM 视频";
+        return;
+      }
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      input.files = transfer.files;
+      input.dispatchEvent(new Event("change"));
     });
   }
   function updateMode() {
