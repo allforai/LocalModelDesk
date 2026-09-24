@@ -29,7 +29,7 @@ spike（已完成，见 §0.3） → **本文：媒体会话底座** → 音乐�
 - 续写链（`continues`）与作业内自动拼接成片（`joined_output`）。
 - 手动合成作业（`op: "compose"`）。
 - 跨会话引用（`refs`）的存储与解析机制。
-- 前端：把图片页里会话通用部分抽成共用模块。
+- 前端：只把会话接口改到 `/api/media-sessions/{kind}`、回填带出会话字段；图片页行为不变。
 
 ### 0.3 spike 结论（2026-09-25，作为本文事实前提）
 
@@ -64,7 +64,7 @@ spike（已完成，见 §0.3） → **本文：媒体会话底座** → 音乐�
  "created": "…", "updated": "…", "attempts": []}
 ```
 
-- [B-03] `kind` 与所在目录一致；读到不一致视为坏文件。
+- [B-03] `kind` 与所在目录一致；文件里写了别的 kind 视为坏文件；没写 `kind` 的按所在目录的 kind 读（下次写回时补上）。
 - [B-04] 标题规则继承 IS D-10–D-13。自动标题取第一个尝试的「标题来源字段」：image/video 取 `prompt`，music 取 `caption`。
 
 ### 1.3 尝试
@@ -121,8 +121,7 @@ desk/media/music3_cli.py        新增 --seed 参数，去掉写死的 seed=0
 desk/media/service.py           MediaService(media_sessions=…)：所有 kind 挂会话；continues/refs 解析；
                                  作业内拼接；compose 作业
 desk/runtime.py、desk/testing/harness.py  传 media_sessions=library.media_sessions（生产与测试外壳都接通）
-desk/static/js/panes/media_session.js  新增：会话列表、时间线骨架、轮询挂接、改名删除（从 image.js 抽出）
-desk/static/js/panes/image.js   只保留图片专属的输入区与卡片内容，其余用 media_session.js
+desk/static/js/panes/image.js   会话接口调用改为 mediaSessions("image") 系列（抽共用模块见 B-70，移到第 2 块）
 desk/static/js/api.js           mediaSessions(kind) 系列取代 imageSessions 系列
 desk/static/js/pure/history_fill.js  fillPlan 对所有 kind 带出 session_id/attempt_id（界面如何用归第 2、3 块）
 ```
@@ -135,7 +134,7 @@ desk/static/js/pure/history_fill.js  fillPlan 对所有 kind 带出 session_id/a
 | 方法 | 行为 |
 |---|---|
 | `find_done(id, attempt_id) -> dict` | 返回该会话中的该尝试；会话/尝试不存在 → `NotFoundError`；未完成或文件不在 → `SegmentMissing`（§7 映射错误码） |
-| `chain(id, attempt_id) -> list[dict]` | 沿 `continues` 回溯，返回从链首到该尝试的有序列表（含自身）；遇到环或缺环返回到断点为止并标记 `broken=True` |
+| `chain(id, attempt_id) -> tuple[list[dict], bool]` | 沿 `continues` 回溯，返回（从链首到该尝试的有序列表（含自身，项同 `get` 的输出，带 `output_missing`），`broken`）；遇到环或指向不存在的尝试时停在断点、`broken=True` |
 | `settle_attempt(…, joined_output=None, joined_error=None)` | 增加两个可选参数，按 B-08 写入 |
 | `record_output(id, attempt_id, output) -> bool` | 仅对 running 尝试写 `output`（B-38a）；不存在返回 False |
 
@@ -251,7 +250,7 @@ desk/static/js/pure/history_fill.js  fillPlan 对所有 kind 带出 session_id/a
 
 ## 8. 前端（本文只做重构）
 
-- [B-70] `panes/media_session.js` 导出一个工厂：参数为 `kind`、输入区与卡片内容的渲染回调；负责会话列表四种状态（IS §7.2）、自动新建首个会话（IS D-62）、当前会话恢复（IS D-63）、时间线骨架与选中展开（IS D-71、D-72）、running 卡片与轮询挂接（IS D-81、D-82）、改名删除（IS D-89、D-90）、忙碌原因中「别的会话在生成」（IS §7.6）。
+- [B-70]（**2026-09-25 修订：移到第 2 块**。理由：image.js 的会话逻辑与图片专属状态（提示条、种子框、底稿、大图自适应）交织很紧，只有一个使用方时抽出的接口只能靠猜；第 2 块有了音乐页这个真实的第二使用方再抽。本块前端只改接口路径与 `fillPlan`。以下为第 2 块的要求。）`panes/media_session.js` 导出一个工厂：参数为 `kind`、输入区与卡片内容的渲染回调；负责会话列表四种状态（IS §7.2）、自动新建首个会话（IS D-62）、当前会话恢复（IS D-63）、时间线骨架与选中展开（IS D-71、D-72）、running 卡片与轮询挂接（IS D-81、D-82）、改名删除（IS D-89、D-90）、忙碌原因中「别的会话在生成」（IS §7.6）。
 - [B-71] 图片页改用该模块后，IS 全部 D-xx 仍成立；图片页 DOM 文本、按钮、文案逐字不变。
 - [B-72] 删除确认正文中的「图片」按 kind 替换为「视频 / 音乐」由工厂参数提供；本文只要求 image 的文案不变。
 - [B-73] 本文不改 `panes/video.js`、`panes/music.js`。它们不传 `session_id`，按 §3.2 照旧能生成；`main.js` 的 `tickJob` 对 video/music 作业（含 compose）仍交给它们的 jobView 显示。
