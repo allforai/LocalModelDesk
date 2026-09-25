@@ -33,7 +33,7 @@ class FakeRoots:
         self.data_root = base
         self.history_path = base / "history.jsonl"
         self.sessions_dir = base / "sessions"
-        self.image_sessions_dir = base / "image-sessions"
+        self.media_sessions_dirs = {k: base / f"{k}-sessions" for k in ("image", "video", "music")}
         self.outputs_root = base / "outputs"
 
 
@@ -111,6 +111,14 @@ def test_by_output_maps_filename_to_entry_and_skips_null(tmp_path):
 
     assert set(mapping) == {"h3-a.mp4"}
     assert mapping["h3-a.mp4"]["id"] == entry["id"]
+
+
+def test_by_output_also_indexes_joined_output(tmp_path):
+    history = store(tmp_path)
+    entry = history.append({"kind": "video", "status": "done", "params": {}, "output": "h3-seg.mp4",
+                            "joined_output": "h3-joined.mp4", "duration_s": 1.0, "error": None})
+    mapping = history.by_output()
+    assert mapping["h3-seg.mp4"]["id"] == entry["id"] and mapping["h3-joined.mp4"]["id"] == entry["id"]
 
 
 def test_service_wires_stores_end_to_end(tmp_path):

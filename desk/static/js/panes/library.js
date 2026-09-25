@@ -38,11 +38,21 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)
     }
     const outByName = new Map(outputs.map((output) => [output.name, output]));
     const matchedOutputNames = new Set();
-    const rows = history.map((entry) => {
-      const output = entry.output ? outByName.get(entry.output) ?? null : null;
-      if (output) matchedOutputNames.add(output.name);
-      return { ts: entry.ts ?? "", entry, output };
-    });
+    const rows = [];
+    for (const entry of history) {
+      // B-43: 续写的成片同时有 output（分段）和 joined_output（成片），各自都应
+      // 在素材库里占一行，都带上同一条历史记录（标题、元数据、回填），不落入孤儿分支。
+      const names = [entry.output, entry.joined_output].filter(Boolean);
+      let matched = false;
+      for (const name of names) {
+        const output = outByName.get(name);
+        if (!output) continue;
+        matchedOutputNames.add(output.name);
+        rows.push({ ts: entry.ts ?? "", entry, output });
+        matched = true;
+      }
+      if (!matched) rows.push({ ts: entry.ts ?? "", entry, output: null });
+    }
     for (const output of outputs) {
       if (!matchedOutputNames.has(output.name)) {
         rows.push({ ts: output.ts ?? "", entry: null, output });

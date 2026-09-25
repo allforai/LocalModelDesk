@@ -66,7 +66,8 @@ test("library 面板合并倒序渲染，点击成品就地播放并回填历史
   assert.equal(elements.player.children[0].src, "/api/outputs/video%20old.mp4");
 
   find(elements.list.children[1], (el) => el.tagName === "button" && el.textContent === "回填参数").click();
-  assert.deepEqual(fills, [{ pane: "video", fields: { prompt: "海边", width: 768, height: 448, frames: 49, steps: 16 } }]);
+  assert.deepEqual(fills, [{ pane: "video", session_id: null, attempt_id: null,
+    fields: { prompt: "海边", width: 768, height: 448, frames: 49, steps: 16 } }]);
 });
 
 test("library 面板保留未返回匹配历史的成品", async (t) => {
@@ -250,6 +251,37 @@ test("图片成品用 img 预览并支持全部参数回填", async (t) => {
   find(row, (e) => e.tagName === "button" && e.textContent === "回填参数").click();
   assert.deepEqual(fills, [{ pane: "image", session_id: "s1", attempt_id: "a1", fields: params }]);
   assert.match(find(row, (e) => e.className === "lib-meta").textContent, /1024×768.*40步.*种子 0/);
+});
+
+test("续写成片（joined_output）与它的分段一样各占一行，都不是孤儿（B-43）", async (t) => {
+  const outputs = [
+    { name: "h3-1.mp4", kind: "video", bytes: 10, ts: "2026-09-25T10:00:00Z" },
+    { name: "h3-joined-1.mp4", kind: "video", bytes: 20, ts: "2026-09-25T10:05:00Z" },
+  ];
+  const history = [{
+    kind: "video", status: "done", ts: "2026-09-25T10:05:00Z",
+    output: "h3-1.mp4", joined_output: "h3-joined-1.mp4",
+    params: { prompt: "海边续写", width: 768, height: 448, frames: 49, steps: 16 },
+  }];
+  const { root, parts } = makeLibrary(outputs, history);
+  const pane = createLibraryPane(root, { applyFill() {} });
+
+  await pane.refresh();
+
+  assert.equal(parts["lib-list"].children.length, 2, "分段行和成片行各一条，不应合并或缺失");
+  const titles = parts["lib-list"].children.map(
+    (row) => find(row, (n) => n.className === "lib-title")?.textContent,
+  );
+  // 两行都应带上该 history 的标题（提示词），不是「无历史记录」的孤儿占位文案。
+  assert.ok(titles.every((t) => t === "海边续写"), `两行都应显示提示词标题，实际: ${JSON.stringify(titles)}`);
+  const metas = parts["lib-list"].children.map(
+    (row) => find(row, (n) => n.className === "lib-meta")?.textContent,
+  );
+  assert.ok(metas.every((m) => !m.includes("无历史记录")), `两行都不应是孤儿文案，实际: ${JSON.stringify(metas)}`);
+  // 两行都应有「回填参数」按钮（entry 存在即可回填）。
+  for (const row of parts["lib-list"].children) {
+    assert.ok(find(row, (n) => n.tagName === "button" && n.textContent === "回填参数"), "缺少回填参数按钮");
+  }
 });
 
 test("歌曲记录按成品实际时长标注，并注明请求值", async (t) => {

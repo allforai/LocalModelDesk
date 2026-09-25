@@ -11,7 +11,7 @@ from media_fakes import FIXED_TIME, STAMP, FakeExecutor, finished_snapshot, make
 
 def start_video(service):
     return service.start_video_job(prompt="rain on a quiet street", width=512,
-        height=288, frames=73, steps=10)
+        height=288, frames=73, steps=10, seed=7)
 
 
 @pytest.fixture
@@ -72,13 +72,14 @@ def test_start_video_job_success_path(tmp_path):
     assert snap["status"] == "done"
     assert snap["output"] == f"h3-{STAMP}.mp4"
     assert snap["params"] == {"prompt": "rain on a quiet street", "width": 512,
-        "height": 288, "frames": 73, "steps": 10}
+        "height": 288, "frames": 73, "steps": 10, "seed": 7}
     assert snap["started_at"] == snap["finished_at"] == FIXED_TIME
     assert "line-1" in snap["log"]
     assert deps.arbiter.acquired == [("video", "job-1", "permit-1")]
     assert deps.arbiter.released == ["permit-1"]
     assert deps.history.entries == [{"kind": "video", "status": "done", "params": snap["params"],
-        "output": f"h3-{STAMP}.mp4", "duration_s": 0.0, "error": None}]
+        "output": f"h3-{STAMP}.mp4", "duration_s": 0.0, "error": None,
+        "session_id": None, "attempt_id": None}]
 
 
 def test_video_argv_and_running_state(tmp_path):
@@ -92,7 +93,7 @@ def test_video_argv_and_running_state(tmp_path):
     assert deps.executor.spawned == [{"cmd": build_h3_command(
         ("/fake/bin/mlx-h3",), tmp_path / "models" / "minimax-h3",
         prompt="rain on a quiet street", width=512, height=288, frames=73,
-        steps=10, output=tmp_path / "outputs" / f"h3-{STAMP}.mp4"),
+        steps=10, seed=7, output=tmp_path / "outputs" / f"h3-{STAMP}.mp4"),
         "extra_env": {"PYTHONPATH": "/fake/pylibs/h3"}}]
     service.cancel_job()
     assert completed.wait(5)
@@ -156,7 +157,7 @@ def test_start_music_job_argv_output_and_runtime_capability(tmp_path):
     ]
 
     snap = finished_snapshot(service, lambda: service.start_music_job(
-        caption="ambient piano", lyrics="instrumental", duration=30.0))
+        caption="ambient piano", lyrics="instrumental", duration=30.0, seed=7))
 
     output = tmp_path / "outputs" / f"music3-{STAMP}.wav"
     assert snap["status"] == "done"
@@ -164,7 +165,7 @@ def test_start_music_job_argv_output_and_runtime_capability(tmp_path):
     assert deps.executor.spawned == [{"cmd": build_music_command(
         roots.music_python, roots.media_cli_dir / "music3_cli.py",
         tmp_path / "models" / "minimax-music3", caption="ambient piano",
-        lyrics="instrumental", duration=30.0, output=output),
+        lyrics="instrumental", duration=30.0, seed=7, output=output),
         "extra_env": roots.music_env}]
 
     service, deps = make_service(tmp_path)
@@ -177,7 +178,7 @@ def test_start_music_job_argv_output_and_runtime_capability(tmp_path):
 
 
 class TestStartDiscipline:
-    VALID = dict(prompt="p", width=512, height=288, frames=73, steps=10)
+    VALID = dict(prompt="p", width=512, height=288, frames=73, steps=10, seed=7)
 
     @pytest.mark.parametrize("bad", [
         dict(width=0), dict(width=-1), dict(width="512"), dict(width=True),
@@ -555,6 +556,34 @@ def test_music_history_records_the_real_output_length(tmp_path, monkeypatch):
     finished_snapshot(service, lambda: service.start_music_job(caption="c", lyrics="l", duration=300))
 
     assert deps.history.entries[-1]["audio_seconds"] == 29.71
+
+
+def test_video_seed_is_recorded_and_passed(tmp_path):
+    service, deps = make_service(tmp_path)
+    snap = finished_snapshot(service, lambda: service.start_video_job(
+        prompt="p", width=512, height=288, frames=49, steps=12, seed=123))
+    assert snap["params"]["seed"] == 123
+    cmd = deps.executor.spawned[0]["cmd"]
+    assert cmd[cmd.index("--seed") + 1] == "123"
+
+
+def test_video_omitted_seed_is_random_and_recorded(tmp_path, monkeypatch):
+    from desk.media import service as service_mod
+    monkeypatch.setattr(service_mod.secrets, "randbelow", lambda n: 424242)
+    service, deps = make_service(tmp_path)
+    snap = finished_snapshot(service, lambda: service.start_video_job(prompt="p", width=512, height=288, frames=49, steps=12))
+    assert snap["params"]["seed"] == 424242
+
+
+@pytest.mark.parametrize("bad", [-1, 2**32, 1.5, True, "7"])
+def test_bad_video_or_music_seed_is_400(tmp_path, bad):
+    service, deps = make_service(tmp_path)
+    with pytest.raises(MediaError) as exc:
+        service.start_video_job(prompt="p", width=512, height=288, frames=49, steps=12, seed=bad)
+    assert (exc.value.code, exc.value.message) == ("invalid_params", "种子须为 0–4294967295 的整数")
+    with pytest.raises(MediaError):
+        service.start_music_job(caption="c", lyrics="l", duration=10, seed=bad)
+    assert deps.executor.spawned == []
 
 
 def test_media_hands_the_arbiter_its_job_params(tmp_path):

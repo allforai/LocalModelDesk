@@ -1,4 +1,4 @@
-"""Image sessions: the file store and its /api/image-sessions routes, on a real filesystem."""
+"""Media sessions: the file store and its /api/media-sessions/{kind} routes, on a real filesystem."""
 import json
 import re
 import threading
@@ -9,7 +9,7 @@ import pytest
 from desk.library import LibraryService
 from desk.library.errors import NotFoundError, ValidationError
 from desk.library.http import LibRequest, routes
-from desk.library.image_sessions import ImageSessionStore, auto_title
+from desk.library.media_sessions import MediaSessionStore, SegmentMissing, auto_title
 
 
 class FakeRoots:
@@ -17,7 +17,7 @@ class FakeRoots:
         self.data_root = base
         self.history_path = base / "history.jsonl"
         self.sessions_dir = base / "sessions"
-        self.image_sessions_dir = base / "image-sessions"
+        self.media_sessions_dirs = {k: base / f"{k}-sessions" for k in ("image", "video", "music")}
         self.outputs_root = base / "outputs"
 
 
@@ -27,8 +27,8 @@ def make_library(tmp_path):
     return LibraryService(roots), roots
 
 
-def store(tmp_path) -> ImageSessionStore:
-    return ImageSessionStore(tmp_path / "image-sessions", tmp_path / "outputs")
+def store(tmp_path, kind="image") -> MediaSessionStore:
+    return MediaSessionStore(kind, tmp_path / f"{kind}-sessions", tmp_path / "outputs")
 
 
 def params(prompt="一只橘猫", seed=1, **extra):
@@ -64,11 +64,11 @@ def test_create_writes_one_json_file_per_session_in_its_own_directory(tmp_path):
 
 def test_image_and_chat_sessions_do_not_see_each_other(tmp_path):
     library, roots = make_library(tmp_path)
-    image = library.create_image_session()
+    image = library.sessions_of("image").create()
     chat = library.create_chat_session("chat")
     assert [s["id"] for s in library.list_chat_sessions()] == [chat["id"]]
-    assert [s["id"] for s in library.list_image_sessions()] == [image["id"]]
-    assert roots.image_sessions_dir != roots.sessions_dir
+    assert [s["id"] for s in library.sessions_of("image").list()] == [image["id"]]
+    assert roots.media_sessions_dirs["image"] != roots.sessions_dir
 
 
 def test_list_is_summary_sorted_by_updated_with_corrupt_last(tmp_path):
@@ -154,7 +154,9 @@ def test_attempts_append_in_order_with_complete_fields(tmp_path):
     a1 = begin(sessions, session_id, seed=11, job_id=1)
     running = sessions.get(session_id)["attempts"][0]
     assert running == {"id": a1, "job_id": 1, "ts": running["ts"], "finished": None, "status": "running",
-                       "params": params(seed=11), "output": None, "error": None, "base": None}
+                       "op": "generate", "params": params(seed=11), "continues": None, "refs": {},
+                       "output": None, "joined_output": None, "joined_error": None, "error": None,
+                       "base": None}
     assert sessions.settle_attempt(session_id, a1, "done", "one.png")
     a2 = begin(sessions, session_id, seed=11, job_id=2)
     assert sessions.settle_attempt(session_id, a2, "failed", error={"code": "exit_nonzero", "message": "exit 1",
@@ -226,22 +228,22 @@ def test_recover_running_settles_leftovers_as_interrupted(tmp_path):
 
 def test_library_startup_recovers_running_attempts(tmp_path):
     library, _ = make_library(tmp_path)
-    session_id = library.create_image_session()["id"]
-    begin(library.image_sessions, session_id)
+    session_id = library.sessions_of("image").create()["id"]
+    begin(library.media_sessions["image"], session_id)
     restarted, _ = make_library(tmp_path)
-    [attempt] = restarted.get_image_session(session_id)["attempts"]
+    [attempt] = restarted.sessions_of("image").get(session_id)["attempts"]
     assert attempt["status"] == "failed" and attempt["error"]["code"] == "interrupted"
-    assert not any(s["running"] for s in restarted.list_image_sessions())
+    assert not any(s["running"] for s in restarted.sessions_of("image").list())
 
 
 # ---- delete semantics (D-30, D-31) -----------------------------------------------
 
 def test_delete_removes_only_the_session_file(tmp_path):
     library, roots = make_library(tmp_path)
-    session_id = library.create_image_session()["id"]
-    attempt_id = begin(library.image_sessions, session_id)
+    session_id = library.sessions_of("image").create()["id"]
+    attempt_id = begin(library.media_sessions["image"], session_id)
     (roots.outputs_root / "qwen-image-1.png").write_bytes(b"png")
-    library.image_sessions.settle_attempt(session_id, attempt_id, "done", "qwen-image-1.png")
+    library.media_sessions["image"].settle_attempt(session_id, attempt_id, "done", "qwen-image-1.png")
     library.append_history({"kind": "image", "status": "done", "output": "qwen-image-1.png",
                             "session_id": session_id, "attempt_id": attempt_id})
     handlers = {(m, p): h for m, p, h in routes(library)}
@@ -250,9 +252,9 @@ def test_delete_removes_only_the_session_file(tmp_path):
     files_before = sorted(p.name for p in roots.outputs_root.iterdir())
     history_bytes = roots.history_path.read_bytes()
 
-    library.delete_image_session(session_id)
+    library.sessions_of("image").delete(session_id)
 
-    assert not (roots.image_sessions_dir / f"{session_id}.json").exists()
+    assert not (roots.media_sessions_dirs["image"] / f"{session_id}.json").exists()
     assert handlers[("GET", "/api/outputs")](LibRequest()).body == outputs_before
     assert handlers[("GET", "/api/history")](LibRequest()).body == history_before
     assert sorted(p.name for p in roots.outputs_root.iterdir()) == files_before
@@ -260,7 +262,7 @@ def test_delete_removes_only_the_session_file(tmp_path):
     served = library.serve_output("qwen-image-1.png")
     assert served.status == 200
     with pytest.raises(NotFoundError):
-        library.delete_image_session(session_id)
+        library.sessions_of("image").delete(session_id)
 
 
 def test_running_attempt_session_can_be_deleted_and_late_settle_is_dropped(tmp_path):
@@ -354,50 +356,244 @@ def test_concurrent_appends_from_two_writers_all_land(tmp_path):
 def call(library, method, path, *, session_id=None, body=None):
     handler = {(m, p): h for m, p, h in routes(library)}[(method, path)]
     raw_body = b"" if body is None else (body if isinstance(body, bytes) else json.dumps(body).encode())
-    response = handler(LibRequest(path_params={"id": session_id} if session_id else {}, body=raw_body))
+    path_params = {"kind": "image"}
+    if session_id:
+        path_params["id"] = session_id
+    response = handler(LibRequest(path_params=path_params, body=raw_body))
     return response.status, json.loads(response.body.decode("utf-8"))
 
 
 def test_http_round_trip(tmp_path):
     library, _ = make_library(tmp_path)
-    assert call(library, "GET", "/api/image-sessions") == (200, [])
-    status, created = call(library, "POST", "/api/image-sessions")
+    assert call(library, "GET", "/api/media-sessions/{kind}") == (200, [])
+    status, created = call(library, "POST", "/api/media-sessions/{kind}")
     assert status == 200 and created["attempts"] == [] and created["title"] == "新会话"
-    assert call(library, "POST", "/api/image-sessions", body={})[0] == 200
-    status, listed = call(library, "GET", "/api/image-sessions")
+    assert call(library, "POST", "/api/media-sessions/{kind}", body={})[0] == 200
+    status, listed = call(library, "GET", "/api/media-sessions/{kind}")
     assert status == 200 and len(listed) == 2
     assert set(listed[0]) == {"id", "title", "created", "updated", "attempt_count", "running", "cover"}
-    status, got = call(library, "GET", "/api/image-sessions/{id}", session_id=created["id"])
+    status, got = call(library, "GET", "/api/media-sessions/{kind}/{id}", session_id=created["id"])
     assert status == 200 and got == created
-    status, renamed = call(library, "PATCH", "/api/image-sessions/{id}", session_id=created["id"],
+    status, renamed = call(library, "PATCH", "/api/media-sessions/{kind}/{id}", session_id=created["id"],
                            body={"title": "猫"})
     assert status == 200 and renamed["title"] == "猫" and renamed["title_auto"] is False
-    assert call(library, "DELETE", "/api/image-sessions/{id}", session_id=created["id"]) == (
+    assert call(library, "DELETE", "/api/media-sessions/{kind}/{id}", session_id=created["id"]) == (
         200, {"deleted": created["id"]})
-    assert len(call(library, "GET", "/api/image-sessions")[1]) == 1
+    assert len(call(library, "GET", "/api/media-sessions/{kind}")[1]) == 1
 
 
 def test_http_errors(tmp_path):
     library, roots = make_library(tmp_path)
-    session_id = library.create_image_session()["id"]
+    session_id = library.sessions_of("image").create()["id"]
     missing = "e" * 32
-    assert call(library, "POST", "/api/image-sessions", body={"title": "x"}) == (
+    assert call(library, "POST", "/api/media-sessions/{kind}", body={"title": "x"}) == (
         400, {"error": "不认识的字段：['title']"})
-    assert call(library, "POST", "/api/image-sessions", body=b"not json")[0] == 400
-    assert call(library, "GET", "/api/image-sessions/{id}", session_id=missing) == (
+    assert call(library, "POST", "/api/media-sessions/{kind}", body=b"not json")[0] == 400
+    assert call(library, "GET", "/api/media-sessions/{kind}/{id}", session_id=missing) == (
         404, {"error": f"会话不存在：{missing}"})
-    assert call(library, "GET", "/api/image-sessions/{id}", session_id="../x") == (
+    assert call(library, "GET", "/api/media-sessions/{kind}/{id}", session_id="../x") == (
         404, {"error": "会话不存在：../x"})
-    assert call(library, "PATCH", "/api/image-sessions/{id}", session_id=session_id,
+    assert call(library, "PATCH", "/api/media-sessions/{kind}/{id}", session_id=session_id,
                 body={"title": "x", "attempts": []}) == (400, {"error": "不认识的字段：['attempts']"})
-    assert call(library, "PATCH", "/api/image-sessions/{id}", session_id=session_id,
+    assert call(library, "PATCH", "/api/media-sessions/{kind}/{id}", session_id=session_id,
                 body={"title": " "}) == (400, {"error": "标题须为 1–80 个字"})
-    assert call(library, "PATCH", "/api/image-sessions/{id}", session_id=missing,
+    assert call(library, "PATCH", "/api/media-sessions/{kind}/{id}", session_id=missing,
                 body={"title": "ok"})[0] == 404
-    assert call(library, "DELETE", "/api/image-sessions/{id}", session_id=missing)[0] == 404
-    (roots.image_sessions_dir / ("c" * 32 + ".json")).write_text("{", "utf-8")
-    assert call(library, "GET", "/api/image-sessions/{id}", session_id="c" * 32) == (
+    assert call(library, "DELETE", "/api/media-sessions/{kind}/{id}", session_id=missing)[0] == 404
+    (roots.media_sessions_dirs["image"] / ("c" * 32 + ".json")).write_text("{", "utf-8")
+    assert call(library, "GET", "/api/media-sessions/{kind}/{id}", session_id="c" * 32) == (
         400, {"error": "会话文件已损坏，无法读取"})
-    assert call(library, "PATCH", "/api/image-sessions/{id}", session_id="c" * 32,
+    assert call(library, "PATCH", "/api/media-sessions/{kind}/{id}", session_id="c" * 32,
                 body={"title": "ok"})[0] == 400
-    assert call(library, "GET", "/api/image-sessions")[1][-1] == {"id": "c" * 32, "corrupt": True}
+    assert call(library, "GET", "/api/media-sessions/{kind}")[1][-1] == {"id": "c" * 32, "corrupt": True}
+
+
+# ---- media-sessions base (B-03, B-04, B-06–B-08, B-12, B-22, B-38a) ---------
+
+def vparams(**extra):
+    return {"prompt": "雨夜街道", "width": 512, "height": 288, "frames": 49, "steps": 12, "seed": 7, **extra}
+
+
+def begin_kind(sessions, session_id, *, attempt_id, params, op="generate", continues=None):
+    assert sessions.begin_attempt(session_id, {"id": attempt_id, "job_id": 1, "params": params,
+                                               "op": op, "continues": continues})
+    return attempt_id
+
+
+def finish(sessions, session_id, attempt_id, output, outputs_root):
+    outputs_root.mkdir(parents=True, exist_ok=True)
+    (outputs_root / output).write_bytes(b"x")
+    assert sessions.settle_attempt(session_id, attempt_id, "done", output)
+
+
+@pytest.mark.parametrize("kind", ["image", "video", "music"])
+def test_each_kind_lives_in_its_own_directory_and_records_its_kind(tmp_path, kind):
+    sessions = store(tmp_path, kind)
+    created = sessions.create()
+    assert created["kind"] == kind
+    assert (tmp_path / f"{kind}-sessions" / f"{created['id']}.json").is_file()
+
+
+def test_kindless_file_reads_as_its_directory_kind(tmp_path):
+    sessions = store(tmp_path, "image")
+    created = sessions.create()
+    path = tmp_path / "image-sessions" / f"{created['id']}.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    del data["kind"]
+    path.write_text(json.dumps(data), encoding="utf-8")
+    assert sessions.get(created["id"])["kind"] == "image"
+    assert [s["id"] for s in sessions.list()] == [created["id"]]
+
+
+def test_file_of_another_kind_is_corrupt(tmp_path):
+    sessions = store(tmp_path, "video")
+    created = sessions.create()
+    path = tmp_path / "video-sessions" / f"{created['id']}.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["kind"] = "music"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    assert sessions.list() == [{"id": created["id"], "corrupt": True}]
+    with pytest.raises(ValidationError):
+        sessions.get(created["id"])
+
+
+def test_music_title_comes_from_caption_and_params_follow_the_whitelist(tmp_path):
+    sessions = store(tmp_path, "music")
+    sid = sessions.create()["id"]
+    begin_kind(sessions, sid, attempt_id="a" * 32,
+               params={"caption": "独立流行 110 BPM", "lyrics": "[verse]\n早晨", "duration": 20, "seed": 7, "junk": 1})
+    session = sessions.get(sid)
+    assert session["title"] == "独立流行 110 BPM"
+    assert session["attempts"][0]["params"] == {"caption": "独立流行 110 BPM", "lyrics": "[verse]\n早晨",
+                                                "duration": 20, "seed": 7}
+
+
+def test_attempt_carries_op_continues_refs_and_empty_join_fields(tmp_path):
+    sessions = store(tmp_path, "video")
+    sid = sessions.create()["id"]
+    begin_kind(sessions, sid, attempt_id="a" * 32, params=vparams())
+    attempt = sessions.get(sid)["attempts"][0]
+    assert attempt["op"] == "generate" and attempt["continues"] is None and attempt["refs"] == {}
+    assert attempt["joined_output"] is None and attempt["joined_error"] is None and attempt["base"] is None
+
+
+def test_compose_attempt_keeps_only_parts_and_never_retitles(tmp_path):
+    sessions = store(tmp_path, "video")
+    sid = sessions.create()["id"]
+    begin_kind(sessions, sid, attempt_id="c" * 32, params={"parts": ["a" * 32, "b" * 32], "prompt": "x"}, op="compose")
+    attempt = sessions.get(sid)["attempts"][0]
+    assert attempt["op"] == "compose" and attempt["params"] == {"parts": ["a" * 32, "b" * 32]}
+    assert sessions.get(sid)["title"] == "新会话"   # 合成不参与自动标题（B-46）
+
+
+def test_record_output_then_settle_done_with_joined_output(tmp_path):
+    sessions, outputs = store(tmp_path, "video"), tmp_path / "outputs"
+    sid = sessions.create()["id"]
+    begin_kind(sessions, sid, attempt_id="a" * 32, params=vparams(), continues="f" * 32)
+    assert sessions.record_output(sid, "a" * 32, "h3-seg.mp4")
+    assert sessions.get(sid)["attempts"][0]["status"] == "running"
+    assert sessions.get(sid)["attempts"][0]["output"] == "h3-seg.mp4"
+    outputs.mkdir(parents=True, exist_ok=True)
+    (outputs / "h3-seg.mp4").write_bytes(b"x")
+    assert sessions.settle_attempt(sid, "a" * 32, "done", "h3-seg.mp4", joined_output="h3-joined.mp4")
+    attempt = sessions.get(sid)["attempts"][0]
+    assert attempt["joined_output"] == "h3-joined.mp4" and attempt["joined_error"] is None
+    assert attempt["joined_missing"] is True  # 文件不在（B-12）
+
+
+def test_record_output_ignores_settled_or_unknown_attempts(tmp_path):
+    sessions = store(tmp_path, "video")
+    sid = sessions.create()["id"]
+    assert sessions.record_output(sid, "a" * 32, "x.mp4") is False
+    assert sessions.record_output("0" * 32, "a" * 32, "x.mp4") is False
+
+
+def test_recover_running_keeps_a_recorded_segment_as_done(tmp_path):
+    sessions = store(tmp_path, "video")
+    sid = sessions.create()["id"]
+    begin_kind(sessions, sid, attempt_id="a" * 32, params=vparams(), continues="f" * 32)
+    sessions.record_output(sid, "a" * 32, "h3-seg.mp4")
+    begin_kind(sessions, sid, attempt_id="b" * 32, params=vparams())
+    assert sessions.recover_running() == 2
+    first, second = sessions.get(sid)["attempts"]
+    assert first["status"] == "done" and first["output"] == "h3-seg.mp4"
+    assert first["joined_error"] == {"code": "interrupted", "message": "应用在拼接成片时关闭"}
+    assert second["status"] == "failed" and second["error"]["code"] == "interrupted"
+
+
+def test_cover_prefers_joined_output(tmp_path):
+    sessions = store(tmp_path, "video")
+    sid = sessions.create()["id"]
+    begin_kind(sessions, sid, attempt_id="a" * 32, params=vparams(), continues="f" * 32)
+    sessions.settle_attempt(sid, "a" * 32, "done", "h3-seg.mp4", joined_output="h3-joined.mp4")
+    assert sessions.list()[0]["cover"] == "h3-joined.mp4"
+
+
+def test_find_done_distinguishes_unknown_from_missing(tmp_path):
+    sessions, outputs = store(tmp_path, "video"), tmp_path / "outputs"
+    sid = sessions.create()["id"]
+    begin_kind(sessions, sid, attempt_id="a" * 32, params=vparams())
+    with pytest.raises(SegmentMissing):
+        sessions.find_done(sid, "a" * 32)          # 还在 running
+    finish(sessions, sid, "a" * 32, "h3-a.mp4", outputs)
+    assert sessions.find_done(sid, "a" * 32)["output"] == "h3-a.mp4"
+    (outputs / "h3-a.mp4").unlink()
+    with pytest.raises(SegmentMissing):
+        sessions.find_done(sid, "a" * 32)          # 文件不在
+    with pytest.raises(NotFoundError):
+        sessions.find_done(sid, "9" * 32)          # 没有这一段
+
+
+def test_chain_walks_continues_back_to_the_head_and_forks_independently(tmp_path):
+    sessions, outputs = store(tmp_path, "video"), tmp_path / "outputs"
+    sid = sessions.create()["id"]
+    begin_kind(sessions, sid, attempt_id="a" * 32, params=vparams())
+    finish(sessions, sid, "a" * 32, "a.mp4", outputs)
+    begin_kind(sessions, sid, attempt_id="b" * 32, params=vparams(), continues="a" * 32)
+    finish(sessions, sid, "b" * 32, "b.mp4", outputs)
+    begin_kind(sessions, sid, attempt_id="c" * 32, params=vparams(), continues="a" * 32)  # 分叉
+    items, broken = sessions.chain(sid, "b" * 32)
+    assert [i["id"] for i in items] == ["a" * 32, "b" * 32] and broken is False
+    items, broken = sessions.chain(sid, "c" * 32)
+    assert [i["id"] for i in items] == ["a" * 32, "c" * 32] and broken is False
+
+
+def test_chain_marks_broken_on_dangling_link_and_on_cycles(tmp_path):
+    sessions = store(tmp_path, "video")
+    sid = sessions.create()["id"]
+    begin_kind(sessions, sid, attempt_id="b" * 32, params=vparams(), continues="a" * 32)  # a 不存在
+    items, broken = sessions.chain(sid, "b" * 32)
+    assert [i["id"] for i in items] == ["b" * 32] and broken is True
+    path = tmp_path / "video-sessions" / f"{sid}.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["attempts"].append({**data["attempts"][0], "id": "a" * 32, "continues": "b" * 32})
+    path.write_text(json.dumps(data), encoding="utf-8")
+    items, broken = sessions.chain(sid, "b" * 32)
+    assert broken is True and len(items) == 2
+
+
+# ---- HTTP: /api/media-sessions/{kind} routes -------------------------------------
+
+@pytest.mark.parametrize("kind", ["image", "video", "music"])
+def test_media_session_routes_round_trip_per_kind(tmp_path, kind):
+    library, roots = make_library(tmp_path)
+    table = {(m, p): h for m, p, h in routes(library)}
+    created = json.loads(table[("POST", "/api/media-sessions/{kind}")](
+        LibRequest(path_params={"kind": kind}, body=b"{}")).body)
+    assert created["kind"] == kind
+    listed = json.loads(table[("GET", "/api/media-sessions/{kind}")](LibRequest(path_params={"kind": kind})).body)
+    assert [s["id"] for s in listed] == [created["id"]]
+    other = "music" if kind != "music" else "video"
+    assert json.loads(table[("GET", "/api/media-sessions/{kind}")](LibRequest(path_params={"kind": other})).body) == []
+    renamed = table[("PATCH", "/api/media-sessions/{kind}/{id}")](
+        LibRequest(path_params={"kind": kind, "id": created["id"]}, body=json.dumps({"title": "新名字"}).encode()))
+    assert renamed.status == 200 and json.loads(renamed.body)["title"] == "新名字"
+    deleted = table[("DELETE", "/api/media-sessions/{kind}/{id}")](LibRequest(path_params={"kind": kind, "id": created["id"]}))
+    assert json.loads(deleted.body) == {"deleted": created["id"]}
+
+
+def test_unknown_media_kind_is_404(tmp_path):
+    library, _ = make_library(tmp_path)
+    table = {(m, p): h for m, p, h in routes(library)}
+    response = table[("GET", "/api/media-sessions/{kind}")](LibRequest(path_params={"kind": "gif"}))
+    assert response.status == 404 and json.loads(response.body) == {"error": "不认识的媒体类型：gif"}

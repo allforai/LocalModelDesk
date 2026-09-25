@@ -42,9 +42,10 @@ class HistoryStore:
     def by_output(self) -> dict[str, dict]:
         mapping: dict[str, dict] = {}
         for entry in self._read_all():
-            output = entry.get("output")
-            if output:
-                mapping[output] = entry
+            for key in ("output", "joined_output"):
+                name = entry.get(key)
+                if name:
+                    mapping[name] = entry
         return mapping
 
     def _read_all(self) -> list[dict]:

@@ -136,30 +136,34 @@ def _only_keys(payload: dict, allowed: set) -> None:
         raise ValidationError(f"不认识的字段：{sorted(unknown)}")
 
 
-def handle_list_image_sessions(service, request: LibRequest) -> Response:
-    return _json_response(200, service.list_image_sessions())
+def _store(service, request: LibRequest):
+    return service.sessions_of(request.path_params["kind"])
 
 
-def handle_create_image_session(service, request: LibRequest) -> Response:
+def handle_list_media_sessions(service, request: LibRequest) -> Response:
+    return _json_response(200, _store(service, request).list())
+
+
+def handle_create_media_session(service, request: LibRequest) -> Response:
+    store = _store(service, request)
     _only_keys(_json_body(request) if request.body else {}, set())
-    return _json_response(200, service.create_image_session())
+    return _json_response(200, store.create())
 
 
-def handle_get_image_session(service, request: LibRequest) -> Response:
-    return _json_response(200, service.get_image_session(request.path_params["id"]))
+def handle_get_media_session(service, request: LibRequest) -> Response:
+    return _json_response(200, _store(service, request).get(request.path_params["id"]))
 
 
-def handle_rename_image_session(service, request: LibRequest) -> Response:
+def handle_rename_media_session(service, request: LibRequest) -> Response:
+    store = _store(service, request)
     payload = _json_body(request)
     _only_keys(payload, {"title"})
-    return _json_response(
-        200, service.rename_image_session(request.path_params["id"], payload.get("title"))
-    )
+    return _json_response(200, store.rename(request.path_params["id"], payload.get("title")))
 
 
-def handle_delete_image_session(service, request: LibRequest) -> Response:
+def handle_delete_media_session(service, request: LibRequest) -> Response:
     session_id = request.path_params["id"]
-    service.delete_image_session(session_id)
+    _store(service, request).delete(session_id)
     return _json_response(200, {"deleted": session_id})
 
 
@@ -192,9 +196,9 @@ def routes(service) -> list[tuple[str, str, object]]:
         ("POST", "/api/sessions", bind(handle_create_session)),
         ("PATCH", "/api/sessions/{id}", bind(handle_update_session)),
         ("DELETE", "/api/sessions/{id}", bind(handle_delete_session)),
-        ("GET", "/api/image-sessions", bind(handle_list_image_sessions)),
-        ("POST", "/api/image-sessions", bind(handle_create_image_session)),
-        ("GET", "/api/image-sessions/{id}", bind(handle_get_image_session)),
-        ("PATCH", "/api/image-sessions/{id}", bind(handle_rename_image_session)),
-        ("DELETE", "/api/image-sessions/{id}", bind(handle_delete_image_session)),
+        ("GET", "/api/media-sessions/{kind}", bind(handle_list_media_sessions)),
+        ("POST", "/api/media-sessions/{kind}", bind(handle_create_media_session)),
+        ("GET", "/api/media-sessions/{kind}/{id}", bind(handle_get_media_session)),
+        ("PATCH", "/api/media-sessions/{kind}/{id}", bind(handle_rename_media_session)),
+        ("DELETE", "/api/media-sessions/{kind}/{id}", bind(handle_delete_media_session)),
     ]

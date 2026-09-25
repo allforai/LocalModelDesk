@@ -34,6 +34,7 @@ def build_h3_command(
     last_frame: Path | None = None,
     ref_video: Path | None = None,
     use_audio: bool = True,
+    seed: int | None = None,
 ) -> list[str]:
     """Build the complete argv for an H3 video-generation invocation."""
     command = [
@@ -52,6 +53,8 @@ def build_h3_command(
         "--budget", str(H3_BUDGET_GB),
         "--output", str(output),
     ]
+    if seed is not None:
+        command.extend(("--seed", str(seed)))
     for flag, path in (("--first-frame", first_frame), ("--last-frame", last_frame),
                        ("--ref-video" if use_audio else "--ref-video-silent", ref_video)):
         if path is not None:
@@ -68,9 +71,10 @@ def build_music_command(
     lyrics: str,
     duration: float,
     output: Path,
+    seed: int | None = None,
 ) -> list[str]:
     """Build the complete argv for a Music 3 generation invocation."""
-    return [
+    command = [
         str(music_python),
         str(music3_cli),
         "--root", str(music3_root),
@@ -79,3 +83,6 @@ def build_music_command(
         "--duration", str(duration),
         "--output", str(output),
     ]
+    if seed is not None:
+        command += ["--seed", str(seed)]
+    return command

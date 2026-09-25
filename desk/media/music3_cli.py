@@ -17,6 +17,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--lyrics", required=True, help="lyrics text (may be empty)")
     parser.add_argument("--duration", required=True, type=float, help="target seconds")
     parser.add_argument("--output", required=True, help="output .wav path")
+    parser.add_argument("--seed", type=int, default=0, help="random seed")
     return parser
 
 
@@ -30,7 +31,7 @@ def main(argv=None) -> None:
             caption=args.caption,
             lyrics=args.lyrics,
             audio_duration=args.duration,
-            seed=0,
+            seed=args.seed,
         ),
         output=args.output,
         overwrite=True,

@@ -39,13 +39,23 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
             steps=payload.get("steps"), mode=payload.get("mode", "text"),
             first_frame=payload.get("first_frame"), last_frame=payload.get("last_frame"),
             ref_video=payload.get("ref_video"), use_audio=payload.get("use_audio", True),
+            seed=payload.get("seed"),
+            session_id=payload.get("session_id"), continues=payload.get("continues"), refs=payload.get("refs"),
             force=bool(payload.get("force", False))))
 
     def start_music(body, _query):
         payload = body or {}
         return _run(lambda: service.start_music_job(
             caption=payload.get("caption"), lyrics=payload.get("lyrics"),
-            duration=payload.get("duration"), force=bool(payload.get("force", False))))
+            duration=payload.get("duration"), seed=payload.get("seed"),
+            session_id=payload.get("session_id"), continues=payload.get("continues"), refs=payload.get("refs"),
+            force=bool(payload.get("force", False))))
+
+    def start_compose(body, _query):
+        payload = body or {}
+        return _run(lambda: service.start_compose_job(
+            kind=payload.get("kind"), session_id=payload.get("session_id"),
+            parts=payload.get("parts"), force=payload.get("force", False)))
 
     def cancel(_body, _query):
         return _run(service.cancel_job)
@@ -56,7 +66,8 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
             session_id=payload.get("session_id"),
             prompt=payload.get("prompt"), width=payload.get("width", 1024),
             height=payload.get("height", 1024), steps=payload.get("steps", 40),
-            seed=payload.get("seed"), force=payload.get("force", False), base=payload.get("base")))
+            seed=payload.get("seed"), force=payload.get("force", False), base=payload.get("base"),
+            continues=payload.get("continues"), refs=payload.get("refs")))
 
     def status(_body, query):
         def call():
@@ -71,6 +82,7 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
         ("POST", "/api/media/video", start_video),
         ("POST", "/api/media/music", start_music),
         ("POST", "/api/media/image", start_image),
+        ("POST", "/api/media/compose", start_compose),
         ("POST", "/api/media/cancel", cancel),
         ("GET", "/api/media/job", status),
     ]

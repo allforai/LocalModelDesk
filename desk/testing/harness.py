@@ -184,7 +184,7 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, skills, a
             "config_path": str(roots.config_path),
             "logs_dir": str(roots.logs_dir),
             "sessions_dir": str(roots.sessions_dir),
-            "image_sessions_dir": str(roots.image_sessions_dir),
+            "media_sessions_dirs": {kind: str(path) for kind, path in roots.media_sessions_dirs.items()},
             "history_path": str(roots.history_path),
             "models_root": str(roots.models_root),
             "outputs_root": str(roots.outputs_root),
@@ -344,7 +344,7 @@ def launch_test_harness(
         list_catalog=resources.list_catalog,
         append_history=library.append_history,
         executor=FakeMediaExecutor(media_script),
-        image_sessions=library.image_sessions,
+        media_sessions=library.media_sessions,
         clock=clock,
     )
     app = DeskApp("127.0.0.1", 0)

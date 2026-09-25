@@ -29,7 +29,7 @@ def wait_job_settled(base_url, session_id, attempt_id, timeout=10.0):
     """Poll the session like the pane does (D-27) until the attempt leaves running."""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        _, session = request(base_url, "GET", f"/api/image-sessions/{session_id}")
+        _, session = request(base_url, "GET", f"/api/media-sessions/image/{session_id}")
         attempt = next(a for a in session["attempts"] if a["id"] == attempt_id)
         if attempt["status"] != "running":
             return attempt
@@ -59,10 +59,10 @@ def test_production_runtime_mounts_image_sessions_and_hands_the_store_to_media(t
     runtime = build_runtime(port=0)
     runtime.start_background()
     try:
-        assert runtime.media._image_sessions is not None
-        status, created = http_call(runtime, "POST", "/api/image-sessions", {})
+        assert runtime.media._sessions["image"] is not None
+        status, created = http_call(runtime, "POST", "/api/media-sessions/image", {})
         assert status == 200 and (data_root / "image-sessions" / f"{created['id']}.json").is_file()
-        assert runtime.media._image_sessions.exists(created["id"])
+        assert runtime.media._sessions["image"].exists(created["id"])
 
         status, body = http_call(runtime, "POST", "/api/media/image", {"prompt": "cat"})
         assert status == 400 and body["error"]["code"] == "session_required"
@@ -73,7 +73,7 @@ def test_production_runtime_mounts_image_sessions_and_hands_the_store_to_media(t
                                  {"prompt": "cat", "session_id": created["id"]})
         assert body.get("error", {}).get("code") not in ("session_required", "session_not_found")
 
-        status, recovered = http_call(runtime, "GET", f"/api/image-sessions/{stale_id}")
+        status, recovered = http_call(runtime, "GET", f"/api/media-sessions/image/{stale_id}")
         assert status == 200
         assert recovered["attempts"][0]["status"] == "failed"
         assert recovered["attempts"][0]["error"]["code"] == "interrupted"
@@ -86,7 +86,7 @@ def test_production_runtime_mounts_image_sessions_and_hands_the_store_to_media(t
 def test_harness_session_attempts_survive_restart_and_delete_keeps_images(tmp_path):
     with image_harness(tmp_path, [fast_media_steps(), fast_media_steps()]) as harness:
         base = harness.base_url
-        status, session = request(base, "POST", "/api/image-sessions", {})
+        status, session = request(base, "POST", "/api/media-sessions/image", {})
         assert status == 200
         status, started = request(base, "POST", "/api/media/image",
                                   {"session_id": session["id"], "prompt": "一只橘猫", "seed": 77})
@@ -98,7 +98,7 @@ def test_harness_session_attempts_survive_restart_and_delete_keeps_images(tmp_pa
         assert status == 200, again
         wait_job_settled(base, session["id"], again["attempt_id"])
 
-        _, got = request(base, "GET", f"/api/image-sessions/{session['id']}")
+        _, got = request(base, "GET", f"/api/media-sessions/image/{session['id']}")
         assert [a["status"] for a in got["attempts"]] == ["done", "done"]
         assert got["attempts"][0]["params"]["seed"] == 77
         assert got["attempts"][1]["params"]["seed"] != 42
@@ -110,17 +110,17 @@ def test_harness_session_attempts_survive_restart_and_delete_keeps_images(tmp_pa
 
     with image_harness(tmp_path, []) as restarted:
         base = restarted.base_url
-        _, listed = request(base, "GET", "/api/image-sessions")
+        _, listed = request(base, "GET", "/api/media-sessions/image")
         assert [(s["id"], s["attempt_count"], s["cover"]) for s in listed] == [
             (session["id"], 2, outputs[-1])]
-        _, after_restart = request(base, "GET", f"/api/image-sessions/{session['id']}")
+        _, after_restart = request(base, "GET", f"/api/media-sessions/image/{session['id']}")
         assert [a["id"] for a in after_restart["attempts"]] == [a["id"] for a in got["attempts"]]
         _, history_before = request(base, "GET", "/api/history")
         _, outputs_before = request(base, "GET", "/api/outputs")
 
-        assert request(base, "DELETE", f"/api/image-sessions/{session['id']}") == (
+        assert request(base, "DELETE", f"/api/media-sessions/image/{session['id']}") == (
             200, {"deleted": session["id"]})
-        assert request(base, "GET", "/api/image-sessions") == (200, [])
+        assert request(base, "GET", "/api/media-sessions/image") == (200, [])
         assert request(base, "GET", "/api/history") == (200, history_before)
         assert request(base, "GET", "/api/outputs") == (200, outputs_before)
         for name in outputs:
@@ -132,15 +132,15 @@ def test_harness_session_attempts_survive_restart_and_delete_keeps_images(tmp_pa
 def test_harness_cancel_is_recorded_in_the_session(tmp_path):
     with image_harness(tmp_path, [cancellable_media_steps()]) as harness:
         base = harness.base_url
-        _, session = request(base, "POST", "/api/image-sessions", {})
+        _, session = request(base, "POST", "/api/media-sessions/image", {})
         status, started = request(base, "POST", "/api/media/image",
                                   {"session_id": session["id"], "prompt": "p"})
         assert status == 200
-        _, listed = request(base, "GET", "/api/image-sessions")
+        _, listed = request(base, "GET", "/api/media-sessions/image")
         assert listed[0]["running"] is True
         harness.media_script.step()  # past the first gate, into BLOCK_UNTIL_CANCEL
         assert request(base, "POST", "/api/media/cancel", {})[0] == 200
         wait_job_settled(base, session["id"], started["attempt_id"])
-        _, got = request(base, "GET", f"/api/image-sessions/{session['id']}")
+        _, got = request(base, "GET", f"/api/media-sessions/image/{session['id']}")
         assert got["attempts"][0]["status"] == "cancelled"
         assert got["attempts"][0]["error"]["code"] == "cancelled"

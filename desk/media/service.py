@@ -3,18 +3,23 @@ from __future__ import annotations
 
 import logging
 import secrets
+import subprocess
 import threading
 import time
 import uuid
 from pathlib import Path
 from typing import Any, Callable
 
+from . import compose
 from .audio import wav_seconds
 from .commands import build_h3_command, build_music_command, build_image_command
 from .inputs import save_input, resolve_input
+from desk.library.errors import NotFoundError
+from desk.library.media_sessions import SegmentMissing
 
 log = logging.getLogger(__name__)
 DEFAULT_LOG_LIMIT = 1024 * 1024
+KIND_NAMES = {"image": "图片", "video": "视频", "music": "音乐"}
 
 
 # Image-to-image presets (design D-40/D-46 rev. 2026-09-24): 「在这张基础上改」 keeps the composition,
@@ -44,9 +49,37 @@ def _positive_int(name: str, value: Any) -> None:
         raise MediaError("invalid_params", f"{name} must be a positive integer", 400)
 
 
+SEED_MESSAGE = "种子须为 0–4294967295 的整数"
+SEGMENT_NOT_FOUND = "找不到要接着的那一段"
+SEGMENT_MISSING = "那一段的文件已不在，无法接着生成"
+CONTINUE_CONFLICT = "续写会用上一段的最后一帧作首帧，不能另选首帧或参考视频"
+JOIN_CANCELLED = {"code": "join_cancelled", "message": "成片拼接被中止"}
+
+
+def _check_seed(seed) -> int:
+    """The seed to use: a given one validated, or a fresh random one (IS D-19, B §3.2)."""
+    if seed is None:
+        return secrets.randbelow(2**32)
+    if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < 2**32:
+        raise MediaError("invalid_params", SEED_MESSAGE, 400)
+    return seed
+
+
+def _video_assets(mode: str, first_frame, last_frame, ref_video) -> dict:
+    """Input assets a video mode uses: {param: (asset id, asset kind)}."""
+    if mode == "image":
+        assets = {"first_frame": (first_frame, "image")}
+        if last_frame: assets["last_frame"] = (last_frame, "image")
+        return assets
+    if mode == "reference":
+        return {"ref_video": (ref_video, "video")}
+    return {}
+
+
 class MediaService:
     def __init__(self, *, resolve_paths, probe_capabilities, arbiter, list_catalog,
-                 append_history, executor, image_sessions, clock: Callable[[], float] = time.time,
+                 append_history, executor, media_sessions, ref_slots: dict | None = None,
+                 clock: Callable[[], float] = time.time,
                  term_grace_s: float = 5.0, log_limit: int = DEFAULT_LOG_LIMIT):
         """`measurements`/`measurements_path`/`available_bytes` are Task 7's media
         calibration seam (R-budget-06): optional, off by default. When all three
@@ -58,15 +91,17 @@ class MediaService:
         today — see Task 7 deviations, desk/runtime.py has not been updated to
         build and pass these in), behaviour is unchanged from before this task.
 
-        `image_sessions` is where image jobs record their attempts. MediaService
-        only calls three methods on it and never touches the session file format:
-        `exists(session_id) -> bool`, `begin_attempt(session_id, {"id", "job_id",
-        "params"}) -> bool` once the job is really running, and
+        `media_sessions` is `dict[kind, store]`, one `MediaSessionStore` per media
+        kind, where jobs of that kind record their attempts. MediaService only
+        calls three methods on a kind's store and never touches the session file
+        format: `exists(session_id) -> bool`, `begin_attempt(session_id, {"id",
+        "job_id", "params"}) -> bool` once the job is really running, and
         `settle_attempt(session_id, attempt_id, status, output, error) -> bool`
         when it ends (status one of done / failed / cancelled)."""
         self._resolve_paths, self._probe_capabilities, self._arbiter = resolve_paths, probe_capabilities, arbiter
         self._list_catalog, self._append_history, self._executor = list_catalog, append_history, executor
-        self._image_sessions = image_sessions
+        self._sessions = media_sessions
+        self._ref_slots = ref_slots or {}
         self._clock, self._term_grace_s, self._log_limit = clock, term_grace_s, log_limit
         self._lock = threading.RLock()
         self._state: dict[str, Any] = {"job_id": 0, "status": "idle", "kind": None, "params": None,
@@ -83,50 +118,148 @@ class MediaService:
         except ValueError as exc:
             raise MediaError("invalid_input", str(exc), 400) from exc
 
+    def _check_session(self, kind: str, session_id, *, required: bool) -> str | None:
+        if session_id is None and not required:
+            return None
+        if not isinstance(session_id, str):
+            raise MediaError("session_required", SESSION_REQUIRED_MESSAGE, 400)
+        if not self._sessions[kind].exists(session_id):
+            raise MediaError("session_not_found", SESSION_NOT_FOUND_MESSAGE, 404)
+        return session_id
+
+    def _resolve_refs(self, kind: str, refs) -> tuple[dict, dict]:
+        """Validate cross-session references (B-55): pointers to store, files to use."""
+        if refs is None:
+            return {}, {}
+        if not isinstance(refs, dict):
+            raise MediaError("invalid_params", "引用参数有误", 400)
+        slots = self._ref_slots.get(kind, {})
+        stored, paths = {}, {}
+        for name, ref in refs.items():
+            target = slots.get(name)
+            if target is None or not isinstance(ref, dict) or ref.get("kind") != target \
+                    or not isinstance(ref.get("session_id"), str) or not isinstance(ref.get("attempt_id"), str):
+                raise MediaError("invalid_params", f"引用参数有误：{name}", 400)
+            try:
+                attempt = self._sessions[target].find_done(ref["session_id"], ref["attempt_id"])
+            except (NotFoundError, SegmentMissing):
+                raise MediaError("ref_missing", f"引用的{KIND_NAMES[target]}已不在", 404) from None
+            stored[name] = {"kind": target, "session_id": ref["session_id"], "attempt_id": ref["attempt_id"]}
+            paths[name] = Path(self._resolve_paths().outputs_root) / attempt["output"]
+        return stored, paths
+
+    def _segment(self, kind: str, session_id: str, attempt_id) -> dict:
+        """The done attempt being continued (B-35), with store errors mapped to 404s."""
+        if not isinstance(attempt_id, str):
+            raise MediaError("invalid_params", SEGMENT_NOT_FOUND, 400)
+        try:
+            return self._sessions[kind].find_done(session_id, attempt_id)
+        except NotFoundError:
+            raise MediaError("segment_not_found", SEGMENT_NOT_FOUND, 404) from None
+        except SegmentMissing:
+            raise MediaError("segment_missing", SEGMENT_MISSING, 404) from None
+
+    def _join_plan(self, kind: str, session_id: str, continues: str) -> dict:
+        """What to join once the new segment exists (B-39/B-40); an 'error' plan skips the join."""
+        items, broken = self._sessions[kind].chain(session_id, continues)
+        for number, item in enumerate(items, 1):
+            if broken or item.get("status") != "done" or item.get("output_missing") or not item.get("output"):
+                return {"error": {"code": "segment_missing",
+                                  "message": f"第 {1 if broken else number} 段的文件已不在，无法拼成成片"}}
+        root = Path(self._resolve_paths().outputs_root)
+        paths = [root / item["output"] for item in items]
+        drops = [False] + [items[i].get("continues") == items[i - 1]["id"] for i in range(1, len(items))]
+        return {"parts": list(zip(paths, drops))}
+
+    def _extract_last_frame(self, video: Path) -> str:
+        """Save the continued video's last frame as an input asset; returns its asset id (B-36/B-37)."""
+        ffmpeg = compose.ffmpeg_path()
+        if ffmpeg is None:
+            raise MediaError("capability_missing", compose.FFMPEG_MISSING, 503)
+        directory = Path(self._resolve_paths().outputs_root) / ".inputs"
+        directory.mkdir(parents=True, exist_ok=True)
+        png = directory / f"{uuid.uuid4().hex}.png"
+        try:
+            result = subprocess.run(compose.last_frame_command(ffmpeg, video, png),
+                                    capture_output=True, text=True, timeout=60)
+            ok = result.returncode == 0 and png.is_file()
+        except (OSError, subprocess.SubprocessError):
+            ok = False
+        if not ok:
+            png.unlink(missing_ok=True)
+            raise MediaError("frame_extract_failed", "没能从上一段截出最后一帧", 500)
+        return png.name
+
     def start_video_job(self, *, prompt, width, height, frames, steps,
                         mode="text", first_frame=None, last_frame=None, ref_video=None,
-                        use_audio=True, force=False) -> dict:
+                        use_audio=True, seed=None, session_id=None, continues=None, refs=None,
+                        force=False) -> dict:
         _nonempty("prompt", prompt, code="prompt_required", message="请填写视频提示词")
         for name, value in (("width", width), ("height", height), ("frames", frames), ("steps", steps)):
             _positive_int(name, value)
+        seed = _check_seed(seed)
+        if continues is not None and (mode not in ("text", "image") or first_frame or last_frame or ref_video):
+            raise MediaError("invalid_params", CONTINUE_CONFLICT, 400)
         if mode not in ("text", "image", "reference") or not isinstance(use_audio, bool):
             raise MediaError("invalid_params", "生成模式或音轨选项无效", 400)
-        assets = {}
-        if mode == "image":
-            assets = {"first_frame": (first_frame, "image")}
-            if last_frame: assets["last_frame"] = (last_frame, "image")
-        elif mode == "reference":
-            assets = {"ref_video": (ref_video, "video")}
-        expected = set(assets)
-        if any(value and key not in expected for key, value in
+        if any(value and key not in _video_assets(mode, first_frame, last_frame, ref_video) for key, value in
                (("first_frame", first_frame), ("last_frame", last_frame), ("ref_video", ref_video))):
             raise MediaError("invalid_params", "素材与生成模式不匹配", 400)
-        try:
-            for asset_id, kind in assets.values():
-                resolve_input(self._resolve_paths().outputs_root, asset_id, kind)
-        except ValueError as exc:
-            raise MediaError("invalid_input", str(exc), 400) from exc
-        params = {"prompt": prompt, "width": width, "height": height, "frames": frames, "steps": steps}
-        if mode != "text":
-            params.update(mode=mode, use_audio=use_audio, **{key: value[0] for key, value in assets.items()})
-        return self._start("video", params, force=force)
+        session_id = self._check_session("video", session_id, required=refs is not None or continues is not None)
+        join, frame = None, None
+        if continues is not None:
+            source = self._segment("video", session_id, continues)
+            join = self._join_plan("video", session_id, continues)
+            joined = source.get("joined_output")
+            frame = self._extract_last_frame(Path(self._resolve_paths().outputs_root)
+                                             / (joined if joined and not source.get("joined_missing") else source["output"]))
+            mode, first_frame = "image", frame
+        try:   # from here on a refusal must not leave the extracted frame behind
+            stored_refs, _ref_paths = self._resolve_refs("video", refs)
+            assets = _video_assets(mode, first_frame, last_frame, ref_video)
+            try:
+                for asset_id, kind in assets.values():
+                    resolve_input(self._resolve_paths().outputs_root, asset_id, kind)
+            except ValueError as exc:
+                raise MediaError("invalid_input", str(exc), 400) from exc
+            params = {"prompt": prompt, "width": width, "height": height, "frames": frames, "steps": steps, "seed": seed}
+            if mode != "text":
+                params.update(mode=mode, use_audio=use_audio, **{key: value[0] for key, value in assets.items()})
+            return self._start("video", params, force=force, session_id=session_id,
+                               attempt_extra={"refs": stored_refs, "continues": continues}, join=join)
+        except MediaError:
+            if frame:
+                (Path(self._resolve_paths().outputs_root) / ".inputs" / frame).unlink(missing_ok=True)
+            raise
 
-    def start_music_job(self, *, caption, lyrics, duration, force=False) -> dict:
+    def start_music_job(self, *, caption, lyrics, duration, seed=None, session_id=None, continues=None,
+                        refs=None, force=False) -> dict:
         _nonempty("caption", caption, code="caption_required", message="请填写风格描述")
         if not isinstance(lyrics, str) or isinstance(duration, bool) or not isinstance(duration, (int, float)) or duration <= 0:
             raise MediaError("invalid_params", "lyrics must be a string and duration must be positive", 400)
         if not lyrics.strip():
             raise MediaError("lyrics_required", "请填写歌词：Music 3 需要歌词才能生成", 400)
-        return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration}, force=force)
+        seed = _check_seed(seed)
+        session_id = self._check_session("music", session_id, required=refs is not None or continues is not None)
+        join = None
+        if continues is not None:
+            self._segment("music", session_id, continues)
+            join = self._join_plan("music", session_id, continues)
+        stored_refs, _ref_paths = self._resolve_refs("music", refs)
+        return self._start("music", {"caption": caption, "lyrics": lyrics, "duration": duration, "seed": seed},
+                           force=force, session_id=session_id,
+                           attempt_extra={"refs": stored_refs, "continues": continues}, join=join)
 
     def start_image_job(self, *, session_id=None, prompt, width=1024, height=1024, steps=40,
-                        seed=None, force=False, base=None) -> dict:
+                        seed=None, force=False, base=None, continues=None, refs=None) -> dict:
         """Start an image job inside a session.
 
         Order (design D-20): parameters → session → the shared `_start` gates.
         A running attempt is appended only once the job really runs; any refusal
         before that leaves the session file untouched (D-21). `seed=None` means
         "pick one": the value actually used is what the attempt records (D-19)."""
+        if continues is not None or refs is not None:
+            raise MediaError("invalid_params", "图片不支持续写或引用", 400)   # B-00b
         _nonempty("prompt", prompt, code="prompt_required", message="请填写图片提示词")
         for name, value in (("width", width), ("height", height)):
             _positive_int(name, value)
@@ -134,31 +267,46 @@ class MediaService:
                 raise MediaError("invalid_params", "宽高须为 256–2048 范围内的 16 的倍数", 400)
         if isinstance(steps, bool) or not isinstance(steps, int) or not 1 <= steps <= 100:
             raise MediaError("invalid_params", "步数须为 1–100 的整数", 400)
-        if seed is not None and (isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < 2**32):
-            raise MediaError("invalid_params", "种子须为 0–4294967295 的整数", 400)
+        seed = _check_seed(seed)
         if not isinstance(force, bool):
             raise MediaError("invalid_params", "force 必须为布尔值", 400)
-        if not isinstance(session_id, str):
-            raise MediaError("session_required", SESSION_REQUIRED_MESSAGE, 400)
-        if not self._image_sessions.exists(session_id):
-            raise MediaError("session_not_found", SESSION_NOT_FOUND_MESSAGE, 404)
+        session_id = self._check_session("image", session_id, required=True)
         params = dict(prompt=prompt, width=width, height=height, steps=steps)
         if base is not None:
             source = self._base_attempt(session_id, base)
             # The base image fixes the canvas: img2img redraws it, so its size wins.
             params.update(width=source["params"]["width"], height=source["params"]["height"],
                           base={"attempt_id": source["id"], "strength": base["strength"], "output": source["output"]})
-        if seed is None:
-            seed = secrets.randbelow(2**32)
         params["seed"] = seed
-        return self._start("image", params, force=force, session_id=session_id)
+        extra = {"base": {"attempt_id": params["base"]["attempt_id"], "strength": params["base"]["strength"]}} \
+            if params.get("base") else {}
+        return self._start("image", params, force=force, session_id=session_id, attempt_extra=extra)
+
+    def start_compose_job(self, *, kind, session_id, parts, force=False) -> dict:
+        """Join chosen segments into one file (B-44–B-48): ffmpeg only, no arbiter, no memory check.
+
+        `force` is accepted and ignored so the page can resend every job the same way (B-45)."""
+        if kind not in ("video", "music"):
+            raise MediaError("invalid_params", "只有视频和音乐可以合成成片", 400)
+        if not isinstance(parts, list) or len(parts) < 2 or not all(isinstance(p, str) for p in parts):
+            raise MediaError("invalid_params", "至少选两段来合成", 400)
+        if not isinstance(force, bool):
+            raise MediaError("invalid_params", "force 必须为布尔值", 400)
+        session_id = self._check_session(kind, session_id, required=True)
+        items = [self._segment(kind, session_id, part) for part in parts]
+        root = Path(self._resolve_paths().outputs_root)
+        paths = [root / item["output"] for item in items]   # each segment's own file, never its joined one (B-48)
+        drops = [False] + [items[i].get("continues") == items[i - 1]["id"] for i in range(1, len(items))]
+        return self._start(kind, {"op": "compose", "parts": list(parts)}, session_id=session_id,
+                           attempt_extra={"op": "compose", "params": {"parts": list(parts)}},
+                           compose_parts=list(zip(paths, drops)))
 
     def _base_attempt(self, session_id: str, base) -> dict:
         """The done attempt of this session an img2img job redraws from (its file must still exist)."""
         if (not isinstance(base, dict) or not isinstance(base.get("attempt_id"), str)
                 or base.get("strength") not in BASE_STRENGTHS or isinstance(base.get("strength"), bool)):
             raise MediaError("invalid_params", "底稿参数有误：需要尝试 id 和预设的变化幅度", 400)
-        session = self._image_sessions.get(session_id)
+        session = self._sessions["image"].get(session_id)
         source = next((a for a in session.get("attempts", [])
                        if isinstance(a, dict) and a.get("id") == base["attempt_id"]), None)
         if source is None:
@@ -181,54 +329,38 @@ class MediaService:
         from .memory_estimate import estimate_bytes
         return estimate_bytes(kind, params), "predicted"
 
-    def _start(self, kind: str, params: dict, *, force: bool = False, session_id: str | None = None) -> dict:
+    def _start(self, kind: str, params: dict, *, force: bool = False, session_id: str | None = None,
+              attempt_extra: dict | None = None, join: dict | None = None,
+              compose_parts: list | None = None) -> dict:
+        """`join` (from `_join_plan`) makes the job join the chain into a finished file after the model (B-38).
+
+        `compose_parts` ([(path, drop_first_frame)]) makes it a compose job instead: only ffmpeg runs,
+        so arbiter, capability/model checks and the memory estimate are skipped (B-45)."""
+        heavy = compose_parts is None
         with self._lock:
             if self._state["status"] == "running":
                 raise MediaError("media_busy", "a media job is already running", 409)
-            cap_key = {"video": "mlx_h3", "music": "music_runtime", "image": "image_runtime"}[kind]
-            cap = self._probe_capabilities().get(cap_key)
-            if cap is None or not cap.present:
-                raise MediaError("capability_missing", f"{cap_key} is unavailable: {getattr(cap, 'detail', '')}", 503)
             roots = self._resolve_paths()
-
-            catalog_key = {"video": "h3", "music": "music3", "image": "qwen-image"}[kind]
-            catalog = list(self._list_catalog())
-            model_root = Path(roots.models_root) / {e.key: e.relpath for e in catalog}[catalog_key]
-            if kind == "image":
-                from .image_model import validate_model
-                try:
-                    validate_model(model_root)
-                except (OSError, ValueError) as exc:
-                    raise MediaError("model_incomplete", str(exc), 409) from exc
-            estimated, source = self._estimate(kind, params)
-            # 预算按作业参数算峰值（memory_estimate 就是这么设计的：分辨率×帧数决定体积项）。
-            # 只从 legacy 的 estimated_bytes 通道递过去，预算路径读不到，会退回草稿档默认值——
-            # 和 llm 侧「不传 config 就把聊天算成 0 字节」是同一类漏。
-            pre = self._arbiter.can_start_heavy(kind, params=params, key=catalog_key,
-                                                estimated_bytes=estimated)
-            if not pre.get("ok"):
-                reason = pre.get("reason") or {}
-                raise MediaError(reason.get("code", "refused"), reason.get("message", "arbiter refused"), 409, reason)
-            warning = pre.get("memory_warning")
-            if warning and not force:
-                required = warning["required_bytes"] / 1024 ** 3
-                available = warning["available_bytes"] / 1024 ** 3
-                label = "已实测" if source == "measured" else "估算"
-                raise MediaError("insufficient_memory",
-                                  f"生成约需 {required:.1f} GiB 内存（{label}），当前可用 {available:.1f} GiB，可能失败或拖慢整机",
-                                  409, {**warning, "source": source})
             job_id = self._state["job_id"] + 1
-            display = {"video": "视频生成中", "music": "音乐生成中", "image": "图片生成中"}[kind]
-            grant = self._arbiter.acquire_heavy(kind, f"job-{job_id}", display,
-                                                params=params, key=catalog_key)
-            if not grant.get("ok"):
-                reason = grant.get("reason") or {}
-                raise MediaError(reason.get("code", "acquire_refused"), reason.get("message", "arbiter refused"), 409, reason)
-            permit, now = grant["token"], self._clock()
+            if heavy:
+                model_root, permit = self._admit_heavy(kind, params, force, join, roots, job_id)
+            else:
+                if compose.ffmpeg_path() is None:
+                    raise MediaError("capability_missing", compose.FFMPEG_MISSING, 503)
+                model_root, permit = None, None
+            now = self._clock()
+            # Per-job state: a later `_start` must never change what this job's finalize releases or records.
+            job = {"permit": permit, "released": False, "join": join, "compose": not heavy,
+                   "joined": {"joined_output": None, "joined_error": None}}
             try:
                 stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(now))
                 root = Path(roots.outputs_root); root.mkdir(parents=True, exist_ok=True)
-                if kind == "video":
+                if not heavy:
+                    suffix, prefix = (".mp4", "h3") if kind == "video" else (".wav", "music3")
+                    output = root / f"{prefix}-compose-{stamp}-{uuid.uuid4().hex[:8]}{suffix}"
+                    command = self._join_command(kind, compose_parts, output)
+                    extra_env = {}
+                elif kind == "video":
                     output = root / f"h3-{stamp}.mp4"
                     command_params = dict(params)
                     command_params.pop("mode", None)
@@ -254,35 +386,79 @@ class MediaService:
                 self._state = {"job_id": job_id, "status": "error", "kind": kind, "params": dict(params), "output": None,
                     "error": {"code": "spawn_failed", "message": str(exc)}, "started_at": now, "finished_at": self._clock(),
                     "session_id": None, "attempt_id": None}
-                self._reset_log(); self._finalize(permit)
+                self._reset_log(); self._finalize(job, self._final_snapshot(job))
                 raise MediaError("spawn_failed", str(exc), 500) from exc
             self._state = {"job_id": job_id, "status": "running", "kind": kind, "params": dict(params), "output": None,
                 "error": None, "started_at": now, "finished_at": None, "session_id": None, "attempt_id": None}
             self._reset_log(); self._cancel_requested = False; self._cancel_origin = "user"; self._handle = handle
-            if kind == "image":
-                self._begin_attempt(session_id, job_id, params)
-            self._worker_thread = threading.Thread(target=self._worker, args=(handle, permit, output, kind), daemon=True)
+            if session_id is not None:
+                self._begin_attempt(kind, session_id, job_id, params, attempt_extra or {})
+            self._worker_thread = threading.Thread(target=self._worker, args=(handle, job, output, kind), daemon=True)
             self._worker_thread.start()
             return self.job_status()
 
-    def _begin_attempt(self, session_id: str, job_id: int, params: dict) -> None:
-        """Attach the now-running job to its session (D-20 step 5).
+    def _admit_heavy(self, kind: str, params: dict, force: bool, join: dict | None, roots, job_id: int):
+        """Capability, model, memory and arbiter gates for a model job; returns (model_root, permit)."""
+        cap_key = {"video": "mlx_h3", "music": "music_runtime", "image": "image_runtime"}[kind]
+        cap = self._probe_capabilities().get(cap_key)
+        if cap is None or not cap.present:
+            raise MediaError("capability_missing", f"{cap_key} is unavailable: {getattr(cap, 'detail', '')}", 503)
+
+        catalog_key = {"video": "h3", "music": "music3", "image": "qwen-image"}[kind]
+        catalog = list(self._list_catalog())
+        model_root = Path(roots.models_root) / {e.key: e.relpath for e in catalog}[catalog_key]
+        if kind == "image":
+            from .image_model import validate_model
+            try:
+                validate_model(model_root)
+            except (OSError, ValueError) as exc:
+                raise MediaError("model_incomplete", str(exc), 409) from exc
+        estimated, source = self._estimate(kind, params)
+        # 预算按作业参数算峰值（memory_estimate 就是这么设计的：分辨率×帧数决定体积项）。
+        # 只从 legacy 的 estimated_bytes 通道递过去，预算路径读不到，会退回草稿档默认值——
+        # 和 llm 侧「不传 config 就把聊天算成 0 字节」是同一类漏。
+        pre = self._arbiter.can_start_heavy(kind, params=params, key=catalog_key,
+                                            estimated_bytes=estimated)
+        if not pre.get("ok"):
+            reason = pre.get("reason") or {}
+            raise MediaError(reason.get("code", "refused"), reason.get("message", "arbiter refused"), 409, reason)
+        warning = pre.get("memory_warning")
+        if warning and not force:
+            required = warning["required_bytes"] / 1024 ** 3
+            available = warning["available_bytes"] / 1024 ** 3
+            label = "已实测" if source == "measured" else "估算"
+            raise MediaError("insufficient_memory",
+                              f"生成约需 {required:.1f} GiB 内存（{label}），当前可用 {available:.1f} GiB，可能失败或拖慢整机",
+                              409, {**warning, "source": source})
+        if join and "parts" in join and compose.ffmpeg_path() is None:
+            raise MediaError("capability_missing", compose.FFMPEG_MISSING, 503)
+        display = {"video": "视频生成中", "music": "音乐生成中", "image": "图片生成中"}[kind]
+        grant = self._arbiter.acquire_heavy(kind, f"job-{job_id}", display,
+                                            params=params, key=catalog_key)
+        if not grant.get("ok"):
+            reason = grant.get("reason") or {}
+            raise MediaError(reason.get("code", "acquire_refused"), reason.get("message", "arbiter refused"), 409, reason)
+        return model_root, grant["token"]
+
+    def _begin_attempt(self, kind: str, session_id: str, job_id: int, params: dict, extra: dict) -> None:
+        """Attach the now-running job to its session (IS D-20 step 5, B-32).
 
         A session deleted since the check, or a store failure, leaves the job
-        running unattached (D-23): the image still reaches outputs and history."""
+        running unattached (IS D-23): the output still reaches outputs and history."""
         attempt_id = uuid.uuid4().hex
         try:
-            base = params.get("base")
-            attached = self._image_sessions.begin_attempt(session_id, {
-                "id": attempt_id, "job_id": job_id, "params": dict(params),
-                "base": {"attempt_id": base["attempt_id"], "strength": base["strength"]} if base else None})
+            attached = self._sessions[kind].begin_attempt(session_id, {
+                "id": attempt_id, "job_id": job_id, "params": dict(extra.get("params", params)),
+                "op": extra.get("op", "generate"), "continues": extra.get("continues"),
+                "refs": extra.get("refs") or {}, "base": extra.get("base")})
         except Exception:
-            log.exception("begin_attempt failed; image job runs without a session")
+            log.exception("begin_attempt failed; %s job runs without a session", kind)
             attached = False
         if attached:
             self._state.update(session_id=session_id, attempt_id=attempt_id)
 
-    def _worker(self, handle, permit: str, output: Path, kind: str) -> None:
+    def _worker(self, handle, job: dict, output: Path, kind: str) -> None:
+        final = None
         try:
             try:
                 for line in handle.iter_output(): self._append_log(line)
@@ -295,23 +471,103 @@ class MediaService:
                 elif code == 0 and output.is_file(): status, error = "done", None
                 elif code == 0: status, error = "error", {"code": "no_output", "message": "exit 0 but output file missing"}
                 else: status, error = "error", {"code": "exit_nonzero", "message": f"exit {code}", "log_tail": self._log_tail(5)}
-                self._state.update(status=status, output=output.name if status == "done" else None, error=error, finished_at=self._clock())
-                self._handle = None
+                if job["compose"] and status == "error":   # B-47: a compose job fails as a join
+                    error = {"code": "join_failed", "message": "拼接成片失败", "log_tail": self._log_tail(5)}
+                if job["compose"] and status != "done":   # B-45: no half-written *-compose-* left behind
+                    output.unlink(missing_ok=True)
+                join = job["join"] if status == "done" else None
+                session_id, attempt_id = self._state["session_id"], self._state["attempt_id"]
+                if join is None:
+                    self._state.update(status=status, output=output.name if status == "done" else None,
+                                       error=error, finished_at=self._clock())
+                    self._handle = None
+                    final = self._final_snapshot(job)
+            if join is not None:
+                self._release_permit(job)   # the model has exited; joining only needs ffmpeg (B-38b)
+                if session_id:
+                    try:
+                        self._sessions[kind].record_output(session_id, attempt_id, output.name)   # B-38a
+                    except Exception:
+                        log.exception("record_output failed")
+                job["joined"] = self._run_join(kind, join, output)
+                with self._lock:
+                    self._state.update(status="done", output=output.name, error=None, finished_at=self._clock())
+                    self._handle = None
+                    final = self._final_snapshot(job)
         finally:
-            self._finalize(permit)
+            if final is None:   # the worker itself failed before the job reached a terminal state
+                with self._lock: final = self._final_snapshot(job)
+            self._finalize(job, final)
 
-    def _finalize(self, permit: str) -> None:
-        with self._lock: snap, callbacks, origin = self.job_status(), list(self._callbacks), self._cancel_origin
-        try: self._arbiter.release_heavy(permit)
+    def _final_snapshot(self, job: dict) -> tuple:
+        """What finalize reports, taken (under the lock) in the same step that ends the job:
+        once the status is terminal a new `_start` may run and replace the service's state."""
+        return self.job_status(), list(self._callbacks), self._cancel_origin, dict(job["joined"])
+
+    def _release_permit(self, job: dict) -> None:
+        """Release this job's heavy permit at most once (B-38b)."""
+        with self._lock:
+            if job["permit"] is None or job["released"]:
+                return
+            job["released"] = True
+        try: self._arbiter.release_heavy(job["permit"])
         except Exception: log.exception("release_heavy failed")
-        try: self._append_history(self._history_entry(snap))
+
+    def _run_join(self, kind: str, join: dict, segment: Path) -> dict:
+        """Join the chain plus the new segment (B-38–B-42); never raises, never fails the segment."""
+        if "error" in join:
+            return {"joined_output": None, "joined_error": dict(join["error"])}
+        stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(self._clock()))
+        suffix, prefix = (".mp4", "h3") if kind == "video" else (".wav", "music3")
+        target = segment.parent / f"{prefix}-joined-{stamp}-{uuid.uuid4().hex[:8]}{suffix}"
+        try:
+            ffmpeg = compose.ffmpeg_path()
+            if ffmpeg is None:
+                raise RuntimeError(compose.FFMPEG_MISSING)
+            command = self._join_command(kind, [*join["parts"], (segment, True)], target, ffmpeg)
+            with self._lock:
+                if self._cancel_requested:
+                    return {"joined_output": None, "joined_error": dict(JOIN_CANCELLED)}
+                handle = self._executor.spawn(command)
+                self._handle = handle
+            self._append_log("[join] 正在拼接成片…")
+            for line in handle.iter_output(): self._append_log(line)
+            code = handle.wait()
+        except Exception as exc:
+            target.unlink(missing_ok=True)
+            return {"joined_output": None,
+                    "joined_error": {"code": "join_failed", "message": "拼接成片失败", "log_tail": str(exc)}}
+        with self._lock:
+            cancelled = self._cancel_requested
+        if cancelled:
+            target.unlink(missing_ok=True)
+            return {"joined_output": None, "joined_error": dict(JOIN_CANCELLED)}
+        if code != 0 or not target.is_file():
+            target.unlink(missing_ok=True)
+            return {"joined_output": None, "joined_error": {"code": "join_failed", "message": "拼接成片失败",
+                                                            "log_tail": self._log_tail(5)}}
+        return {"joined_output": target.name, "joined_error": None}
+
+    @staticmethod
+    def _join_command(kind: str, parts: list, target: Path, ffmpeg: str | None = None) -> list[str]:
+        """ffmpeg argv joining [(path, drop_first_frame)] into `target` (B-50 video / B-51 music)."""
+        ffmpeg = ffmpeg or compose.ffmpeg_path()
+        if kind == "video":
+            size = compose.probe_size(compose.ffprobe_path() or "ffprobe", parts[0][0])
+            return compose.concat_video_command(ffmpeg, parts, size, target)
+        return compose.crossfade_audio_command(ffmpeg, [(path, wav_seconds(path) or 0.0) for path, _drop in parts], target)
+
+    def _finalize(self, job: dict, final: tuple) -> None:
+        snap, callbacks, origin, joined = final
+        self._release_permit(job)
+        try: self._append_history(self._history_entry(snap, joined))
         except Exception as exc: self._append_log(f"[media] append_history failed: {exc}")
-        self._settle_attempt(snap, origin)
+        self._settle_attempt(snap, origin, joined)
         for callback in callbacks:
             try: callback(snap)
             except Exception: log.exception("jobFinished subscriber failed")
 
-    def _settle_attempt(self, snap: dict, cancel_origin: str) -> None:
+    def _settle_attempt(self, snap: dict, cancel_origin: str, joined: dict) -> None:
         """Write the job's outcome into its session attempt (D-24); never raises."""
         if not snap.get("attempt_id"):
             return
@@ -322,20 +578,22 @@ class MediaService:
         elif status == "cancelled":
             error = dict(CANCEL_ERRORS[cancel_origin])
         try:
-            settled = self._image_sessions.settle_attempt(
-                snap["session_id"], snap["attempt_id"], status, snap["output"], error)
+            settled = self._sessions[snap["kind"]].settle_attempt(
+                snap["session_id"], snap["attempt_id"], status, snap["output"], error,
+                joined_output=joined["joined_output"], joined_error=joined["joined_error"])
             if not settled:
-                log.info("image attempt %s not settled: its session is gone", snap["attempt_id"])
+                log.info("%s attempt %s not settled: its session is gone", snap["kind"], snap["attempt_id"])
         except Exception:
             log.exception("settle_attempt failed")
 
-    def _history_entry(self, snap: dict) -> dict:
+    def _history_entry(self, snap: dict, joined: dict) -> dict:
         error = snap["error"]
         entry = {"kind": snap["kind"], "status": {"done": "done", "error": "failed", "cancelled": "cancelled"}[snap["status"]],
             "params": snap["params"], "output": snap["output"], "duration_s": snap["finished_at"] - snap["started_at"],
             "error": f"{error['code']}: {error['message']}" if error else None}
-        if snap["kind"] == "image":
-            entry.update(session_id=snap.get("session_id"), attempt_id=snap.get("attempt_id"))
+        entry.update(session_id=snap.get("session_id"), attempt_id=snap.get("attempt_id"))
+        if joined.get("joined_output"):
+            entry["joined_output"] = joined["joined_output"]
         if snap["kind"] == "music" and snap["status"] == "done" and snap["output"]:
             entry["audio_seconds"] = wav_seconds(Path(self._resolve_paths().outputs_root) / snap["output"])
         return entry

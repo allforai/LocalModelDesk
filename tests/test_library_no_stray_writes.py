@@ -13,7 +13,7 @@ class FakeRoots:
         self.data_root = base
         self.history_path = base / "history.jsonl"
         self.sessions_dir = base / "sessions"
-        self.image_sessions_dir = base / "image-sessions"
+        self.media_sessions_dirs = {k: base / f"{k}-sessions" for k in ("image", "video", "music")}
         self.outputs_root = base / "outputs"
 
 
@@ -41,7 +41,7 @@ def test_full_flow_writes_only_under_roots(tmp_path):
         service.delete_chat_session(session_id)
         for method, path, handler in routes(service):
             if method == "GET":
-                handler(LibRequest(path_params={"name": "h3-a.mp4", "id": "0" * 32}))
+                handler(LibRequest(path_params={"name": "h3-a.mp4", "id": "0" * 32, "kind": "image"}))
     finally:
         os.chdir(old_cwd)
         os.chmod(jail, 0o700)
