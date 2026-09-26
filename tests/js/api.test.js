@@ -62,6 +62,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["renameMediaSession", ["image", "s1", "橘猫"], "/api/media-sessions/image/s1", "PATCH", { title: "橘猫" }],
     ["deleteMediaSession", ["image", "s1"], "/api/media-sessions/image/s1", "DELETE"],
     ["startImageJob", [{ session_id: "s1", prompt: "cat" }], "/api/media/image", "POST", { session_id: "s1", prompt: "cat" }],
+    ["startComposeJob", [{ kind: "music", session_id: "s1", parts: ["a1", "a2"] }], "/api/media/compose", "POST", { kind: "music", session_id: "s1", parts: ["a1", "a2"] }],
     ["gatewayConfig", [], "/api/gateway/config", "GET"],
     ["gatewayConfig", [true], "/api/gateway/config", "POST"],
     ["listSkills", [], "/api/skills", "GET"],
@@ -73,7 +74,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
   const names = [
     "readConfig", "writeConfig", "resetConfig", "completeFirstRun", "adoptLegacyModels", "discoverModels", "listCatalog", "verifyAllModels",
     "startDownload", "cancelDownload", "deleteModel", "diskUsage", "memorySnapshot", "deskState", "budget", "loadLlm", "unloadLlm",
-    "llmStatus", "chatStream", "promptAssist", "startVideoJob", "startMusicJob", "startImageJob", "capabilities", "cancelJob", "jobStatus", "listOutputs",
+    "llmStatus", "chatStream", "promptAssist", "startVideoJob", "startMusicJob", "startImageJob", "startComposeJob", "capabilities", "cancelJob", "jobStatus", "listOutputs",
     "serveOutput", "revealOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
     "listSkills", "rescanSkills", "previewSkill", "installSkill", "discardSkill",
     "listMediaSessions", "createMediaSession", "getMediaSession", "renameMediaSession", "deleteMediaSession",

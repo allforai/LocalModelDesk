@@ -3,8 +3,11 @@
 // 左栏会话列表、右侧尝试时间线、忙碌原因、发起生成与作业轮询都在这里；卡片长什么样（renderCard）
 // 与输入区（composer）由各页提供。尝试记录只由后端写（D-14）：这里只读会话、发起生成，
 // 作业结束后重新 GET 会话，从不自己把尝试标成完成或失败（D-27）。
-// 页面里的元素都按 data-<dataPrefix>-* 找：timeline、session-list、session-new、model、hint、hint-text、return、error。
+// 页面里的元素都按 data-<dataPrefix>-* 找：timeline、session-list、session-new、model、hint、hint-text、return、error；
+// canCompose 时另找 composer（挑选合成模式里隐藏它），工具行与合成栏由这里创建（§1.3 M-05–M-11）。
 import * as api from "../api.js";
+import { addIcon } from "../icons.js";
+import { describeJobError } from "../pure/job_error.js";
 import { confirmDialog } from "../widgets/confirm.js";
 import { beginRenameItem, renderSessionItem } from "../widgets/session_list.js";
 import { parseStepProgress } from "../pure/job_progress.js";
@@ -17,7 +20,7 @@ const camel = (name) => name.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 export function createSessionPane(root, {
   kind, noun, dataPrefix, emptyLines, modelTexts = {},
   renderCard, fitExpanded = null, composer, startJob,
-  confirm: askConfirm, onStarted,
+  confirm: askConfirm, onStarted, canCompose = false,
 }) {
   const confirm = askConfirm ?? confirmDialog;
   const doc = root.ownerDocument;
@@ -39,6 +42,8 @@ export function createSessionPane(root, {
   // 整张可见（点卡片、在这张基础上改、素材库回填），null 是用户自己滚过——之后只重算大图上限，不再拽动。
   let scrollIntent = null;
   const broken = new Set();
+  // 挑选合成模式（M-05–M-11）：picks 是已勾选尝试的 id，顺序即拼接顺序。
+  let picking = false; let picks = []; let composeError = "";
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
 
@@ -58,6 +63,7 @@ export function createSessionPane(root, {
     els.hint.hidden = !state.reason;
     els.model.textContent = modelReason || "模型文件完整 · 可离线生成";
     composer.updateAvailability?.(state, { recompose: recomposeRefs });
+    updateCompose(state);
   }
   function setModelStatus(status) {
     modelReason = status?.state === "present" ? "" : status?.reason || (
@@ -172,6 +178,7 @@ export function createSessionPane(root, {
       return;
     }
     if (!attempts.some((a) => a.id === selectedId)) selectedId = attempts.at(-1).id;
+    prunePicks();
     const list = doc.createElement("ol");
     list.className = `session-attempts ${dataPrefix}-attempts`;
     attempts.forEach((attempt, index) => {
@@ -179,13 +186,19 @@ export function createSessionPane(root, {
         attempt, index, attempts, selected: attempt.id === selectedId, job, broken: broken.has(attempt.id),
         onBroken: (a) => { if (!broken.has(a.id)) { broken.add(a.id); renderTimeline(); } },
         onImageLoad: settleView,
+        picking, pickIndex: picks.indexOf(attempt.id), onTogglePick: (a) => togglePick(a.id),
       });
-      card.node.addEventListener("click", () => selectAttempt(attempt));
+      // 挑选模式里点卡片切换勾选而不是展开（M-06）；勾选框自己的 click 冒泡上来时不再切一次（它走 change）。
+      card.node.addEventListener("click", (event) => {
+        if (!picking) selectAttempt(attempt);
+        else if (event?.target?.type !== "checkbox") togglePick(attempt.id);
+      });
       card.node.addEventListener("keydown", (event) => {
         if (event.target && event.target !== card.node) return;
         if (event.key !== "Enter" && event.key !== " ") return;
         event.preventDefault?.();
-        selectAttempt(attempt, { focus: true });
+        if (picking) { togglePick(attempt.id); focusCard(attempt.id); }
+        else selectAttempt(attempt, { focus: true });
       });
       if (card.running) runningRefs = { ...card.running, attemptId: attempt.id };
       if (card.recompose) recomposeRefs = card.recompose;
@@ -265,8 +278,12 @@ export function createSessionPane(root, {
     selectedId = attempt.id;
     scrollIntent = "selected";
     renderTimeline();
-    if (focus) [...(els.timeline.querySelectorAll?.("[data-attempt-id]") ?? [])]
-      .find((node) => node.dataset.attemptId === attempt.id)?.focus?.();
+    if (focus) focusCard(attempt.id);
+  }
+  // 时间线重画后卡片是新节点：键盘操作后把焦点还给同一张卡片。
+  function focusCard(attemptId) {
+    [...(els.timeline.querySelectorAll?.("[data-attempt-id]") ?? [])]
+      .find((node) => node.dataset.attemptId === attemptId)?.focus?.();
   }
 
   // 页面用：按 id 选中当前会话里的一次尝试（同点卡片）。
@@ -321,7 +338,10 @@ export function createSessionPane(root, {
   }
 
   function switchTo(id) {
-    if (id !== currentId) { composer.onSessionSwitch?.(); selectedId = null; current = null; currentCorrupt = false; }
+    if (id !== currentId) {
+      composer.onSessionSwitch?.(); selectedId = null; current = null; currentCorrupt = false;
+      exitPicking({ render: false }); // M-10：切换、新建会话都退出挑选模式
+    }
     currentId = id;
     renderList();
     renderTimeline();
@@ -416,6 +436,171 @@ export function createSessionPane(root, {
     try { applyJob(await api.cancelJob()); } catch (error) { setError(error.message); }
   }
 
+  // ---------- 挑选合成（§1.3 M-05–M-11） ----------
+  const PICK_AT_LEAST_TWO = "至少要有两段完成的才能合成";
+  const pickable = (attempt) => attempt?.status === "done" && typeof attempt.output === "string" && !!attempt.output
+    && !attempt.output_missing && !broken.has(attempt.id);
+  const attemptsNow = () => current?.attempts ?? [];
+  const pickName = (id) => `第 ${attemptsNow().findIndex((a) => a.id === id) + 1} 次`;
+  function prunePicks() { picks = picks.filter((id) => pickable(attemptsNow().find((a) => a.id === id))); }
+
+  const compose = canCompose ? buildCompose() : null;
+  function buildCompose() {
+    const make = (tag, className, text) => {
+      const node = doc.createElement(tag);
+      if (className) node.className = className;
+      if (text) node.textContent = text;
+      return node;
+    };
+    const toolbar = make("div", "session-toolbar");
+    const startBtn = make("button", "btn-secondary btn-sm", "挑几段合成…");
+    startBtn.dataset[camel(`${dataPrefix}-compose-start`)] = "";
+    startBtn.addEventListener("click", enterPicking);
+    toolbar.append(startBtn);
+    els.timeline.parentNode.insertBefore(toolbar, els.timeline);
+
+    const bar = make("div", "compose-bar");
+    bar.dataset[camel(`${dataPrefix}-compose-bar`)] = "";
+    bar.setAttribute("role", "form");
+    bar.setAttribute("aria-label", "挑几段合成");
+    bar.hidden = true;
+    const lead = make("p", "hint compose-lead", "勾选顺序就是拼接顺序：");
+    const list = make("ol", "compose-picks");
+    const submit = make("button", "btn-primary");
+    submit.addEventListener("click", () => {
+      if (!submit.disabled) startCompose([...picks]);
+    });
+    const cancel = make("button", "btn-secondary", "取消");
+    cancel.addEventListener("click", () => exitPicking());
+    const actions = make("div", "compose-actions");
+    actions.append(submit, cancel);
+    const reason = make("p", "hint compose-reason");
+    reason.setAttribute("role", "status");
+    const error = make("p", "inline-error");
+    error.dataset[camel(`${dataPrefix}-compose-error`)] = "";
+    error.setAttribute("role", "alert");
+    bar.append(lead, list, actions, reason, error);
+    const composerNode = q("composer");
+    composerNode.parentNode.insertBefore(bar, composerNode);
+    return { startBtn, bar, list, submit, reason, error, composerNode };
+  }
+
+  function iconButton(made, label, icon, disabled, onClick) {
+    const btn = doc.createElement("button");
+    made.set(label, btn);
+    btn.className = "btn-sm";
+    btn.setAttribute("aria-label", label);
+    btn.title = label;
+    btn.disabled = disabled;
+    addIcon(btn, icon, doc);
+    btn.addEventListener("click", onClick);
+    return btn;
+  }
+
+  // 已选列表：每项「第 N 次」＋上移、下移、移除；refocus 是刚点过的按钮名，重画后把焦点还给同名按钮。
+  function renderPicks(refocus = null) {
+    if (!compose) return;
+    const move = (from, to) => {
+      const next = [...picks];
+      [next[from], next[to]] = [next[to], next[from]];
+      picks = next;
+    };
+    const made = new Map();
+    const rows = picks.map((id, i) => {
+      const name = pickName(id);
+      const li = doc.createElement("li");
+      const label = doc.createElement("span");
+      label.textContent = name;
+      li.append(label,
+        iconButton(made, `上移${name}`, "chevron-up", i === 0, () => { move(i, i - 1); afterPicksChange(`上移${name}`); }),
+        iconButton(made, `下移${name}`, "chevron-down", i === picks.length - 1, () => { move(i, i + 1); afterPicksChange(`下移${name}`); }),
+        iconButton(made, `移除${name}`, "x", false, () => { picks = picks.filter((p) => p !== id); afterPicksChange(); }));
+      return li;
+    });
+    if (!rows.length) {
+      const li = doc.createElement("li");
+      li.className = "hint";
+      li.textContent = "在上面的卡片里勾选要拼接的段落";
+      rows.push(li);
+    }
+    compose.list.replaceChildren(...rows);
+    if (refocus) {
+      const target = made.get(refocus);
+      if (target && !target.disabled) target.focus?.();
+      else compose.submit.focus?.();
+    }
+  }
+  function afterPicksChange(refocus = null) {
+    renderPicks(refocus);
+    renderTimeline();
+  }
+
+  // 合成栏主按钮、原因行、错误行与工具行按钮随可用性更新（M-05、M-08）。
+  function updateCompose(state = currentAvailability()) {
+    if (!compose) return;
+    const count = attemptsNow().filter(pickable).length;
+    compose.startBtn.disabled = count < 2 || picking;
+    compose.startBtn.title = count < 2 ? PICK_AT_LEAST_TWO : "";
+    compose.bar.hidden = !picking;
+    compose.composerNode.hidden = picking;
+    compose.submit.textContent = `合成（${picks.length} 段）`;
+    compose.submit.disabled = picks.length < 2 || state.disabled;
+    compose.reason.textContent = picks.length < 2 ? "至少选两段" : state.reason;
+    compose.error.textContent = composeError;
+  }
+
+  function enterPicking() {
+    if (!compose || picking || compose.startBtn.disabled) return;
+    picking = true; picks = []; composeError = "";
+    renderPicks();
+    renderTimeline();
+  }
+
+  function exitPicking({ render = true } = {}) {
+    if (!picking) return;
+    picking = false; picks = []; composeError = "";
+    renderPicks();
+    if (render) renderTimeline();
+    else updateCompose();
+  }
+
+  // 只在挑选模式里、只对完成且文件在的尝试生效；再点一次取消勾选（同一段不会选两次，M-11）。
+  function togglePick(id) {
+    if (!picking) return;
+    if (picks.includes(id)) picks = picks.filter((p) => p !== id);
+    else if (pickable(attemptsNow().find((a) => a.id === id))) picks = [...picks, id];
+    else return;
+    afterPicksChange();
+  }
+
+  // 提交合成（M-09）；也给页面的「重新拼接」用（M-41）。合成不查内存，没有「仍要生成」确认。
+  // 失败时挑选模式里写到合成栏错误行并留在模式内，否则写到页面错误行。
+  async function startCompose(parts) {
+    const toBar = picking;
+    pending = true; composeError = ""; setError(""); updateAvailability();
+    try {
+      const started = await api.startComposeJob({ kind, session_id: currentId, parts });
+      job = started; jobLog = started.log ?? "";
+      exitPicking({ render: false });
+      onStarted?.(started);
+      if (started.attempt_id) selectedId = started.attempt_id;
+      if (started.session_id === currentId) await loadSession(currentId, { scroll: true });
+      await reloadList();
+    } catch (error) {
+      const text = composeErrorText(error);
+      if (toBar && picking) composeError = text;
+      else setError(text);
+    } finally { pending = false; updateAvailability(); }
+  }
+
+  // capability_missing 显示后端原话（「需要 ffmpeg 才能拼接成片」）；describeJobError 认得的码用它的标题，
+  // 其余（段已不在、会话已删等）用后端原话，不笼统写成「生成失败」。
+  function composeErrorText(error) {
+    if (error?.code === "capability_missing") return error.message;
+    const { title } = describeJobError({ code: error?.code, message: error?.message });
+    return title && title !== "生成失败" ? title : error?.message || "合成没有开始";
+  }
+
   // ---------- 作业轮询（D-82、D-27） ----------
   // main.js 的 2 秒 tick 取到本页这种媒体的作业时交给这里。
   function applyJob(payload, { replaceLog = false } = {}) {
@@ -483,7 +668,7 @@ export function createSessionPane(root, {
   updateAvailability();
   return {
     refresh, applyJob, poll, applyFill, cancelJob, setHeavyAllowed, setModelStatus, setRuntimeStatus,
-    startGeneration, currentId: () => currentId, currentSession: () => current,
+    startGeneration, startCompose, togglePick, currentId: () => currentId, currentSession: () => current,
     selectAttempt: selectAttemptById, keepInView,
     availability: currentAvailability, setError, settleView, rerender: () => renderTimeline(),
   };

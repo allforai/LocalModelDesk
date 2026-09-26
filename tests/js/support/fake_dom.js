@@ -21,6 +21,12 @@ export class Element {
     this.children = text ? [{ tagName: "#text", textContent: text, children: [], dataset: {}, attrs: {} }] : [];
   }
   append(...nodes) { for (const node of nodes) { node.parentNode = this; this.children.push(node); } }
+  insertBefore(node, ref) {
+    const at = this.children.indexOf(ref);
+    node.parentNode = this;
+    this.children.splice(at < 0 ? this.children.length : at, 0, node);
+    return node;
+  }
   replaceChildren(...nodes) { this.children = []; this.append(...nodes); }
   addEventListener(type, listener) { (this.listeners[type] ??= []).push(listener); }
   dispatch(type, event = {}) { return Promise.all((this.listeners[type] ?? []).map((fn) => fn({ target: this, preventDefault() {}, stopPropagation() {}, ...event }))); }
@@ -57,8 +63,9 @@ export function mainFlowText(node, advancedClassRe = /image-advanced|attempt-adv
 }
 
 // 一个极小的后端：某一种媒体的会话存在内存里，按路由回应；每次调用记下来。
+// startResult / composeResult 设成函数时，生成 / 合成请求改由它回应（造错误用）。
 export function fakeBackend(kind) {
-  const state = { sessions: [], calls: [], nextJob: 1, startResult: null };
+  const state = { sessions: [], calls: [], nextJob: 1, startResult: null, composeResult: null };
   const summary = (s) => ({ id: s.id, title: s.title, created: s.created, updated: s.updated,
     attempt_count: s.attempts.length, running: s.attempts.some((a) => a.status === "running"),
     cover: s.attempts.filter((a) => a.status === "done").at(-1)?.output ?? null });
@@ -101,9 +108,10 @@ export function fakeBackend(kind) {
       return addRunning(s, { params });
     }
     if (url === "/api/media/compose" && method === "POST") {
+      if (state.composeResult) return state.composeResult(body);
       const s = state.sessions.find((item) => item.id === body.session_id);
       if (!s) return missing();
-      return addRunning(s, { op: "compose", params: { attempt_ids: body.attempt_ids } });
+      return addRunning(s, { op: "compose", params: { parts: body.parts } });
     }
     if (url === "/api/media/cancel") return reply(200, { job_id: 1, kind, status: "cancelled" });
     throw new Error(`unexpected ${method} ${url}`);
@@ -145,6 +153,8 @@ export function makeGenericPane(options = {}) {
       const li = d.createElement("li");
       li.dataset.attemptId = o.attempt.id;
       li.dataset.attemptStatus = o.attempt.status;
+      li.dataset.pickIndex = String(o.pickIndex ?? -1);
+      if (o.picking) li.dataset.picking = "";
       li.setAttribute("aria-expanded", o.selected || o.attempt.status === "running" ? "true" : "false");
       li.textContent = `${o.index + 1}:${o.attempt.status}`;
       return { node: li };

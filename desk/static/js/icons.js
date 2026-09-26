@@ -28,6 +28,8 @@ const PATHS = {
   brain: "M9.5 4.5A3 3 0 0 0 4 6a3 3 0 0 0-1 5.8A3.5 3.5 0 0 0 6 18h3.5V4.5Zm5 0A3 3 0 0 1 20 6a3 3 0 0 1 1 5.8A3.5 3.5 0 0 1 18 18h-3.5V4.5ZM9.5 9H7m7.5 3H18",
   activity: "M3 12h4l2-6 4 12 2-6h6",
   check: "m5 12 4 4L19 6",
+  "chevron-up": "m6 15 6-6 6 6",
+  "chevron-down": "m6 9 6 6 6-6",
 };
 
 export function iconNode(doc, name) {
