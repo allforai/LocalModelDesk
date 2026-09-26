@@ -196,7 +196,7 @@ def test_a_job_started_before_the_previous_finalize_cannot_steal_its_permit_or_j
         if not delayed:                       # job 2's finalize: squeeze job 3 in before it
             delayed.append(True)
             finished[3] = threading.Event()
-            video(service)
+            video(service, session_id=deps.media_sessions["video"].create()["id"])
             assert finished[3].wait(5)
         original(*args, **kwargs)
 

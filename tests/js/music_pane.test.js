@@ -152,6 +152,7 @@ test("续写目标在会话刷新后文件不在：提示条改为不能接着�
     assert.equal(parts["chip-text"].textContent, "第 1 次的文件已不在，不能接着写");
     assert.equal(parts.start.disabled, true);
     assert.equal(parts.start.title, "第 1 次的文件已不在，不能接着写");
+    assert.ok(find(cards(parts)[0], (n) => n.classList?.contains?.("icon-music")), "文件不在的音乐卡片应显示音乐图标而非图片图标");
     await parts["chip-clear"].click();
     assert.equal(parts.chip.hidden, true);
     assert.equal(parts.start.disabled, false);

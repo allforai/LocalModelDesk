@@ -4,7 +4,16 @@ import { fillPlan } from "../../desk/static/js/pure/history_fill.js";
 
 test("video 参数 → video 表单五字段", () => {
   const plan = fillPlan({ kind: "video", params: { prompt: "海边", width: 768, height: 448, frames: 49, steps: 16 } });
-  assert.deepEqual(plan, { pane: "video", session_id: null, attempt_id: null, fields: { prompt: "海边", width: 768, height: 448, frames: 49, steps: 16 } });
+  assert.deepEqual(plan, { pane: "video", session_id: null, attempt_id: null, fields: { prompt: "海边", width: 768, height: 448, frames: 49, steps: 16, seed: null } });
+});
+
+test("video 条目带种子与顶层 refs（V-05、V-61）", () => {
+  const ref = { kind: "image", session_id: "s", attempt_id: "a" };
+  const plan = fillPlan({ kind: "video", refs: { first_frame: ref },
+    params: { prompt: "p", width: 512, height: 288, frames: 49, steps: 16, seed: 7, mode: "image", first_frame: null, use_audio: true } });
+  assert.equal(plan.fields.seed, 7);
+  assert.deepEqual(plan.fields.refs, { first_frame: ref });
+  assert.equal("refs" in fillPlan({ kind: "video", refs: {}, params: { prompt: "p" } }).fields, false);
 });
 
 test("music 参数 → music 表单四字段，带种子（M-52：回填后能沿用素材库里这首）", () => {

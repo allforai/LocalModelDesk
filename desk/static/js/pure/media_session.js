@@ -8,6 +8,31 @@ import { formatDuration } from "./format.js";
 
 export const SEED_MAX = 4294967295;
 
+// 卡片状态 → {kind, badge, title, sub, icon, tone}（D-73、D-84、D-85；V-10）。
+// kind ∈ running | done | failed | cancelled | missing；missing 是 done 但文件不在
+// （后端 output_missing，或前端加载触发 error 后由调用方传 broken=true）。noun 决定缺文件文案，
+// 各媒体页传自己的名词（图片、音频、视频…），默认「图片」；icon 同理决定缺文件图标，默认「image」。
+export function attemptView(attempt, { broken = false, noun = "图片", icon = "image" } = {}) {
+  const status = attempt?.status;
+  if (status === "running") return { kind: "running", badge: "生成中", title: "", sub: "", icon: null, tone: "busy" };
+  if (status === "done" && !attempt.output_missing && !broken && attempt.output)
+    return { kind: "done", badge: "", title: "", sub: "", icon: null, tone: "" };
+  if (status === "done") {
+    const text = `${noun}文件已不在`;
+    return { kind: "missing", badge: text, title: text, sub: "可能已在访达中移动或删除", icon, tone: "muted" };
+  }
+  if (status === "cancelled") {
+    const onQuit = attempt?.error?.code === "cancelled_on_quit";
+    // 用户取消：标记「已取消」之外，说明取存进文件的原话（D-09「已取消：这次生成被手动停止」），
+    // 去掉与标记重复的前缀；退出取消的标题本身就是原因，不再重复。
+    const said = onQuit ? "" : String(attempt?.error?.message ?? "").replace(/^\s*已取消\s*[：:]?\s*/, "").trim();
+    return { kind: "cancelled", badge: "已取消", title: onQuit ? "应用退出时停止了这次生成" : "已取消", sub: said, icon: "x", tone: "muted" };
+  }
+  const error = attempt?.error ?? null;
+  const title = error?.code === "interrupted" ? "应用在生成途中关闭，这次没有完成" : (describeJobError(error).title || "生成失败");
+  return { kind: "failed", badge: "失败", title, sub: "", icon: "x", tone: "danger" };
+}
+
 // D-11：连续空白折叠、去首尾空白、超过 24 字取前 24 字加「…」（与聊天 displayTitle 同规则）。
 export function autoTitle(prompt) {
   const text = String(prompt ?? "").replace(/\s+/g, " ").trim();
@@ -33,7 +58,7 @@ export function attemptLabel(index, attempt) {
   return [`第 ${index + 1} 次`, clock(attempt?.ts)].filter(Boolean).join(" · ");
 }
 
-// D-81：running 卡片的标题行，沿用 jobview 的 formatDuration 文案。
+// D-81：running 卡片的标题行，已用时长用 formatDuration 的文案。
 export function runningLabel(index, elapsedSeconds) {
   const elapsed = Number.isFinite(elapsedSeconds) ? `（已用 ${formatDuration(elapsedSeconds)}）` : "";
   return `第 ${index + 1} 次 · 生成中…${elapsed}`;

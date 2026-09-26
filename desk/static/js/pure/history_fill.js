@@ -15,6 +15,9 @@ export function fillPlan(entry) {
         height: params.height ?? null,
         frames: params.frames ?? null,
         steps: params.steps ?? null,
+        // V-61：带种子才能显示「沿用素材库里这段」；V-05：首帧来自图片会话时历史条目在顶层记 refs。
+        seed: Number.isInteger(params.seed) ? params.seed : null,
+        ...(entry.refs && Object.keys(entry.refs).length ? { refs: entry.refs } : {}),
         ...(params.mode ? { mode: params.mode, first_frame: params.first_frame,
           last_frame: params.last_frame, ref_video: params.ref_video, use_audio: params.use_audio } : {}),
       },

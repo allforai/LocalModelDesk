@@ -1,7 +1,7 @@
 // 图片会话的纯逻辑（设计 docs/superpowers/specs/2026-09-24-image-sessions-design.md）。
 // 零 DOM、零 fetch：卡片文案、动作参数、当前会话选择、不可用原因都在这里算好，
-// panes/image.js 只负责把结果画出来。
-import { describeJobError } from "./job_error.js";
+// panes/image.js 只负责把结果画出来。attemptView 是图片、音乐等媒体共用的卡片状态函数，
+// 已搬到 pure/media_session.js。
 import { ParamsError, SEED_MAX, randomSeed } from "./media_session.js";
 
 export const DEFAULT_PARAMS = Object.freeze({ width: 1024, height: 1024, steps: 40 });
@@ -11,28 +11,6 @@ export function specLine(params) {
   const size = Number.isInteger(p.width) && Number.isInteger(p.height) ? `${p.width}×${p.height}` : "";
   const steps = Number.isInteger(p.steps) ? `${p.steps} 步` : "";
   return [size, steps].filter(Boolean).join(" · ");
-}
-
-// 卡片状态 → {kind, badge, title, sub, icon, tone}（D-73、D-84、D-85）。
-// kind ∈ running | done | failed | cancelled | missing；missing 是 done 但图片文件不在
-// （后端 output_missing，或前端 <img> 触发 error 后由调用方传 broken=true）。
-export function attemptView(attempt, { broken = false } = {}) {
-  const status = attempt?.status;
-  if (status === "running") return { kind: "running", badge: "生成中", title: "", sub: "", icon: null, tone: "busy" };
-  if (status === "done" && !attempt.output_missing && !broken && attempt.output)
-    return { kind: "done", badge: "", title: "", sub: "", icon: null, tone: "" };
-  if (status === "done")
-    return { kind: "missing", badge: "图片文件已不在", title: "图片文件已不在", sub: "可能已在访达中移动或删除", icon: "image", tone: "muted" };
-  if (status === "cancelled") {
-    const onQuit = attempt?.error?.code === "cancelled_on_quit";
-    // 用户取消：标记「已取消」之外，说明取存进文件的原话（D-09「已取消：这次生成被手动停止」），
-    // 去掉与标记重复的前缀；退出取消的标题本身就是原因，不再重复。
-    const said = onQuit ? "" : String(attempt?.error?.message ?? "").replace(/^\s*已取消\s*[：:]?\s*/, "").trim();
-    return { kind: "cancelled", badge: "已取消", title: onQuit ? "应用退出时停止了这次生成" : "已取消", sub: said, icon: "x", tone: "muted" };
-  }
-  const error = attempt?.error ?? null;
-  const title = error?.code === "interrupted" ? "应用在生成途中关闭，这次没有完成" : (describeJobError(error).title || "生成失败");
-  return { kind: "failed", badge: "失败", title, sub: "", icon: "x", tone: "danger" };
 }
 
 // D-40：「在这张基础上改」回填到输入区的五个值。

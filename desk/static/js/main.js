@@ -20,7 +20,7 @@ const $ = (selector) => document.querySelector(selector);
 const store = createStore({ activeTab: "chat" });
 let activeTab = "chat";
 let panes; let statusbar; let settings; let failures = 0; let modelNames = {};
-let jobActive = false; let jobLogFrom = 0; let lastJobId = null; let mediaBusyReason = "";
+let jobActive = false; let jobLogFrom = 0; let lastJobId = null;
 // tick() 每 2 秒都会刷新资源面板，配置坏掉可能在开机之后才发生（比如运行中被外部
 // 改坏）——一旦发现就只报一次致命屏，不要每个 tick 都重挂一遍「重新设置」监听器。
 let configBroken = false;
@@ -49,11 +49,16 @@ function enterDesk() {
     const onStarted = (job) => { jobActive = job.status === "running"; lastJobId = job.job_id ?? null; jobLogFrom = job.next_log_from ?? 0; };
     panes = {
       chat:createChatPane($("#pane-chat")), video:createVideoPane($("#pane-video"), { onStarted }),
-      music:createMusicPane($("#pane-music"), { onStarted }), image:createImagePane($("#pane-image"), { onStarted }),
+      music:createMusicPane($("#pane-music"), { onStarted }),
+      // V-51：图片页「用这张生成视频」经这里切到视频页并填首帧。
+      image:createImagePane($("#pane-image"), {
+        onStarted, onUseAsFirstFrame: (pick) => { showTab("video"); panes.video.useFirstFrame(pick); },
+      }),
       resources:createResourcesPane($("#pane-resources"), {
         onModels: (models) => {
           panes.image.setModelStatus(models?.find((m) => m.key === "qwen-image"));
           panes.music.setModelStatus(models?.find((m) => m.key === "music3"));
+          panes.video.setModelStatus(models?.find((m) => m.key === "h3"));
         },
         // 配置读不出来是整台机器级别的问题（不只是资源页），复用开机就有的那个
         // fatal 屏和「重新设置」入口，不为资源页另起一个说法（R-config-corrupt-01）。
@@ -99,16 +104,15 @@ function showTab(name) {
   if (globalThis.location) globalThis.history?.replaceState(null, "", `#tab=${name}`);
   if (name === "resources") panes.resources.refresh();
   if (name === "library") panes.library.refresh();
-  if (name === "video") panes.video.jobView.sync({ busyReason: mediaBusyReason });
+  if (name === "video") panes.video.refresh();
   if (name === "music") panes.music.refresh();
   if (name === "image") panes.image.refresh();
 }
 
-// 图片、音乐条目的回填要先找回它所在的会话（设计 D-94/D-95、M-52），由各自的页处理。
+// 图片、音乐、视频条目的回填要先找回它所在的会话（设计 D-94/D-95、M-52、V-61），由各自的页处理。
 function applyFill(plan) {
   if (!plan) return;
-  if (plan.pane === "image" || plan.pane === "music") { showTab(plan.pane); panes[plan.pane].applyFill(plan); return; }
-  panes[plan.pane].fill(plan.fields); showTab(plan.pane);
+  showTab(plan.pane); panes[plan.pane].applyFill(plan);
 }
 
 function applyHeavyAvailability(deskState) {
@@ -119,19 +123,14 @@ function applyHeavyAvailability(deskState) {
   panes.video.setHeavyAllowed(media.allowed, media.reason);
   panes.music.setHeavyAllowed(media.allowed, media.reason);
   panes.image.setHeavyAllowed(media.allowed, media.reason);
-  // Idle panes must say why they can't start, not silently keep the last
-  // finished job's caption while their own button is disabled (F14, gap #9).
-  mediaBusyReason = media.allowed ? "" : media.reason;
-  panes.video.jobView.setBusyReason(mediaBusyReason);
 }
 
 async function tickJob() {
   const payload = await api.jobStatus(jobLogFrom, lastJobId);
   const changed = payload.job_id !== lastJobId;
   if (changed) { lastJobId = payload.job_id; jobLogFrom = 0; }
-  // 图片、音乐作业（含音乐合成）不再有固定的作业区：交给各自的页按 attempt_id 找到对应卡片（设计 D-82/D-92、M-51）。
-  if (payload.kind === "image" || payload.kind === "music") panes[payload.kind].applyJob(payload, { replaceLog: changed });
-  else (panes[payload.kind] ?? panes.video).jobView.apply(payload, { replaceLog: changed, busyReason: mediaBusyReason });
+  // 媒体作业（含合成）没有固定的作业区：交给各自的页按 attempt_id 找到对应卡片（设计 D-82/D-92、M-51、V-60）。
+  panes[payload.kind]?.applyJob(payload, { replaceLog: changed });
   jobLogFrom = payload.next_log_from ?? jobLogFrom;
   if (payload.status !== "running") jobActive = false;
 }
@@ -146,6 +145,7 @@ async function tick() {
     ]);
     panes.image.setRuntimeStatus(capabilities?.image_runtime);
     panes.music.setRuntimeStatus(capabilities?.music_runtime);
+    panes.video.setRuntimeStatus(capabilities?.mlx_h3);
     const download = await panes.resources.refresh();
     failures = 0; statusbar.offline(false); statusbar.update(deskState, memory, download, modelNames, budget); applyHeavyAvailability(deskState); store.set({ deskState, memory });
     panes.chat.applyLlmStatus(llm, deskState);
@@ -157,9 +157,11 @@ async function tick() {
     if (jobActive) await tickJob();
     await panes.image.poll(deskState);
     await panes.music.poll(deskState);
+    await panes.video.poll(deskState);
   } catch (error) {
     panes.image.setHeavyAllowed(false, "服务状态暂不可用，请稍后重试");
     panes.music.setHeavyAllowed(false, "服务状态暂不可用，请稍后重试");
+    panes.video.setHeavyAllowed(false, "服务状态暂不可用，请稍后重试");
     failures += 1; if (failures >= 3) statusbar.offline(true);
   }
 }

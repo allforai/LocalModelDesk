@@ -58,20 +58,20 @@ export function createMusicPane(root, ctx = {}) {
 
   // 「生成歌曲」与展开卡片上「换个版本」的可用状态；续写目标已不在时「生成歌曲」也不可用（M-28、M-34）。
   let lastState = null;
-  function updateAvailability(state, { recompose }) {
-    lastState = { state, recompose };
+  function updateAvailability(state, { secondary }) {
+    lastState = { state, secondary };
     syncChip();
     const missing = !!ref?.missing;
     els.start.disabled = state.disabled || missing;
     els.start.title = state.disabled ? state.reason : missing ? chipText(ref) : "";
-    if (recompose) {
-      recompose.button.disabled = state.disabled;
-      recompose.button.title = state.disabled ? state.reason : "";
-      recompose.hint.textContent = state.disabled ? state.reason : "";
+    if (secondary) {
+      secondary.button.disabled = state.disabled;
+      secondary.button.title = state.disabled ? state.reason : "";
+      secondary.hint.textContent = state.disabled ? state.reason : "";
     }
   }
   function refreshAvailability() {
-    if (lastState) updateAvailability(pane.availability(), { recompose: lastState.recompose });
+    if (lastState) updateAvailability(pane.availability(), { secondary: lastState.secondary });
   }
 
   async function startJob(params) {

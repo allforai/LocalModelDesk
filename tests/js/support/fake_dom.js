@@ -65,7 +65,7 @@ export function mainFlowText(node, advancedClassRe = /image-advanced|attempt-adv
 // 一个极小的后端：某一种媒体的会话存在内存里，按路由回应；每次调用记下来。
 // startResult / composeResult 设成函数时，生成 / 合成请求改由它回应（造错误用）。
 export function fakeBackend(kind) {
-  const state = { sessions: [], calls: [], nextJob: 1, startResult: null, composeResult: null };
+  const state = { sessions: [], calls: [], nextJob: 1, startResult: null, composeResult: null, uploads: 0 };
   const summary = (s) => ({ id: s.id, title: s.title, created: s.created, updated: s.updated,
     attempt_count: s.attempts.length, running: s.attempts.some((a) => a.status === "running"),
     cover: s.attempts.filter((a) => a.status === "done").at(-1)?.output ?? null });
@@ -114,6 +114,9 @@ export function fakeBackend(kind) {
       return addRunning(s, { op: "compose", params: { parts: body.parts } });
     }
     if (url === "/api/media/cancel") return reply(200, { job_id: 1, kind, status: "cancelled" });
+    // 素材上传（视频的首帧、尾帧、参考视频）：回一个按次数编号、保留扩展名的 id。
+    if (url === "/api/media/inputs" && method === "POST")
+      return reply(200, { id: `in${++state.uploads}${String(body.name).match(/\.\w+$/)?.[0] ?? ""}` });
     throw new Error(`unexpected ${method} ${url}`);
   };
   state.finish = (attemptId, patch) => {

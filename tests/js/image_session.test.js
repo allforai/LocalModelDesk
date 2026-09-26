@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  attemptView,
   readImageParams, recomposeParams, refineChipText, refineChipVisible, refineFields, specLine,
   hasImage, submitBase, baseLabel, NO_IMAGE_REASON,
 } from "../../desk/static/js/pure/image_session.js";
+import { attemptView } from "../../desk/static/js/pure/media_session.js";
 
 const SEED = "种子"; // 「种子」
 

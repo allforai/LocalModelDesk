@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  autoTitle, availability, deleteMessage, orderSessions, pickCurrent, randomSeed,
+  attemptView, autoTitle, availability, deleteMessage, orderSessions, pickCurrent, randomSeed,
   runningLabel, runningSessionId, sessionMeta, sessionTitle, startErrorText, attemptLabel, chainOf,
 } from "../../desk/static/js/pure/media_session.js";
 
@@ -54,7 +54,7 @@ test("会话列表文案：标题、N 次生成 · HH:MM、坏文件（D-77、§
   assert.equal(sessionMeta({ id: "x", corrupt: true }), "文件已损坏");
 });
 
-test("卡片标题行：第 N 次 · HH:MM；生成中沿用 jobview 时长文案（D-73、D-81）", () => {
+test("卡片标题行：第 N 次 · HH:MM；生成中带已用时长（D-73、D-81）", () => {
   assert.equal(attemptLabel(0, { ts: "2026-09-24T14:02:11" }), "第 1 次 · 14:02");
   assert.equal(runningLabel(1, 80), "第 2 次 · 生成中…（已用 1分20秒）");
   assert.equal(runningLabel(2, undefined), "第 3 次 · 生成中…");
@@ -132,4 +132,18 @@ test("列表顺序：updated 降序、坏文件最后；同一秒并列时刚新
   ];
   assert.deepEqual(orderSessions(list, "fresh").map((s) => s.id), ["fresh", "a", "old", "x"]);
   assert.deepEqual(orderSessions(list).map((s) => s.id), ["a", "fresh", "old", "x"]);
+});
+
+test("attemptView names the missing file by noun", () => {
+  const gone = { status: "done", output: "x", output_missing: true };
+  assert.equal(attemptView(gone).title, "图片文件已不在");
+  assert.equal(attemptView(gone, { noun: "音频" }).badge, "音频文件已不在");
+  assert.equal(attemptView(gone, { noun: "视频" }).title, "视频文件已不在");
+});
+
+test("attemptView 的 missing 图标默认 image，可由调用方按媒体种类覆盖", () => {
+  const gone = { status: "done", output: "x", output_missing: true };
+  assert.equal(attemptView(gone).icon, "image");
+  assert.equal(attemptView(gone, { noun: "音频", icon: "music" }).icon, "music");
+  assert.equal(attemptView(gone, { noun: "视频", icon: "video" }).icon, "video");
 });

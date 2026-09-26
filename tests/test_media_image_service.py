@@ -390,14 +390,6 @@ def test_image_route_requires_session_and_rejects_truthy_string_force(tmp_path, 
     assert body["params"]["seed"] == 7  # no fixed default of 42 any more
 
 
-def test_non_image_jobs_carry_null_session_fields(tmp_path):
-    service, deps = make_service(tmp_path)
-    snap = finished_snapshot(service, lambda: service.start_video_job(
-        prompt="rain", width=512, height=288, frames=73, steps=10))
-    assert snap["session_id"] is None and snap["attempt_id"] is None
-    assert deps.history.entries[-1]["session_id"] is None and deps.history.entries[-1]["attempt_id"] is None
-
-
 def test_image_manifest_is_pinned_offline_and_describes_two_sources(tmp_path):
     model = entry("qwen-image")
     store = ManifestStore(lambda: tmp_path, fetcher=lambda _: pytest.fail("must not fetch main"))

@@ -263,7 +263,9 @@ def test_three_rounds_refine_keep_order_seed_and_recompose(page, tmp_path):
         expect(last.locator("details.attempt-advanced")).not_to_have_attribute("open", "")
         expect(last.get_by_role("button", name="在这张基础上改")).to_be_visible()
         expect(last.get_by_role("button", name="换个构图")).to_be_visible()
-        assert last.locator(".attempt-actions button").count() == 2  # no per-attempt delete (D-00c)
+        # two actions plus 「用这张生成视频」 (video-sessions V-50); still no per-attempt delete (D-00c)
+        expect(last.get_by_role("button", name="用这张生成视频")).to_be_visible()
+        assert last.locator(".attempt-actions button").count() == 3
         # timeline-three-rounds is judged as a declared pair per viewport: pinned to the end, the
         # expanded 第 3 次 is whole (header, image, prompt, 高级参数, both actions); scrolled to the top
         # by the user, 第 1 次 → 第 3 次 headers are all in view.
@@ -568,7 +570,7 @@ def test_other_media_job_blocks_generation_without_return_button(page, tmp_path)
         video = page.locator("#pane-video")
         video.locator("[data-video-prompt]").fill("视频占用")
         video.locator("[data-video-start]").click()
-        expect(video.locator("[data-job-log]")).to_contain_text("step 1/10")
+        expect(video.locator(".attempt-log pre")).to_contain_text("step 1/10")
         page.locator("#tabs [data-tab='image']").click()
         card = _cards(pane).first
         expect(card.get_by_role("button", name="换个构图")).to_be_disabled(timeout=15_000)

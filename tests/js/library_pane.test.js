@@ -67,7 +67,7 @@ test("library 面板合并倒序渲染，点击成品就地播放并回填历史
 
   find(elements.list.children[1], (el) => el.tagName === "button" && el.textContent === "回填参数").click();
   assert.deepEqual(fills, [{ pane: "video", session_id: null, attempt_id: null,
-    fields: { prompt: "海边", width: 768, height: 448, frames: 49, steps: 16 } }]);
+    fields: { prompt: "海边", width: 768, height: 448, frames: 49, steps: 16, seed: null } }]);
 });
 
 test("library 面板保留未返回匹配历史的成品", async (t) => {

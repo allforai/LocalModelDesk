@@ -1,9 +1,11 @@
-// 音乐会话时间线里的一张尝试卡片（设计 docs/superpowers/specs/2026-09-27-music-sessions-design.md §2.3–§2.5）。
-// 只画 DOM，不发请求：三个动作、重新拼接、取消、挑选勾选、音频加载失败都经回调交还给 panes/music.js。
+// 视频会话时间线里的一张尝试卡片（设计 docs/superpowers/specs/2026-09-27-video-sessions-design.md §3.2）。
+// 只画 DOM，不发请求：三个动作、重新拼接、取消、挑选勾选、视频加载失败都经回调交还给 panes/video.js。
+// 结构与 music_session_card.js 相同，差异是 <video>、方式标签与规格行、首帧来源行。
 import { addIcon } from "../icons.js";
 import { renderErrorBlock } from "./error_block.js";
 import { attemptView, runningLabel } from "../pure/media_session.js";
-import { CANNOT_CONTINUE, canContinue, cardTitle, chainLine, joinProblem, lyricsPreview } from "../pure/music_session.js";
+import { chainLine, joinProblem } from "../pure/music_session.js";
+import { CANNOT_CONTINUE, MODES, canContinue, cardTitle, durationLabel, sourceOf, specLine } from "../pure/video_session.js";
 
 function el(doc, tag, className, text) {
   const node = doc.createElement(tag);
@@ -25,7 +27,9 @@ function advancedList(doc, params) {
   const details = el(doc, "details", "attempt-advanced");
   details.append(el(doc, "summary", "", "高级参数"));
   const list = el(doc, "dl", "attempt-params");
-  for (const [label, value] of [["时长（秒）", params?.duration], ["种子", params?.seed]]) {
+  const size = Number.isFinite(params?.width) && Number.isFinite(params?.height) ? `${params.width}×${params.height}` : null;
+  const duration = Number.isFinite(params?.frames) ? durationLabel(params.frames) : null;
+  for (const [label, value] of [["画幅", size], ["时长", duration], ["步数", params?.steps], ["种子", params?.seed]]) {
     list.append(el(doc, "dt", "", label), el(doc, "dd", "", value == null ? "—" : String(value)));
   }
   details.append(list);
@@ -42,28 +46,28 @@ function actionButton(doc, text, icon, onClick) {
   return btn;
 }
 
-// 播放器：有可用成片时默认放成片，旁边「成片 | 只听这一段」切换（M-31）。
+// 播放器：有可用成片时默认放成片，旁边「成片 | 只看这一段」切换（V-32，同 M-31）。
 function player(doc, attempt, { serveOutput, onBroken }) {
   const box = el(doc, "div", "attempt-player");
-  const audio = el(doc, "audio", "attempt-audio");
-  audio.setAttribute("controls", "");
-  audio.setAttribute("preload", "metadata");
-  audio.addEventListener("error", () => onBroken?.(attempt));
+  const video = el(doc, "video", "attempt-video");
+  video.setAttribute("controls", "");
+  video.setAttribute("preload", "metadata");
+  video.addEventListener("error", () => onBroken?.(attempt));
   const joined = typeof attempt.joined_output === "string" && attempt.joined_output && !attempt.joined_missing;
-  audio.src = serveOutput(joined ? attempt.joined_output : attempt.output);
-  box.append(audio);
+  video.src = serveOutput(joined ? attempt.joined_output : attempt.output);
+  box.append(video);
   if (!joined) return box;
   const group = el(doc, "div", "segment-switch");
   group.setAttribute("role", "radiogroup");
   group.setAttribute("aria-label", "播放哪一版");
-  const choices = [["成片", attempt.joined_output], ["只听这一段", attempt.output]].map(([label, file], i) => {
+  const choices = [["成片", attempt.joined_output], ["只看这一段", attempt.output]].map(([label, file], i) => {
     const btn = el(doc, "button", "btn-secondary btn-sm", label);
     btn.setAttribute("role", "radio");
     btn.setAttribute("aria-checked", i === 0 ? "true" : "false");
     btn.addEventListener("click", (event) => {
       event.stopPropagation?.();
       for (const other of choices) other.setAttribute("aria-checked", other === btn ? "true" : "false");
-      audio.src = serveOutput(file);
+      video.src = serveOutput(file);
     });
     return btn;
   });
@@ -73,18 +77,18 @@ function player(doc, attempt, { serveOutput, onBroken }) {
 }
 
 // 返回 {node, running, secondary}：running 是 running 卡片里轮询要就地更新的几个元素；
-// secondary 是「换个版本」按钮与其下方原因行（由面板按生成可用性更新，与图片页「换个构图」同一机制）。
-export function renderMusicCard(doc, opts) {
+// secondary 是「换个版本」按钮与其下方原因行（由面板按生成可用性更新）。
+// firstFrameText(attempt)：首帧来自图片会话时的说明文字，由面板按已加载的图片会话算好。
+export function renderVideoCard(doc, opts) {
   const { attempt, index, attempts, selected, broken = false, serveOutput, picking = false, pickIndex = -1 } = opts;
-  const view = attemptView(attempt, { broken, noun: "音频", icon: "music" });
+  const view = attemptView(attempt, { broken, noun: "视频", icon: "video" });
   const running = view.kind === "running";
   const expanded = running || selected;
   const compose = isCompose(attempt);
   const params = attempt?.params ?? {};
-  const caption = typeof params.caption === "string" ? params.caption : "";
-  const lyrics = typeof params.lyrics === "string" ? params.lyrics : "";
+  const prompt = typeof params.prompt === "string" ? params.prompt : "";
 
-  const card = el(doc, "li", `card attempt music-attempt attempt-${view.kind}`);
+  const card = el(doc, "li", `card attempt video-attempt attempt-${view.kind}`);
   card.dataset.attemptId = attempt.id;
   card.dataset.attemptStatus = view.kind;
   card.tabIndex = 0;
@@ -92,8 +96,7 @@ export function renderMusicCard(doc, opts) {
   if (selected) card.classList.add("selected");
 
   const row = el(doc, "div", "attempt-row");
-  // 挑选模式：能接着写（完成且文件在）的卡片前面有勾选框与序号（M-06）。卡片本身的点击由控制器切换勾选，
-  // 这里只接勾选框的 change，不再接卡片点击（否则一次点击切两次）。
+  // 挑选模式：卡片本身的点击由控制器切换勾选，这里只接勾选框的 change（V-34）。
   if (picking && canContinue(attempt) && !broken) {
     const pick = el(doc, "input", "attempt-pick");
     pick.type = "checkbox";
@@ -110,13 +113,14 @@ export function renderMusicCard(doc, opts) {
   head.append(label);
   if (view.badge && !running) head.append(el(doc, "span", `badge attempt-badge tone-${view.tone}`, view.badge));
   summary.append(head);
-  if (caption) {
-    const captionLine = el(doc, "p", "attempt-prompt", caption);
-    captionLine.title = caption;
-    summary.append(captionLine);
+  if (prompt) {
+    const promptLine = el(doc, "p", "attempt-prompt", prompt);
+    promptLine.title = prompt;
+    summary.append(promptLine);
   }
-  const preview = lyricsPreview(lyrics);
-  if (preview) summary.append(el(doc, "p", "attempt-spec attempt-lyrics-preview", preview));
+  if (!compose && Number.isFinite(params.width)) {
+    summary.append(el(doc, "p", "attempt-spec", `${MODES[params.mode ?? "text"] ?? MODES.text} · ${specLine(params)}`));
+  }
   if (view.title && view.title !== view.badge) summary.append(el(doc, "p", `attempt-reason tone-${view.tone}`, view.title));
   if (view.sub) summary.append(el(doc, "p", "attempt-reason-sub", view.sub));
   row.append(summary);
@@ -127,7 +131,7 @@ export function renderMusicCard(doc, opts) {
     const detail = el(doc, "div", "attempt-detail");
     const progress = el(doc, "progress", "attempt-progress");
     progress.max = 100;
-    progress.setAttribute("aria-label", "歌曲生成进度");
+    progress.setAttribute("aria-label", "视频生成进度");
     const cancel = el(doc, "button", "btn-secondary attempt-cancel", "取消");
     cancel.dataset.attemptCancel = "";
     addIcon(cancel, "x", doc);
@@ -161,12 +165,10 @@ export function renderMusicCard(doc, opts) {
     }
     detail.append(line);
   }
-  if (caption) detail.append(el(doc, "p", "attempt-full-prompt", caption));
-  if (lyrics) {
-    const words = el(doc, "details", "attempt-lyrics");
-    words.append(el(doc, "summary", "", "歌词"), el(doc, "pre", "", lyrics));
-    detail.append(words);
+  if (sourceOf(attempt)?.type === "ref") {
+    detail.append(el(doc, "p", "hint attempt-first-frame", opts.firstFrameText?.(attempt) || "首帧：来自图片会话"));
   }
+  if (prompt) detail.append(el(doc, "p", "attempt-full-prompt", prompt));
   if (view.kind === "failed" && attempt.error) {
     const block = renderErrorBlock(doc, attempt.error);
     const more = [...(block.children ?? [])].find((child) => String(child.tagName).toLowerCase() === "details");
@@ -174,7 +176,7 @@ export function renderMusicCard(doc, opts) {
   }
   if (!compose) detail.append(advancedList(doc, params));
 
-  // 挑选模式：卡片只做勾选，三个动作按钮都不画（控制器裁定：卡片是勾选目标，不是隐藏表单的入口）。
+  // 挑选模式：卡片只做勾选，三个动作按钮都不画。
   if (!picking) {
     const actions = el(doc, "div", "attempt-actions");
     let version = null;
@@ -185,7 +187,7 @@ export function renderMusicCard(doc, opts) {
       version.dataset.attemptVersion = "";
       actions.append(refine, version);
     }
-    const next = actionButton(doc, "接着写下一段", "plus", () => opts.onContinue?.(attempt, index));
+    const next = actionButton(doc, "接着往下生", "plus", () => opts.onContinue?.(attempt, index));
     next.dataset.attemptContinue = "";
     const continuable = canContinue(attempt) && !broken;
     next.disabled = !continuable;

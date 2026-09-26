@@ -10,8 +10,23 @@ from desk.testing import launch_test_harness
 from desk.testing.seed import TINY_MP4
 
 
+# 视频页改成会话式后（设计 V-20），作业进度与日志在时间线里正在生成的那张卡片上，成品是卡片里的 <video>。
+def _job_log(pane):
+    return pane.locator(".attempt-log pre")
+
+
+def _card_video(pane):
+    return pane.locator(".attempt video.attempt-video")
+
+
+def _open_advanced(pane):
+    advanced = pane.locator("[data-video-advanced]")
+    if advanced.get_attribute("open") is None:
+        advanced.locator("summary").click()
+
+
 @pytest.mark.parametrize("mode,selector,name,mime,content,flag", [
-    ("image", "first", "first.png", "image/png", base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9ZkAAAAASUVORK5CYII="), "--first-frame"),
+    ("image", "first-upload", "first.png", "image/png", base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9ZkAAAAASUVORK5CYII="), "--first-frame"),
     ("reference", "source", "clip.mp4", "video/mp4", TINY_MP4, "--ref-video-silent"),
 ])
 def test_conditioning_file_upload_preview_and_generation(page, tmp_path, mode, selector, name, mime, content, flag):
@@ -29,18 +44,20 @@ def test_conditioning_file_upload_preview_and_generation(page, tmp_path, mode, s
         pane.locator("[data-video-start]").click()
         expect(pane.locator("[data-video-error]")).to_contain_text("请先选择")
         pane.locator(f"[data-video-{selector}]").set_input_files({"name": name, "mimeType": mime, "buffer": content})
-        expect(pane.locator(f"[data-video-{selector}-preview] > *")).to_be_visible()
+        preview = "first" if mode == "image" else "source"
+        expect(pane.locator(f"[data-video-{preview}-preview] > *")).to_be_visible()
         if mode == "reference":
+            _open_advanced(pane)
             pane.locator("[data-video-audio]").uncheck()
         pane.locator("[data-video-start]").click()
-        expect(pane.locator("[data-job-log]")).to_contain_text("step 1/10")
+        expect(_job_log(pane)).to_contain_text("step 1/10")
         argv = harness.media_script.spawned_argvs[-1]
         assert flag in argv
         from pathlib import Path
         assert Path(argv[argv.index(flag) + 1]).read_bytes() == content
         harness.media_script.step()
         harness.media_script.step()
-        expect(pane.locator("[data-job-player] video")).to_be_visible()
+        expect(_card_video(pane)).to_be_visible()
 
 
 def test_video_parameters_progress_and_player_src_follow_finished_output(
@@ -53,20 +70,21 @@ def test_video_parameters_progress_and_player_src_follow_finished_output(
         pane = page.locator("#pane-video")
         expect(pane).to_be_visible()
         pane.locator("[data-video-prompt]").fill("rain on a quiet street")
+        _open_advanced(pane)
         pane.locator("[data-video-size]").select_option("768x448")
         pane.locator("[data-video-frames]").select_option("49")
         pane.locator("[data-video-steps]").fill("16")
         pane.locator("[data-video-start]").dispatch_event("click")
 
-        expect(pane.locator("[data-job-log]")).to_contain_text("step 1/10")
+        expect(_job_log(pane)).to_contain_text("step 1/10")
         harness.media_script.step()
-        expect(pane.locator("[data-job-log]")).to_contain_text("step 5/10")
+        expect(_job_log(pane)).to_contain_text("step 5/10")
         harness.media_script.step()
 
         output_name = "h3-{}.mp4".format(
             time.strftime("%Y%m%d-%H%M%S", time.localtime(harness.clock()))
         )
-        player = pane.locator("[data-job-player] video")
+        player = _card_video(pane)
         expect(player).to_have_attribute("controls", "")
         expect(player).to_have_attribute("src", f"/api/outputs/{output_name}")
         assert (harness.outputs_root / output_name).read_bytes() == TINY_MP4
@@ -80,13 +98,13 @@ def test_first_frame_picker_is_reachable_by_keyboard(page, tmp_path, audit_viola
     with launch_test_harness(tmp_path) as harness:
         page.goto(harness.base_url + "#tab=video")
         page.locator("[data-video-mode]").select_option("image")
-        picker = page.locator("[data-video-first]")
+        picker = page.locator("[data-video-first-upload]")
         picker.focus()
-        assert page.evaluate("document.activeElement.matches('[data-video-first]')")
+        assert page.evaluate("document.activeElement.matches('[data-video-first-upload]')")
         with page.expect_file_chooser() as chooser_info:
             page.keyboard.press("Space")
         chooser_info.value.set_files(files=[{"name": "a.png", "mimeType": "image/png", "buffer": b"\x89PNG\r\n\x1a\n" + b"0" * 64}])
-        expect(page.locator("[data-video-first-name]")).to_have_text("a.png")
+        expect(page.locator("[data-video-first-label]")).to_have_text("已选择：a.png")
     assert audit_violations == []
 
 
@@ -111,16 +129,39 @@ def _drop_file(page, row_selector, name, mime, content):
 def test_dropping_an_image_on_the_first_frame_row_uses_it(page, tmp_path):
     """issue #15: the file inputs are visually hidden and the page had no drop handling,
     so a dragged image never reached them."""
+    page.set_viewport_size({"width": 900, "height": 700})
     with launch_test_harness(tmp_path) as harness:
         page.goto(harness.base_url + "#tab=video")
         pane = page.locator("#pane-video")
         pane.locator("[data-video-mode]").select_option("image")
-        _drop_file(page, "#pane-video .file-row:has([data-video-first])", "dropped.png", "image/png", _PNG)
-        expect(pane.locator("[data-video-first-name]")).to_have_text("dropped.png")
+        _drop_file(page, "#pane-video .file-row:has([data-video-first-upload])", "dropped.png", "image/png", _PNG)
+        expect(pane.locator("[data-video-first-label]")).to_have_text("已选择：dropped.png")
         expect(pane.locator("[data-video-first-preview] > *")).to_be_visible()
+        # 首帧、尾帧都选了时，输入区最高半屏、方式与素材那块在内部滚动：900×700 下时间线仍有可用高度
+        # （实测 144px；不设上限时 118px，小图各占一行时 28px），提示词与「生成视频」在输入区里完整可见，
+        # 状态提示行出现时也不挤时间线；没有横向滚动。
+        pane.locator("[data-video-last]").set_input_files({"name": "last.png", "mimeType": "image/png", "buffer": _PNG})
+        expect(pane.locator("[data-video-last-preview] > *")).to_be_visible()
+        start = pane.locator("[data-video-start]")
+        expect(start).to_be_enabled()
+
+        def check_room():
+            room = page.evaluate("""() => {
+                const box = (s) => document.querySelector(s).getBoundingClientRect();
+                const composer = box('[data-video-composer]');
+                const inside = (s) => { const r = box(s); return r.top >= composer.top - 1 && r.bottom <= composer.bottom + 1; };
+                return { timeline: document.querySelector('[data-video-timeline]').clientHeight,
+                         prompt: inside('[data-video-prompt]'), start: inside('[data-video-start]'),
+                         wide: document.documentElement.scrollWidth > innerWidth };
+            }""")
+            assert room["timeline"] >= 140 and room["prompt"] and room["start"] and not room["wide"], room
+
+        check_room()
         pane.locator("[data-video-prompt]").fill("gentle waves")
-        pane.locator("[data-video-start]").click()
-        expect(pane.locator("[data-job-log]")).to_contain_text("step 1/10")
+        start.click()
+        expect(_job_log(pane)).to_contain_text("step 1/10")
+        expect(pane.locator("[data-video-hint-text]")).not_to_be_empty()
+        check_room()
         argv = harness.media_script.spawned_argvs[-1]
         from pathlib import Path
         assert Path(argv[argv.index("--first-frame") + 1]).read_bytes() == _PNG
@@ -131,9 +172,9 @@ def test_dropping_a_non_image_on_the_first_frame_row_is_refused(page, tmp_path):
         page.goto(harness.base_url + "#tab=video")
         pane = page.locator("#pane-video")
         pane.locator("[data-video-mode]").select_option("image")
-        _drop_file(page, "#pane-video .file-row:has([data-video-first])", "notes.txt", "text/plain", b"hello")
+        _drop_file(page, "#pane-video .file-row:has([data-video-first-upload])", "notes.txt", "text/plain", b"hello")
         expect(pane.locator("[data-video-error]")).to_contain_text("PNG、JPEG、WebP")
-        expect(pane.locator("[data-video-first-name]")).to_have_text("未选择文件")
+        expect(pane.locator("[data-video-first-label]")).to_have_text("未选择")
 
 
 def test_a_file_dropped_outside_any_upload_row_does_not_replace_the_desk(page, tmp_path):

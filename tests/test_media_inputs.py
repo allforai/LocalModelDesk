@@ -50,8 +50,9 @@ def test_uploaded_asset_reaches_real_command_builder(tmp_path, mode, name, conte
     routes = {(m, p): h for m, p, h in build_routes(service)}
     code, asset = routes["POST", "/api/media/inputs"]({"name": name, "data": base64.b64encode(content).decode()}, {})
     assert code == 200, asset
+    sid = deps.media_sessions["video"].create()["id"]
     params = dict(prompt="waves", width=512, height=288, frames=49, steps=16,
-                  mode=mode, use_audio=False, **{key: asset["id"]})
+                  mode=mode, use_audio=False, session_id=sid, **{key: asset["id"]})
     snapshot = finished_snapshot(service, lambda: service.start_video_job(**params))
     command = deps.executor.spawned[0]["cmd"]
     assert command[command.index(flag) + 1] == str(tmp_path / "outputs" / ".inputs" / asset["id"])
@@ -60,12 +61,18 @@ def test_uploaded_asset_reaches_real_command_builder(tmp_path, mode, name, conte
     assert (tmp_path / "outputs" / ".inputs" / asset["id"]).read_bytes() == content
 
 
-@pytest.mark.parametrize("asset_id", [None, "../../secret.png", "a" * 32 + ".png"])
-def test_missing_or_unsafe_inputs_rejected_before_acquire(tmp_path, asset_id):
+@pytest.mark.parametrize("asset_id, message", [
+    (None, "素材编号无效，请重新选择文件"),
+    ("../../secret.png", "素材编号无效，请重新选择文件"),
+    ("a" * 32 + ".png", "素材不存在或类型不匹配，请重新选择文件"),
+])
+def test_missing_or_unsafe_inputs_rejected_before_acquire(tmp_path, asset_id, message):
     service, deps = make_service(tmp_path)
-    with pytest.raises(MediaError):
+    sid = deps.media_sessions["video"].create()["id"]
+    with pytest.raises(MediaError) as exc:
         service.start_video_job(prompt="p", width=512, height=288, frames=49, steps=16,
-                                mode="image", first_frame=asset_id)
+                                mode="image", first_frame=asset_id, session_id=sid)
+    assert (exc.value.code, exc.value.message) == ("invalid_input", message)
     assert not deps.arbiter.acquired
 
 

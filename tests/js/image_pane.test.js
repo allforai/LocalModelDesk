@@ -551,3 +551,21 @@ test("内存不足被拒时先确认再以 force 重提；取消则什么都不�
     assert.equal(cards(parts).length, 1);
   });
 });
+
+test("展开的 done 卡片有「用这张生成视频」，点击带 ref/title/index；文件不在的卡片没有这个按钮（V-50）", async () => {
+  await withBackend(async (backend) => {
+    backend.addSession("橘猫", [done("a1", 11, "橘猫一"), { ...done("a2", 22, "橘猫二"), output_missing: true }]);
+    const picks = [];
+    const { parts, pane, ready } = makePane({ onUseAsFirstFrame: (pick) => picks.push(pick) }); ready();
+    await pane.refresh();
+    const sessionId = backend.sessions[0].id;
+    const [first, second] = cards(parts);
+    assert.equal(second.attrs["aria-expanded"], "true", "默认展开最后一张");
+    assert.equal(button(second, "用这张生成视频"), null, "文件不在的卡片没有这个按钮");
+    await first.click();
+    const useBtn = button(cards(parts)[0], "用这张生成视频");
+    assert.ok(useBtn);
+    await useBtn.click();
+    assert.deepEqual(picks, [{ ref: { kind: "image", session_id: sessionId, attempt_id: "a1" }, title: "橘猫", index: 0 }]);
+  });
+});

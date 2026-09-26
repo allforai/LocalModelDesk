@@ -11,22 +11,56 @@
   <nav id="tabs" aria-label="工作区"><button data-tab="chat" data-icon-name="chat" class="active">聊天</button><button data-tab="image" data-icon-name="image">图片</button><button data-tab="video" data-icon-name="video">视频</button><button data-tab="music" data-icon-name="music">音乐</button><button data-tab="resources" data-icon-name="drive">资源</button><button data-tab="library" data-icon-name="library">素材库</button></nav>
   <main>
     <section id="pane-chat" data-pane="chat"><aside class="sessions"><button data-session-new data-icon-name="plus" class="btn-primary">新会话</button><ul data-session-list></ul></aside><div class="chat-main"><div class="model-row"><select data-model-select></select><button data-load data-icon-name="power">加载</button><button data-unload data-icon-name="power"><span data-label>卸载</span></button><span class="hint" data-load-hint></span><span data-model-state data-status="idle">未加载</span><button class="btn-sm" data-skill-toggle>指令</button></div><div class="skill-panel" data-skill-panel hidden><div class="skill-panel-box" role="dialog" aria-modal="true" aria-label="指令"><div class="skill-panel-actions"><button class="btn-sm" data-skill-rescan>重新扫描</button><button class="btn-sm" data-skill-install>从 GitHub 安装</button><button class="btn-sm" data-skill-panel-close>关闭</button></div><span class="hint" data-skill-notice></span><span class="hint" data-skill-cost></span><div class="skill-list" data-skill-list></div><p class="hint" data-skill-effect-hint>改了 SKILL.md？老会话下一轮就会用新版本，不会继续用当时那一版</p></div></div><div class="messages" data-messages></div><p class="inline-error" data-chat-error></p><div class="composer"><textarea data-chat-input placeholder="输入消息，⌘Enter 发送"></textarea><button data-send data-icon-name="send" class="btn-primary"><span data-label>发送</span></button></div></div></section>
-    <section id="pane-video" data-pane="video" hidden><div class="form">
-      <label>生成方式 <select data-video-mode><option value="text">文生视频</option><option value="image">图生视频</option><option value="reference">视频参考生成</option></select></label>
-      <div data-video-images hidden>
-        <div class="file-row"><label class="file-pick"><span class="btn">选择首帧图片</span><input type="file" class="visually-hidden" data-video-first accept="image/png,image/jpeg,image/webp"></label><span class="file-name hint" data-video-first-name>未选择文件</span></div>
-        <div data-video-first-preview></div>
-        <div class="file-row"><label class="file-pick"><span class="btn">选择尾帧图片（可选）</span><input type="file" class="visually-hidden" data-video-last accept="image/png,image/jpeg,image/webp"></label><span class="file-name hint" data-video-last-name>未选择文件</span></div>
-        <div data-video-last-preview></div><button type="button" data-video-clear-last>清除尾帧</button>
-        <p class="hint">支持 PNG、JPEG、WebP，每个文件最多 32 MB。</p>
+    <section id="pane-video" data-pane="video" hidden>
+      <aside class="sessions" aria-label="视频会话"><button data-video-session-new data-icon-name="plus" class="btn-primary">新会话</button><ul data-video-session-list></ul></aside>
+      <div class="image-main video-main">
+        <div class="image-head">
+          <h2>生成视频</h2>
+          <span class="hint" data-video-model role="status">正在检查模型…</span>
+          <details class="image-model-note"><summary>模型说明</summary><p class="hint">MiniMax H3 · MLX 本机推理。输出带声音的 MP4。「接着往下生」用上一段的最后一帧作首帧，拼接处可能有动作跳变。</p></details>
+        </div>
+        <div class="image-timeline" data-video-timeline></div>
+        <div class="image-composer" data-video-composer role="form" aria-label="生成视频">
+          <div class="refine-chip" data-video-chip hidden><span data-video-chip-text></span><button class="btn-quiet btn-sm" data-video-chip-clear data-icon-name="x" aria-label="取消沿用或续写"></button></div>
+          <div class="video-materials">
+            <label class="video-mode">生成方式 <select data-video-mode><option value="text">文生视频</option><option value="image">图生视频</option><option value="reference">视频参考生成</option></select></label>
+            <div class="video-assets" data-video-first-area hidden>
+              <div class="file-row"><label class="file-pick"><span class="btn">上传图片</span><input type="file" class="visually-hidden" data-video-first-upload accept="image/png,image/jpeg,image/webp"></label><button type="button" class="btn-secondary" data-video-first-pick>从图片会话选…</button><span class="file-name hint" data-video-first-label>未选择</span></div>
+              <div class="video-preview" data-video-first-preview></div>
+            </div>
+            <div class="video-assets" data-video-last-area hidden>
+              <div class="file-row"><label class="file-pick"><span class="btn">上传图片（可选）</span><input type="file" class="visually-hidden" data-video-last accept="image/png,image/jpeg,image/webp"></label><span class="file-name hint" data-video-last-label>未选择</span><button type="button" class="btn-secondary" data-video-clear-last>清除尾帧</button></div>
+              <div class="video-preview" data-video-last-preview></div>
+              <p class="hint">支持 PNG、JPEG、WebP，每个文件最多 32 MB。</p>
+            </div>
+            <div class="video-assets" data-video-reference-area hidden>
+              <div class="file-row"><label class="file-pick"><span class="btn">上传参考视频</span><input type="file" class="visually-hidden" data-video-source accept="video/mp4,video/quicktime,video/webm"></label><span class="file-name hint" data-video-source-label>未选择</span></div>
+              <div class="video-preview" data-video-source-preview></div>
+              <p class="hint">支持 MP4、MOV、WebM，最长 15 秒、最大 32 MB。参考生成不保证逐帧保留原视频动作。</p>
+            </div>
+          </div>
+          <div class="image-input-row">
+            <textarea data-video-prompt class="video-prompt" aria-label="视频提示词" placeholder="视频提示词（含环境声描述）"></textarea>
+            <button data-video-start data-icon-name="sparkles" class="btn-primary" disabled>生成视频</button>
+          </div>
+          <div class="assist-row" data-video-assist></div>
+          <details class="image-advanced video-advanced" data-video-advanced><summary>高级参数</summary>
+            <div class="image-params">
+              <label>画幅 <select data-video-size></select></label>
+              <label>视频时长 <select data-video-frames></select></label>
+              <label>步数 <input data-video-steps type="number" value="16" min="4" max="50" step="1" required></label>
+              <label>种子（留空则每次随机） <input data-video-seed type="number" min="0" max="4294967295" step="1" placeholder="留空则每次随机"></label>
+            </div>
+            <p class="hint hint-busy" data-video-cost-note></p>
+            <label class="video-audio" data-video-audio-row hidden><input type="checkbox" data-video-audio checked><span>使用素材的声音</span></label>
+            <p class="inline-error" data-video-advanced-error role="alert"></p>
+          </details>
+          <p class="hint" data-video-upload-status role="status"></p>
+          <p class="hint hint-busy image-hint" data-video-hint role="status"><span data-video-hint-text></span><button class="btn-secondary btn-sm" data-video-return hidden>回到该会话</button></p>
+          <p class="inline-error" data-video-error role="alert"></p>
+        </div>
       </div>
-      <div data-video-reference hidden>
-        <div class="file-row"><label class="file-pick"><span class="btn">选择参考视频</span><input type="file" class="visually-hidden" data-video-source accept="video/mp4,video/quicktime,video/webm"></label><span class="file-name hint" data-video-source-name>未选择文件</span></div>
-        <div data-video-source-preview></div>
-        <label><input type="checkbox" data-video-audio checked>使用原视频音轨作为参考</label>
-        <p class="hint">支持 MP4、MOV、WebM，最长 15 秒、最大 32 MB。参考生成不保证逐帧保留原视频动作。</p>
-      </div>
-      <textarea data-video-prompt aria-label="视频提示词" placeholder="视频提示词（含环境声描述）"></textarea><div class="assist-row" data-video-assist></div><label>画幅 <select data-video-size></select></label><label>视频时长 <select data-video-frames></select></label><p class="hint hint-busy" data-video-cost-note></p><label>步数 <input data-video-steps type="number" value="16" min="4" max="50"></label><button data-video-start data-icon-name="sparkles" class="btn-primary">生成视频</button><p class="hint" data-video-upload-status role="status"></p><p class="hint hint-busy" data-video-hint></p><p class="inline-error" data-video-error role="alert"></p></div><div class="job"><p class="job-status" data-job-status data-state="idle">空闲</p><progress data-job-progress max="100" hidden></progress><button data-job-cancel data-icon-name="x" hidden>取消</button><div class="inline-error job-error" data-job-error></div><details class="job-log"><summary>日志</summary><pre data-job-log></pre></details><div data-job-player></div></div></section>
+    </section>
     <section id="pane-music" data-pane="music" hidden>
       <aside class="sessions" aria-label="音乐会话"><button data-music-session-new data-icon-name="plus" class="btn-primary">新会话</button><ul data-music-session-list></ul></aside>
       <div class="image-main music-main">
