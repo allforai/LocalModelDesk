@@ -65,10 +65,14 @@ def _check_seed(seed) -> int:
     return seed
 
 
-def _video_assets(mode: str, first_frame, last_frame, ref_video) -> dict:
-    """Input assets a video mode uses: {param: (asset id, asset kind)}."""
+def _video_assets(mode: str, first_frame, last_frame, ref_video, *, first_from_ref: bool = False) -> dict:
+    """Input assets a video mode uses: {param: (asset id, asset kind)}.
+
+    `first_from_ref=True` means the first frame comes from `refs.first_frame`
+    (an image-session reference) instead of an uploaded asset id, so it is
+    not part of this asset table (V-04)."""
     if mode == "image":
-        assets = {"first_frame": (first_frame, "image")}
+        assets = {} if first_from_ref else {"first_frame": (first_frame, "image")}
         if last_frame: assets["last_frame"] = (last_frame, "image")
         return assets
     if mode == "reference":
@@ -101,12 +105,12 @@ class MediaService:
         self._resolve_paths, self._probe_capabilities, self._arbiter = resolve_paths, probe_capabilities, arbiter
         self._list_catalog, self._append_history, self._executor = list_catalog, append_history, executor
         self._sessions = media_sessions
-        self._ref_slots = ref_slots or {}
+        self._ref_slots = ref_slots if ref_slots is not None else {"video": {"first_frame": "image"}}
         self._clock, self._term_grace_s, self._log_limit = clock, term_grace_s, log_limit
         self._lock = threading.RLock()
         self._state: dict[str, Any] = {"job_id": 0, "status": "idle", "kind": None, "params": None,
             "output": None, "error": None, "started_at": None, "finished_at": None,
-            "session_id": None, "attempt_id": None}
+            "session_id": None, "attempt_id": None, "refs": None}
         self._log = ""; self._log_dropped = 0; self._log_truncated = False
         self._cancel_requested = False; self._cancel_origin = "user"
         self._handle = None; self._worker_thread: threading.Thread | None = None
@@ -200,12 +204,17 @@ class MediaService:
         seed = _check_seed(seed)
         if continues is not None and (mode not in ("text", "image") or first_frame or last_frame or ref_video):
             raise MediaError("invalid_params", CONTINUE_CONFLICT, 400)
+        wants_ref_frame = isinstance(refs, dict) and "first_frame" in refs
+        if wants_ref_frame and continues is not None:
+            raise MediaError("invalid_params", CONTINUE_CONFLICT, 400)
+        if wants_ref_frame and (mode != "image" or first_frame):
+            raise MediaError("invalid_params", "首帧只能从上传或图片会话二选一", 400)
         if mode not in ("text", "image", "reference") or not isinstance(use_audio, bool):
             raise MediaError("invalid_params", "生成模式或音轨选项无效", 400)
-        if any(value and key not in _video_assets(mode, first_frame, last_frame, ref_video) for key, value in
-               (("first_frame", first_frame), ("last_frame", last_frame), ("ref_video", ref_video))):
+        if any(value and key not in _video_assets(mode, first_frame, last_frame, ref_video, first_from_ref=wants_ref_frame)
+               for key, value in (("first_frame", first_frame), ("last_frame", last_frame), ("ref_video", ref_video))):
             raise MediaError("invalid_params", "素材与生成模式不匹配", 400)
-        session_id = self._check_session("video", session_id, required=refs is not None or continues is not None)
+        session_id = self._check_session("video", session_id, required=True)
         join, frame = None, None
         if continues is not None:
             source = self._segment("video", session_id, continues)
@@ -215,8 +224,8 @@ class MediaService:
                                              / (joined if joined and not source.get("joined_missing") else source["output"]))
             mode, first_frame = "image", frame
         try:   # from here on a refusal must not leave the extracted frame behind
-            stored_refs, _ref_paths = self._resolve_refs("video", refs)
-            assets = _video_assets(mode, first_frame, last_frame, ref_video)
+            stored_refs, ref_paths = self._resolve_refs("video", refs)
+            assets = _video_assets(mode, first_frame, last_frame, ref_video, first_from_ref=wants_ref_frame)
             try:
                 for asset_id, kind in assets.values():
                     resolve_input(self._resolve_paths().outputs_root, asset_id, kind)
@@ -226,7 +235,8 @@ class MediaService:
             if mode != "text":
                 params.update(mode=mode, use_audio=use_audio, **{key: value[0] for key, value in assets.items()})
             return self._start("video", params, force=force, session_id=session_id,
-                               attempt_extra={"refs": stored_refs, "continues": continues}, join=join)
+                               attempt_extra={"refs": stored_refs, "continues": continues}, join=join,
+                               ref_paths=ref_paths)
         except MediaError:
             if frame:
                 (Path(self._resolve_paths().outputs_root) / ".inputs" / frame).unlink(missing_ok=True)
@@ -331,7 +341,7 @@ class MediaService:
 
     def _start(self, kind: str, params: dict, *, force: bool = False, session_id: str | None = None,
               attempt_extra: dict | None = None, join: dict | None = None,
-              compose_parts: list | None = None) -> dict:
+              compose_parts: list | None = None, ref_paths: dict | None = None) -> dict:
         """`join` (from `_join_plan`) makes the job join the chain into a finished file after the model (B-38).
 
         `compose_parts` ([(path, drop_first_frame)]) makes it a compose job instead: only ffmpeg runs,
@@ -367,6 +377,8 @@ class MediaService:
                     for key in ("first_frame", "last_frame", "ref_video"):
                         if key in command_params:
                             command_params[key] = resolve_input(root, command_params[key], "video" if key == "ref_video" else "image")
+                    if ref_paths and ref_paths.get("first_frame"):
+                        command_params["first_frame"] = ref_paths["first_frame"]
                     command = build_h3_command(tuple(roots.mlx_h3_cmd), model_root, output=output, **command_params)
                     extra_env = dict(roots.mlx_h3_env)
                 elif kind == "music":
@@ -385,11 +397,12 @@ class MediaService:
             except Exception as exc:
                 self._state = {"job_id": job_id, "status": "error", "kind": kind, "params": dict(params), "output": None,
                     "error": {"code": "spawn_failed", "message": str(exc)}, "started_at": now, "finished_at": self._clock(),
-                    "session_id": None, "attempt_id": None}
+                    "session_id": None, "attempt_id": None, "refs": None}
                 self._reset_log(); self._finalize(job, self._final_snapshot(job))
                 raise MediaError("spawn_failed", str(exc), 500) from exc
             self._state = {"job_id": job_id, "status": "running", "kind": kind, "params": dict(params), "output": None,
-                "error": None, "started_at": now, "finished_at": None, "session_id": None, "attempt_id": None}
+                "error": None, "started_at": now, "finished_at": None, "session_id": None, "attempt_id": None,
+                "refs": (attempt_extra or {}).get("refs") or None}
             self._reset_log(); self._cancel_requested = False; self._cancel_origin = "user"; self._handle = handle
             if session_id is not None:
                 self._begin_attempt(kind, session_id, job_id, params, attempt_extra or {})
@@ -592,6 +605,8 @@ class MediaService:
             "params": snap["params"], "output": snap["output"], "duration_s": snap["finished_at"] - snap["started_at"],
             "error": f"{error['code']}: {error['message']}" if error else None}
         entry.update(session_id=snap.get("session_id"), attempt_id=snap.get("attempt_id"))
+        if snap.get("refs"):
+            entry["refs"] = snap["refs"]
         if joined.get("joined_output"):
             entry["joined_output"] = joined["joined_output"]
         if snap["kind"] == "music" and snap["status"] == "done" and snap["output"]:

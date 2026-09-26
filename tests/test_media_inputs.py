@@ -50,8 +50,9 @@ def test_uploaded_asset_reaches_real_command_builder(tmp_path, mode, name, conte
     routes = {(m, p): h for m, p, h in build_routes(service)}
     code, asset = routes["POST", "/api/media/inputs"]({"name": name, "data": base64.b64encode(content).decode()}, {})
     assert code == 200, asset
+    sid = deps.media_sessions["video"].create()["id"]
     params = dict(prompt="waves", width=512, height=288, frames=49, steps=16,
-                  mode=mode, use_audio=False, **{key: asset["id"]})
+                  mode=mode, use_audio=False, session_id=sid, **{key: asset["id"]})
     snapshot = finished_snapshot(service, lambda: service.start_video_job(**params))
     command = deps.executor.spawned[0]["cmd"]
     assert command[command.index(flag) + 1] == str(tmp_path / "outputs" / ".inputs" / asset["id"])

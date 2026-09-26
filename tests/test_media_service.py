@@ -9,16 +9,19 @@ from desk.media.service import MediaError
 from media_fakes import FIXED_TIME, STAMP, FakeExecutor, finished_snapshot, make_service
 
 
-def start_video(service):
+def video_session(deps) -> str:
+    return deps.media_sessions["video"].create()["id"]
+
+
+def start_video(service, deps):
     return service.start_video_job(prompt="rain on a quiet street", width=512,
-        height=288, frames=73, steps=10, seed=7)
+        height=288, frames=73, steps=10, seed=7, session_id=video_session(deps))
 
 
 @pytest.fixture
 def service_factory(tmp_path):
     def factory(*, memory_warning=None, executor=None):
-        service, deps = make_service(tmp_path, executor=executor, memory_warning=memory_warning)
-        return service, deps.arbiter
+        return make_service(tmp_path, executor=executor, memory_warning=memory_warning)
     return factory
 
 
@@ -38,7 +41,7 @@ def test_initial_job_state_shape(tmp_path):
     state = make_service(tmp_path)[0].job_status()
     assert state == {"job_id": 0, "status": "idle", "kind": None, "params": None,
         "output": None, "error": None, "started_at": None, "finished_at": None,
-        "session_id": None, "attempt_id": None,
+        "session_id": None, "attempt_id": None, "refs": None,
         "log": "", "next_log_from": 0, "log_len": 0, "log_truncated": False, "elapsed_s": None}
 
 
@@ -55,20 +58,22 @@ def test_missing_caption_and_prompt_have_chinese_codes(tmp_path):
 def test_video_job_refuses_when_memory_warning_unless_forced(service_factory):
     warning = {"code": "insufficient_memory", "required_bytes": 10, "available_bytes": 1,
                "message": "model requires about 0.0 GB; 0.0 GB is currently available"}
-    svc, arbiter = service_factory(memory_warning=warning)
+    svc, deps = service_factory(memory_warning=warning)
+    arbiter = deps.arbiter
+    sid = video_session(deps)
     with pytest.raises(MediaError) as exc:
-        svc.start_video_job(prompt="x", width=512, height=288, frames=49, steps=16)
+        svc.start_video_job(prompt="x", width=512, height=288, frames=49, steps=16, session_id=sid)
     assert exc.value.code == "insufficient_memory" and exc.value.http_status == 409
     from desk.media.memory_estimate import estimate_bytes
     expected = estimate_bytes("video", {"width": 512, "height": 288, "frames": 49, "steps": 16})
     assert arbiter.precheck_calls[-1][1] == expected   # 按作业参数估算，不再用 catalog 磁盘体积
-    job = svc.start_video_job(prompt="x", width=512, height=288, frames=49, steps=16, force=True)
+    job = svc.start_video_job(prompt="x", width=512, height=288, frames=49, steps=16, session_id=sid, force=True)
     assert job["status"] == "running"
 
 
 def test_start_video_job_success_path(tmp_path):
     service, deps = make_service(tmp_path)
-    snap = finished_snapshot(service, lambda: start_video(service))
+    snap = finished_snapshot(service, lambda: start_video(service, deps))
     assert snap["status"] == "done"
     assert snap["output"] == f"h3-{STAMP}.mp4"
     assert snap["params"] == {"prompt": "rain on a quiet street", "width": 512,
@@ -79,7 +84,7 @@ def test_start_video_job_success_path(tmp_path):
     assert deps.arbiter.released == ["permit-1"]
     assert deps.history.entries == [{"kind": "video", "status": "done", "params": snap["params"],
         "output": f"h3-{STAMP}.mp4", "duration_s": 0.0, "error": None,
-        "session_id": None, "attempt_id": None}]
+        "session_id": snap["session_id"], "attempt_id": snap["attempt_id"]}]
 
 
 def test_video_argv_and_running_state(tmp_path):
@@ -88,7 +93,7 @@ def test_video_argv_and_running_state(tmp_path):
     service, deps = make_service(tmp_path, executor=FakeExecutor("block"))
     completed = threading.Event()
     service.on_job_finished(lambda _: completed.set())
-    state = start_video(service)
+    state = start_video(service, deps)
     assert state["status"] == "running"
     assert deps.executor.spawned == [{"cmd": build_h3_command(
         ("/fake/bin/mlx-h3",), tmp_path / "models" / "minimax-h3",
@@ -110,7 +115,7 @@ def test_concurrent_start_allows_one_running_job_and_releases_its_permit_once(tm
     def attempt_start():
         start.wait(timeout=5)
         try:
-            result = start_video(service)
+            result = start_video(service, deps)
             with lock:
                 results.append(result)
         except MediaError as exc:
@@ -236,7 +241,7 @@ class TestStartDiscipline:
         service, deps = make_service(tmp_path)
         service._probe_capabilities = lambda: {}
         with pytest.raises(MediaError) as err:
-            service.start_video_job(**self.VALID)
+            service.start_video_job(**self.VALID, session_id=video_session(deps))
         assert err.value.code == "capability_missing"
         assert err.value.http_status == 503
         assert deps.arbiter.acquired == []
@@ -247,7 +252,7 @@ class TestStartDiscipline:
         reason = {"code": "transition_in_progress", "message": "evicting now", "holder": {"kind": "llm"}}
         deps.arbiter.can_start_heavy = lambda _kind, **_kw: {"ok": False, "reason": reason}
         with pytest.raises(MediaError) as err:
-            service.start_video_job(**self.VALID)
+            service.start_video_job(**self.VALID, session_id=video_session(deps))
         assert err.value.code == "transition_in_progress"
         assert err.value.http_status == 409
         assert err.value.detail == reason
@@ -259,7 +264,7 @@ class TestStartDiscipline:
         reason = {"code": "evict_failed", "message": "still listening", "holder": {"kind": "llm"}}
         deps.arbiter.acquire_heavy = lambda *_a, **_kw: {"ok": False, "reason": reason}
         with pytest.raises(MediaError) as err:
-            service.start_video_job(**self.VALID)
+            service.start_video_job(**self.VALID, session_id=video_session(deps))
         assert err.value.code == "evict_failed"
         assert err.value.detail == reason
         assert deps.executor.spawned == []
@@ -268,8 +273,8 @@ class TestStartDiscipline:
 
 
 def test_nonzero_exit_records_log_tail(service_factory):
-    svc, _arbiter = service_factory(executor=FakeExecutor("block", lines=()))
-    svc.start_video_job(prompt="x", width=512, height=288, frames=49, steps=16)
+    svc, deps = service_factory(executor=FakeExecutor("block", lines=()))
+    svc.start_video_job(prompt="x", width=512, height=288, frames=49, steps=16, session_id=video_session(deps))
     handle = svc._handle
     handle.emit("step 1/16\n"); handle.emit("Traceback\n"); handle.emit("mlx_h3.memory.BudgetExceeded: SWAPPING\n")
     handle.exit(1)
@@ -282,7 +287,7 @@ def test_nonzero_exit_records_log_tail(service_factory):
 def test_failed_process_releases_permit_and_records_terminal_failure(tmp_path, script, code):
     service, deps = make_service(tmp_path, executor=FakeExecutor(script))
 
-    snap = finished_snapshot(service, lambda: start_video(service))
+    snap = finished_snapshot(service, lambda: start_video(service, deps))
 
     assert snap["status"] == "error"
     assert snap["output"] is None
@@ -299,7 +304,7 @@ def test_spawn_failure_is_terminal_and_releases_permit(tmp_path):
     service, deps = make_service(tmp_path, executor=SpawnFailure())
 
     with pytest.raises(MediaError) as err:
-        start_video(service)
+        start_video(service, deps)
 
     assert err.value.code == "spawn_failed"
     assert service.job_status()["status"] == "error"
@@ -314,7 +319,7 @@ def test_history_failure_does_not_change_terminal_status_or_leak_permit(tmp_path
         raise OSError("history disk full")
 
     service._append_history = fail_history
-    snap = finished_snapshot(service, lambda: start_video(service))
+    snap = finished_snapshot(service, lambda: start_video(service, deps))
 
     assert snap["status"] == "error"
     assert snap["error"]["code"] == "exit_nonzero"
@@ -353,7 +358,7 @@ class TestCancel:
         service._term_grace_s = 0.01
         done = threading.Event()
         service.on_job_finished(lambda _: done.set())
-        service.start_video_job(**self.VALID)
+        service.start_video_job(**self.VALID, session_id=video_session(deps))
         return service, deps, done
 
     def test_cancel_running_job_exit_zero_stays_cancelled(self, tmp_path):
@@ -382,9 +387,9 @@ class TestCancel:
 
     @pytest.mark.parametrize("finish_first", [False, True])
     def test_cancel_without_running_job_is_409(self, tmp_path, finish_first):
-        service, _ = make_service(tmp_path)
+        service, deps = make_service(tmp_path)
         if finish_first:
-            finished_snapshot(service, lambda: service.start_video_job(**self.VALID))
+            finished_snapshot(service, lambda: service.start_video_job(**self.VALID, session_id=video_session(deps)))
 
         with pytest.raises(MediaError) as err:
             service.cancel_job()
@@ -413,7 +418,7 @@ class TestLogCursor:
         service._log_limit = log_limit
         done = threading.Event()
         service.on_job_finished(lambda _: done.set())
-        service.start_video_job(**TestLogCursor.VALID)
+        service.start_video_job(**TestLogCursor.VALID, session_id=video_session(deps))
         return service, deps, done
 
     @staticmethod
@@ -442,8 +447,8 @@ class TestLogCursor:
         assert done.wait(5.0)
 
     def test_stale_job_id_resends_full_log(self, tmp_path):
-        service, _ = make_service(tmp_path)
-        finished_snapshot(service, lambda: service.start_video_job(**self.VALID))
+        service, deps = make_service(tmp_path)
+        finished_snapshot(service, lambda: service.start_video_job(**self.VALID, session_id=video_session(deps)))
         full_log = service.job_status()["log"]
 
         replay = service.job_status(log_from=len(full_log), job_id=999)
@@ -470,11 +475,11 @@ class TestJobFinishedEvent:
     VALID = dict(prompt="p", width=512, height=288, frames=73, steps=10)
 
     def test_payload_is_terminal_snapshot(self, tmp_path):
-        service, _ = make_service(tmp_path)
+        service, deps = make_service(tmp_path)
         events: list[dict] = []
         service.on_job_finished(events.append)
 
-        finished_snapshot(service, lambda: service.start_video_job(**self.VALID))
+        finished_snapshot(service, lambda: service.start_video_job(**self.VALID, session_id=video_session(deps)))
 
         assert len(events) == 1
         snap = events[0]
@@ -491,19 +496,19 @@ class TestJobFinishedEvent:
 
         service.on_job_finished(bad)
         service.on_job_finished(seen.append)
-        snap = finished_snapshot(service, lambda: service.start_video_job(**self.VALID))
+        snap = finished_snapshot(service, lambda: service.start_video_job(**self.VALID, session_id=video_session(deps)))
 
         assert snap["status"] == "done"
         assert len(seen) == 1
         assert deps.history.entries[0]["status"] == "done"
 
     def test_unsubscribe_stops_delivery(self, tmp_path):
-        service, _ = make_service(tmp_path)
+        service, deps = make_service(tmp_path)
         seen: list[dict] = []
         unsubscribe = service.on_job_finished(seen.append)
         unsubscribe()
 
-        finished_snapshot(service, lambda: service.start_video_job(**self.VALID))
+        finished_snapshot(service, lambda: service.start_video_job(**self.VALID, session_id=video_session(deps)))
 
         assert seen == []
 
@@ -511,9 +516,9 @@ class TestJobFinishedEvent:
         ("success", "done"), ("no_output", "error"), ("fail", "error"),
     ])
     def test_event_fires_for_every_terminal_state(self, tmp_path, script, status):
-        service, _ = make_service(tmp_path / script, executor=FakeExecutor(script))
+        service, deps = make_service(tmp_path / script, executor=FakeExecutor(script))
 
-        snap = finished_snapshot(service, lambda: service.start_video_job(**self.VALID))
+        snap = finished_snapshot(service, lambda: service.start_video_job(**self.VALID, session_id=video_session(deps)))
 
         assert snap["status"] == status
 
@@ -522,7 +527,7 @@ def test_close_cancels_running_job_and_waits_for_terminal_state(tmp_path):
     """应用退出时在跑的媒体作业不能变成孤儿（R-shell-04，cross-exam 2026-09-13 G12）。"""
     service, deps = make_service(tmp_path, executor=FakeExecutor("block"))
     service._term_grace_s = 0.01
-    service.start_video_job(prompt="rain", width=512, height=288, frames=73, steps=10)
+    service.start_video_job(prompt="rain", width=512, height=288, frames=73, steps=10, session_id=video_session(deps))
     assert service.job_status()["status"] == "running"
 
     service.close()
@@ -564,7 +569,7 @@ def test_music_history_records_the_real_output_length(tmp_path, monkeypatch):
 def test_video_seed_is_recorded_and_passed(tmp_path):
     service, deps = make_service(tmp_path)
     snap = finished_snapshot(service, lambda: service.start_video_job(
-        prompt="p", width=512, height=288, frames=49, steps=12, seed=123))
+        prompt="p", width=512, height=288, frames=49, steps=12, seed=123, session_id=video_session(deps)))
     assert snap["params"]["seed"] == 123
     cmd = deps.executor.spawned[0]["cmd"]
     assert cmd[cmd.index("--seed") + 1] == "123"
@@ -574,7 +579,8 @@ def test_video_omitted_seed_is_random_and_recorded(tmp_path, monkeypatch):
     from desk.media import service as service_mod
     monkeypatch.setattr(service_mod.secrets, "randbelow", lambda n: 424242)
     service, deps = make_service(tmp_path)
-    snap = finished_snapshot(service, lambda: service.start_video_job(prompt="p", width=512, height=288, frames=49, steps=12))
+    snap = finished_snapshot(service, lambda: service.start_video_job(
+        prompt="p", width=512, height=288, frames=49, steps=12, session_id=video_session(deps)))
     assert snap["params"]["seed"] == 424242
 
 
@@ -597,7 +603,7 @@ def test_media_hands_the_arbiter_its_job_params(tmp_path):
     """
     service, deps = make_service(tmp_path)
 
-    service.start_video_job(prompt="一只猫", width=1024, height=576, frames=73, steps=16)
+    service.start_video_job(prompt="一只猫", width=1024, height=576, frames=73, steps=16, session_id=video_session(deps))
 
     passed = deps.arbiter.last_precheck["params"] or {}
     assert passed.get("width") == 1024 and passed.get("frames") == 73, \

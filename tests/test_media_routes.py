@@ -26,7 +26,7 @@ def test_music_without_lyrics_is_a_400_with_chinese_message(tmp_path):
 
 
 def test_media_routes_adapter_and_error_envelopes(tmp_path):
-    service, _ = make_service(tmp_path)
+    service, deps = make_service(tmp_path)
     routes = route_map(service)
     assert list(routes) == [
         ("POST", "/api/media/inputs"),
@@ -43,8 +43,9 @@ def test_media_routes_adapter_and_error_envelopes(tmp_path):
     assert set(payload["error"]) == {"code", "message", "detail"}
 
     service._probe_capabilities = lambda: {}
+    sid = deps.media_sessions["video"].create()["id"]
     status, payload = routes[("POST", "/api/media/video")]({
-        "prompt": "p", "width": 512, "height": 288, "frames": 73, "steps": 10,
+        "prompt": "p", "width": 512, "height": 288, "frames": 73, "steps": 10, "session_id": sid,
     }, {})
     assert (status, payload["error"]["code"]) == (503, "capability_missing")
 
@@ -53,12 +54,13 @@ def test_media_routes_adapter_and_error_envelopes(tmp_path):
 
 
 def test_media_routes_start_jobs_and_parse_status_cursor(tmp_path):
-    service, _ = make_service(tmp_path)
+    service, deps = make_service(tmp_path)
     routes = route_map(service)
     done = threading.Event()
     service.on_job_finished(lambda _: done.set())
+    sid = deps.media_sessions["video"].create()["id"]
     status, payload = routes[("POST", "/api/media/video")]({
-        "prompt": "p", "width": 512, "height": 288, "frames": 73, "steps": 10,
+        "prompt": "p", "width": 512, "height": 288, "frames": 73, "steps": 10, "session_id": sid,
     }, {})
     assert status == 200
     assert payload["status"] == "running"
