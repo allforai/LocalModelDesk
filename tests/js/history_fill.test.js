@@ -7,9 +7,14 @@ test("video 参数 → video 表单五字段", () => {
   assert.deepEqual(plan, { pane: "video", session_id: null, attempt_id: null, fields: { prompt: "海边", width: 768, height: 448, frames: 49, steps: 16 } });
 });
 
-test("music 参数 → music 表单三字段", () => {
+test("music 参数 → music 表单四字段，带种子（M-52：回填后能沿用素材库里这首）", () => {
+  const plan = fillPlan({ kind: "music", params: { caption: "民谣", lyrics: "词", duration: 90, seed: 11 } });
+  assert.deepEqual(plan, { pane: "music", session_id: null, attempt_id: null, fields: { caption: "民谣", lyrics: "词", duration: 90, seed: 11 } });
+});
+
+test("music 参数没有种子 → seed 为 null，不补默认值", () => {
   const plan = fillPlan({ kind: "music", params: { caption: "民谣", lyrics: "词", duration: 90 } });
-  assert.deepEqual(plan, { pane: "music", session_id: null, attempt_id: null, fields: { caption: "民谣", lyrics: "词", duration: 90 } });
+  assert.deepEqual(plan, { pane: "music", session_id: null, attempt_id: null, fields: { caption: "民谣", lyrics: "词", duration: 90, seed: null } });
 });
 
 test("未知 kind → null（不显示按钮）", () => {

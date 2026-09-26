@@ -17,6 +17,13 @@ import {
 
 const camel = (name) => name.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 
+// 页面没传 modelTexts（或漏了某一项）时的通用兜底文案，保证「模型缺失/运行环境不可用」时原因行不为空
+// （空原因会让 availability 把这一条当没发生，生成仍然可点，见最终评审 Minor 1）。
+const DEFAULT_MODEL_TEXTS = {
+  missing: "尚未安装模型，请到「资源」页下载",
+  runtime: "MLX 运行环境不可用，请检查服务或应用安装",
+};
+
 export function createSessionPane(root, {
   kind, noun, dataPrefix, emptyLines, modelTexts = {},
   renderCard, fitExpanded = null, composer, startJob,
@@ -68,11 +75,11 @@ export function createSessionPane(root, {
   function setModelStatus(status) {
     modelReason = status?.state === "present" ? "" : status?.reason || (
       status?.state === "partial" ? "模型不完整，请到「资源」页继续下载或校验" :
-      status?.state === "missing" ? modelTexts.missing : "暂时无法确认模型状态，请稍后重试");
+      status?.state === "missing" ? (modelTexts.missing || DEFAULT_MODEL_TEXTS.missing) : "暂时无法确认模型状态，请稍后重试");
     updateAvailability();
   }
   function setRuntimeStatus(capability) {
-    runtimeReason = capability?.present ? "" : capability?.detail || modelTexts.runtime;
+    runtimeReason = capability?.present ? "" : capability?.detail || modelTexts.runtime || DEFAULT_MODEL_TEXTS.runtime;
     updateAvailability();
   }
   function setHeavyAllowed(value, reason = "") {

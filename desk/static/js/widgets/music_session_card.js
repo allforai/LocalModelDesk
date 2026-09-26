@@ -158,7 +158,8 @@ export function renderMusicCard(doc, opts) {
   if (problem) {
     const line = el(doc, "div", "attempt-join-problem");
     line.append(el(doc, "p", "inline-error", problem.text));
-    if (problem.rejoin || problem.reason) {
+    // 挑选模式：卡片只做勾选，重新拼接按钮（连同它下面的原因行）不画；出错的说明文字仍留着。
+    if (!picking && (problem.rejoin || problem.reason)) {
       const rejoin = actionButton(doc, "重新拼接", "refresh", () => opts.onRejoin?.(problem.rejoin.parts));
       rejoin.dataset.attemptRejoin = "";
       rejoin.disabled = !problem.rejoin;
@@ -181,27 +182,30 @@ export function renderMusicCard(doc, opts) {
   }
   if (!compose) detail.append(advancedList(doc, params));
 
-  const actions = el(doc, "div", "attempt-actions");
-  let version = null;
-  if (!compose) {
-    const refine = actionButton(doc, "在这段基础上改", "pencil", () => opts.onRefine?.(attempt, index));
-    refine.dataset.attemptRefine = "";
-    version = actionButton(doc, "换个版本", "refresh", () => opts.onVersion?.(attempt, index));
-    version.dataset.attemptVersion = "";
-    actions.append(refine, version);
+  // 挑选模式：卡片只做勾选，三个动作按钮都不画（控制器裁定：卡片是勾选目标，不是隐藏表单的入口）。
+  if (!picking) {
+    const actions = el(doc, "div", "attempt-actions");
+    let version = null;
+    if (!compose) {
+      const refine = actionButton(doc, "在这段基础上改", "pencil", () => opts.onRefine?.(attempt, index));
+      refine.dataset.attemptRefine = "";
+      version = actionButton(doc, "换个版本", "refresh", () => opts.onVersion?.(attempt, index));
+      version.dataset.attemptVersion = "";
+      actions.append(refine, version);
+    }
+    const next = actionButton(doc, "接着写下一段", "plus", () => opts.onContinue?.(attempt, index));
+    next.dataset.attemptContinue = "";
+    const continuable = canContinue(attempt) && !broken;
+    next.disabled = !continuable;
+    if (!continuable) next.title = CANNOT_CONTINUE;
+    actions.append(next);
+    detail.append(actions);
+    if (!continuable) detail.append(el(doc, "p", "hint attempt-continue-reason", CANNOT_CONTINUE));
+    const hint = el(doc, "p", "hint hint-busy attempt-action-hint");
+    hint.setAttribute("role", "status");
+    detail.append(hint);
+    if (version) result.recompose = { button: version, hint, noImageReason: "" };
   }
-  const next = actionButton(doc, "接着写下一段", "plus", () => opts.onContinue?.(attempt, index));
-  next.dataset.attemptContinue = "";
-  const continuable = canContinue(attempt) && !broken;
-  next.disabled = !continuable;
-  if (!continuable) next.title = CANNOT_CONTINUE;
-  actions.append(next);
-  detail.append(actions);
-  if (!continuable) detail.append(el(doc, "p", "hint attempt-continue-reason", CANNOT_CONTINUE));
-  const hint = el(doc, "p", "hint hint-busy attempt-action-hint");
-  hint.setAttribute("role", "status");
-  detail.append(hint);
   card.append(detail);
-  if (version) result.recompose = { button: version, hint, noImageReason: "" };
   return result;
 }

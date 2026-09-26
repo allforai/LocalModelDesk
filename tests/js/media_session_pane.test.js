@@ -99,6 +99,25 @@ test("别的会话在生成时，忙碌原因用 noun：「<标题>」正在生�
   });
 });
 
+test("modelTexts 缺省时用通用兜底文案：模型/运行环境缺失时原因行不为空，生成仍被禁用", async () => {
+  await withBackend("music", async (backend) => {
+    backend.addSession("歌", [done("a1")]);
+    const { parts, pane } = makeGenericPane({ modelTexts: undefined });
+    pane.setHeavyAllowed(true);
+    await pane.refresh();
+
+    pane.setRuntimeStatus({ present: false });
+    assert.equal(pane.availability().reason, "MLX 运行环境不可用，请检查服务或应用安装");
+    assert.equal(pane.availability().disabled, true);
+
+    pane.setRuntimeStatus({ present: true });
+    pane.setModelStatus({ state: "missing" });
+    assert.equal(parts.model.textContent, "尚未安装模型，请到「资源」页下载");
+    assert.equal(pane.availability().reason, "尚未安装模型，请到「资源」页下载");
+    assert.equal(pane.availability().disabled, true);
+  });
+});
+
 // ---------- 挑选合成模式（M-05–M-11） ----------
 const labeled = (node, label) => find(node, (n) => n.tagName === "button" && n.attrs?.["aria-label"] === label);
 const card = (parts, id) => cards(parts).find((c) => c.dataset.attemptId === id);

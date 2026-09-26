@@ -275,6 +275,55 @@ test("挑选模式：只接勾选框的 change，点卡片由控制器切换一�
   });
 });
 
+test("挑选模式下卡片只做勾选：三个动作与重新拼接都不出现，文字说明还在；退出后恢复", async () => {
+  await withBackend("music", async (backend) => {
+    const failed = { code: "join_failed", message: "ffmpeg 出错" };
+    backend.addSession("歌", [done("a1"), done("a2", { continues: "a1", joined_error: failed })]);
+    const { root, parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    let card = cards(parts)[1]; // 默认选中最后一次，展开
+    assert.equal(card.getAttribute("aria-expanded"), "true");
+    assert.match(card.textContent, /这一段生成好了，但成片没拼成：ffmpeg 出错/);
+    assert.ok(button(card, "在这段基础上改"));
+    assert.ok(button(card, "换个版本"));
+    assert.ok(button(card, "接着写下一段"));
+    assert.ok(button(card, "重新拼接"));
+
+    const start = find(root, (n) => "musicComposeStart" in n.dataset);
+    await start.click();
+    card = cards(parts)[1];
+    assert.equal(button(card, "在这段基础上改"), null);
+    assert.equal(button(card, "换个版本"), null);
+    assert.equal(button(card, "接着写下一段"), null);
+    assert.equal(button(card, "重新拼接"), null);
+    assert.match(card.textContent, /这一段生成好了，但成片没拼成：ffmpeg 出错/, "出错说明文字仍留着");
+
+    const bar = find(root, (n) => "musicComposeBar" in n.dataset);
+    await button(bar, "取消").click();
+    card = cards(parts)[1];
+    assert.ok(button(card, "在这段基础上改"));
+    assert.ok(button(card, "换个版本"));
+    assert.ok(button(card, "接着写下一段"));
+    assert.ok(button(card, "重新拼接"));
+  });
+});
+
+test("素材库回填：原会话已不在时按字段回填，种子带着，提示条显示「沿用素材库里这首」（M-52）", async () => {
+  await withBackend("music", async (backend) => {
+    backend.addSession("歌", [done("a1")]);
+    const { parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    await pane.applyFill({ pane: "music", session_id: "gone", attempt_id: "x",
+      fields: { caption: "旧风格", lyrics: "旧词", duration: 45, seed: 7 } });
+    assert.equal(parts.caption.value, "旧风格");
+    assert.equal(parts.lyrics.value, "旧词");
+    assert.equal(parts.duration.value, "45");
+    assert.equal(parts.seed.value, "7");
+    assert.equal(parts.chip.hidden, false);
+    assert.equal(parts["chip-text"].textContent, "沿用素材库里这首");
+  });
+});
+
 test("AI 帮写写回风格描述与歌词", async () => {
   await withBackend("music", async (backend) => {
     const { parts, pane, ready } = makeMusicPane(); ready();

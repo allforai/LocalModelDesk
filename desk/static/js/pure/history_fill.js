@@ -28,6 +28,7 @@ export function fillPlan(entry) {
         caption: params.caption ?? "",
         lyrics: params.lyrics ?? "",
         duration: params.duration ?? null,
+        seed: Number.isInteger(params.seed) ? params.seed : null,
       },
     };
   }
