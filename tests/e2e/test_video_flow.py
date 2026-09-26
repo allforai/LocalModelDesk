@@ -137,17 +137,31 @@ def test_dropping_an_image_on_the_first_frame_row_uses_it(page, tmp_path):
         _drop_file(page, "#pane-video .file-row:has([data-video-first-upload])", "dropped.png", "image/png", _PNG)
         expect(pane.locator("[data-video-first-label]")).to_have_text("已选择：dropped.png")
         expect(pane.locator("[data-video-first-preview] > *")).to_be_visible()
-        # 首帧、尾帧都选了时，输入区里的预览只是与按钮同一行的 64px 小图：900×700 下时间线仍放得下一整张
-        # 折叠卡片（实测 118px；小图各占一行时只剩 28px），也没有横向滚动。
+        # 首帧、尾帧都选了时，输入区最高半屏、方式与素材那块在内部滚动：900×700 下时间线仍有可用高度
+        # （实测 144px；不设上限时 118px，小图各占一行时 28px），提示词与「生成视频」在输入区里完整可见，
+        # 状态提示行出现时也不挤时间线；没有横向滚动。
         pane.locator("[data-video-last]").set_input_files({"name": "last.png", "mimeType": "image/png", "buffer": _PNG})
         expect(pane.locator("[data-video-last-preview] > *")).to_be_visible()
-        expect(pane.locator("[data-video-start]")).to_be_enabled()  # 服务状态查完，状态提示行不占高度
-        timeline = pane.locator("[data-video-timeline]").evaluate("el => el.clientHeight")
-        assert timeline >= 100, timeline
-        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+        start = pane.locator("[data-video-start]")
+        expect(start).to_be_enabled()
+
+        def check_room():
+            room = page.evaluate("""() => {
+                const box = (s) => document.querySelector(s).getBoundingClientRect();
+                const composer = box('[data-video-composer]');
+                const inside = (s) => { const r = box(s); return r.top >= composer.top - 1 && r.bottom <= composer.bottom + 1; };
+                return { timeline: document.querySelector('[data-video-timeline]').clientHeight,
+                         prompt: inside('[data-video-prompt]'), start: inside('[data-video-start]'),
+                         wide: document.documentElement.scrollWidth > innerWidth };
+            }""")
+            assert room["timeline"] >= 140 and room["prompt"] and room["start"] and not room["wide"], room
+
+        check_room()
         pane.locator("[data-video-prompt]").fill("gentle waves")
-        pane.locator("[data-video-start]").click()
+        start.click()
         expect(_job_log(pane)).to_contain_text("step 1/10")
+        expect(pane.locator("[data-video-hint-text]")).not_to_be_empty()
+        check_room()
         argv = harness.media_script.spawned_argvs[-1]
         from pathlib import Path
         assert Path(argv[argv.index("--first-frame") + 1]).read_bytes() == _PNG

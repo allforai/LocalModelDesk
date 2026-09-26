@@ -295,6 +295,10 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 /* 14. video sessions（视频会话设计 §3）：布局与图片、音乐页同构，上面的 #pane-image 规则已同时作用于 #pane-video */
 .video-prompt { min-height: calc(3 * 1.5em + 16px); max-height: 40vh; resize: none; field-sizing: content; }
 .attempt-video { width: 100%; max-height: 50vh; background: #000; }
+/* 视频输入区最高半屏：放不下时只有方式与素材那一块收缩并在内部滚动，提示词、「生成视频」、
+   提示行与错误行始终可见，时间线留足空间（图片、音乐页不设此上限） */
+#pane-video .image-composer { max-height: 50vh; overflow-y: auto; }
+.video-materials { flex: 0 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .video-mode { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
 .video-mode select { color: var(--text); }
 /* 素材行：按钮、说明与小图预览排成一行（放不下再换行），说明文字独占一行 */

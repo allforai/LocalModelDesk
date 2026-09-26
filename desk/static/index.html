@@ -22,20 +22,22 @@
         <div class="image-timeline" data-video-timeline></div>
         <div class="image-composer" data-video-composer role="form" aria-label="生成视频">
           <div class="refine-chip" data-video-chip hidden><span data-video-chip-text></span><button class="btn-quiet btn-sm" data-video-chip-clear data-icon-name="x" aria-label="取消沿用或续写"></button></div>
-          <label class="video-mode">生成方式 <select data-video-mode><option value="text">文生视频</option><option value="image">图生视频</option><option value="reference">视频参考生成</option></select></label>
-          <div class="video-assets" data-video-first-area hidden>
-            <div class="file-row"><label class="file-pick"><span class="btn">上传图片</span><input type="file" class="visually-hidden" data-video-first-upload accept="image/png,image/jpeg,image/webp"></label><button type="button" class="btn-secondary" data-video-first-pick>从图片会话选…</button><span class="file-name hint" data-video-first-label>未选择</span></div>
-            <div class="video-preview" data-video-first-preview></div>
-          </div>
-          <div class="video-assets" data-video-last-area hidden>
-            <div class="file-row"><label class="file-pick"><span class="btn">上传图片（可选）</span><input type="file" class="visually-hidden" data-video-last accept="image/png,image/jpeg,image/webp"></label><span class="file-name hint" data-video-last-label>未选择</span><button type="button" class="btn-secondary" data-video-clear-last>清除尾帧</button></div>
-            <div class="video-preview" data-video-last-preview></div>
-            <p class="hint">支持 PNG、JPEG、WebP，每个文件最多 32 MB。</p>
-          </div>
-          <div class="video-assets" data-video-reference-area hidden>
-            <div class="file-row"><label class="file-pick"><span class="btn">上传参考视频</span><input type="file" class="visually-hidden" data-video-source accept="video/mp4,video/quicktime,video/webm"></label><span class="file-name hint" data-video-source-label>未选择</span></div>
-            <div class="video-preview" data-video-source-preview></div>
-            <p class="hint">支持 MP4、MOV、WebM，最长 15 秒、最大 32 MB。参考生成不保证逐帧保留原视频动作。</p>
+          <div class="video-materials">
+            <label class="video-mode">生成方式 <select data-video-mode><option value="text">文生视频</option><option value="image">图生视频</option><option value="reference">视频参考生成</option></select></label>
+            <div class="video-assets" data-video-first-area hidden>
+              <div class="file-row"><label class="file-pick"><span class="btn">上传图片</span><input type="file" class="visually-hidden" data-video-first-upload accept="image/png,image/jpeg,image/webp"></label><button type="button" class="btn-secondary" data-video-first-pick>从图片会话选…</button><span class="file-name hint" data-video-first-label>未选择</span></div>
+              <div class="video-preview" data-video-first-preview></div>
+            </div>
+            <div class="video-assets" data-video-last-area hidden>
+              <div class="file-row"><label class="file-pick"><span class="btn">上传图片（可选）</span><input type="file" class="visually-hidden" data-video-last accept="image/png,image/jpeg,image/webp"></label><span class="file-name hint" data-video-last-label>未选择</span><button type="button" class="btn-secondary" data-video-clear-last>清除尾帧</button></div>
+              <div class="video-preview" data-video-last-preview></div>
+              <p class="hint">支持 PNG、JPEG、WebP，每个文件最多 32 MB。</p>
+            </div>
+            <div class="video-assets" data-video-reference-area hidden>
+              <div class="file-row"><label class="file-pick"><span class="btn">上传参考视频</span><input type="file" class="visually-hidden" data-video-source accept="video/mp4,video/quicktime,video/webm"></label><span class="file-name hint" data-video-source-label>未选择</span></div>
+              <div class="video-preview" data-video-source-preview></div>
+              <p class="hint">支持 MP4、MOV、WebM，最长 15 秒、最大 32 MB。参考生成不保证逐帧保留原视频动作。</p>
+            </div>
           </div>
           <div class="image-input-row">
             <textarea data-video-prompt class="video-prompt" aria-label="视频提示词" placeholder="视频提示词（含环境声描述）"></textarea>
