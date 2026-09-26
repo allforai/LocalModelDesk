@@ -1,5 +1,5 @@
 // 图片会话时间线里的一张尝试卡片（设计 §7.3–§7.5）。只画 DOM，不发请求：
-// 点击、两个动作、取消、图片加载失败都经回调交还给 panes/image.js。
+// 点击、两个动作（done 卡片再加「用这张生成视频」，V-50）、取消、图片加载失败都经回调交还给 panes/image.js。
 import { addIcon } from "../icons.js";
 import { renderErrorBlock } from "./error_block.js";
 import { specLine } from "../pure/image_session.js";
@@ -129,6 +129,14 @@ export function renderAttemptCard(doc, opts) {
     if (!recompose.disabled) opts.onRecompose?.(attempt, index);
   });
   actions.append(refine, recompose);
+  // done 且图片在的卡片多一个跨页入口：拿这张去视频页当首帧（V-50）。文件不在、失败、取消都没有它。
+  if (view.kind === "done") {
+    const useFrame = el(doc, "button", "btn-secondary", "用这张生成视频");
+    useFrame.dataset.attemptUseFrame = "";
+    addIcon(useFrame, "video", doc);
+    useFrame.addEventListener("click", (event) => { event.stopPropagation?.(); opts.onUseAsFirstFrame?.(attempt, index); });
+    actions.append(useFrame);
+  }
   const hint = el(doc, "p", "hint hint-busy attempt-action-hint");
   hint.setAttribute("role", "status");
   detail.append(actions, hint);

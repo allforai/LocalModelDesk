@@ -9,7 +9,7 @@ import {
   refineChipText, refineChipVisible, refineFields,
   hasImage, submitBase, baseLabel, NO_IMAGE_REASON,
 } from "../pure/image_session.js";
-import { randomSeed } from "../pure/media_session.js";
+import { randomSeed, sessionTitle } from "../pure/media_session.js";
 
 // 展开卡片的大图不会为了整张放进时间线而缩到这个高度（缩略图的两倍）以下（IS D-74、B-01）。
 const IMAGE_FLOOR = 192;
@@ -55,6 +55,7 @@ export function createImagePane(root, ctx = {}) {
         elapsed: ours ? o.job.elapsed_s : undefined, serveOutput: api.serveOutput,
         baseText: baseLabel(o.attempt, o.attempts), secondaryBlockedReason: hasImage(o.attempt) ? "" : NO_IMAGE_REASON,
         onBroken: o.onBroken, onImageLoad: o.onImageLoad, onRefine: refine, onRecompose: recompose, onCancel: () => pane.cancelJob(),
+        onUseAsFirstFrame: useAsFirstFrame,
       });
     },
     fitExpanded: (image, room) => { image.style.maxHeight = `min(60vh, ${Math.max(IMAGE_FLOOR, Math.floor(room))}px)`; },
@@ -111,6 +112,17 @@ export function createImagePane(root, ctx = {}) {
     const sessionId = pane.currentId();
     if (pane.availability().disabled || !sessionId) return;
     pane.startGeneration(recomposeParams(attempt, sessionId, drawSeed), { fromInputs: false });
+  }
+
+  // V-50：跨页到视频页当首帧——只交出引用与展示用的标题/序号，切页与回填是 main.js 与视频页的事。
+  function useAsFirstFrame(attempt, index) {
+    const sessionId = pane.currentId();
+    if (!sessionId) return;
+    ctx.onUseAsFirstFrame?.({
+      ref: { kind: "image", session_id: sessionId, attempt_id: attempt.id },
+      title: sessionTitle(pane.currentSession()),
+      index,
+    });
   }
 
   // ---------- 事件 ----------

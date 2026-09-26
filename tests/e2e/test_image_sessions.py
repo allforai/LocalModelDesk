@@ -587,7 +587,8 @@ def test_model_missing_with_runtime_present_names_the_model(page, tmp_path):
 
 def test_action_buttons_of_the_settled_attempt_are_in_view_at_900x700(page, tmp_path):
     """AC-7 / D-71 / D-78: in a 900×700 window, once an attempt settles the timeline sits at its
-    bottom, so the expanded card's two action buttons are inside the timeline viewport."""
+    bottom, so the expanded card's three action buttons (V-50 adds 「用这张生成视频」) are inside
+    the timeline viewport."""
     page.set_viewport_size({"width": 900, "height": 700})
     with _harness(tmp_path, [fast_media_steps() for _ in range(3)]) as harness:
         pane = _open(page, harness)
@@ -603,7 +604,7 @@ def test_action_buttons_of_the_settled_attempt_are_in_view_at_900x700(page, tmp_
                 .map((b) => { const r = b.getBoundingClientRect();
                   return {text: b.innerText, top: r.top, bottom: r.bottom, timeline_bottom: timeline.bottom}; });
             }""")
-            assert len(geometry) == 2, geometry
+            assert len(geometry) == 3, geometry
             hidden = [g for g in geometry if g["bottom"] > g["timeline_bottom"] + 1]
             assert not hidden, (f"attempt {index + 1}: action buttons below the timeline viewport", geometry)
         # A window that shrinks keeps the expanded card's actions in view (re-pinned on resize).
@@ -616,8 +617,9 @@ IMAGE_FLOOR = 2 * THUMB  # B-01: the expanded 大图 must be really bigger than 
 
 
 def _expanded_geometry(page):
-    """Rects of the expanded card, its header, large image, header thumbnail and two actions, and of
-    the timeline (with its inner height, padding excluded)."""
+    """Rects of the expanded card, its header, large image, header thumbnail and its action buttons
+    (two for a card without an image, three for a done card since V-50 added 「用这张生成视频」),
+    and of the timeline (with its inner height, padding excluded)."""
     return page.evaluate("""() => {
       const box = (node) => { if (!node) return null; const r = node.getBoundingClientRect();
         return {top: r.top, bottom: r.bottom, left: r.left, right: r.right, height: r.height}; };
@@ -638,11 +640,11 @@ def _expanded_geometry(page):
 
 
 def _assert_expanded_card_in_view(page, when, settle_ms=2_000):
-    """The expanded card's large image and both actions are inside the timeline viewport, and so is
-    its header whenever the whole card fits. The large image is never shrunk below IMAGE_FLOOR (or
-    60vh / its own size when those are smaller) to make the header fit (B-01): when card and floor
-    do not both fit, the header is the part that scrolls away. The pane re-fits and re-pins on image
-    load and on its ResizeObserver, so poll until settled."""
+    """The expanded card's large image and all three actions (V-50 adds 「用这张生成视频」) are
+    inside the timeline viewport, and so is its header whenever the whole card fits. The large image
+    is never shrunk below IMAGE_FLOOR (or 60vh / its own size when those are smaller) to make the
+    header fit (B-01): when card and floor do not both fit, the header is the part that scrolls away.
+    The pane re-fits and re-pins on image load and on its ResizeObserver, so poll until settled."""
     page.wait_for_function(
         "() => [...document.querySelectorAll('#pane-image .attempt-image')].every((i) => i.complete)")
     deadline = time.monotonic() + settle_ms / 1000
@@ -656,10 +658,10 @@ def _assert_expanded_card_in_view(page, when, settle_ms=2_000):
         outside = {name: r for name, r in parts.items() if r is not None and (r["top"] < top or r["bottom"] > bottom)}
         floor = min(IMAGE_FLOOR, g["vh60"], g["image_natural"] or IMAGE_FLOOR)
         small = g["image"] is not None and g["image"]["height"] < floor - 1
-        if (not outside and not small and len(g["buttons"]) == 2) or time.monotonic() > deadline:
+        if (not outside and not small and len(g["buttons"]) == 3) or time.monotonic() > deadline:
             break
         page.wait_for_timeout(100)
-    assert len(g["buttons"]) == 2, (when, g)
+    assert len(g["buttons"]) == 3, (when, g)
     assert not outside, (when, "expanded card's image/actions (and header when it fits) not inside the timeline viewport",
                          outside, g["timeline"])
     assert not small, (when, f"expanded 大图 shrunk below {floor}px", g["image"], g)
@@ -670,8 +672,8 @@ def _assert_expanded_card_in_view(page, when, settle_ms=2_000):
 
 def test_selected_attempt_with_a_full_size_image_shows_header_image_and_actions_together(page, tmp_path):
     """AC-7 / D-72 / D-74: the harness writes the image at its declared 1024×1024, as the real model
-    does, and selecting an earlier attempt shows its header, whole large image and both actions at
-    once — at 1280×800 and at 900×700. After 「在这张基础上改」 the clicked button is still in view."""
+    does, and selecting an earlier attempt shows its header, whole large image and all three actions
+    at once — at 1280×800 and at 900×700. After 「在这张基础上改」 the clicked button is still in view."""
     for name, (width, height) in VIEWPORTS.items():
         page.set_viewport_size({"width": width, "height": height})
         with _harness(tmp_path / name, [fast_media_steps() for _ in range(3)]) as harness:
