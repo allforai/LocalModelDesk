@@ -96,7 +96,7 @@ def test_disabled_reason_sits_the_same_distance_in_both_panes(page, tmp_path):
         page.locator("#tabs [data-tab='music']").click()
         music = page.locator("#pane-music")
         expect(music.locator("[data-music-start]")).to_be_disabled()
-        expect(music.locator("[data-music-hint-text]")).not_to_be_empty()
+        expect(music.locator("[data-music-hint-text]")).to_contain_text("媒体作业进行中")
         below = page.evaluate(
             "() => { const btn = document.querySelector('[data-music-start]').getBoundingClientRect();"
             " const hint = document.querySelector('[data-music-hint]').getBoundingClientRect();"
