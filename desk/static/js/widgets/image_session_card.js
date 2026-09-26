@@ -2,7 +2,8 @@
 // 点击、两个动作、取消、图片加载失败都经回调交还给 panes/image.js。
 import { addIcon } from "../icons.js";
 import { renderErrorBlock } from "./error_block.js";
-import { attemptLabel, attemptView, runningLabel, specLine } from "../pure/image_session.js";
+import { attemptView, specLine } from "../pure/image_session.js";
+import { attemptLabel, runningLabel } from "../pure/media_session.js";
 
 function el(doc, tag, className, text) {
   const node = doc.createElement(tag);

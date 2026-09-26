@@ -156,8 +156,9 @@ def test_start_music_job_argv_output_and_runtime_capability(tmp_path):
         SimpleNamespace(key="music3", relpath="minimax-music3", gb=27.0),
     ]
 
+    sid = deps.media_sessions["music"].create()["id"]
     snap = finished_snapshot(service, lambda: service.start_music_job(
-        caption="ambient piano", lyrics="instrumental", duration=30.0, seed=7))
+        caption="ambient piano", lyrics="instrumental", duration=30.0, seed=7, session_id=sid))
 
     output = tmp_path / "outputs" / f"music3-{STAMP}.wav"
     assert snap["status"] == "done"
@@ -170,8 +171,9 @@ def test_start_music_job_argv_output_and_runtime_capability(tmp_path):
 
     service, deps = make_service(tmp_path)
     service._probe_capabilities = lambda: {}
+    sid = deps.media_sessions["music"].create()["id"]
     with pytest.raises(MediaError) as err:
-        service.start_music_job(caption="ambient piano", lyrics="instrumental", duration=30.0)
+        service.start_music_job(caption="ambient piano", lyrics="instrumental", duration=30.0, session_id=sid)
     assert err.value.code == "capability_missing"
     assert err.value.http_status == 503
     assert deps.executor.spawned == []
@@ -553,7 +555,8 @@ def test_music_history_records_the_real_output_length(tmp_path, monkeypatch):
     service._probe_capabilities = lambda: {"music_runtime": SimpleNamespace(present=True, detail="")}
     service._list_catalog = lambda: [SimpleNamespace(key="music3", relpath="minimax-music3", gb=27.0)]
 
-    finished_snapshot(service, lambda: service.start_music_job(caption="c", lyrics="l", duration=300))
+    sid = deps.media_sessions["music"].create()["id"]
+    finished_snapshot(service, lambda: service.start_music_job(caption="c", lyrics="l", duration=300, session_id=sid))
 
     assert deps.history.entries[-1]["audio_seconds"] == 29.71
 

@@ -74,6 +74,17 @@ def test_fake_media_executor_writes_real_tiny_output(tmp_path):
     assert script.spawned_argvs[0][0] == "mlx-h3"
 
 
+def test_fake_media_executor_completes_ffmpeg_commands_without_a_scripted_job(tmp_path):
+    script = MediaScript(jobs=[fast_media_steps()])
+    executor = FakeMediaExecutor(script)
+    joined = tmp_path / "music3-joined-x.wav"
+    handle = executor.spawn(["ffmpeg", "-y", "-i", "a.wav", "-i", "b.wav", str(joined)])
+    assert list(handle.iter_output()) == [] and handle.wait() == 0
+    assert joined.read_bytes() == TINY_WAV
+    assert len(script.jobs) == 1   # the model run's job is still there
+    assert script.spawned_argvs[0][0] == "ffmpeg"
+
+
 def test_fake_media_handle_blocks_until_terminate(tmp_path):
     script = MediaScript(jobs=[cancellable_media_steps()])
     script.jobs[0][1].open()

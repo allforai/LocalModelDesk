@@ -1,12 +1,13 @@
-// 图片页左栏的会话列表项（设计 D-77、§7.2、D-89、D-90），与聊天页 renderSessionList 同构：
+// 会话式媒体页（图片、音乐）左栏的会话列表项（设计 D-77、§7.2、D-89、D-90），与聊天页 renderSessionList 同构：
 // card session 卡片、右侧图标按钮列、当前项 aria-current。只画 DOM，动作交回面板。
+// kindClass 是各页自己的类名（图片 image-session、音乐 music-session）。
 import { addIcon } from "../icons.js";
-import { sessionMeta, sessionTitle } from "../pure/image_session.js";
+import { sessionMeta, sessionTitle } from "../pure/media_session.js";
 
-export function renderSessionItem(doc, summary, { current, onSelect, onRename, onDelete }) {
+export function renderSessionItem(doc, summary, { current, onSelect, onRename, onDelete, kindClass }) {
   const title = sessionTitle(summary);
   const li = doc.createElement("li");
-  li.className = "card session image-session";
+  li.className = `card session ${kindClass}`;
   li.classList.toggle("active", current);
   li.tabIndex = 0;
   li.dataset.sessionId = summary.id;

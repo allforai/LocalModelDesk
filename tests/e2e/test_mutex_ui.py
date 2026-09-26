@@ -21,6 +21,10 @@ def test_media_job_disables_other_heavy_controls_shows_reason_and_restores(page,
         music = page.locator("#pane-music")
         chat = page.locator("#pane-chat")
 
+        # 会话式音乐页在首次打开时才加载会话；先打开一次，它的「生成歌曲」才有可用与否可言。
+        page.locator("#tabs [data-tab='music']").click()
+        expect(music.locator("[data-music-start]")).to_be_enabled()
+
         page.locator("#tabs [data-tab='video']").click()
         video.locator("[data-video-prompt]").fill("a quiet street in rain")
         video.locator("[data-video-start]").click()
@@ -49,7 +53,9 @@ def test_idle_pane_shows_the_busy_reason_while_sitting_on_that_tab(page, tmp_pat
         page.goto(harness.base_url)
         page.locator("#tabs [data-tab='music']").click()
         music = page.locator("#pane-music")
-        expect(music.locator("[data-job-status]")).to_contain_text("空闲")
+        # 会话式音乐页没有作业状态行（M-20）：空闲时「生成歌曲」可用，状态提示行为空。
+        expect(music.locator("[data-music-start]")).to_be_enabled()
+        expect(music.locator("[data-music-hint]")).to_be_hidden()
 
         # Start the video job without ever navigating away from the music tab —
         # its own pane is `hidden` in the DOM but its start button still works.
@@ -57,13 +63,16 @@ def test_idle_pane_shows_the_busy_reason_while_sitting_on_that_tab(page, tmp_pat
             "() => { document.querySelector('#pane-video [data-video-prompt]').value = 'a quiet street in rain';"
             " document.querySelector('#pane-video [data-video-start]').click(); }"
         )
-        expect(music.locator("[data-job-status]")).to_contain_text("媒体作业进行中")
-        expect(music.locator("[data-job-status]")).not_to_contain_text("填好左侧参数")
+        expect(music.locator("[data-music-hint-text]")).to_contain_text("媒体作业进行中")
+        expect(music.locator("[data-music-start]")).to_be_disabled()
 
 
 def test_disabled_reason_sits_the_same_distance_in_both_panes(page, tmp_path):
     """S2: the same disabled-reason message must sit the same distance from the
-    generate button in both media panes (F7/W7)."""
+    generate button in both media panes (F7/W7).
+
+    音乐页改成会话式后（音乐会话设计 §2.1），状态提示行在输入区底部、「AI 帮写」与「高级参数」之下，
+    与图片页同构，不再与视频表单并排比较间距；这里对音乐页只断言原因写在提示行里、位于按钮下方。"""
     with launch_test_harness(tmp_path) as harness:
         page.goto(harness.base_url)
         page.locator("#tabs [data-tab='video']").click()
@@ -75,7 +84,6 @@ def test_disabled_reason_sits_the_same_distance_in_both_panes(page, tmp_path):
         gaps = {}
         for tab, button_sel, hint_sel in (
             ("video", "[data-video-start]", "[data-video-hint]"),
-            ("music", "[data-music-start]", "[data-music-hint]"),
         ):
             page.locator(f"#tabs [data-tab='{tab}']").click()
             expect(page.locator(hint_sel)).not_to_be_empty()
@@ -83,8 +91,17 @@ def test_disabled_reason_sits_the_same_distance_in_both_panes(page, tmp_path):
                 "([b, h]) => { const btn = document.querySelector(b).getBoundingClientRect();"
                 " const hint = document.querySelector(h).getBoundingClientRect();"
                 " return hint.top - btn.bottom; }", [button_sel, hint_sel])
-        assert abs(gaps["video"] - gaps["music"]) <= 1, gaps
         assert round(gaps["video"]) in (8, 12, 16), gaps
+
+        page.locator("#tabs [data-tab='music']").click()
+        music = page.locator("#pane-music")
+        expect(music.locator("[data-music-start]")).to_be_disabled()
+        expect(music.locator("[data-music-hint-text]")).to_contain_text("媒体作业进行中")
+        below = page.evaluate(
+            "() => { const btn = document.querySelector('[data-music-start]').getBoundingClientRect();"
+            " const hint = document.querySelector('[data-music-hint]').getBoundingClientRect();"
+            " return hint.top - btn.bottom; }")
+        assert below >= 0, below
 
 
 def test_a_chat_model_can_be_loaded_while_a_media_job_runs(page, tmp_path):

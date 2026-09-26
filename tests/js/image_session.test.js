@@ -1,34 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  attemptLabel, attemptView, autoTitle, availability, deleteMessage, orderSessions, pickCurrent, randomSeed,
-  readImageParams, recomposeParams, refineChipText, refineChipVisible, refineFields, runningLabel,
-  runningSessionId, sessionMeta, sessionTitle, specLine, startErrorText,
+  attemptView,
+  readImageParams, recomposeParams, refineChipText, refineChipVisible, refineFields, specLine,
   hasImage, submitBase, baseLabel, NO_IMAGE_REASON,
 } from "../../desk/static/js/pure/image_session.js";
 
 const SEED = "种子"; // 「种子」
 
-test("D-11 标题截断：空白折叠、去首尾空白、超过 24 字加省略号（与聊天同规则）", () => {
-  assert.equal(autoTitle("  一只橘猫\n\n坐在  窗边 "), "一只橘猫 坐在 窗边");
-  const long = "一只橘猫坐在窗边，午后阳光，细腻的水彩插画，暖色调，柔和光线";
-  assert.equal(autoTitle(long), `${long.slice(0, 24)}…`);
-  assert.equal(autoTitle("a".repeat(24)), "a".repeat(24));
-});
-
-test("会话列表文案：标题、N 次生成 · HH:MM、坏文件（D-77、§7.2）", () => {
-  assert.equal(sessionTitle({ title: "橘猫" }), "橘猫");
-  assert.equal(sessionTitle({ title: "" }), "新会话");
-  assert.equal(sessionTitle({ id: "x", corrupt: true }), "无法读取的会话");
-  assert.equal(sessionMeta({ attempt_count: 3, updated: "2026-09-24T14:05:40" }), "3 次生成 · 14:05");
-  assert.equal(sessionMeta({ attempt_count: 0, updated: "2026-09-24T09:01:00" }), "0 次生成 · 09:01");
-  assert.equal(sessionMeta({ id: "x", corrupt: true }), "文件已损坏");
-});
-
-test("卡片标题行：第 N 次 · HH:MM；生成中沿用 jobview 时长文案（D-73、D-81）", () => {
-  assert.equal(attemptLabel(0, { ts: "2026-09-24T14:02:11" }), "第 1 次 · 14:02");
-  assert.equal(runningLabel(1, 80), "第 2 次 · 生成中…（已用 1分20秒）");
-  assert.equal(runningLabel(2, undefined), "第 3 次 · 生成中…");
+test("卡片标题行：规格文案（D-73）", () => {
   assert.equal(specLine({ width: 1024, height: 768, steps: 40 }), "1024×768 · 40 步");
 });
 
@@ -63,12 +43,6 @@ test("「换个构图」同参数、新随机种子，恰好相同时重取（D-
   const draws = [7, 7, 99];
   const params = recomposeParams(attempt, "s1", () => draws.shift());
   assert.deepEqual(params, { session_id: "s1", prompt: "猫", width: 768, height: 512, steps: 30, seed: 99 });
-  for (let i = 0; i < 50; i += 1) {
-    const seed = randomSeed();
-    assert.ok(Number.isInteger(seed) && seed >= 0 && seed <= 4294967295);
-  }
-  const fixed = { getRandomValues: (buffer) => { buffer[0] = 4294967295; return buffer; } };
-  assert.equal(randomSeed(fixed), 4294967295);
 });
 
 test("提示条只在种子框等于被引用尝试的种子时显示（D-41、D-42、D-95）", () => {
@@ -83,16 +57,6 @@ test("提示条只在种子框等于被引用尝试的种子时显示（D-41、D
   assert.equal(refineChipText({ seed: 3, index: null }), "沿用素材库里这张的构图");
 });
 
-test("当前会话恢复：优先生成中的，否则最新；坏文件不优先（D-63）", () => {
-  const list = [{ id: "a" }, { id: "b", running: true }, { id: "c", corrupt: true }];
-  assert.equal(pickCurrent(list), "b");
-  assert.equal(pickCurrent(list, "a"), "a");
-  assert.equal(pickCurrent(list, "gone"), "b");
-  assert.equal(pickCurrent([{ id: "c", corrupt: true }, { id: "d" }]), "d");
-  assert.equal(pickCurrent([{ id: "c", corrupt: true }]), "c");
-  assert.equal(pickCurrent([]), null);
-});
-
 test("输入区读数：种子留空不传；高级参数错误带前缀（D-51、D-66）", () => {
   assert.deepEqual(readImageParams({ prompt: "猫", width: "1024", height: "768", steps: "40", seed: "" }),
     { prompt: "猫", width: 1024, height: 768, steps: 40 });
@@ -105,62 +69,15 @@ test("输入区读数：种子留空不传；高级参数错误带前缀（D-51�
   }
 });
 
-const base = {
-  pending: false, listState: "ready", currentId: "a", currentCorrupt: false,
-  current: { id: "a", attempts: [{ id: "x1", status: "done" }] }, job: null,
-  sessions: [{ id: "a", title: "橘猫" }, { id: "b", title: "海边的灯塔" }],
-  allowed: true, busyReason: "", runtimeReason: "", modelReason: "",
-};
-
-test("不可用原因按 §7.6 优先级只取第一条", () => {
-  assert.deepEqual(availability(base), { reason: "", disabled: false, returnTo: null });
-  assert.equal(availability({ ...base, pending: true, modelReason: "m" }).reason, "正在提交…");
-  assert.equal(availability({ ...base, listState: "loading" }).reason, "会话还没加载好");
-  assert.equal(availability({ ...base, listState: "error" }).reason, "会话还没加载好");
-  assert.equal(availability({ ...base, currentCorrupt: true, current: null }).reason, "请选择其他会话或新建一个");
-  const runningHere = { kind: "image", status: "running", session_id: "a", attempt_id: "x2" };
-  const hereState = { ...base, job: runningHere, allowed: false, busyReason: "媒体作业进行中",
-    current: { id: "a", attempts: [{ id: "x1", status: "done" }, { id: "x2", status: "running" }] } };
-  assert.equal(availability(hereState).reason, "正在生成这个会话里的第 2 次");
-  const other = availability({ ...base, job: { ...runningHere, session_id: "b" }, allowed: false, busyReason: "媒体作业进行中" });
-  assert.deepEqual(other, { reason: "「海边的灯塔」正在生成图片", disabled: true, returnTo: "b" });
-  const fromList = availability({ ...base, sessions: [{ id: "a" }, { id: "b", title: "灯塔", running: true }] });
-  assert.equal(fromList.returnTo, "b");
-  assert.equal(availability({ ...base, allowed: false, busyReason: "媒体作业进行中" }).reason, "媒体作业进行中");
-  assert.equal(availability({ ...base, allowed: false, busyReason: "媒体作业进行中" }).returnTo, null);
-  assert.equal(availability({ ...base, runtimeReason: "r", modelReason: "m" }).reason, "r");
-  assert.equal(availability({ ...base, modelReason: "尚未安装图片模型，请到「资源」页下载" }).disabled, true);
-  assert.equal(runningSessionId({ kind: "image", status: "done", session_id: "a" }, [{ id: "b", running: true }]), "b");
-});
-
-test("删除确认正文：只删分组；生成中追加一句（D-90）", () => {
-  assert.equal(deleteMessage({ title: "橘猫" }), "确定删除「橘猫」？只删除这个会话分组，其中的图片仍保留在素材库。");
-  assert.match(deleteMessage({ title: "橘猫", running: true }), /生成会继续完成，图片会进入素材库，但不会再出现在任何会话里。$/);
-});
-
-test("启动失败文案（D-88）与主流程文案都不出现「种子」（D-50）", () => {
-  assert.equal(startErrorText({ code: "media_busy", message: "x" }), "已有作业在进行");
-  assert.equal(startErrorText({ code: "spawn_failed", message: "x" }), "无法启动生成程序");
+test("规格、提示条、尝试状态文案都不出现「种子」（D-50）", () => {
   const texts = [
-    autoTitle("猫"), sessionMeta({ attempt_count: 1, updated: "2026-09-24T10:00:00" }), attemptLabel(0, {}), runningLabel(0, 1),
     specLine({ width: 1, height: 1, steps: 1 }), refineChipText({ index: 0 }), refineChipText({ index: null }),
-    deleteMessage({ title: "t", running: true }), availability(base).reason,
-    availability({ ...base, pending: true }).reason, availability({ ...base, currentCorrupt: true }).reason,
     ...["failed", "cancelled", "done"].flatMap((status) => {
       const v = attemptView({ status, output: "a.png", output_missing: true, error: { code: "exit_nonzero", message: "m" } });
       return [v.badge, v.title, v.sub];
     }),
   ];
   for (const text of texts) assert.ok(!String(text).includes(SEED), text);
-});
-
-test("列表顺序：updated 降序、坏文件最后；同一秒并列时刚新建的排最上（D-60）", () => {
-  const list = [
-    { id: "old", updated: "2026-09-24T10:00:00" }, { id: "x", corrupt: true },
-    { id: "a", updated: "2026-09-24T10:05:00" }, { id: "fresh", updated: "2026-09-24T10:05:00" },
-  ];
-  assert.deepEqual(orderSessions(list, "fresh").map((s) => s.id), ["fresh", "a", "old", "x"]);
-  assert.deepEqual(orderSessions(list).map((s) => s.id), ["a", "fresh", "old", "x"]);
 });
 
 

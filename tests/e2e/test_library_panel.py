@@ -35,9 +35,12 @@ def _run_music(page):
     pane = page.locator("#pane-music")
     pane.locator("[data-music-caption]").fill(MUSIC_PARAMS["caption"])
     pane.locator("[data-music-lyrics]").fill(MUSIC_PARAMS["lyrics"])
+    pane.locator("[data-music-advanced] summary").click()
     pane.locator("[data-music-duration]").fill(MUSIC_PARAMS["duration"])
-    pane.locator("[data-music-start]").click()
-    expect(pane.locator("audio[controls]")).to_be_visible()
+    start = pane.locator("[data-music-start]")
+    expect(start).to_be_enabled()
+    start.click()
+    expect(pane.locator(".attempt audio[controls]")).to_be_visible(timeout=15_000)
 
 
 def test_audio_player_matches_the_dark_palette(page, tmp_path):
@@ -48,13 +51,16 @@ def test_audio_player_matches_the_dark_palette(page, tmp_path):
         pane = page.locator("#pane-music")
         pane.locator("[data-music-caption]").fill("warm acoustic folk")
         pane.locator("[data-music-lyrics]").fill("under amber skies")
+        expect(pane.locator("[data-music-start]")).to_be_enabled()
         pane.locator("[data-music-start]").dispatch_event("click")
-        expect(pane.locator("[data-job-log]")).to_contain_text("step 1/10")
+        # 会话式音乐页：日志与播放器都在尝试卡片里（原作业区已删，M-20）。
+        card = pane.locator(".attempt").first
+        expect(card.locator(".attempt-log pre")).to_contain_text("step 1/10")
         harness.media_script.step()
-        expect(pane.locator("[data-job-log]")).to_contain_text("step 5/10")
+        expect(card.locator(".attempt-log pre")).to_contain_text("step 5/10")
         harness.media_script.step()
-        audio = pane.locator("[data-job-player] audio")
-        expect(audio).to_be_visible()
+        audio = card.locator("audio.attempt-audio")
+        expect(audio).to_be_visible(timeout=15_000)
         style = audio.evaluate(
             "el => { const s = getComputedStyle(el);"
             " return {scheme: s.colorScheme, bg: s.backgroundColor}; }"

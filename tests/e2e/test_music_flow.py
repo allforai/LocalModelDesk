@@ -18,18 +18,25 @@ def test_music_parameters_progress_and_player_src_follow_finished_output(
         expect(pane).to_be_visible()
         pane.locator("[data-music-caption]").fill("warm acoustic folk")
         pane.locator("[data-music-lyrics]").fill("under amber skies")
+        pane.locator("[data-music-advanced] summary").click()
         pane.locator("[data-music-duration]").fill("75")
-        pane.locator("[data-music-start]").dispatch_event("click")
+        start = pane.locator("[data-music-start]")
+        expect(start).to_be_enabled()
+        start.dispatch_event("click")
 
-        expect(pane.locator("[data-job-log]")).to_contain_text("step 1/10")
+        # 会话式音乐页：进度与日志在正在生成的那张卡片里（原作业区已删，M-20）。
+        card = pane.locator(".attempt").first
+        expect(card).to_have_attribute("data-attempt-status", "running")
+        expect(card.locator(".attempt-log pre")).to_contain_text("step 1/10")
         harness.media_script.step()
-        expect(pane.locator("[data-job-log]")).to_contain_text("step 5/10")
+        expect(card.locator(".attempt-log pre")).to_contain_text("step 5/10")
         harness.media_script.step()
 
         output_name = "music3-{}.wav".format(
             time.strftime("%Y%m%d-%H%M%S", time.localtime(harness.clock()))
         )
-        player = pane.locator("[data-job-player] audio")
+        expect(card).to_have_attribute("data-attempt-status", "done", timeout=15_000)
+        player = card.locator("audio.attempt-audio")
         expect(player).to_have_attribute("controls", "")
         expect(player).to_have_attribute("src", f"/api/outputs/{output_name}")
         expect(player).to_have_css("max-width", "100%")
