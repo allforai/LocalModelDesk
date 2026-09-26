@@ -57,7 +57,13 @@ def test_idle_pane_shows_the_busy_reason_while_sitting_on_that_tab(page, tmp_pat
         expect(music.locator("[data-music-start]")).to_be_enabled()
         expect(music.locator("[data-music-hint]")).to_be_hidden()
 
-        # Start the video job without ever navigating away from the music tab —
+        # 会话式视频页（V-20）在首次打开时才加载会话、「生成视频」才可用：先开一次再回到音乐页。
+        page.locator("#tabs [data-tab='video']").click()
+        expect(page.locator("#pane-video [data-video-start]")).to_be_enabled()
+        page.locator("#tabs [data-tab='music']").click()
+        expect(music.locator("[data-music-start]")).to_be_enabled()
+
+        # Start the video job without navigating away from the music tab again —
         # its own pane is `hidden` in the DOM but its start button still works.
         page.evaluate(
             "() => { document.querySelector('#pane-video [data-video-prompt]').value = 'a quiet street in rain';"
@@ -71,8 +77,9 @@ def test_disabled_reason_sits_the_same_distance_in_both_panes(page, tmp_path):
     """S2: the same disabled-reason message must sit the same distance from the
     generate button in both media panes (F7/W7).
 
-    音乐页改成会话式后（音乐会话设计 §2.1），状态提示行在输入区底部、「AI 帮写」与「高级参数」之下，
-    与图片页同构，不再与视频表单并排比较间距；这里对音乐页只断言原因写在提示行里、位于按钮下方。"""
+    音乐页、视频页都改成会话式后（音乐会话设计 §2.1、视频会话设计 V-20），状态提示行在输入区底部、
+    「AI 帮写」与「高级参数」之下，与图片页同构，不再有表单里的固定间距可比；这里对两页都只断言
+    原因写在提示行里、位于按钮下方。"""
     with launch_test_harness(tmp_path) as harness:
         page.goto(harness.base_url)
         page.locator("#tabs [data-tab='video']").click()
@@ -81,17 +88,12 @@ def test_disabled_reason_sits_the_same_distance_in_both_panes(page, tmp_path):
         video.locator("[data-video-start]").click()
         expect(video.locator("[data-video-start]")).to_be_disabled()
 
-        gaps = {}
-        for tab, button_sel, hint_sel in (
-            ("video", "[data-video-start]", "[data-video-hint]"),
-        ):
-            page.locator(f"#tabs [data-tab='{tab}']").click()
-            expect(page.locator(hint_sel)).not_to_be_empty()
-            gaps[tab] = page.evaluate(
-                "([b, h]) => { const btn = document.querySelector(b).getBoundingClientRect();"
-                " const hint = document.querySelector(h).getBoundingClientRect();"
-                " return hint.top - btn.bottom; }", [button_sel, hint_sel])
-        assert round(gaps["video"]) in (8, 12, 16), gaps
+        expect(video.locator("[data-video-hint-text]")).not_to_be_empty()
+        below_video = page.evaluate(
+            "() => { const btn = document.querySelector('[data-video-start]').getBoundingClientRect();"
+            " const hint = document.querySelector('[data-video-hint]').getBoundingClientRect();"
+            " return hint.top - btn.bottom; }")
+        assert below_video >= 0, below_video
 
         page.locator("#tabs [data-tab='music']").click()
         music = page.locator("#pane-music")

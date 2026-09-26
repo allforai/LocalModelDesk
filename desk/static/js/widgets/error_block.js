@@ -1,5 +1,5 @@
-// ui:errorBlock —— 作业失败的统一呈现：标题 + 可选「详情」折叠，两处消费者
-// （jobview.js 的作业面板、library.js 的素材库失败行）共用同一张卡片外观（F8）。
+// ui:errorBlock —— 作业失败的统一呈现：标题 + 可选「详情」折叠；会话卡片（取其「详情」折叠）
+// 与 library.js 的素材库失败行共用同一套说法（F8）。
 import { describeJobError } from "../pure/job_error.js";
 
 export function renderErrorBlock(doc, error) {

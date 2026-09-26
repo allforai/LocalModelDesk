@@ -84,7 +84,7 @@ REQUIRED_STATIC = [
     "js/main.js", "js/api.js", "js/store.js", "js/stream.js",
     "js/panes/chat.js", "js/panes/video.js", "js/panes/music.js",
     "js/panes/resources.js", "js/panes/library.js", "js/panes/firstrun.js", "js/panes/settings.js",
-    "js/widgets/statusbar.js", "js/widgets/confirm.js", "js/widgets/jobview.js",
+    "js/widgets/statusbar.js", "js/widgets/confirm.js", "js/widgets/video_session_card.js",
     "js/pure/chat_stream.js", "js/pure/model_status.js", "js/pure/desk_state.js",
     "js/pure/mem_warn.js", "js/pure/history_fill.js", "js/pure/base_url.js",
     "js/pure/sessions.js", "js/pure/format.js",

@@ -40,7 +40,7 @@ button:disabled,button[aria-disabled="true"]{opacity:.5;cursor:not-allowed;filte
 #tabs button{min-width:78px;background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0;color:var(--muted);padding:10px 12px}
 #tabs button:hover{color:var(--text)}
 #tabs button.active{color:var(--accent);background:transparent;border-bottom-color:var(--accent)}
-main > section { min-height:calc(100vh - 94px); padding:var(--margin); background:var(--bg); } #pane-chat { display:flex; gap:16px; } .sessions { width:220px; flex:none; } .sessions ul,[data-res-list],[data-lib-list] { list-style:none; padding:0; } .chat-main { flex:1; display:flex; flex-direction:column; } .model-row,.composer,.res-head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .messages { min-height:300px; overflow:auto; } .form { max-width:640px; display:flex; flex-direction:column; gap:8px; } [data-job-log] { max-height:240px; overflow:auto; white-space:pre-wrap; } [data-job-player] video,[data-job-player] audio,[data-lib-player] video { max-width:100%; }
+main > section { min-height:calc(100vh - 94px); padding:var(--margin); background:var(--bg); } #pane-chat { display:flex; gap:16px; } .sessions { width:220px; flex:none; } .sessions ul,[data-res-list],[data-lib-list] { list-style:none; padding:0; } .chat-main { flex:1; display:flex; flex-direction:column; } .model-row,.composer,.res-head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .messages { min-height:300px; overflow:auto; } [data-lib-player] video { max-width:100%; }
 #fatal { position:fixed; inset:0; z-index:40; display:grid; place-content:center; justify-items:center; gap:16px; padding:48px; background:var(--bg); } #fatal [data-fatal-text] { color:var(--danger); max-width:40em; text-align:center; margin:0; }
 body.drawer-open { overflow:hidden; }
 body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009; z-index:24; }
@@ -136,34 +136,20 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .badge-unknown{background:rgba(229,83,75,.15);color:var(--danger)}
 /* empty states (plan task 10) */
 .empty{color:var(--muted);padding:24px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius-card)}
-/* 8. media panes: form left, job right */
-#pane-video{display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:var(--margin);align-items:start}
-@media (max-width:899px){#pane-video{grid-template-columns:1fr}}
+/* 8. media panes */
 .image-params{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .image-params input{width:100%;box-sizing:border-box}
-[data-job-player] img,[data-lib-player] img{display:block;max-width:100%;max-height:70vh;object-fit:contain;border-radius:var(--radius);background:var(--panel)}
+[data-lib-player] img{display:block;max-width:100%;max-height:70vh;object-fit:contain;border-radius:var(--radius);background:var(--panel)}
 .res-sources .hint{white-space:pre-wrap;overflow-wrap:anywhere}
-.form{display:flex;flex-direction:column;gap:12px}.form label{display:grid;gap:4px;font-size:13px;color:var(--muted)}.form label>select,.form label>input{color:var(--text)}
-.job{display:flex;flex-direction:column;gap:12px}
-[data-job-progress]{width:100%;height:6px;accent-color:var(--busy)}
 .job-log pre{max-height:240px;overflow:auto;white-space:pre-wrap;font:13px ui-monospace,Menlo,monospace;color:var(--muted);margin:8px 0 0}
-[data-job-player] video,[data-job-player] audio,[data-lib-player] video,[data-lib-player] audio,.attempt-audio{max-width:100%;border-radius:var(--radius);color-scheme:dark;background:var(--panel)}
-.job-status{margin:0;font-weight:600}
-.job-status[data-state="running"]{color:var(--busy)}.job-status[data-state="done"]{color:var(--ok)}
-.job-status[data-state="error"]{color:var(--danger)}.job-status[data-state="error"]::before{content:"✕ ";}
-.job-status[data-state="done"]::before{content:"✓ ";}
-.job [data-job-cancel]{align-self:flex-start}
+[data-lib-player] video,[data-lib-player] audio,.attempt-audio,.attempt-video{max-width:100%;border-radius:var(--radius);color-scheme:dark;background:var(--panel)}
 .job-error{padding:12px;border:1px solid var(--danger);border-radius:var(--radius);background:rgba(229,83,75,.08)}
 .job-error:empty{display:none}.job-error details{margin-top:8px;color:var(--muted);font-size:13px}.job-error pre{white-space:pre-wrap;margin:4px 0 0;font:12px ui-monospace,Menlo,monospace}
 /* A hint paragraph with no text (e.g. the video pane's upload-status line while
-   idle) must not occupy a flex row — otherwise its empty box plus the form's
-   own 12px gap silently doubles the space before whatever comes after it,
-   producing three times the gap the music pane shows for the same message
-   (F7/W7). The browser's default <p> margin is dropped too, so the form's
-   flex `gap` is the single source of truth for spacing between its rows. */
+   idle) must not occupy a flex row — otherwise its empty box plus the composer's
+   own gap silently doubles the space before whatever comes after it (F7/W7). */
 .hint:empty{display:none}
-.form>p{margin:0}
-[data-job-player] audio,[data-lib-player] audio,.attempt-audio{width:100%;border:1px solid var(--border)}
+[data-lib-player] audio,.attempt-audio{width:100%;border:1px solid var(--border)}
 .file-row{display:flex;align-items:center;gap:8px}.file-pick .btn{display:inline-block;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer}
 .visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .file-row.drag-over{outline:2px dashed var(--accent);outline-offset:4px;border-radius:var(--radius)}
@@ -211,7 +197,7 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 ::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 
 /* 12. image sessions (设计 §7.1)：与 #pane-chat 同构——左栏会话列表，右侧时间线 + 底部输入区 */
-#pane-image, #pane-music{display:flex;gap:var(--margin);height:calc(100vh - 94px);min-height:0;overflow:hidden}
+#pane-image, #pane-music, #pane-video{display:flex;gap:var(--margin);height:calc(100vh - 94px);min-height:0;overflow:hidden}
 .image-main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
 .image-head,.image-timeline,.image-composer{max-width:var(--chat-col);width:calc(100% - 48px);margin:0 auto}
 .image-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;flex:none}
@@ -281,10 +267,10 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .sessions-state{padding:8px 4px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .sessions-state p{margin:0}
 /* 「新会话」按钮与第一项之间留出与列表项相同的间距（N-03） */
-#pane-image .sessions ul, #pane-music .sessions ul{margin-top:12px}
+#pane-image .sessions ul, #pane-music .sessions ul, #pane-video .sessions ul{margin-top:12px}
 /* 图片会话项：改名/删除按钮不悬停时不占宽度，标题与「生成中」标记用满整行；悬停或聚焦时按钮仍占自己的一列，不压标题（N-02） */
-.image-session .session-actions,.music-session .session-actions{display:none}
-.image-session:hover .session-actions,.image-session:focus-within .session-actions,.music-session:hover .session-actions,.music-session:focus-within .session-actions{display:flex}
+.image-session .session-actions,.music-session .session-actions,.video-session .session-actions{display:none}
+.image-session:hover .session-actions,.image-session:focus-within .session-actions,.music-session:hover .session-actions,.music-session:focus-within .session-actions,.video-session:hover .session-actions,.video-session:focus-within .session-actions{display:flex}
 /* 13. music sessions（音乐会话设计 §2）：布局与图片页同构，上面的 #pane-image 规则已同时作用于 #pane-music */
 #pane-music .image-composer>input{background:var(--panel);border-radius:16px;padding:10px 16px}
 .music-lyrics { min-height: calc(4 * 1.5em + 16px); max-height: 50vh; resize: none; field-sizing: content; }
@@ -306,3 +292,28 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .compose-bar > p { margin: 0; } .compose-bar > p:empty { display: none; }
 .compose-actions { display: flex; gap: 8px; }
 .compose-bar ol li { display: inline-flex; align-items: center; gap: 2px; }
+/* 14. video sessions（视频会话设计 §3）：布局与图片、音乐页同构，上面的 #pane-image 规则已同时作用于 #pane-video */
+.video-prompt { min-height: calc(3 * 1.5em + 16px); max-height: 40vh; resize: none; field-sizing: content; }
+.attempt-video { width: 100%; max-height: 50vh; background: #000; }
+.video-mode { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.video-mode select { color: var(--text); }
+.video-assets { display: flex; flex-direction: column; gap: 6px; }
+.video-assets > p { margin: 0; }
+.video-assets .file-row { flex-wrap: wrap; }
+/* 续写时首帧、尾帧的上传入口禁用：隐藏的 file input 禁用了，外面那层按钮样子也要跟着变灰 */
+.file-pick:has(input:disabled) .btn { opacity: .5; cursor: not-allowed; }
+.video-preview:empty { display: none; }
+.video-preview-media { display: block; max-width: 100%; max-height: 160px; border-radius: var(--radius); }
+.attempt-first-frame { margin: 0; }
+.image-advanced .video-audio { display: flex; align-items: center; gap: 8px; margin-top: 8px; color: var(--text); }
+.video-audio input { width: auto; margin: 0; accent-color: var(--accent); }
+/* 从图片会话选首帧（V-23）：左栏会话列表、右侧缩略图网格，高度超出时各自滚动 */
+.image-picker { max-width: 760px; }
+.image-picker-body { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); gap: 12px; max-height: 70vh; margin: 0 0 16px; }
+.image-picker-sessions { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.image-picker-session { width: 100%; text-align: left; overflow-wrap: anywhere; }
+.image-picker-session.selected { border-color: var(--accent); color: var(--accent); }
+.image-picker-grid { overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; align-content: start; }
+.image-picker-thumb { width: 100%; height: auto; aspect-ratio: 1; padding: 0; border: 1px solid var(--border); background: var(--bg); cursor: pointer; }
+.image-picker-thumb:hover, .image-picker-thumb:focus-visible { border-color: var(--accent); }
+.image-picker-empty { grid-column: 1 / -1; margin: 0; }

@@ -58,7 +58,7 @@ export function attemptLabel(index, attempt) {
   return [`第 ${index + 1} 次`, clock(attempt?.ts)].filter(Boolean).join(" · ");
 }
 
-// D-81：running 卡片的标题行，沿用 jobview 的 formatDuration 文案。
+// D-81：running 卡片的标题行，已用时长用 formatDuration 的文案。
 export function runningLabel(index, elapsedSeconds) {
   const elapsed = Number.isFinite(elapsedSeconds) ? `（已用 ${formatDuration(elapsedSeconds)}）` : "";
   return `第 ${index + 1} 次 · 生成中…${elapsed}`;

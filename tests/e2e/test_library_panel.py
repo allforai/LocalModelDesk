@@ -23,11 +23,15 @@ def _run_video(page):
     page.locator("#tabs [data-tab='video']").click()
     pane = page.locator("#pane-video")
     pane.locator("[data-video-prompt]").fill(VIDEO_PARAMS["prompt"])
+    # 会话式视频页（V-21）：画幅、时长、步数收在「高级参数」里；成品是尝试卡片里的 <video>。
+    pane.locator("[data-video-advanced] summary").click()
     pane.locator("[data-video-size]").select_option(VIDEO_PARAMS["size"])
     pane.locator("[data-video-frames]").select_option(VIDEO_PARAMS["frames"])
     pane.locator("[data-video-steps]").fill(VIDEO_PARAMS["steps"])
-    pane.locator("[data-video-start]").click()
-    expect(pane.locator("video[controls]")).to_be_visible()
+    start = pane.locator("[data-video-start]")
+    expect(start).to_be_enabled()
+    start.click()
+    expect(pane.locator(".attempt video.attempt-video[controls]")).to_be_visible(timeout=15_000)
 
 
 def _run_music(page):

@@ -54,7 +54,7 @@ test("会话列表文案：标题、N 次生成 · HH:MM、坏文件（D-77、§
   assert.equal(sessionMeta({ id: "x", corrupt: true }), "文件已损坏");
 });
 
-test("卡片标题行：第 N 次 · HH:MM；生成中沿用 jobview 时长文案（D-73、D-81）", () => {
+test("卡片标题行：第 N 次 · HH:MM；生成中带已用时长（D-73、D-81）", () => {
   assert.equal(attemptLabel(0, { ts: "2026-09-24T14:02:11" }), "第 1 次 · 14:02");
   assert.equal(runningLabel(1, 80), "第 2 次 · 生成中…（已用 1分20秒）");
   assert.equal(runningLabel(2, undefined), "第 3 次 · 生成中…");
