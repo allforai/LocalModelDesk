@@ -16,6 +16,9 @@ import {
 // 提示词框默认 3 行；内容多时长高到 40vh，失焦且不超 3 行时回落（V-21）。
 const PROMPT_ROWS = 3;
 const MAX_UPLOAD = 32 * 1024 * 1024;
+// 回填时只知道之前上传的素材 id，不知道原文件名：不把 id 露给用户。
+const EARLIER_IMAGE = "之前上传的图片";
+const EARLIER_VIDEO = "之前上传的视频";
 const SEGMENT_ERRORS = new Set(["segment_missing", "segment_not_found"]);
 const PLACEHOLDERS = {
   text: "视频提示词（含环境声描述）",
@@ -389,8 +392,8 @@ export function createVideoPane(root, ctx = {}) {
     if (fields.steps != null) els.steps.value = String(fields.steps);
     els.seed.value = fields.seed == null ? "" : String(fields.seed);
     if (els.audio) els.audio.checked = fields.useAudio !== false;
-    setLast(fields.last ? { id: fields.last, name: fields.last } : null);
-    setRefVideo(fields.refVideo ? { id: fields.refVideo, name: fields.refVideo } : null);
+    setLast(fields.last ? { id: fields.last, name: EARLIER_IMAGE } : null);
+    setRefVideo(fields.refVideo ? { id: fields.refVideo, name: EARLIER_VIDEO } : null);
     setFirst(nextFirst);
     ref = fields.seed == null && nextFirst?.type !== "continue" ? null : nextRef;
     updateCost();
@@ -402,7 +405,7 @@ export function createVideoPane(root, ctx = {}) {
   function firstFromSource(source) {
     if (source?.type === "continue") return { type: "continue", attemptId: source.attemptId, index: position(source.attemptId) };
     if (source?.type === "ref") return { type: "ref", ref: source.ref };
-    if (source?.type === "upload") return { type: "upload", id: source.id, name: source.id };
+    if (source?.type === "upload") return { type: "upload", id: source.id, name: EARLIER_IMAGE };
     return null;
   }
 
@@ -443,7 +446,7 @@ export function createVideoPane(root, ctx = {}) {
     const size = fields.width && fields.height ? `${fields.width}x${fields.height}` : null;
     const imageRef = fields.refs?.first_frame;
     const nextFirst = imageRef ? { type: "ref", ref: imageRef }
-      : fields.first_frame ? { type: "upload", id: fields.first_frame, name: fields.first_frame } : null;
+      : fields.first_frame ? { type: "upload", id: fields.first_frame, name: EARLIER_IMAGE } : null;
     const seed = Number.isInteger(fields.seed) ? fields.seed : null;
     prefill({
       mode: fields.mode ?? "text", prompt: fields.prompt ?? "", size, frames: fields.frames, steps: fields.steps, seed,

@@ -297,13 +297,17 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .attempt-video { width: 100%; max-height: 50vh; background: #000; }
 .video-mode { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
 .video-mode select { color: var(--text); }
-.video-assets { display: flex; flex-direction: column; gap: 6px; }
-.video-assets > p { margin: 0; }
+/* 素材行：按钮、说明与小图预览排成一行（放不下再换行），说明文字独占一行 */
+.video-assets { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.video-assets > p { margin: 0; flex-basis: 100%; }
 .video-assets .file-row { flex-wrap: wrap; }
 /* 续写时首帧、尾帧的上传入口禁用：隐藏的 file input 禁用了，外面那层按钮样子也要跟着变灰 */
 .file-pick:has(input:disabled) .btn { opacity: .5; cursor: not-allowed; }
 .video-preview:empty { display: none; }
-.video-preview-media { display: block; max-width: 100%; max-height: 160px; border-radius: var(--radius); }
+.video-preview-media { display: block; max-width: 100%; border-radius: var(--radius); object-fit: contain; }
+/* 输入区里的首帧、尾帧只是小图提示，不挤掉时间线（900×700 下时间线仍有可用高度） */
+img.video-preview-media { height: 64px; width: auto; }
+video.video-preview-media { max-height: 96px; }
 .attempt-first-frame { margin: 0; }
 .image-advanced .video-audio { display: flex; align-items: center; gap: 8px; margin-top: 8px; color: var(--text); }
 .video-audio input { width: auto; margin: 0; accent-color: var(--accent); }

@@ -77,9 +77,10 @@ def test_disabled_reason_sits_the_same_distance_in_both_panes(page, tmp_path):
     """S2: the same disabled-reason message must sit the same distance from the
     generate button in both media panes (F7/W7).
 
-    音乐页、视频页都改成会话式后（音乐会话设计 §2.1、视频会话设计 V-20），状态提示行在输入区底部、
-    「AI 帮写」与「高级参数」之下，与图片页同构，不再有表单里的固定间距可比；这里对两页都只断言
-    原因写在提示行里、位于按钮下方。"""
+    音乐页、视频页都改成会话式后（音乐会话设计 §2.1、视频会话设计 V-20），两页输入区同构：
+    按钮下面依次是「AI 帮写」、折叠的「高级参数」、状态提示行。所以提示行都在按钮下方，且两页的距离相同。"""
+    below = "([b, h]) => { const btn = document.querySelector(b).getBoundingClientRect();" \
+            " const hint = document.querySelector(h).getBoundingClientRect(); return hint.top - btn.bottom; }"
     with launch_test_harness(tmp_path) as harness:
         page.goto(harness.base_url)
         page.locator("#tabs [data-tab='video']").click()
@@ -87,23 +88,17 @@ def test_disabled_reason_sits_the_same_distance_in_both_panes(page, tmp_path):
         video.locator("[data-video-prompt]").fill("a quiet street in rain")
         video.locator("[data-video-start]").click()
         expect(video.locator("[data-video-start]")).to_be_disabled()
-
         expect(video.locator("[data-video-hint-text]")).not_to_be_empty()
-        below_video = page.evaluate(
-            "() => { const btn = document.querySelector('[data-video-start]').getBoundingClientRect();"
-            " const hint = document.querySelector('[data-video-hint]').getBoundingClientRect();"
-            " return hint.top - btn.bottom; }")
-        assert below_video >= 0, below_video
+        below_video = page.evaluate(below, ["[data-video-start]", "[data-video-hint]"])
 
         page.locator("#tabs [data-tab='music']").click()
         music = page.locator("#pane-music")
         expect(music.locator("[data-music-start]")).to_be_disabled()
         expect(music.locator("[data-music-hint-text]")).to_contain_text("媒体作业进行中")
-        below = page.evaluate(
-            "() => { const btn = document.querySelector('[data-music-start]').getBoundingClientRect();"
-            " const hint = document.querySelector('[data-music-hint]').getBoundingClientRect();"
-            " return hint.top - btn.bottom; }")
-        assert below >= 0, below
+        below_music = page.evaluate(below, ["[data-music-start]", "[data-music-hint]"])
+
+        assert below_video >= 0 and below_music >= 0, (below_video, below_music)
+        assert abs(below_video - below_music) <= 1, (below_video, below_music)
 
 
 def test_a_chat_model_can_be_loaded_while_a_media_job_runs(page, tmp_path):

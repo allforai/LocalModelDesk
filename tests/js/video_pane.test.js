@@ -415,3 +415,56 @@ test("主流程文字不含「种子」", async () => {
     assert.ok(!mainFlowText(root, /video-advanced|attempt-advanced/).includes("种子"));
   });
 });
+
+test("回填之前上传的素材：说明写「之前上传的…」，不露出素材 id", async () => {
+  await withBackend("video", async (backend) => {
+    backend.addSession("片", [done("a1", { params: { ...done("a1").params, mode: "image", use_audio: true,
+      first_frame: "f00d.png", last_frame: "beef.png" } }), done("a2", { params: { ...done("a2").params, mode: "reference",
+      use_audio: false, ref_video: "cafe.mp4" } })]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await cards(parts)[0].click();
+    await button(cards(parts)[0], "在这段基础上改").click();
+    assert.equal(parts["first-label"].textContent, "已选择：之前上传的图片");
+    assert.equal(parts["last-label"].textContent, "已选择：之前上传的图片");
+    await parts.start.click();
+    assert.equal(videoCalls(backend)[0].body.first_frame, "f00d.png");
+    assert.equal(videoCalls(backend)[0].body.last_frame, "beef.png");
+    assert.equal(uploadCalls(backend).length, 0);
+    await pane.refresh();
+    await cards(parts)[1].click();
+    await button(cards(parts)[1], "在这段基础上改").click();
+    assert.equal(parts["source-label"].textContent, "已选择：之前上传的视频");
+    assert.equal(parts.audio.checked, false);
+  });
+});
+
+test("内存可能不足：确认后带 force 重发；取消则不再发请求", async () => {
+  for (const answer of [true, false]) {
+    await withBackend("video", async (backend) => {
+      const asked = [];
+      const { parts, pane, ready } = makeVideoPane({ confirm: async (_doc, options) => { asked.push(options); return answer; } }); ready();
+      await pane.refresh();
+      backend.startResult = (body) => (body.force
+        ? { ok: true, status: 200, json: async () => ({ job_id: 9, kind: "video", status: "running", session_id: body.session_id, attempt_id: "a9", log: "" }) }
+        : { ok: false, status: 409, statusText: "", json: async () => ({ error: { code: "insufficient_memory", message: "内存可能不够" } }) });
+      parts.prompt.value = "海边";
+      await parts.start.click();
+      await flush();
+      assert.equal(asked.length, 1);
+      assert.equal(asked[0].message, "内存可能不够");
+      assert.equal(asked[0].confirmLabel, "仍要生成");
+      const calls = videoCalls(backend);
+      if (answer) {
+        assert.equal(calls.length, 2);
+        assert.equal(calls[1].body.force, true);
+        assert.equal(calls[1].body.prompt, "海边");
+        assert.equal(parts.error.textContent, "");
+      } else {
+        assert.equal(calls.length, 1, "取消后不再发第二次");
+        assert.equal("force" in calls[0].body, false);
+        assert.equal(parts.error.textContent, "");
+      }
+    });
+  }
+});
