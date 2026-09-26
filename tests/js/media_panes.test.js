@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createVideoPane } from "../../desk/static/js/panes/video.js";
-import { createMusicPane } from "../../desk/static/js/panes/music.js";
 
 class Element {
   constructor(value = "", tagName = "div") {
@@ -19,7 +18,7 @@ class Element {
 
 function pane(values) {
   const parts = Object.fromEntries(Object.entries(values).map(([name, value]) => [name, new Element(value)]));
-  for (const name of ["job-status", "job-cancel", "job-log", "job-progress", "job-player", "job-error", "job-log-details", "video-error", "music-error", "video-hint", "music-hint", "video-first-name", "video-last-name", "video-source-name", "video-size", "video-frames"]) parts[name] ??= new Element();
+  for (const name of ["job-status", "job-cancel", "job-log", "job-progress", "job-player", "job-error", "job-log-details", "video-error", "video-hint", "video-first-name", "video-last-name", "video-source-name", "video-size", "video-frames"]) parts[name] ??= new Element();
   const doc = { createElement: (tag) => new Element("", tag) };
   return { parts, ownerDocument: doc, querySelector(selector) {
     if (selector === ".job-log") return parts["job-log-details"];
@@ -32,33 +31,26 @@ function withFetch(responses, run) {
   return Promise.resolve(run(calls)).finally(() => { globalThis.fetch = previous; });
 }
 
-// 图片页已改为会话式界面（设计 2026-09-24-image-sessions），它的面板测试在 image_pane.test.js。
+// 图片页、音乐页已改为会话式界面，它们的面板测试在 image_pane.test.js、music_pane.test.js。
 
-test("video/music panes use documented DOM selectors, submit media APIs, and fill saved fields", async () => {
+test("video pane uses documented DOM selectors, submit media APIs, and fill saved fields", async () => {
   const video = pane({ "video-prompt": "海边", "video-size": "768x448", "video-frames": "49", "video-steps": "16", "video-start": "" });
-  const music = pane({ "music-caption": "民谣", "music-lyrics": "一二三", "music-duration": "90", "music-start": "" });
   const started = [];
   const videoPane = createVideoPane(video, { onStarted: (job) => started.push(job) });
-  const musicPane = createMusicPane(music, { onStarted: (job) => started.push(job) });
   assert.deepEqual(video.parts["video-size"].children.map((option) => option.value), ["512x288", "768x448", "1024x576"]);
   assert.deepEqual(video.parts["video-frames"].children.map((option) => option.textContent), ["约 2 秒（快速）", "约 3 秒", "约 5 秒（常用）", "约 8 秒", "约 10 秒", "约 15 秒（最长）"]);
   videoPane.fill({ prompt: "夜景", width: 1024, height: 576, frames: 57, steps: 20 });
-  musicPane.fill({ caption: "爵士", lyrics: "la", duration: 75 });
   assert.equal(video.parts["video-size"].value, "1024x576");
-  assert.equal(music.parts["music-duration"].value, "75");
-  await withFetch([{ job_id: 7, status: "running", kind: "video", log: "started" }, { job_id: 8, status: "done", kind: "music", output: "song.wav" }], async (calls) => {
-    await video.parts["video-start"].click(); await music.parts["music-start"].click();
+  await withFetch([{ job_id: 7, status: "running", kind: "video", log: "started" }], async (calls) => {
+    await video.parts["video-start"].click();
     assert.deepEqual(calls.map(({ url, options }) => [url, JSON.parse(options.body)]), [
       ["/api/media/video", { prompt: "夜景", width: 1024, height: 576, frames: 49, steps: 20 }],
-      ["/api/media/music", { caption: "爵士", lyrics: "la", duration: 75 }],
     ]);
   });
   assert.equal(video.parts["job-status"].textContent, "生成中…");
   assert.equal(video.parts["job-cancel"].hidden, false);
   assert.equal(video.parts["job-log"].textContent, "started");
-  assert.equal(music.parts["job-player"].firstChild.tagName, "audio");
-  assert.equal(music.parts["job-player"].firstChild.src, "/api/outputs/song.wav");
-  assert.deepEqual(started.map(({ job_id }) => job_id), [7, 8]);
+  assert.deepEqual(started.map(({ job_id }) => job_id), [7]);
 });
 
 test("jobview appends polling logs, shows failures, and cancels through documented controls", async () => {
@@ -74,90 +66,39 @@ test("jobview appends polling logs, shows failures, and cancels through document
   assert.equal(video.parts["job-status"].textContent, "已取消");
 });
 
-test("a finished job from another pane does not masquerade as this pane's state (F14)", () => {
-  const music = pane({ "music-caption": "x", "music-lyrics": "y", "music-duration": "30", "music-start": "" });
-  const musicPane = createMusicPane(music);
-  musicPane.jobView.apply({ job_id: 3, status: "done", kind: "video", started_at: 1, finished_at: 31 });
-  assert.ok(music.parts["job-status"].textContent.includes("空闲"), music.parts["job-status"].textContent);
-});
-
-test("视频/音乐面板各有看手气与优化提示词，写回各自的输入框", async () => {
+test("视频面板有看手气与优化提示词，写回输入框", async () => {
   const video = pane({ "video-prompt": "", "video-size": "768x448", "video-frames": "49", "video-steps": "16", "video-start": "", "video-assist": "" });
-  const music = pane({ "music-caption": "民谣", "music-lyrics": "", "music-duration": "60", "music-start": "", "music-assist": "" });
   const videoPane = createVideoPane(video);
-  const musicPane = createMusicPane(music);
   const videoButtons = video.parts["video-assist"].children;
-  const musicButtons = music.parts["music-assist"].children;
   assert.deepEqual(videoButtons.slice(0, 3).map((b) => b.textContent), ["看手气", "优化提示词", "恢复原文"]);
-  assert.deepEqual(musicButtons.slice(0, 2).map((b) => b.textContent), ["看手气", "优化提示词"]);
 
   videoPane.setAssistAvailable(true, "");
-  musicPane.setAssistAvailable(true, "");
   const previous = globalThis.fetch;
-  const replies = [{ task: "video", action: "lucky", text: "雨夜街角" }, { task: "music", action: "refine", text: "木吉他民谣", lyrics: "第一行" }];
+  const replies = [{ task: "video", action: "lucky", text: "雨夜街角" }];
   globalThis.fetch = async () => new Response(JSON.stringify(replies.shift()), { status: 200 });
   try {
     await videoButtons[0].click();
-    await musicButtons[1].click();
   } finally { globalThis.fetch = previous; }
   assert.equal(video.parts["video-prompt"].value, "雨夜街角");
-  assert.equal(music.parts["music-caption"].value, "木吉他民谣");
-  assert.equal(music.parts["music-lyrics"].value, "第一行");
-});
-
-test("busy reason replaces the idle hint instead of a stale finished-job caption (F14)", () => {
-  const music = pane({ "music-caption": "x", "music-lyrics": "y", "music-duration": "30", "music-start": "" });
-  const musicPane = createMusicPane(music);
-  musicPane.jobView.apply({ job_id: null, status: "idle", kind: null }, { busyReason: "媒体作业进行中" });
-  const text = music.parts["job-status"].textContent;
-  assert.ok(text.includes("媒体作业进行中"), text);
-  assert.ok(!text.includes("填好左侧参数"), "忙态还挂着空闲引导句");
-});
-
-test("setBusyReason updates an idle pane in place, but never a running/done one (F14)", () => {
-  const music = pane({ "music-caption": "x", "music-lyrics": "y", "music-duration": "30", "music-start": "" });
-  const musicPane = createMusicPane(music);
-  musicPane.jobView.setBusyReason("媒体作业进行中");
-  assert.ok(music.parts["job-status"].textContent.includes("媒体作业进行中"), music.parts["job-status"].textContent);
-
-  musicPane.jobView.apply({ job_id: 9, status: "done", kind: "music", started_at: 1, finished_at: 5 });
-  musicPane.jobView.setBusyReason("媒体作业进行中");
-  assert.ok(!music.parts["job-status"].textContent.includes("媒体作业进行中"), "已完成的状态被忙态覆盖了");
-});
-
-test("setBusyReason still applies after a sync() against the backend's never-started sentinel (job_id 0)", () => {
-  const music = pane({ "music-caption": "x", "music-lyrics": "y", "music-duration": "30", "music-start": "" });
-  const musicPane = createMusicPane(music);
-  // The real backend's idle sentinel is job_id 0, not null — a naive `!= null`
-  // guard would treat that as "a job exists" and never let the reason through.
-  musicPane.jobView.apply({ job_id: 0, status: "idle", kind: null, log: "" });
-  musicPane.jobView.setBusyReason("媒体作业进行中");
-  assert.ok(music.parts["job-status"].textContent.includes("媒体作业进行中"), music.parts["job-status"].textContent);
 });
 
 test("job views do not create independent polling timers and still apply shell-delivered job updates", async () => {
   const video = pane({ "video-prompt": "海浪", "video-size": "512x288", "video-frames": "25", "video-steps": "8", "video-start": "" });
-  const music = pane({ "music-caption": "轻快", "music-lyrics": "la", "music-duration": "30", "music-start": "" });
   const videoPane = createVideoPane(video);
-  const musicPane = createMusicPane(music);
   const previousSetInterval = globalThis.setInterval;
   let intervals = 0;
   globalThis.setInterval = () => { intervals += 1; return intervals; };
   try {
-    await withFetch([{ job_id: 12, status: "running", kind: "video", log: "one" }, { job_id: 13, status: "running", kind: "music", log: "three" }], async () => {
+    await withFetch([{ job_id: 12, status: "running", kind: "video", log: "one" }], async () => {
       await video.parts["video-start"].click();
-      await music.parts["music-start"].click();
     });
   } finally {
     globalThis.setInterval = previousSetInterval;
   }
   assert.equal(intervals, 0);
   videoPane.jobView.apply({ job_id: 12, status: "done", kind: "video", log: "two", output: "clip.mp4" });
-  musicPane.jobView.apply({ job_id: 13, status: "done", kind: "music", log: "four", output: "song.wav" });
   assert.equal(video.parts["job-log"].textContent, "onetwo");
   assert.equal(video.parts["job-player"].firstChild.tagName, "video");
-  assert.equal(music.parts["job-log"].textContent, "threefour");
-  assert.equal(music.parts["job-player"].firstChild.tagName, "audio");
 });
 
 test("内存不足被拒时先确认再以 force 重提", async () => {
@@ -178,25 +119,6 @@ test("内存不足被拒时先确认再以 force 重提", async () => {
   } finally { globalThis.fetch = previous; delete globalThis.__confirmForTest; }
 });
 
-test("音乐面板空歌词时本地拦截并提示", async () => {
-  const music = pane({ "music-caption": "民谣", "music-lyrics": "", "music-duration": "10", "music-start": "" });
-  const previous = globalThis.fetch; let calls = 0;
-  globalThis.fetch = async () => { calls += 1; return { ok: true, json: async () => ({}) }; };
-  try {
-    createMusicPane(music, {});
-    await music.parts["music-start"].click();
-    assert.equal(calls, 0);
-    assert.equal(music.parts["music-error"].textContent, "请填写歌词：Music 3 需要歌词才能生成");
-  } finally { globalThis.fetch = previous; }
-});
-
-test("音乐面板：风格描述留空时前端直接提示，不发请求", async () => {
-  const music = pane({ "music-caption": "   ", "music-lyrics": "一二三", "music-duration": "10", "music-start": "" });
-  createMusicPane(music, {});
-  await withFetch([], async (calls) => { await music.parts["music-start"].click(); assert.equal(calls.length, 0); });
-  assert.equal(music.parts["music-error"].textContent, "请填写风格描述");
-});
-
 test("回到面板时 sync 会补画已完成作业的播放器，并显示已用时长", async () => {
   const video = pane({ "video-prompt": "", "video-size": "512x288", "video-frames": "49", "video-steps": "16", "video-start": "" });
   const p = createVideoPane(video, {});
@@ -208,19 +130,13 @@ test("回到面板时 sync 会补画已完成作业的播放器，并显示已�
 
 test("媒体面板在其他重作业运行时禁用开始按钮，并在结束后恢复", () => {
   const video = pane({ "video-prompt": "海浪", "video-size": "512x288", "video-frames": "25", "video-steps": "8", "video-start": "" });
-  const music = pane({ "music-caption": "轻快", "music-lyrics": "la", "music-duration": "30", "music-start": "" });
   const videoPane = createVideoPane(video);
-  const musicPane = createMusicPane(music);
   videoPane.setHeavyAllowed(false, "媒体作业进行中");
-  musicPane.setHeavyAllowed(false, "媒体作业进行中");
   assert.equal(video.parts["video-start"].disabled, true);
-  assert.equal(music.parts["music-start"].disabled, true);
   assert.equal(video.parts["video-hint"].textContent, "媒体作业进行中");
   assert.equal(video.parts["video-error"].textContent, "");
   videoPane.setHeavyAllowed(true);
-  musicPane.setHeavyAllowed(true);
   assert.equal(video.parts["video-start"].disabled, false);
-  assert.equal(music.parts["music-start"].disabled, false);
 });
 
 test("idle 状态文案给出下一步", () => {
@@ -272,17 +188,6 @@ test("error 态：错误块先于日志、日志不自动展开、状态行带 d
   assert.equal(video.parts["job-status"].dataset.state, "error");
   assert.equal(video.parts["job-log-details"].open, false);
   assert.equal(video.parts["job-error"].children[0].textContent, "生成程序异常退出");
-});
-
-test("running 且日志无 step 行时进度条为不定态（F7/N3）", () => {
-  const music = pane({ "music-caption": "民谣", "music-lyrics": "一二三", "music-duration": "10", "music-start": "" });
-  const view = createMusicPane(music, {}).jobView;
-  view.apply({ job_id: 6, status: "running", kind: "music", log: "loading model\n", elapsed_s: 4 });
-  assert.equal(music.parts["job-progress"].hidden, false);
-  assert.equal(music.parts["job-progress"].indeterminate, true);
-  view.apply({ job_id: 6, status: "running", kind: "music", log: "step 2/8\n", elapsed_s: 9 });
-  assert.equal(music.parts["job-progress"].indeterminate, false);
-  assert.equal(music.parts["job-progress"].value, 25);
 });
 
 test("清晰画幅加 10 秒以上时视频面板提示很慢，改小后提示消失", () => {
