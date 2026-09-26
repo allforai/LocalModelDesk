@@ -1,7 +1,7 @@
 // 图片页左栏的会话列表项（设计 D-77、§7.2、D-89、D-90），与聊天页 renderSessionList 同构：
 // card session 卡片、右侧图标按钮列、当前项 aria-current。只画 DOM，动作交回面板。
 import { addIcon } from "../icons.js";
-import { sessionMeta, sessionTitle } from "../pure/image_session.js";
+import { sessionMeta, sessionTitle } from "../pure/media_session.js";
 
 export function renderSessionItem(doc, summary, { current, onSelect, onRename, onDelete }) {
   const title = sessionTitle(summary);

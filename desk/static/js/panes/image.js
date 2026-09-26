@@ -7,10 +7,13 @@ import { renderAttemptCard } from "../widgets/image_session_card.js";
 import { beginRenameItem, renderSessionItem } from "../widgets/image_session_list.js";
 import { parseStepProgress } from "../pure/job_progress.js";
 import {
-  availability, deleteMessage, orderSessions, pickCurrent, randomSeed, readImageParams, recomposeParams,
-  refineChipText, refineChipVisible, refineFields, runningLabel, sessionTitle, startErrorText,
+  readImageParams, recomposeParams,
+  refineChipText, refineChipVisible, refineFields,
   hasImage, submitBase, baseLabel, NO_IMAGE_REASON,
 } from "../pure/image_session.js";
+import {
+  availability, deleteMessage, orderSessions, pickCurrent, randomSeed, runningLabel, sessionTitle, startErrorText,
+} from "../pure/media_session.js";
 
 export function createImagePane(root, ctx = {}) {
   const KIND = "image";
@@ -46,7 +49,7 @@ export function createImagePane(root, ctx = {}) {
     return availability({
       pending, listState, currentId, currentCorrupt, current, job, sessions,
       allowed, busyReason, runtimeReason, modelReason,
-    });
+    }, { noun: "图片" });
   }
   function updateAvailability() {
     const state = currentAvailability();
@@ -132,7 +135,7 @@ export function createImagePane(root, ctx = {}) {
   }
 
   async function removeSession(summary) {
-    const go = await confirm(doc, { title: "删除会话", message: deleteMessage(summary), confirmLabel: "删除" });
+    const go = await confirm(doc, { title: "删除会话", message: deleteMessage(summary, { noun: "图片" }), confirmLabel: "删除" });
     if (!go) return;
     try {
       await api.deleteMediaSession(KIND, summary.id);
