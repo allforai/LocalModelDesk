@@ -76,7 +76,7 @@ function player(doc, attempt, { serveOutput, onBroken }) {
 // secondary 是「换个版本」按钮与其下方原因行（由面板按生成可用性更新，与图片页「换个构图」同一机制）。
 export function renderMusicCard(doc, opts) {
   const { attempt, index, attempts, selected, broken = false, serveOutput, picking = false, pickIndex = -1 } = opts;
-  const view = attemptView(attempt, { broken, noun: "音频" });
+  const view = attemptView(attempt, { broken, noun: "音频", icon: "music" });
   const running = view.kind === "running";
   const expanded = running || selected;
   const compose = isCompose(attempt);

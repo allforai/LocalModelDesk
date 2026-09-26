@@ -80,7 +80,11 @@ export function versionParams(attempt, sessionId, draw = randomSeed) {
   let seed = draw();
   while (seed === p.seed) seed = draw();
   const base = { session_id: sessionId, prompt: p.prompt, width: p.width, height: p.height, frames: p.frames, steps: p.steps, seed };
-  if (attempt?.continues) return { ...base, continues: attempt.continues };
+  if (attempt?.continues) {
+    const continued = { ...base, continues: attempt.continues };
+    if (typeof p.use_audio === "boolean") continued.use_audio = p.use_audio;
+    return continued;
+  }
   const params = { ...base };
   if (typeof p.mode === "string" && p.mode !== "text") params.mode = p.mode;
   if (typeof p.use_audio === "boolean") params.use_audio = p.use_audio;

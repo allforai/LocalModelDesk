@@ -81,7 +81,7 @@ function player(doc, attempt, { serveOutput, onBroken }) {
 // firstFrameText(attempt)：首帧来自图片会话时的说明文字，由面板按已加载的图片会话算好。
 export function renderVideoCard(doc, opts) {
   const { attempt, index, attempts, selected, broken = false, serveOutput, picking = false, pickIndex = -1 } = opts;
-  const view = attemptView(attempt, { broken, noun: "视频" });
+  const view = attemptView(attempt, { broken, noun: "视频", icon: "video" });
   const running = view.kind === "running";
   const expanded = running || selected;
   const compose = isCompose(attempt);

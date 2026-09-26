@@ -140,3 +140,10 @@ test("attemptView names the missing file by noun", () => {
   assert.equal(attemptView(gone, { noun: "音频" }).badge, "音频文件已不在");
   assert.equal(attemptView(gone, { noun: "视频" }).title, "视频文件已不在");
 });
+
+test("attemptView 的 missing 图标默认 image，可由调用方按媒体种类覆盖", () => {
+  const gone = { status: "done", output: "x", output_missing: true };
+  assert.equal(attemptView(gone).icon, "image");
+  assert.equal(attemptView(gone, { noun: "音频", icon: "music" }).icon, "music");
+  assert.equal(attemptView(gone, { noun: "视频", icon: "video" }).icon, "video");
+});

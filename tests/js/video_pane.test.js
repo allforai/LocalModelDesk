@@ -342,6 +342,7 @@ test("合成尝试只有「接着往下生」；没生成好的尝试不能接�
     await cards(parts)[0].click();
     await find(cards(parts)[0], (n) => n.tagName === "video").dispatch("error");
     assert.match(cards(parts)[0].textContent, /视频文件已不在/);
+    assert.ok(find(cards(parts)[0], (n) => n.classList?.contains?.("icon-video")), "文件不在的视频卡片应显示视频图标而非图片图标");
   });
 });
 

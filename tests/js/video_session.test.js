@@ -38,6 +38,15 @@ test("versionParams keeps assets, refs and continues with a new seed", () => {
   assert.equal(p.continues, "a"); assert.equal("first_frame" in p, false); assert.equal("mode" in p, false);   // 续写由后端决定首帧与方式
 });
 
+test("versionParams 续写段换版本保留 use_audio（未勾选不能被后端默认值带回来）", () => {
+  const off = T("c", { continues: "a", params: { ...T("c").params, mode: "image", first_frame: "x.png", use_audio: false } });
+  assert.equal(v.versionParams(off, "s1", () => 1).use_audio, false);
+  const on = T("c", { continues: "a", params: { ...T("c").params, mode: "image", first_frame: "x.png", use_audio: true } });
+  assert.equal(v.versionParams(on, "s1", () => 1).use_audio, true);
+  const absent = T("c", { continues: "a", params: { ...T("c").params, mode: "image", first_frame: "x.png" } });
+  assert.equal("use_audio" in v.versionParams(absent, "s1", () => 1), false);
+});
+
 test("next segment keeps size/frames/steps; compose keeps current", () => {
   assert.deepEqual(v.nextFields(T("a"), { size: "1024x576", frames: 49, steps: 20 }), { size: "512x288", frames: 73, steps: 16 });
   assert.deepEqual(v.nextFields({ id: "c", status: "done", output: "c.mp4", op: "compose", params: { parts: ["a", "b"] } }, { size: "1024x576", frames: 49, steps: 20 }),

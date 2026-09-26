@@ -11,15 +11,15 @@ export const SEED_MAX = 4294967295;
 // 卡片状态 → {kind, badge, title, sub, icon, tone}（D-73、D-84、D-85；V-10）。
 // kind ∈ running | done | failed | cancelled | missing；missing 是 done 但文件不在
 // （后端 output_missing，或前端加载触发 error 后由调用方传 broken=true）。noun 决定缺文件文案，
-// 各媒体页传自己的名词（图片、音频、视频…），默认「图片」。
-export function attemptView(attempt, { broken = false, noun = "图片" } = {}) {
+// 各媒体页传自己的名词（图片、音频、视频…），默认「图片」；icon 同理决定缺文件图标，默认「image」。
+export function attemptView(attempt, { broken = false, noun = "图片", icon = "image" } = {}) {
   const status = attempt?.status;
   if (status === "running") return { kind: "running", badge: "生成中", title: "", sub: "", icon: null, tone: "busy" };
   if (status === "done" && !attempt.output_missing && !broken && attempt.output)
     return { kind: "done", badge: "", title: "", sub: "", icon: null, tone: "" };
   if (status === "done") {
     const text = `${noun}文件已不在`;
-    return { kind: "missing", badge: text, title: text, sub: "可能已在访达中移动或删除", icon: "image", tone: "muted" };
+    return { kind: "missing", badge: text, title: text, sub: "可能已在访达中移动或删除", icon, tone: "muted" };
   }
   if (status === "cancelled") {
     const onQuit = attempt?.error?.code === "cancelled_on_quit";
