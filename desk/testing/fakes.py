@@ -221,7 +221,11 @@ def _declared_png(argv: list[str]) -> bytes:
 
 
 class FakeMediaExecutor:
-    """Media executor that records argv and produces scripted tiny artifacts."""
+    """Media executor that records argv and produces scripted tiny artifacts.
+
+    Model runs (commands with ``--output``) play the next scripted job. ffmpeg commands — the
+    join after a continuation and a composition — name their output last (desk/media/compose.py)
+    and succeed on their own, writing a tiny file by suffix without consuming a scripted job."""
 
     def __init__(self, script: MediaScript):
         self.script = script
@@ -229,7 +233,9 @@ class FakeMediaExecutor:
     def spawn(self, cmd: list[str], *, log_path=None, extra_env=None) -> FakeMediaHandle:
         argv = list(cmd)
         self.script.spawned_argvs.append(argv)
-        output_path = Path(argv[argv.index("--output") + 1]) if "--output" in argv else Path(argv[-1])
+        if "--output" not in argv:
+            return FakeMediaHandle([WRITE_OUTPUT, Exit(0)], Path(argv[-1]))
+        output_path = Path(argv[argv.index("--output") + 1])
         return FakeMediaHandle(self.script.next_job(), output_path, _declared_png(argv))
 
 
