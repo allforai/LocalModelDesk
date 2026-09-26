@@ -33,14 +33,14 @@ export function createImagePane(root, ctx = {}) {
   function clearSeedAndChip() { els.seed.value = ""; refineRef = null; syncChip(); }
 
   // 生成按钮与展开卡片上「换个构图」的可用状态（§7.6）。
-  function updateAvailability(state, { recompose }) {
+  function updateAvailability(state, { secondary }) {
     els.start.disabled = state.disabled;
     els.start.title = state.reason;
-    if (recompose) {
-      const reason = recompose.noImageReason || (state.disabled ? state.reason : "");
-      recompose.button.disabled = state.disabled || !!recompose.noImageReason;
-      recompose.button.title = reason;
-      recompose.hint.textContent = reason;
+    if (secondary) {
+      const reason = secondary.secondaryBlockedReason || (state.disabled ? state.reason : "");
+      secondary.button.disabled = state.disabled || !!secondary.secondaryBlockedReason;
+      secondary.button.title = reason;
+      secondary.hint.textContent = reason;
     }
   }
 
@@ -53,7 +53,7 @@ export function createImagePane(root, ctx = {}) {
       return renderAttemptCard(doc, {
         attempt: o.attempt, index: o.index, selected: o.selected, broken: o.broken,
         elapsed: ours ? o.job.elapsed_s : undefined, serveOutput: api.serveOutput,
-        baseText: baseLabel(o.attempt, o.attempts), noImageReason: hasImage(o.attempt) ? "" : NO_IMAGE_REASON,
+        baseText: baseLabel(o.attempt, o.attempts), secondaryBlockedReason: hasImage(o.attempt) ? "" : NO_IMAGE_REASON,
         onBroken: o.onBroken, onImageLoad: o.onImageLoad, onRefine: refine, onRecompose: recompose, onCancel: () => pane.cancelJob(),
       });
     },

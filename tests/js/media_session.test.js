@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  autoTitle, availability, deleteMessage, orderSessions, pickCurrent, randomSeed,
+  attemptView, autoTitle, availability, deleteMessage, orderSessions, pickCurrent, randomSeed,
   runningLabel, runningSessionId, sessionMeta, sessionTitle, startErrorText, attemptLabel, chainOf,
 } from "../../desk/static/js/pure/media_session.js";
 
@@ -132,4 +132,11 @@ test("列表顺序：updated 降序、坏文件最后；同一秒并列时刚新
   ];
   assert.deepEqual(orderSessions(list, "fresh").map((s) => s.id), ["fresh", "a", "old", "x"]);
   assert.deepEqual(orderSessions(list).map((s) => s.id), ["a", "fresh", "old", "x"]);
+});
+
+test("attemptView names the missing file by noun", () => {
+  const gone = { status: "done", output: "x", output_missing: true };
+  assert.equal(attemptView(gone).title, "图片文件已不在");
+  assert.equal(attemptView(gone, { noun: "音频" }).badge, "音频文件已不在");
+  assert.equal(attemptView(gone, { noun: "视频" }).title, "视频文件已不在");
 });

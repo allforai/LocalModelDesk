@@ -2,8 +2,7 @@
 // 只画 DOM，不发请求：三个动作、重新拼接、取消、挑选勾选、音频加载失败都经回调交还给 panes/music.js。
 import { addIcon } from "../icons.js";
 import { renderErrorBlock } from "./error_block.js";
-import { attemptView } from "../pure/image_session.js";
-import { runningLabel } from "../pure/media_session.js";
+import { attemptView, runningLabel } from "../pure/media_session.js";
 import { CANNOT_CONTINUE, canContinue, cardTitle, chainLine, joinProblem, lyricsPreview } from "../pure/music_session.js";
 
 function el(doc, tag, className, text) {
@@ -11,13 +10,6 @@ function el(doc, tag, className, text) {
   if (className) node.className = className;
   if (text !== undefined) node.textContent = text;
   return node;
-}
-
-// 图片的 attemptView 之外，文件不在时的文案不说「图片」（M-32 / IS D-85）。
-function musicView(attempt, broken) {
-  const view = attemptView(attempt, { broken });
-  if (view.kind !== "missing") return view;
-  return { ...view, badge: "文件已不在", title: "文件已不在", sub: "可能已在访达中移动或删除", icon: "music" };
 }
 
 const isCompose = (attempt) => attempt?.op === "compose" || Array.isArray(attempt?.params?.parts);
@@ -80,11 +72,11 @@ function player(doc, attempt, { serveOutput, onBroken }) {
   return box;
 }
 
-// 返回 {node, running, recompose}：running 是 running 卡片里轮询要就地更新的几个元素；
-// recompose 是「换个版本」按钮与其下方原因行（由面板按生成可用性更新，与图片页「换个构图」同一机制）。
+// 返回 {node, running, secondary}：running 是 running 卡片里轮询要就地更新的几个元素；
+// secondary 是「换个版本」按钮与其下方原因行（由面板按生成可用性更新，与图片页「换个构图」同一机制）。
 export function renderMusicCard(doc, opts) {
   const { attempt, index, attempts, selected, broken = false, serveOutput, picking = false, pickIndex = -1 } = opts;
-  const view = musicView(attempt, broken);
+  const view = attemptView(attempt, { broken, noun: "音频" });
   const running = view.kind === "running";
   const expanded = running || selected;
   const compose = isCompose(attempt);
@@ -130,7 +122,7 @@ export function renderMusicCard(doc, opts) {
   row.append(summary);
   card.append(row);
 
-  const result = { node: card, running: null, recompose: null, image: null };
+  const result = { node: card, running: null, secondary: null, image: null };
   if (running) {
     const detail = el(doc, "div", "attempt-detail");
     const progress = el(doc, "progress", "attempt-progress");
@@ -204,7 +196,7 @@ export function renderMusicCard(doc, opts) {
     const hint = el(doc, "p", "hint hint-busy attempt-action-hint");
     hint.setAttribute("role", "status");
     detail.append(hint);
-    if (version) result.recompose = { button: version, hint, noImageReason: "" };
+    if (version) result.secondary = { button: version, hint, secondaryBlockedReason: "" };
   }
   card.append(detail);
   return result;

@@ -44,7 +44,7 @@ export function createSessionPane(root, {
   let pending = false; let allowed = false; let busyReason = "正在检查服务状态…";
   let modelReason = "正在检查模型…"; let runtimeReason = "正在检查 MLX 运行环境…";
   let inflight = null; let polling = false; let viewToken = 0; let returnTo = null; let freshId = null;
-  let runningRefs = null; let recomposeRefs = null; let expandedRefs = null;
+  let runningRefs = null; let secondaryRefs = null; let expandedRefs = null;
   // 时间线该停在哪（D-71/D-72）："bottom" 贴底（打开会话、追加、落定），"selected" 让选中的展开卡片
   // 整张可见（点卡片、在这张基础上改、素材库回填），null 是用户自己滚过——之后只重算大图上限，不再拽动。
   let scrollIntent = null;
@@ -69,7 +69,7 @@ export function createSessionPane(root, {
     els.returnBtn.hidden = !returnTo;
     els.hint.hidden = !state.reason;
     els.model.textContent = modelReason || "模型文件完整 · 可离线生成";
-    composer.updateAvailability?.(state, { recompose: recomposeRefs });
+    composer.updateAvailability?.(state, { secondary: secondaryRefs });
     updateCompose(state);
   }
   function setModelStatus(status) {
@@ -169,7 +169,7 @@ export function createSessionPane(root, {
   }
 
   function renderTimeline({ scroll = false } = {}) {
-    runningRefs = null; recomposeRefs = null; expandedRefs = null;
+    runningRefs = null; secondaryRefs = null; expandedRefs = null;
     if (scroll) scrollIntent = "bottom";
     const keep = els.timeline.scrollTop;
     if (currentCorrupt) {
@@ -208,7 +208,7 @@ export function createSessionPane(root, {
         else selectAttempt(attempt, { focus: true });
       });
       if (card.running) runningRefs = { ...card.running, attemptId: attempt.id };
-      if (card.recompose) recomposeRefs = card.recompose;
+      if (card.secondary) secondaryRefs = card.secondary;
       if (card.node.getAttribute("aria-expanded") === "true") expandedRefs = { node: card.node, image: card.image };
       list.append(card.node);
     });

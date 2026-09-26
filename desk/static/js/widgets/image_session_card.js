@@ -2,8 +2,8 @@
 // 点击、两个动作、取消、图片加载失败都经回调交还给 panes/image.js。
 import { addIcon } from "../icons.js";
 import { renderErrorBlock } from "./error_block.js";
-import { attemptView, specLine } from "../pure/image_session.js";
-import { attemptLabel, runningLabel } from "../pure/media_session.js";
+import { specLine } from "../pure/image_session.js";
+import { attemptLabel, attemptView, runningLabel } from "../pure/media_session.js";
 
 function el(doc, tag, className, text) {
   const node = doc.createElement(tag);
@@ -30,8 +30,8 @@ function advancedList(doc, params) {
   return details;
 }
 
-// 返回 {node, running, recompose, image}：running 是 running 卡片里轮询要就地更新的几个元素，
-// recompose 是「换个构图」按钮与其下方原因行（不可用时由面板更新），image 是展开卡片的大图
+// 返回 {node, running, secondary, image}：running 是 running 卡片里轮询要就地更新的几个元素，
+// secondary 是「换个构图」按钮与其下方原因行（不可用时由面板更新），image 是展开卡片的大图
 // （面板按时间线高度给它定上限，让标题、整张图与两个动作能同时看到）。
 export function renderAttemptCard(doc, opts) {
   const { attempt, index, selected, broken = false, serveOutput } = opts;
@@ -79,7 +79,7 @@ export function renderAttemptCard(doc, opts) {
   row.append(summary);
   card.append(row);
 
-  const result = { node: card, running: null, recompose: null, image: null };
+  const result = { node: card, running: null, secondary: null, image: null };
   if (running) {
     const detail = el(doc, "div", "attempt-detail");
     const progress = el(doc, "progress", "attempt-progress");
@@ -134,6 +134,6 @@ export function renderAttemptCard(doc, opts) {
   detail.append(actions, hint);
   card.append(detail);
   // 没图的尝试不能当底稿（以图生图）：「换个构图」不可用并写明原因；面板更新可用性时保留这条原因。
-  result.recompose = { button: recompose, hint, noImageReason: opts.noImageReason || "" };
+  result.secondary = { button: recompose, hint, secondaryBlockedReason: opts.secondaryBlockedReason || "" };
   return result;
 }
