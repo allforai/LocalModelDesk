@@ -47,11 +47,22 @@ def test_music_in_a_session_takes_its_title_from_the_caption(tmp_path):
     assert deps.media_sessions["music"].get(sid)["title"] == "独立流行"
 
 
-def test_video_and_music_without_session_still_run_unattached(tmp_path):
+def test_video_without_session_still_runs_unattached(tmp_path):
     service, deps = make_service(tmp_path)
     snap = finished_snapshot(service, lambda: video(service))
     assert snap["status"] == "done" and snap["session_id"] is None and snap["attempt_id"] is None
     assert deps.history.entries[-1]["session_id"] is None
+
+
+@pytest.mark.parametrize("session_id, code, status", [(None, "session_required", 400), (7, "session_required", 400),
+                                                      ("f" * 32, "session_not_found", 404)])
+def test_music_requires_a_session(tmp_path, session_id, code, status):
+    service, deps = make_service(tmp_path)
+    music_ready(service, tmp_path)
+    with pytest.raises(MediaError) as exc:
+        music(service, session_id=session_id)
+    assert (exc.value.code, exc.value.http_status) == (code, status)
+    assert deps.executor.spawned == []
 
 
 @pytest.mark.parametrize("session_id, code, status", [(123, "session_required", 400), ("f" * 32, "session_not_found", 404)])

@@ -240,7 +240,7 @@ class MediaService:
         if not lyrics.strip():
             raise MediaError("lyrics_required", "请填写歌词：Music 3 需要歌词才能生成", 400)
         seed = _check_seed(seed)
-        session_id = self._check_session("music", session_id, required=refs is not None or continues is not None)
+        session_id = self._check_session("music", session_id, required=True)
         join = None
         if continues is not None:
             self._segment("music", session_id, continues)

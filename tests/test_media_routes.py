@@ -70,7 +70,7 @@ def test_media_routes_start_jobs_and_parse_status_cursor(tmp_path):
     status, payload = routes[("GET", "/api/media/job")](None, {"log_from": "nope"})
     assert (status, payload["error"]["code"]) == (400, "invalid_params")
 
-    service, _ = make_service(tmp_path / "music")
+    service, deps = make_service(tmp_path / "music")
     service._probe_capabilities = lambda: {
         "music_runtime": SimpleNamespace(present=True, detail=""),
     }
@@ -80,10 +80,11 @@ def test_media_routes_start_jobs_and_parse_status_cursor(tmp_path):
         music_env={},
     )
     service._list_catalog = lambda: [SimpleNamespace(key="music3", relpath="minimax-music3", gb=27.0)]
+    sid = deps.media_sessions["music"].create()["id"]
     done = threading.Event()
     service.on_job_finished(lambda _: done.set())
     status, payload = route_map(service)[("POST", "/api/media/music")]({
-        "caption": "c", "lyrics": "l", "duration": 30.0,
+        "caption": "c", "lyrics": "l", "duration": 30.0, "session_id": sid,
     }, {})
     assert status == 200
     assert payload["kind"] == "music"
