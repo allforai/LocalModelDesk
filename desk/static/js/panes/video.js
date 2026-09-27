@@ -113,7 +113,9 @@ export function createVideoPane(root, ctx = {}) {
     const key = `${kind}/${id}`;
     try { linkedSessions.set(key, await api.getMediaSession(kind, id)); }
     catch (error) {
-      if (error?.status === 404) linkedSessions.set(key, null);
+      // 404：真的不在。400：会话文件本身已损坏（media_session.js:351），同样是定性结论，不是暂时读不到，
+      // 不然会一直显示「暂时读不到…请稍后重试」（final review Minor 1）。其余状态才是网络/服务瞬时错误。
+      if (error?.status === 404 || error?.status === 400) linkedSessions.set(key, null);
       else return undefined; // 读取失败：不缓存，不当作「已不在」
     }
     return linkedSessions.get(key);
@@ -371,6 +373,8 @@ export function createVideoPane(root, ctx = {}) {
   function updateAvailability(state, { secondary }) {
     lastState = { state, secondary };
     syncChip();
+    // 不需要 music.js 那个 ref.type==="continue"||chipVisible() 判断（final review Important 1）：一个续写段的
+    // refine 会把 first 也设成 {type:"continue"}（sourceOf, L46-49），chipVisible() 因 continuing() 恒真，改种子不隐藏提示条。
     const missing = !!ref?.missing;
     els.start.disabled = state.disabled || missing || uploading;
     els.start.title = state.disabled ? state.reason : missing ? chipTextFor(ref) : "";

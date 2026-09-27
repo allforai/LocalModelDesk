@@ -142,6 +142,25 @@ test("「在这段基础上改」一个续写段后，它接的前段文件不�
   });
 });
 
+test("上一条之后改种子：提示条隐藏且「生成歌曲」重新可用，生成不带 continues（final review Important 1）", async () => {
+  await withBackend("music", async (backend) => {
+    backend.addSession("歌", [done("a1"), done("a2", { continues: "a1" })]);
+    const { parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    await button(cards(parts)[1], "在这段基础上改").click();
+    backend.finish("a1", { output_missing: true });
+    await pane.refresh();
+    assert.equal(parts.start.disabled, true, "改种子之前仍是不能接着写的死路");
+    parts.seed.value = "12"; await parts.seed.dispatch("input");
+    assert.equal(parts.chip.hidden, true, "改种子后提示条本就该隐藏");
+    assert.equal(parts.start.disabled, false, "改种子后不再沿用前段，不该被卡住");
+    assert.equal(parts.start.title, "");
+    await parts.start.click();
+    assert.equal("continues" in musicCalls(backend)[0].body, false);
+    assert.equal(musicCalls(backend)[0].body.seed, 12);
+  });
+});
+
 test("沿用提示条可见时生成带被引用尝试的 continues", async () => {
   await withBackend("music", async (backend) => {
     backend.addSession("歌", [done("a1"), done("a2", { continues: "a1" })]);

@@ -741,7 +741,11 @@ class MediaService:
         for `_run_join`, which builds its command before taking the lock. Raises `JoinInputError(n)`
         when music segment n's (1-based) duration cannot be read."""
         if kind == "video":
-            size = size or compose.probe_size(compose.ffprobe_path() or "ffprobe", parts[0][0])
+            if size is None:
+                ffprobe = compose.ffprobe_path()
+                if ffprobe is None:   # never fall back to a bare name (#17 drift); _run_join reports this as join_failed
+                    raise RuntimeError("需要 ffprobe 才能拼接成片")
+                size = compose.probe_size(ffprobe, parts[0][0])
             return compose.concat_video_command(ffmpeg, parts, size, target)
         return compose.crossfade_audio_command(ffmpeg, _timed_parts(parts), target)
 

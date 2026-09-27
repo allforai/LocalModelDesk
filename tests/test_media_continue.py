@@ -275,6 +275,22 @@ def test_unreadable_wav_duration_fails_the_join_without_running_ffmpeg(tmp_path,
     assert len(deps.executor.spawned) == spawned_before + 1       # 只跑了模型，没跑拼接
 
 
+def test_missing_ffprobe_fails_the_join_instead_of_a_bare_name_fallback(tmp_path, monkeypatch):
+    """final review Minor 2 (service.py:744): no bare "ffprobe" name once compose.ffprobe_path() is None."""
+    service, deps = make_service(tmp_path)
+    sid, first = first_segment(service, deps)
+    monkeypatch.setattr(compose, "ffprobe_path", lambda: None)
+    probed = []
+    monkeypatch.setattr(compose, "probe_size", lambda *args: probed.append(args) or (512, 288))
+    spawned_before = len(deps.executor.spawned)
+    finished_snapshot(service, lambda: video(service, session_id=sid, continues=first))
+    second = attempts(deps, "video", sid)[1]
+    assert second["status"] == "done"
+    assert second["joined_output"] is None and second["joined_error"]["code"] == "join_failed"
+    assert probed == []                                            # 从未用裸名 "ffprobe" 去探测
+    assert len(deps.executor.spawned) == spawned_before + 1         # 只跑了模型，没跑拼接
+
+
 def test_non_media_error_after_frame_extraction_removes_the_frame(tmp_path, monkeypatch):
     service, deps = make_service(tmp_path)
     sid, first = first_segment(service, deps)

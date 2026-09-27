@@ -77,13 +77,13 @@ function imageSession({ missing = false } = {}) {
 }
 const pick = { ref: { kind: "image", session_id: "img1", attempt_id: "i3" }, title: "橘猫", index: 2 };
 // 视频页读图片会话（首帧说明、失效检查）与音乐会话（配乐说明）：在假后端外面接一层。
-// fail：读取时回 500（网络/服务瞬时错误）的 "kind/session_id" 集合（issue #19）。
-function serveImages(backend, sessions, music = [], fail = new Set()) {
+// fail：读取时回 failStatus（默认 500，网络/服务瞬时错误）的 "kind/session_id" 集合（issue #19）。
+function serveImages(backend, sessions, music = [], fail = new Set(), failStatus = 500) {
   const inner = backend.fetch;
   globalThis.fetch = async (url, options = {}) => {
     const match = url.match(/^\/api\/media-sessions\/(image|music)\/(\w+)$/);
     if (!match) return inner(url, options);
-    if (fail.has(`${match[1]}/${match[2]}`)) return { ok: false, status: 500, statusText: "", json: async () => ({ error: "服务出错" }) };
+    if (fail.has(`${match[1]}/${match[2]}`)) return { ok: false, status: failStatus, statusText: "", json: async () => ({ error: "服务出错" }) };
     const found = (match[1] === "image" ? sessions : music).find((s) => s.id === match[2]);
     return found ? { ok: true, status: 200, json: async () => structuredClone(found) }
       : { ok: false, status: 404, statusText: "", json: async () => ({ error: "会话不存在" }) };
@@ -293,6 +293,22 @@ test("引用的图片会话确实已被删除（404）：仍清空首帧来源�
   });
 });
 
+test("引用的图片会话已损坏（400）：当作已不在处理，清空首帧来源并显示「引用的图片已不在」（final review Minor 1）", async () => {
+  await withBackend("video", async (backend) => {
+    serveImages(backend, [imageSession()], [], new Set(["image/img1"]), 400);
+    backend.addSession("片", [done("a1", { params: { prompt: "猫", width: 512, height: 288, frames: 73, steps: 16, seed: 4,
+      mode: "image", use_audio: true, first_frame: null }, refs: { first_frame: pick.ref } })]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await flush();
+    await button(cards(parts)[0], "在这段基础上改").click();
+    await flush();
+    assert.equal(parts["first-label"].textContent, "引用的图片已不在", "损坏的引用应定性为已不在，不是暂时读不到");
+    await parts.start.click();
+    assert.equal(parts.error.textContent, "请先选择首帧图片");
+  });
+});
+
 test("配乐参考——歌引用查询网络失败（500）：不清空歌来源，只提示稍后重试；确实 404 时清空并说明（issue #19）", async () => {
   for (const fail of [true, false]) {
     await withBackend("video", async (backend) => {
@@ -341,6 +357,23 @@ test("「在这段基础上改」一个续写段后，它接的前段文件不�
     await pane.refresh();
     assert.equal(parts["chip-text"].textContent, "第 1 次的文件已不在，不能接着往下生");
     assert.equal(parts.start.disabled, true);
+  });
+});
+
+test("上一条之后改种子：video 不受 music 那个死路影响，方式仍锁定为续写，「生成视频」仍禁用（final review Important 1 一并确认）", async () => {
+  await withBackend("video", async (backend) => {
+    backend.addSession("片", [done("a1"), done("a2", { continues: "a1", params: { ...done("a2").params, mode: "image", use_audio: true } })]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await button(cards(parts)[1], "在这段基础上改").click();
+    backend.finish("a1", { output_missing: true });
+    await pane.refresh();
+    assert.equal(parts.start.disabled, true);
+    parts.seed.value = "999"; await parts.seed.dispatch("input");
+    // video 的 refine 续写段回填时首帧来源本身就是 {type:"continue"}（sourceOf），chip 因此恒可见，
+    // 改种子不会像 music 那样隐藏提示条，所以这里仍应保持禁用。
+    assert.equal(parts.chip.hidden, false, "video 续写提示条不因改种子隐藏");
+    assert.equal(parts.start.disabled, true, "仍会带 continues，禁用是对的，不是死路");
   });
 });
 

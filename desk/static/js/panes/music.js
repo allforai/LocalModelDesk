@@ -72,7 +72,8 @@ export function createMusicPane(root, ctx = {}) {
   function updateAvailability(state, { secondary }) {
     lastState = { state, secondary };
     syncChip();
-    const missing = !!ref?.missing;
+    // 改种子后一个 refine 提示条会隐藏（chipVisible() 假），此时请求不再带 continues，不该被挡（final review Important 1）。
+    const missing = !!ref?.missing && (ref.type === "continue" || chipVisible());
     els.start.disabled = state.disabled || missing;
     els.start.title = state.disabled ? state.reason : missing ? chipTextFor(ref) : "";
     if (secondary) {
