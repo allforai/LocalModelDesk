@@ -3,7 +3,7 @@
 // 这里只有视频卡片、输入区（方式、首帧/尾帧/参考视频素材、提示词、高级参数、提示条）与三个动作、重新拼接。
 import * as api from "../api.js";
 import { renderVideoCard } from "../widgets/video_session_card.js";
-import { openImagePicker } from "../widgets/image_picker.js";
+import { openMediaPicker } from "../widgets/media_picker.js";
 import { createPromptAssist } from "../widgets/prompt_assist.js";
 import { createSessionPane } from "./media_session.js";
 import { ParamsError, randomSeed, sessionTitle } from "../pure/media_session.js";
@@ -50,7 +50,10 @@ export function createVideoPane(root, ctx = {}) {
   };
   const doc = root.ownerDocument;
   const drawSeed = ctx.randomSeed ?? randomSeed;
-  const pickImage = ctx.pickImage ?? (() => openImagePicker(doc, {
+  const pickImage = ctx.pickImage ?? (() => openMediaPicker(doc, {
+    kind: "image",
+    title: "从图片会话选首帧",
+    emptyText: "这个会话还没有生成好的图片",
     listSessions: () => api.listMediaSessions("image"),
     getSession: (id) => api.getMediaSession("image", id),
     serveOutput: api.serveOutput,
