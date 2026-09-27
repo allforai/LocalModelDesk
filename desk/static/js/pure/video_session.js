@@ -80,7 +80,6 @@ export function refineFields(attempt) {
     last: typeof p.last_frame === "string" && p.last_frame ? p.last_frame : null,
     refVideo: typeof p.ref_video === "string" && p.ref_video ? p.ref_video : null,
     useAudio: typeof p.use_audio === "boolean" ? p.use_audio : true,
-    refImage: typeof p.ref_image === "string" && p.ref_image ? p.ref_image : null,
     audioStart: Number.isFinite(p.audio_start) && p.audio_start >= 0 ? p.audio_start : 0,
   };
 }
@@ -99,7 +98,7 @@ export function versionParams(attempt, sessionId, draw = randomSeed) {
   }
   const params = { ...base };
   if (typeof p.mode === "string" && p.mode !== "text") params.mode = p.mode;
-  if (typeof p.use_audio === "boolean") params.use_audio = p.use_audio;
+  if (typeof p.use_audio === "boolean" && p.mode !== "music_ref") params.use_audio = p.use_audio; // 配乐参考没有素材声音
   for (const key of ["first_frame", "last_frame", "ref_video", "ref_image"]) {
     if (typeof p[key] === "string" && p[key]) params[key] = p[key];
   }

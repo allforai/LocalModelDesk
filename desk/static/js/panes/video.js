@@ -22,8 +22,10 @@ const MAX_UPLOAD = 32 * 1024 * 1024;
 const EARLIER_IMAGE = "之前上传的图片";
 const EARLIER_VIDEO = "之前上传的视频";
 const SEGMENT_ERRORS = new Set(["segment_missing", "segment_not_found"]);
-// 配乐作业的这些错误显示后端原话（「需要 ffmpeg 才能拼接成片」「引用的音乐已不在」等），同合成（S-02）。
-const SOUNDTRACK_ERRORS = new Set([...SEGMENT_ERRORS, "capability_missing", "ref_missing"]);
+// 配乐作业与配乐参考生成的这些错误显示后端原话（「需要 ffmpeg 才能拼接成片」「引用的音乐已不在」
+// 「这首歌从第 N 秒起不足 2 秒」「没能截取这段音乐」等），同合成（S-02、S-12）。
+const SOUNDTRACK_ERRORS = new Set([...SEGMENT_ERRORS, "capability_missing", "ref_missing", "invalid_params"]);
+const MUSIC_REF_ERRORS = new Set(["segment_missing", "capability_missing", "ref_missing", "invalid_params", "audio_clip_failed"]);
 const PLACEHOLDERS = {
   text: "视频提示词（含环境声描述）",
   image: "描述图片中的动作、镜头变化和声音",
@@ -198,7 +200,8 @@ export function createVideoPane(root, ctx = {}) {
     els.lastArea.hidden = mode !== "image";
     els.referenceArea.hidden = mode !== "reference";
     if (els.musicArea) els.musicArea.hidden = mode !== "music_ref";
-    if (els.audioRow) els.audioRow.hidden = mode === "text";
+    // 配乐参考没有素材自带的声音（音频来自所选的歌），不给「使用素材的声音」。
+    if (els.audioRow) els.audioRow.hidden = mode === "text" || mode === "music_ref";
     els.prompt.placeholder = PLACEHOLDERS[mode] ?? PLACEHOLDERS.text;
     els.firstLabel.textContent = firstText();
     for (const control of [els.firstUpload, els.firstPick, els.last, els.clearLast]) if (control) control.disabled = locked || uploading;
@@ -357,7 +360,7 @@ export function createVideoPane(root, ctx = {}) {
   async function startJob(params) {
     try { return await api.startVideoJob(params); }
     catch (error) {
-      if (SEGMENT_ERRORS.has(error?.code)) {
+      if (SEGMENT_ERRORS.has(error?.code) || (params.mode === "music_ref" && MUSIC_REF_ERRORS.has(error?.code))) {
         verbatimError = error;
         if (params.continues && ref?.type === "continue" && ref.attemptId === params.continues) ref = { ...ref, missing: true };
       }
@@ -451,14 +454,14 @@ export function createVideoPane(root, ctx = {}) {
       if (!song) { pane.setError("请先选择一首歌"); return; }
       const raw = String(els.audioStart?.value ?? "").trim();
       const audioStart = raw ? Number(raw) : 0;
-      if (!Number.isFinite(audioStart) || audioStart < 0) { pane.setError("从第几秒开始须为不小于 0 的数"); return; }
+      if (!Number.isFinite(audioStart) || audioStart < 0) { pane.setError("起始秒数须为不小于 0 的数"); return; }
       body.mode = "music_ref";
       body.audio_start = audioStart;
       body.refs = { ref_audio: song.ref };
       if (refImage.type === "ref") body.refs.ref_image = refImage.ref;
       else uploads.push(["ref_image", refImage]);
     }
-    if (mode !== "text") body.use_audio = !!els.audio?.checked;
+    if (mode !== "text" && mode !== "music_ref") body.use_audio = !!els.audio?.checked;
     if (uploads.length) {
       uploading = true; renderInputs(); refreshAvailability();
       try {
