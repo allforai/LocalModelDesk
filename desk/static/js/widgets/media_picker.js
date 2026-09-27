@@ -6,7 +6,7 @@ import { hasImage } from "../pure/image_session.js";
 import { autoTitle, sessionTitle } from "../pure/media_session.js";
 
 // 音乐尝试的可选文件：优先未缺失的 joined_output，否则 output；都不在则不可选（S-20）。
-function musicOutput(attempt) {
+export function musicOutput(attempt) {
   if (typeof attempt?.joined_output === "string" && attempt.joined_output && !attempt.joined_missing) return attempt.joined_output;
   if (typeof attempt?.output === "string" && attempt.output && !attempt.output_missing) return attempt.output;
   return null;

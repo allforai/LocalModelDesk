@@ -8,7 +8,7 @@ const ROUTES = {
   llmLoad: "/api/llm/load", llmUnload: "/api/llm/unload", llmStatus: "/api/llm/status",
   chatStream: "/api/llm/chat/stream", promptAssist: "/api/llm/prompt-assist",
   video: "/api/media/video", music: "/api/media/music", image: "/api/media/image", capabilities: "/api/capabilities",
-  compose: "/api/media/compose", cancelJob: "/api/media/cancel", job: "/api/media/job", outputs: "/api/outputs",
+  compose: "/api/media/compose", soundtrack: "/api/media/soundtrack", cancelJob: "/api/media/cancel", job: "/api/media/job", outputs: "/api/outputs",
   history: "/api/history", sessions: "/api/sessions", mediaSessions: "/api/media-sessions", gatewayConfig: "/api/gateway/config",
   skills: "/api/skills", skillsRescan: "/api/skills/rescan",
   skillsPreview: "/api/skills/preview", skillsInstall: "/api/skills/install", skillsDiscard: "/api/skills/discard",
@@ -122,6 +122,7 @@ export async function uploadMediaInput(file) {
 export const startMusicJob = (params) => json(ROUTES.music, "POST", params);
 export const startImageJob = (params) => json(ROUTES.image, "POST", params);
 export const startComposeJob = (params) => json(ROUTES.compose, "POST", params);
+export const startSoundtrackJob = (params) => json(ROUTES.soundtrack, "POST", params);
 export const cancelJob = () => json(ROUTES.cancelJob, "POST");
 export const jobStatus = (logFrom = 0, jobId = null) =>
   request(`${ROUTES.job}?log_from=${logFrom}${jobId === null ? "" : `&job_id=${jobId}`}`);

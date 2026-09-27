@@ -312,6 +312,9 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 /* 输入区里的首帧、尾帧只是小图提示，不挤掉时间线（900×700 下时间线仍有可用高度） */
 img.video-preview-media { height: 64px; width: auto; }
 video.video-preview-media { max-height: 96px; }
+audio.video-preview-media { width: min(360px, 100%); height: 36px; }
+.video-audio-start { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.video-audio-start input { width: 96px; color: var(--text); }
 .attempt-first-frame { margin: 0; }
 .image-advanced .video-audio { display: flex; align-items: center; gap: 8px; margin-top: 8px; color: var(--text); }
 .video-audio input { width: auto; margin: 0; accent-color: var(--accent); }

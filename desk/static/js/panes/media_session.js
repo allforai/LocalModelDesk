@@ -408,19 +408,20 @@ export function createSessionPane(root, {
   }
 
   // ---------- 生成 ----------
-  async function submitWithMemoryConfirm(params) {
-    try { return await startJob(params); }
+  async function submitWithMemoryConfirm(params, submit) {
+    try { return await submit(params); }
     catch (error) {
       if (error.code !== "insufficient_memory") throw error;
       const ok = await confirm(doc, { title: "内存可能不足", message: error.message, confirmLabel: "仍要生成" });
-      return ok ? startJob({ ...params, force: true }) : null;
+      return ok ? submit({ ...params, force: true }) : null;
     }
   }
 
-  async function startGeneration(params, { fromInputs }) {
+  // via：页面自己的另一种作业接口（如视频的配乐），走同样的提交 → onStarted → 选中新尝试 → 重载会话流程。
+  async function startGeneration(params, { fromInputs, via = startJob }) {
     pending = true; setError(""); updateAvailability();
     try {
-      const started = await submitWithMemoryConfirm(params);
+      const started = await submitWithMemoryConfirm(params, via);
       if (!started) return;
       job = started; jobLog = started.log ?? "";
       onStarted?.(started);

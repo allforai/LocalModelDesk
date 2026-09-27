@@ -3,7 +3,7 @@ import { ParamsError, SEED_MAX, attemptLabel, randomSeed } from "./media_session
 
 export const SIZES = [["512x288", "草稿 512×288"], ["768x448", "标准 768×448"], ["1024x576", "清晰 1024×576"]];
 export const DURATIONS = [[49, "约 2 秒（快速）"], [73, "约 3 秒"], [124, "约 5 秒（常用）"], [192, "约 8 秒"], [243, "约 10 秒"], [362, "约 15 秒（最长）"]];
-export const MODES = { text: "文生", image: "图生", reference: "参考" };
+export const MODES = { text: "文生", image: "图生", reference: "参考", music_ref: "配乐参考" };
 export const CANNOT_CONTINUE = "这一段没有生成好，不能接着往下生";
 
 const DEFAULT_SIZE = SIZES[0][0];
@@ -53,6 +53,16 @@ export function sourceOf(attempt) {
   return null;
 }
 
+// 配乐参考的参考图来源（S-34）：图片会话引用优先于本地上传素材；其他方式没有参考图。
+export function refImageOf(attempt) {
+  const p = attempt?.params ?? {};
+  if (p.mode !== "music_ref") return null;
+  const ref = attempt?.refs?.ref_image;
+  if (ref) return { type: "ref", ref };
+  if (typeof p.ref_image === "string" && p.ref_image) return { type: "upload", id: p.ref_image };
+  return null;
+}
+
 // 「在这段基础上改」回填用（V-40）：只读这段自己记录的参数，不涉及 continues/refs 的解读（由 sourceOf 负责）。
 export function refineFields(attempt) {
   const p = attempt?.params ?? {};
@@ -70,6 +80,8 @@ export function refineFields(attempt) {
     last: typeof p.last_frame === "string" && p.last_frame ? p.last_frame : null,
     refVideo: typeof p.ref_video === "string" && p.ref_video ? p.ref_video : null,
     useAudio: typeof p.use_audio === "boolean" ? p.use_audio : true,
+    refImage: typeof p.ref_image === "string" && p.ref_image ? p.ref_image : null,
+    audioStart: Number.isFinite(p.audio_start) && p.audio_start >= 0 ? p.audio_start : 0,
   };
 }
 
@@ -88,16 +100,17 @@ export function versionParams(attempt, sessionId, draw = randomSeed) {
   const params = { ...base };
   if (typeof p.mode === "string" && p.mode !== "text") params.mode = p.mode;
   if (typeof p.use_audio === "boolean") params.use_audio = p.use_audio;
-  for (const key of ["first_frame", "last_frame", "ref_video"]) {
+  for (const key of ["first_frame", "last_frame", "ref_video", "ref_image"]) {
     if (typeof p[key] === "string" && p[key]) params[key] = p[key];
   }
+  if (p.mode === "music_ref" && Number.isFinite(p.audio_start)) params.audio_start = p.audio_start;
   if (attempt?.refs && Object.keys(attempt.refs).length) params.refs = attempt.refs;
   return params;
 }
 
-// 「接着往下生」沿用画幅/时长/步数（V-42）；合成尝试没有这些参数，保留输入区当前值。
+// 「接着往下生」沿用画幅/时长/步数（V-42）；合成、配乐尝试没有这些参数，保留输入区当前值。
 export function nextFields(attempt, current) {
-  if (attempt?.op === "compose" || Array.isArray(attempt?.params?.parts)) return current;
+  if (attempt?.op === "compose" || attempt?.op === "soundtrack" || Array.isArray(attempt?.params?.parts)) return current;
   const p = attempt?.params ?? {};
   const size = Number.isFinite(p.width) && Number.isFinite(p.height) ? `${p.width}x${p.height}` : current.size;
   return {
@@ -134,6 +147,7 @@ export function firstFrameLabel(source, { fileName, imageTitle, imageIndex, cont
 
 // 同音乐规则（music_session.js 的 cardTitle）：合成尝试标出各段序号，续写段标出前段序号。
 export function cardTitle(attempt, index, attempts) {
+  if (attempt?.op === "soundtrack") return soundtrackTitle(attempt, index, attempts, "");
   const base = attemptLabel(index, attempt);
   const position = (id) => (attempts ?? []).findIndex((a) => a?.id === id);
   if (attempt?.op === "compose" || Array.isArray(attempt?.params?.parts)) {
@@ -145,4 +159,13 @@ export function cardTitle(attempt, index, attempts) {
     if (n >= 0) return `${base} · 接第 ${n + 1} 次`;
   }
   return base;
+}
+
+// 配乐卡片标题（S-31）：「第 N 次 · HH:MM · 配乐：<风格描述摘要> · 基于第 M 次」；
+// label（风格描述摘要）取不到只写「配乐」，原视频不在本会话里就省略「基于」一段。
+export function soundtrackTitle(attempt, index, attempts, label) {
+  const source = (attempts ?? []).findIndex((a) => a?.id === attempt?.params?.source);
+  const parts = [attemptLabel(index, attempt), label ? `配乐：${label}` : "配乐"];
+  if (source >= 0) parts.push(`基于第 ${source + 1} 次`);
+  return parts.join(" · ");
 }

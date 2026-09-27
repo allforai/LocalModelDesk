@@ -1,11 +1,13 @@
 // 视频会话时间线里的一张尝试卡片（设计 docs/superpowers/specs/2026-09-27-video-sessions-design.md §3.2）。
-// 只画 DOM，不发请求：三个动作、重新拼接、取消、挑选勾选、视频加载失败都经回调交还给 panes/video.js。
+// 只画 DOM，不发请求：三个动作、「配乐…」、重新拼接、取消、挑选勾选、视频加载失败都经回调交还给 panes/video.js。
 // 结构与 music_session_card.js 相同，差异是 <video>、方式标签与规格行、首帧来源行。
 import { addIcon } from "../icons.js";
 import { renderErrorBlock } from "./error_block.js";
 import { attemptView, runningLabel } from "../pure/media_session.js";
 import { chainLine, joinProblem } from "../pure/music_session.js";
-import { CANNOT_CONTINUE, MODES, canContinue, cardTitle, durationLabel, sourceOf, specLine } from "../pure/video_session.js";
+import {
+  CANNOT_CONTINUE, MODES, canContinue, cardTitle, durationLabel, soundtrackTitle, sourceOf, specLine,
+} from "../pure/video_session.js";
 
 function el(doc, tag, className, text) {
   const node = doc.createElement(tag);
@@ -15,6 +17,7 @@ function el(doc, tag, className, text) {
 }
 
 const isCompose = (attempt) => attempt?.op === "compose" || Array.isArray(attempt?.params?.parts);
+const isSoundtrack = (attempt) => attempt?.op === "soundtrack";
 
 function iconBlock(doc, view) {
   const block = el(doc, "div", `attempt-thumb attempt-icon tone-${view.tone}`);
@@ -77,14 +80,16 @@ function player(doc, attempt, { serveOutput, onBroken }) {
 }
 
 // 返回 {node, running, secondary}：running 是 running 卡片里轮询要就地更新的几个元素；
-// secondary 是「换个版本」按钮与其下方原因行（由面板按生成可用性更新）。
-// firstFrameText(attempt)：首帧来自图片会话时的说明文字，由面板按已加载的图片会话算好。
+// secondary 是「换个版本」「配乐…」按钮（buttons）与其下方原因行（由面板按生成可用性更新）。
+// firstFrameText(attempt)：首帧来自图片会话时的说明文字，由面板按已加载的图片会话算好；
+// songLabel(attempt)：配乐尝试所用歌的风格描述摘要（S-31），取不到给空串。
 export function renderVideoCard(doc, opts) {
   const { attempt, index, attempts, selected, broken = false, serveOutput, picking = false, pickIndex = -1 } = opts;
   const view = attemptView(attempt, { broken, noun: "视频", icon: "video" });
   const running = view.kind === "running";
   const expanded = running || selected;
   const compose = isCompose(attempt);
+  const soundtrack = isSoundtrack(attempt);
   const params = attempt?.params ?? {};
   const prompt = typeof params.prompt === "string" ? params.prompt : "";
 
@@ -109,7 +114,8 @@ export function renderVideoCard(doc, opts) {
   if (view.icon) row.append(iconBlock(doc, view));
   const summary = el(doc, "div", "attempt-summary");
   const head = el(doc, "div", "attempt-head");
-  const label = el(doc, "span", "attempt-label", running ? runningLabel(index, opts.elapsed) : cardTitle(attempt, index, attempts));
+  const title = soundtrack ? soundtrackTitle(attempt, index, attempts, opts.songLabel?.(attempt) ?? "") : cardTitle(attempt, index, attempts);
+  const label = el(doc, "span", "attempt-label", running ? runningLabel(index, opts.elapsed) : title);
   head.append(label);
   if (view.badge && !running) head.append(el(doc, "span", `badge attempt-badge tone-${view.tone}`, view.badge));
   summary.append(head);
@@ -174,13 +180,13 @@ export function renderVideoCard(doc, opts) {
     const more = [...(block.children ?? [])].find((child) => String(child.tagName).toLowerCase() === "details");
     if (more) { more.classList?.add?.("attempt-error-details"); detail.append(more); }
   }
-  if (!compose) detail.append(advancedList(doc, params));
+  if (!compose && !soundtrack) detail.append(advancedList(doc, params));
 
-  // 挑选模式：卡片只做勾选，三个动作按钮都不画。
+  // 挑选模式：卡片只做勾选，动作按钮都不画。合成、配乐尝试没有提示词与画幅，只有「接着往下生」「配乐…」（S-31）。
   if (!picking) {
     const actions = el(doc, "div", "attempt-actions");
     let version = null;
-    if (!compose) {
+    if (!compose && !soundtrack) {
       const refine = actionButton(doc, "在这段基础上改", "pencil", () => opts.onRefine?.(attempt, index));
       refine.dataset.attemptRefine = "";
       version = actionButton(doc, "换个版本", "refresh", () => opts.onVersion?.(attempt, index));
@@ -193,12 +199,20 @@ export function renderVideoCard(doc, opts) {
     next.disabled = !continuable;
     if (!continuable) next.title = CANNOT_CONTINUE;
     actions.append(next);
+    // 「配乐…」只在 done 且文件在的卡片上（S-30）；不可用条件与原因同「换个版本」。
+    let dub = null;
+    if (continuable) {
+      dub = actionButton(doc, "配乐…", "music", () => opts.onSoundtrack?.(attempt, index));
+      dub.dataset.attemptSoundtrack = "";
+      actions.append(dub);
+    }
     detail.append(actions);
     if (!continuable) detail.append(el(doc, "p", "hint attempt-continue-reason", CANNOT_CONTINUE));
     const hint = el(doc, "p", "hint hint-busy attempt-action-hint");
     hint.setAttribute("role", "status");
     detail.append(hint);
-    if (version) result.secondary = { button: version, hint, secondaryBlockedReason: "" };
+    const buttons = [version, dub].filter(Boolean);
+    if (buttons.length) result.secondary = { buttons, hint };
   }
   card.append(detail);
   return result;
