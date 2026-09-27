@@ -14,7 +14,7 @@
 
 - 图片页零回归：`tests/js/image_pane.test.js` 断言不改。
 - B-33：启动前任一步失败都不写会话——**不因本计划改变**。
-- 新文案（逐字）：选择框读列表失败「会话列表读不出来：<原因>」；引用查询网络失败时首帧/参考图/歌说明保持原选择不变，页面错误行显示「暂时读不到图片会话，请稍后重试」（音乐为「暂时读不到音乐会话，请稍后重试」）；拼接读不出时长「读不出第 N 段的时长，无法拼成成片」（`joined_error.code = "join_failed"`）。
+- 新文案（逐字）：选择框读列表失败「会话列表读不出来：<原因>」；引用查询网络失败时首帧/参考图/歌说明保持原选择不变，页面错误行显示「暂时读不到图片会话，请稍后重试」（音乐为「暂时读不到音乐会话，请稍后重试」）；拼接读不出时长「读不出第 N 段的时长，无法拼成成片」（`joined_error.code = "join_failed"`）；合成前读不出画面尺寸「读不出第一段的画面尺寸」（500 `join_failed`，不写会话）；成片文件被删「这一段生成好了，但成片文件已不在」（提供「重新拼接」）。
 - 输出文件名：`h3-<stamp>-<8hex>.mp4`、`music3-<stamp>-<8hex>.wav`（与 joined/compose 同式）。
 - 测试命令：`node --test tests/js/`；`python3 -m pytest -q --ignore=tests/e2e`（`tests/test_shell_window.py` 4 个间歇环境失败除外）；改 `desk/static` 必跑 `python3 -m pytest tests/e2e -q`。
 - 提交中文 `fix(media-sessions): …` / `refactor(media-sessions): …` / `test(media-sessions): …`，结尾 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`；提交信息里引用 issue 号（如「#19」），不写 `Fixes`（关闭在 Task 6 统一做）。
@@ -87,16 +87,21 @@ export function musicOutput(attempt) {
   5. 展开的续写段：成片 `<audio>` 触发 `error` → 播放器切回本段 `output`、隐藏「成片 | 只听这一段」切换、卡片不标「文件已不在」、「接着写下一段」仍可用；本段 `<audio>` error → 仍按原规则标文件不在（视频同理）。
   6. `pickBadge(0) === "①"`、`pickBadge(19) === "⑳"`、`pickBadge(20) === "(21)"`。
   7. 切换会话后 `brokenIds` 清空（先在会话 A 标 broken，切到 B 再切回 A 并刷新，文件已恢复时该段可续写）。
+  9. 作业结束后「重新拼接」自动恢复可用（不需要切换会话或点击卡片）：作业 running 时 disabled，轮询到作业结束后同一张卡上的按钮 `disabled === false`。
+  10. 挑选模式中切换会话 / 新建会话退出挑选时，焦点**不**移到「挑几段合成…」（只有点「取消」才移）。
+  11. `joined_output` 存在但 `joined_missing: true`、无 `joined_error` 的续写段：显示「这一段生成好了，但成片文件已不在」与「重新拼接」（链完整时可用），点击发 compose `parts` = 链。
+  12. 控制器的 `broken` 集合与页面的 `brokenIds` 在切换会话后都已清空。
   8. 分段切换：焦点在「成片」按 ArrowRight → 「只听这一段」`aria-checked="true"` 并获得焦点、播放源切换；ArrowLeft 回来。
 - [ ] **Step 2:** `node --test tests/js/` → 新用例 FAIL
 - [ ] **Step 3: 实现**
-  - `startCompose`：入口 `if (pending || currentAvailability().disabled) return;`。控制器把 `currentAvailability()` 的 `disabled ? reason : ""` 作为 `actionsBlocked` 传给 `renderCard`；两张卡片的「重新拼接」按钮在 `actionsBlocked` 非空时 `disabled` 且 `title = actionsBlocked`（有 `problem.reason` 时 reason 优先）。
+  - `startCompose`：入口 `if (pending || currentAvailability().disabled) return;`。控制器把 `currentAvailability()` 的 `disabled ? reason : ""` 作为 `actionsBlocked` 传给 `renderCard`，并记住上次传出的值；`updateAvailability` 发现它变化时调用 `renderTimeline()`（否则卡片按钮只会在下次重画时更新，作业结束后会一直禁用）；两张卡片的「重新拼接」按钮在 `actionsBlocked` 非空时 `disabled` 且 `title = actionsBlocked`（有 `problem.reason` 时 reason 优先）。
   - `renderTimeline` 里把 `prunePicks()` 换成：`const before = picks.length; prunePicks(); if (picks.length !== before) renderPicks();`。
-  - `exitPicking`：末尾 `compose.startBtn.focus?.()`（仅在由用户操作退出时；`startCompose` 成功后的退出不抢焦点——加参数 `{focus = true}`，成功路径传 `false`）。
+  - `exitPicking({render, focus = false})`：`focus` 为真时末尾 `compose.startBtn.focus?.()`；只有合成栏「取消」按钮传 `focus: true`，切换会话、新建会话、合成成功的退出都不抢焦点。
   - 卡片 `player()`：成片源出错时 `audio.src = serveOutput(attempt.output)`、移除切换控件，不调用 `onBroken`；只有当前源就是本段 `output` 时出错才调用 `onBroken`。视频卡片同理。
   - `pickBadge`、`positionOf` 放 `pure/media_session.js`，两张卡片与 `music_session.js`、`video_session.js` 的 `cardTitle`/`chainLine` 改用 `positionOf`（删除各自内联的 `position`）；`cardTitle` 合并为 `pure/media_session.js` 的 `sessionCardTitle(attempt, index, attempts, {composeWord = "合成"})`，音乐/视频的 `cardTitle` 删除并改调用它（视频的配乐标题分支保留在 `video_session.js`，先判断 op soundtrack 再回落到通用函数）。
   - `renderSegmentSwitch` 取代两张卡片里的手写 radiogroup。
-  - `music.js`/`video.js` 的 `onSessionSwitch` 里 `brokenIds.clear()`。
+  - `music.js`/`video.js` 的 `onSessionSwitch` 里 `brokenIds.clear()`；控制器 `switchTo` 在换会话时 `broken.clear()`。
+  - `pure/music_session.js::joinProblem`：`status === "done"`、有 `joined_output` 且 `joined_missing` 为真、无 `joined_error` 时返回 `{text: "这一段生成好了，但成片文件已不在", rejoin|reason 同 join_failed 规则}`（视频卡片共用该函数）。同步修订 spec：在 `docs/superpowers/specs/2026-09-27-music-sessions-design.md` M-40/M-41 后追加一句「成片文件被删（`joined_missing`）同样显示问题行并按 M-41 提供重新拼接」，提交在同一个 commit。
 - [ ] **Step 4:** `node --test tests/js/`；`python3 -m pytest tests/e2e -q`
 - [ ] **Step 5: Commit** `fix(media-sessions): 重新拼接受忙碌门控、合成栏随刷新同步、成片坏了退回单段播放等（#18）`
 
@@ -111,7 +116,7 @@ export function musicOutput(attempt) {
 - [ ] **Step 1: 失败测试**
   1. `test_media_continue.py`「cancel while join handle raises」：`join_script` 用一个 `wait()` 抛 `RuntimeError` 的 handle，在拼接阶段 `cancel_job()` → 尝试 `done` + `joined_error.code == "join_cancelled"`。
   2. 「unreadable wav duration」：音乐续写，patch `wav_seconds` 对第 1 段返回 `None` → `joined_error == {"code":"join_failed","message":"读不出第 1 段的时长，无法拼成成片"}`，不 spawn ffmpeg 拼接。
-  3. `test_media_service.py`：固定时钟下连续两次视频作业（第一次完成后立即第二次）输出名不同，均匹配 `^h3-\d{8}-\d{6}-[0-9a-f]{8}\.mp4$`；音乐同理 `^music3-…\.wav$`。更新所有断言固定输出名的旧测试（按正则或读取 `snap["output"]`，不放宽其它断言）。
+  3. `test_media_service.py`：固定时钟下连续两次视频作业（第一次完成后立即第二次）输出名不同，均匹配 `^h3-\d{8}-\d{6}-[0-9a-f]{8}\.mp4$`；音乐同理 `^music3-…\.wav$`。先 `grep -rn '"h3-\|"music3-\|h3-{STAMP}\|music3-{STAMP}' tests desk/testing` 找出所有写死输出名的断言（含 e2e 与素材库测试），改为按正则或读取 `snap["output"]`，不放宽其它断言；`desk/library/outputs.py::_infer_kind` 按前缀识别，确认新名仍识别为 video/music（加一条断言）。
   4. `test_media_continue.py`「frame cleanup on non-MediaError」：patch `_resolve_refs` 抛 `RuntimeError` → 请求抛出、`.inputs/` 中无新增 png。
   5. 「busy before frame extraction」：有作业在跑时发续写请求 → 409 `media_busy`，`subprocess.run`（截帧）未被调用。
   6. `test_media_video_refs.py`：`mode="image"` 带 `refs.ref_image` → 400 且文案为引用名不被允许的「引用参数有误：ref_image」（由 `_check_ref_names` 给出），不是「素材与生成模式不匹配」。
@@ -136,7 +141,7 @@ export function musicOutput(attempt) {
 **Interfaces:** Produces `compose.find_tool(name) -> str | None`（覆盖变量有效用它；无效则**退回 PATH**；都没有返回 None）；`inputs._tool(name, default)` 改为 `compose.find_tool(name) or default or name`；`compose.probe_size` 超时抛 `ValueError`；service 内 `_run_to_input(builder, suffix, code, message) -> Path`；`_drop_flags(items) -> list[bool]`；`_join_command(kind, parts, target, ffmpeg, size=None)`（`ffmpeg` 必填，视频 `size` 可预先给）。
 
 - [ ] **Step 1: 失败测试**
-  - `test_media_compose.py`：`LOCALMODELDESK_FFMPEG` 指向不存在的文件、PATH 有 ffmpeg → `find_tool("ffmpeg")` 返回 PATH 上的；`probe_size` 在 `subprocess.run` 抛 `TimeoutExpired` 时抛 `ValueError`。
+  - `test_media_compose.py`：`LOCALMODELDESK_FFMPEG` 指向不存在的文件、PATH 有 ffmpeg → `find_tool("ffmpeg")` 返回 PATH 上的（**有意的行为变化**：同时改写现有 `test_ffmpeg_path_honours_override_and_reports_absence` 中「覆盖路径无效 → None」的断言为「退回 PATH；PATH 也没有 → None」）；`probe_size` 在 `subprocess.run` 抛 `TimeoutExpired` 时抛 `ValueError`。
   - `test_media_inputs.py`：`_tool("ffprobe")` 与 `compose.find_tool("ffprobe")` 对同一环境给出同一结果（覆盖有效/无效两种）。
   - `test_media_compose_job.py`「probe outside lock」：patch `compose.probe_size` 为阻塞 0.5 秒的函数，另起线程调用 `start_compose_job`，期间主线程 `job_status()` 在 0.1 秒内返回。
 - [ ] **Step 2:** 确认失败。
@@ -175,6 +180,8 @@ export function musicOutput(attempt) {
 ---
 
 ### Task 6: 关闭 issue
+
+> 本任务含对外操作（推送、在 GitHub 上评论/编辑/关闭 issue）：执行前先向用户确认；Task 1–5 完成、合并到本地 main 之前不做。
 
 - [ ] **Step 1:** 对 #16–#20 逐个 `gh issue comment <n> --body …`：列出每个清单条目的处理结果（已修：提交短 SHA；不改：原因），其中 #16 的三条不改项写明：
   - 白名单外参数键不记 null：没有调用方依赖「未传」与「空值」的区别，保持现状。
