@@ -1,4 +1,5 @@
 """MediaService video success path."""
+import re
 import threading
 from pathlib import Path
 from types import SimpleNamespace
@@ -7,6 +8,9 @@ import pytest
 
 from desk.media.service import MediaError
 from media_fakes import FIXED_TIME, STAMP, FakeExecutor, finished_snapshot, make_service
+
+VIDEO_NAME = re.compile(rf"^h3-{STAMP}-[0-9a-f]{{8}}\.mp4$")
+MUSIC_NAME = re.compile(rf"^music3-{STAMP}-[0-9a-f]{{8}}\.wav$")
 
 
 def video_session(deps) -> str:
@@ -75,7 +79,7 @@ def test_start_video_job_success_path(tmp_path):
     service, deps = make_service(tmp_path)
     snap = finished_snapshot(service, lambda: start_video(service, deps))
     assert snap["status"] == "done"
-    assert snap["output"] == f"h3-{STAMP}.mp4"
+    assert VIDEO_NAME.match(snap["output"])
     assert snap["params"] == {"prompt": "rain on a quiet street", "width": 512,
         "height": 288, "frames": 73, "steps": 10, "seed": 7}
     assert snap["started_at"] == snap["finished_at"] == FIXED_TIME
@@ -83,7 +87,7 @@ def test_start_video_job_success_path(tmp_path):
     assert deps.arbiter.acquired == [("video", "job-1", "permit-1")]
     assert deps.arbiter.released == ["permit-1"]
     assert deps.history.entries == [{"kind": "video", "status": "done", "params": snap["params"],
-        "output": f"h3-{STAMP}.mp4", "duration_s": 0.0, "error": None,
+        "output": snap["output"], "duration_s": 0.0, "error": None,
         "session_id": snap["session_id"], "attempt_id": snap["attempt_id"]}]
 
 
@@ -95,10 +99,13 @@ def test_video_argv_and_running_state(tmp_path):
     service.on_job_finished(lambda _: completed.set())
     state = start_video(service, deps)
     assert state["status"] == "running"
+    cmd = deps.executor.spawned[0]["cmd"]
+    output = Path(cmd[cmd.index("--output") + 1])
+    assert VIDEO_NAME.match(output.name)
     assert deps.executor.spawned == [{"cmd": build_h3_command(
         ("/fake/bin/mlx-h3",), tmp_path / "models" / "minimax-h3",
         prompt="rain on a quiet street", width=512, height=288, frames=73,
-        steps=10, seed=7, output=tmp_path / "outputs" / f"h3-{STAMP}.mp4"),
+        steps=10, seed=7, output=tmp_path / "outputs" / output.name),
         "extra_env": {"PYTHONPATH": "/fake/pylibs/h3"}}]
     service.cancel_job()
     assert completed.wait(5)
@@ -165,9 +172,9 @@ def test_start_music_job_argv_output_and_runtime_capability(tmp_path):
     snap = finished_snapshot(service, lambda: service.start_music_job(
         caption="ambient piano", lyrics="instrumental", duration=30.0, seed=7, session_id=sid))
 
-    output = tmp_path / "outputs" / f"music3-{STAMP}.wav"
     assert snap["status"] == "done"
-    assert snap["output"] == output.name
+    assert MUSIC_NAME.match(snap["output"])
+    output = tmp_path / "outputs" / snap["output"]
     assert deps.executor.spawned == [{"cmd": build_music_command(
         roots.music_python, roots.media_cli_dir / "music3_cli.py",
         tmp_path / "models" / "minimax-music3", caption="ambient piano",
@@ -484,7 +491,7 @@ class TestJobFinishedEvent:
         assert len(events) == 1
         snap = events[0]
         assert snap["status"] == "done"
-        assert snap["output"] == f"h3-{STAMP}.mp4"
+        assert VIDEO_NAME.match(snap["output"])
         assert snap["params"]["prompt"] == "p"
 
     def test_broken_subscriber_does_not_break_others_or_job(self, tmp_path):
@@ -611,3 +618,40 @@ def test_media_hands_the_arbiter_its_job_params(tmp_path):
     assert deps.arbiter.last_precheck["key"] == "h3"
     assert (deps.arbiter.last_acquire["params"] or {}).get("width") == 1024, \
         "acquire_heavy 没收到作业参数"
+
+
+def test_two_jobs_in_the_same_second_get_different_output_names(tmp_path):
+    from desk.library.outputs import _infer_kind
+    from test_media_sessions_service import music, music_ready
+
+    service, deps = make_service(tmp_path)
+    videos = [finished_snapshot(service, lambda: start_video(service, deps))["output"] for _ in range(2)]
+    assert videos[0] != videos[1]
+    assert all(re.match(r"^h3-\d{8}-\d{6}-[0-9a-f]{8}\.mp4$", name) for name in videos)
+    assert all(_infer_kind(name) == "video" for name in videos)
+
+    music_ready(service, tmp_path)
+    sid = deps.media_sessions["music"].create()["id"]
+    songs = [finished_snapshot(service, lambda: music(service, session_id=sid))["output"] for _ in range(2)]
+    assert songs[0] != songs[1]
+    assert all(re.match(r"^music3-\d{8}-\d{6}-[0-9a-f]{8}\.wav$", name) for name in songs)
+    assert all(_infer_kind(name) == "music" for name in songs)
+
+
+def test_a_refused_request_draws_no_random_seed(tmp_path, monkeypatch):
+    from desk.media import service as service_mod
+    draws = []
+    monkeypatch.setattr(service_mod.secrets, "randbelow", lambda n: draws.append(n) or 7)
+    service, deps = make_service(tmp_path)
+    with pytest.raises(MediaError) as exc:
+        service.start_video_job(prompt="p", width=512, height=288, frames=49, steps=12, seed=None,
+                                force="x", session_id=video_session(deps))
+    assert exc.value.code == "invalid_params"
+    with pytest.raises(MediaError) as exc:
+        service.start_image_job(prompt="p", seed=None, force="x", session_id=deps.media_sessions["image"].create()["id"])
+    assert exc.value.code == "invalid_params"
+    with pytest.raises(MediaError) as exc:
+        service.start_music_job(caption="c", lyrics="l", duration=10, seed=None, force="x",
+                                session_id=deps.media_sessions["music"].create()["id"])
+    assert exc.value.code == "invalid_params"
+    assert draws == [] and deps.executor.spawned == []

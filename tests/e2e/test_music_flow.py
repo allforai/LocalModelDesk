@@ -1,4 +1,5 @@
 """R-e2e-07: music parameters progress through the UI into a playable output."""
+import re
 import time
 
 from playwright.sync_api import expect
@@ -32,13 +33,13 @@ def test_music_parameters_progress_and_player_src_follow_finished_output(
         expect(card.locator(".attempt-log pre")).to_contain_text("step 5/10")
         harness.media_script.step()
 
-        output_name = "music3-{}.wav".format(
-            time.strftime("%Y%m%d-%H%M%S", time.localtime(harness.clock()))
-        )
+        stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(harness.clock()))
+        output_pattern = re.compile(rf"^/api/outputs/(music3-{stamp}-[0-9a-f]{{8}}\.wav)$")
         expect(card).to_have_attribute("data-attempt-status", "done", timeout=15_000)
         player = card.locator("audio.attempt-audio")
         expect(player).to_have_attribute("controls", "")
-        expect(player).to_have_attribute("src", f"/api/outputs/{output_name}")
+        expect(player).to_have_attribute("src", output_pattern)
+        output_name = output_pattern.match(player.get_attribute("src")).group(1)
         expect(player).to_have_css("max-width", "100%")
         assert (harness.outputs_root / output_name).read_bytes() == TINY_WAV
 

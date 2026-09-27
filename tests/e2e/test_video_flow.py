@@ -1,4 +1,5 @@
 """R-e2e-06: video parameters progress through the UI into a playable output."""
+import re
 import time
 import base64
 import pytest
@@ -81,12 +82,12 @@ def test_video_parameters_progress_and_player_src_follow_finished_output(
         expect(_job_log(pane)).to_contain_text("step 5/10")
         harness.media_script.step()
 
-        output_name = "h3-{}.mp4".format(
-            time.strftime("%Y%m%d-%H%M%S", time.localtime(harness.clock()))
-        )
+        stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(harness.clock()))
+        output_pattern = re.compile(rf"^/api/outputs/(h3-{stamp}-[0-9a-f]{{8}}\.mp4)$")
         player = _card_video(pane)
         expect(player).to_have_attribute("controls", "")
-        expect(player).to_have_attribute("src", f"/api/outputs/{output_name}")
+        expect(player).to_have_attribute("src", output_pattern)
+        output_name = output_pattern.match(player.get_attribute("src")).group(1)
         assert (harness.outputs_root / output_name).read_bytes() == TINY_MP4
 
         response = page.request.get(f"{harness.base_url}{player.get_attribute('src')}")
