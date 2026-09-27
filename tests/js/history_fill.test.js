@@ -53,5 +53,6 @@ test("fillPlan carries session fields for video and music, and skips compose ent
   const music = fillPlan({ kind: "music", session_id: "m", attempt_id: "b", params: { caption: "c", lyrics: "l", duration: 20 } });
   assert.equal(music.session_id, "m"); assert.equal(music.attempt_id, "b");
   assert.equal(fillPlan({ kind: "video", params: { op: "compose", parts: ["a", "b"] } }), null);
+  assert.equal(fillPlan({ kind: "video", params: { op: "soundtrack", source: "a" } }), null);
   assert.equal(fillPlan({ kind: "video", params: { prompt: "p" } }).session_id, null);
 });

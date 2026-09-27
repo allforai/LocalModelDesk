@@ -3,7 +3,7 @@ export function fillPlan(entry) {
   if (!entry || typeof entry !== "object") return null;
   const params = entry.params;
   if (!params || typeof params !== "object") return null;
-  if (params.op === "compose") return null; // 合成成品没有可回填的参数（B-74）
+  if (params.op === "compose" || params.op === "soundtrack") return null; // 合成、配乐成品没有可回填的参数（B-74、S-06）
   const session = { session_id: entry.session_id ?? null, attempt_id: entry.attempt_id ?? null };
   if (entry.kind === "video") {
     return {

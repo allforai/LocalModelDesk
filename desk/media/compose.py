@@ -82,6 +82,7 @@ def crossfade_audio_command(ffmpeg: str, parts: list[tuple[Path, float]], output
             "-c:a", "pcm_s16le", str(output)]
 
 
-def replace_audio_command(ffmpeg: str, video: Path, audio: Path, output: Path) -> list[str]:
+def soundtrack_command(ffmpeg: str, video: Path, audio: Path, output: Path) -> list[str]:
+    """Replace the video's audio with `audio`, padded with silence or cut so the video length wins (S-04)."""
     return [ffmpeg, "-y", "-v", "error", "-i", str(video), "-i", str(audio), "-map", "0:v", "-map", "1:a",
-            "-c:v", "copy", "-c:a", "aac", "-shortest", str(output)]
+            "-c:v", "copy", "-af", "apad", "-c:a", "aac", "-shortest", str(output)]

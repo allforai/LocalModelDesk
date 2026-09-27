@@ -105,7 +105,7 @@ class MediaService:
         self._resolve_paths, self._probe_capabilities, self._arbiter = resolve_paths, probe_capabilities, arbiter
         self._list_catalog, self._append_history, self._executor = list_catalog, append_history, executor
         self._sessions = media_sessions
-        self._ref_slots = ref_slots if ref_slots is not None else {"video": {"first_frame": "image"}}
+        self._ref_slots = ref_slots if ref_slots is not None else {"video": {"first_frame": "image", "soundtrack": "music"}}
         self._clock, self._term_grace_s, self._log_limit = clock, term_grace_s, log_limit
         self._lock = threading.RLock()
         self._state: dict[str, Any] = {"job_id": 0, "status": "idle", "kind": None, "params": None,
@@ -204,6 +204,8 @@ class MediaService:
         seed = _check_seed(seed)
         if continues is not None and (mode not in ("text", "image") or first_frame or last_frame or ref_video):
             raise MediaError("invalid_params", CONTINUE_CONFLICT, 400)
+        if isinstance(refs, dict) and "soundtrack" in refs:   # only a soundtrack job takes a song (S-01)
+            raise MediaError("invalid_params", "引用参数有误：soundtrack", 400)
         wants_ref_frame = isinstance(refs, dict) and "first_frame" in refs
         if wants_ref_frame and continues is not None:
             raise MediaError("invalid_params", CONTINUE_CONFLICT, 400)
@@ -307,9 +309,32 @@ class MediaService:
         root = Path(self._resolve_paths().outputs_root)
         paths = [root / item["output"] for item in items]   # each segment's own file, never its joined one (B-48)
         drops = [False] + [items[i].get("continues") == items[i - 1]["id"] for i in range(1, len(items))]
+        joined = list(zip(paths, drops))
         return self._start(kind, {"op": "compose", "parts": list(parts)}, session_id=session_id,
                            attempt_extra={"op": "compose", "params": {"parts": list(parts)}},
-                           compose_parts=list(zip(paths, drops)))
+                           compose_command=lambda ffmpeg, output: self._join_command(kind, joined, output, ffmpeg),
+                           output_prefix="h3-compose" if kind == "video" else "music3-compose")
+
+    def start_soundtrack_job(self, *, session_id, source, refs, force=False) -> dict:
+        """Replace a video attempt's audio with a music-session song (S-01–S-05): ffmpeg only, like compose.
+
+        `force` is accepted and ignored, as for compose (B-45)."""
+        if not isinstance(source, str) or not isinstance(refs, dict) or set(refs) != {"soundtrack"} \
+                or not isinstance(refs["soundtrack"], dict):
+            raise MediaError("invalid_params", "配乐参数有误：需要一段视频和一首歌", 400)
+        if not isinstance(force, bool):
+            raise MediaError("invalid_params", "force 必须为布尔值", 400)
+        session_id = self._check_session("video", session_id, required=True)
+        segment = self._segment("video", session_id, source)
+        stored_refs, ref_paths = self._resolve_refs("video", refs)
+        joined = segment.get("joined_output")
+        root = Path(self._resolve_paths().outputs_root)
+        video = root / (joined if joined and not segment.get("joined_missing") else segment["output"])   # S-03
+        audio = ref_paths["soundtrack"]
+        return self._start("video", {"op": "soundtrack", "source": source}, session_id=session_id,
+                           attempt_extra={"op": "soundtrack", "refs": stored_refs},
+                           compose_command=lambda ffmpeg, output: compose.soundtrack_command(ffmpeg, video, audio, output),
+                           output_prefix="h3-soundtrack")
 
     def _base_attempt(self, session_id: str, base) -> dict:
         """The done attempt of this session an img2img job redraws from (its file must still exist)."""
@@ -341,12 +366,14 @@ class MediaService:
 
     def _start(self, kind: str, params: dict, *, force: bool = False, session_id: str | None = None,
               attempt_extra: dict | None = None, join: dict | None = None,
-              compose_parts: list | None = None, ref_paths: dict | None = None) -> dict:
+              compose_command: Callable[[str, Path], list[str]] | None = None, output_prefix: str | None = None,
+              ref_paths: dict | None = None) -> dict:
         """`join` (from `_join_plan`) makes the job join the chain into a finished file after the model (B-38).
 
-        `compose_parts` ([(path, drop_first_frame)]) makes it a compose job instead: only ffmpeg runs,
-        so arbiter, capability/model checks and the memory estimate are skipped (B-45)."""
-        heavy = compose_parts is None
+        `compose_command(ffmpeg, output) -> argv` makes it an ffmpeg-only job instead (compose B-45,
+        soundtrack S-02): arbiter, capability/model checks and the memory estimate are skipped, and
+        the output is `<output_prefix>-<stamp>-<8hex>` with the kind's suffix."""
+        heavy = compose_command is None
         with self._lock:
             if self._state["status"] == "running":
                 raise MediaError("media_busy", "a media job is already running", 409)
@@ -355,7 +382,8 @@ class MediaService:
             if heavy:
                 model_root, permit = self._admit_heavy(kind, params, force, join, roots, job_id)
             else:
-                if compose.ffmpeg_path() is None:
+                ffmpeg = compose.ffmpeg_path()
+                if ffmpeg is None:
                     raise MediaError("capability_missing", compose.FFMPEG_MISSING, 503)
                 model_root, permit = None, None
             now = self._clock()
@@ -366,9 +394,9 @@ class MediaService:
                 stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(now))
                 root = Path(roots.outputs_root); root.mkdir(parents=True, exist_ok=True)
                 if not heavy:
-                    suffix, prefix = (".mp4", "h3") if kind == "video" else (".wav", "music3")
-                    output = root / f"{prefix}-compose-{stamp}-{uuid.uuid4().hex[:8]}{suffix}"
-                    command = self._join_command(kind, compose_parts, output)
+                    suffix = ".mp4" if kind == "video" else ".wav"
+                    output = root / f"{output_prefix}-{stamp}-{uuid.uuid4().hex[:8]}{suffix}"
+                    command = compose_command(ffmpeg, output)
                     extra_env = {}
                 elif kind == "video":
                     output = root / f"h3-{stamp}.mp4"
@@ -484,9 +512,9 @@ class MediaService:
                 elif code == 0 and output.is_file(): status, error = "done", None
                 elif code == 0: status, error = "error", {"code": "no_output", "message": "exit 0 but output file missing"}
                 else: status, error = "error", {"code": "exit_nonzero", "message": f"exit {code}", "log_tail": self._log_tail(5)}
-                if job["compose"] and status == "error":   # B-47: a compose job fails as a join
+                if job["compose"] and status == "error":   # B-47/S-05: an ffmpeg-only job fails as a join
                     error = {"code": "join_failed", "message": "拼接成片失败", "log_tail": self._log_tail(5)}
-                if job["compose"] and status != "done":   # B-45: no half-written *-compose-* left behind
+                if job["compose"] and status != "done":   # B-45/S-05: no half-written output left behind
                     output.unlink(missing_ok=True)
                 join = job["join"] if status == "done" else None
                 session_id, attempt_id = self._state["session_id"], self._state["attempt_id"]
