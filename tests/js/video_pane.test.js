@@ -808,3 +808,43 @@ test("配乐参考「换个版本」时引用已不在：显示后端原话", as
     assert.equal(parts.error.textContent, "引用的音乐已不在");
   });
 });
+
+// ---------- issue #18 ----------
+test("成片播放出错退回本段、不标文件不在；分段切换可用方向键；切换会话后 brokenIds 清空", async () => {
+  await withBackend("video", async (backend) => {
+    const a = backend.addSession("甲", [done("a1"), done("a2", { continues: "a1", joined_output: "j2.mp4" })]);
+    const b = backend.addSession("乙", [done("b1")]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    const item = (id) => findAll(parts["session-list"], (n) => n.dataset?.sessionId === id)[0];
+    const cardOf = (id) => cards(parts).find((n) => n.dataset.attemptId === id);
+    await item(a.id).click(); await flush();
+
+    let video = find(cardOf("a2"), (n) => n.tagName === "video");
+    const group = find(cardOf("a2"), (n) => n.attrs?.role === "radiogroup");
+    const whole = button(group, "成片"); const part = button(group, "只看这一段");
+    await whole.dispatch("keydown", { key: "ArrowRight" });
+    assert.equal(part.attrs["aria-checked"], "true");
+    assert.equal(part.focused, 1);
+    assert.equal(video.src, "/api/outputs/a2.mp4");
+    await part.dispatch("keydown", { key: "ArrowLeft" });
+    assert.equal(whole.attrs["aria-checked"], "true");
+    assert.equal(video.src, "/api/outputs/j2.mp4");
+
+    await video.dispatch("error");
+    assert.equal(video.src, "/api/outputs/a2.mp4");
+    assert.equal(find(cardOf("a2"), (n) => n.attrs?.role === "radiogroup"), null);
+    assert.doesNotMatch(cardOf("a2").textContent, /视频文件已不在/);
+    assert.equal(button(cardOf("a2"), "接着往下生").disabled, false);
+    await video.dispatch("error");
+    assert.match(cardOf("a2").textContent, /视频文件已不在/);
+
+    await item(b.id).click(); await flush();
+    await item(a.id).click(); await flush();
+    await pane.refresh();
+    const next = button(cardOf("a2"), "接着往下生");
+    assert.equal(next.disabled, false);
+    await next.click();
+    assert.equal(parts["chip-text"].textContent, "接在第 2 次后面");
+  });
+});

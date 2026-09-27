@@ -113,7 +113,7 @@ export function createMusicPane(root, ctx = {}) {
     composer: {
       startLabel: "生成歌曲",
       afterStart: ({ fromInputs }) => { if (fromInputs) { els.seed.value = ""; ref = null; syncChip(); } },
-      onSessionSwitch: clearChip,
+      onSessionSwitch: () => { brokenIds.clear(); clearChip(); }, // 播放出错的标记只在本会话内有效（issue #18）
       focus: () => els.lyrics.focus?.(),
       updateAvailability,
     },

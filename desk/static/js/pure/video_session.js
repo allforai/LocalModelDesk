@@ -1,5 +1,5 @@
 // 视频会话的纯逻辑（设计 docs/superpowers/specs/2026-09-27-video-sessions-design.md，第 3a 块）。零 DOM、零 fetch。
-import { ParamsError, SEED_MAX, attemptLabel, randomSeed } from "./media_session.js";
+import { ParamsError, SEED_MAX, attemptLabel, positionOf, randomSeed, sessionCardTitle } from "./media_session.js";
 
 export const SIZES = [["512x288", "草稿 512×288"], ["768x448", "标准 768×448"], ["1024x576", "清晰 1024×576"]];
 export const DURATIONS = [[49, "约 2 秒（快速）"], [73, "约 3 秒"], [124, "约 5 秒（常用）"], [192, "约 8 秒"], [243, "约 10 秒"], [362, "约 15 秒（最长）"]];
@@ -144,26 +144,16 @@ export function firstFrameLabel(source, { fileName, imageTitle, imageIndex, cont
   return "未选择";
 }
 
-// 同音乐规则（music_session.js 的 cardTitle）：合成尝试标出各段序号，续写段标出前段序号。
-export function cardTitle(attempt, index, attempts) {
-  if (attempt?.op === "soundtrack") return soundtrackTitle(attempt, index, attempts, "");
-  const base = attemptLabel(index, attempt);
-  const position = (id) => (attempts ?? []).findIndex((a) => a?.id === id);
-  if (attempt?.op === "compose" || Array.isArray(attempt?.params?.parts)) {
-    const nums = (attempt.params?.parts ?? []).map(position);
-    return nums.length && nums.every((n) => n >= 0) ? `${base} · 合成：第 ${nums.map((n) => n + 1).join("、")} 次` : `${base} · 合成`;
-  }
-  if (attempt?.continues) {
-    const n = position(attempt.continues);
-    if (n >= 0) return `${base} · 接第 ${n + 1} 次`;
-  }
-  return base;
+// 卡片标题：配乐尝试走 soundtrackTitle（songLabel 是歌的风格描述摘要，可为空），其余同音乐规则（sessionCardTitle）。
+export function cardTitle(attempt, index, attempts, songLabel = "") {
+  if (attempt?.op === "soundtrack") return soundtrackTitle(attempt, index, attempts, songLabel);
+  return sessionCardTitle(attempt, index, attempts);
 }
 
 // 配乐卡片标题（S-31）：「第 N 次 · HH:MM · 配乐：<风格描述摘要> · 基于第 M 次」；
 // label（风格描述摘要）取不到只写「配乐」，原视频不在本会话里就省略「基于」一段。
 export function soundtrackTitle(attempt, index, attempts, label) {
-  const source = (attempts ?? []).findIndex((a) => a?.id === attempt?.params?.source);
+  const source = positionOf(attempts, attempt?.params?.source);
   const parts = [attemptLabel(index, attempt), label ? `配乐：${label}` : "配乐"];
   if (source >= 0) parts.push(`基于第 ${source + 1} 次`);
   return parts.join(" · ");

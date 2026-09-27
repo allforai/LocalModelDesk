@@ -427,7 +427,7 @@ export function createVideoPane(root, ctx = {}) {
         if (continuing()) first = null;
         renderInputs(); syncChip();
       },
-      onSessionSwitch: clearChip,
+      onSessionSwitch: () => { brokenIds.clear(); clearChip(); }, // 播放出错的标记只在本会话内有效（issue #18）
       focus: () => els.prompt.focus?.(),
       updateAvailability,
     },

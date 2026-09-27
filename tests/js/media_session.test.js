@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   attemptView, autoTitle, availability, deleteMessage, orderSessions, pickCurrent, randomSeed,
   runningLabel, runningSessionId, sessionMeta, sessionTitle, startErrorText, attemptLabel, chainOf,
+  pickBadge, positionOf, sessionCardTitle,
 } from "../../desk/static/js/pure/media_session.js";
 
 const ready = { listState: "ready", currentId: "s1", current: { attempts: [] }, sessions: [{ id: "s1" }, { id: "s2", title: "旧歌", running: true }],
@@ -146,4 +147,25 @@ test("attemptView 的 missing 图标默认 image，可由调用方按媒体种�
   assert.equal(attemptView(gone).icon, "image");
   assert.equal(attemptView(gone, { noun: "音频", icon: "music" }).icon, "music");
   assert.equal(attemptView(gone, { noun: "视频", icon: "video" }).icon, "video");
+});
+
+test("pickBadge：前 20 个用圈码，之后用带括号的序号（issue #18）", () => {
+  assert.equal(pickBadge(0), "①");
+  assert.equal(pickBadge(19), "⑳");
+  assert.equal(pickBadge(20), "(21)");
+});
+
+test("positionOf 与 sessionCardTitle：续写段标前段序号，合成标各段序号，找不到时回落（issue #18）", () => {
+  const at = (id, extra = {}) => ({ id, status: "done", output: `${id}.wav`, ts: "2026-09-27T09:00:00", ...extra });
+  const attempts = [at("a"), at("b", { continues: "a" }), at("c", { op: "compose", params: { parts: ["a", "b"] } }),
+    at("d", { continues: "zz" }), at("e", { op: "compose", params: { parts: ["a", "zz"] } })];
+  assert.equal(positionOf(attempts, "b"), 1);
+  assert.equal(positionOf(attempts, "zz"), -1);
+  assert.equal(positionOf(null, "a"), -1);
+  assert.equal(sessionCardTitle(attempts[0], 0, attempts), "第 1 次 · 09:00");
+  assert.equal(sessionCardTitle(attempts[1], 1, attempts), "第 2 次 · 09:00 · 接第 1 次");
+  assert.equal(sessionCardTitle(attempts[2], 2, attempts), "第 3 次 · 09:00 · 合成：第 1、2 次");
+  assert.equal(sessionCardTitle(attempts[3], 3, attempts), "第 4 次 · 09:00");
+  assert.equal(sessionCardTitle(attempts[4], 4, attempts), "第 5 次 · 09:00 · 合成");
+  assert.equal(sessionCardTitle(attempts[2], 2, attempts, { composeWord: "拼接" }), "第 3 次 · 09:00 · 拼接：第 1、2 次");
 });

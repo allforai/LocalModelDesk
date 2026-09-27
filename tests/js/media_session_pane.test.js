@@ -341,3 +341,100 @@ test("startCompose 在挑选模式外也能用（重新拼接）：成功后新�
     assert.equal(parts.error.textContent, "");
   });
 });
+
+// ---------- issue #18 ----------
+test("挑选模式中已选的一段在刷新后文件不在：合成栏列表与「合成（K 段）」随之减少", async () => {
+  await withBackend("music", async (backend) => {
+    const s = backend.addSession("歌", [done("a1"), done("a2"), done("a3")]);
+    const { root, pane, ready } = makeGenericPane({ canCompose: true });
+    ready(); await pane.refresh();
+    await byData(root, "musicComposeStart").click();
+    pane.togglePick("a1"); pane.togglePick("a2"); pane.togglePick("a3");
+    const bar = byData(root, "musicComposeBar");
+    assert.ok(button(bar, "合成（3 段）"));
+    assert.ok(labeled(bar, "移除第 2 次"));
+    s.attempts[1].output_missing = true;
+    await pane.refresh();
+    assert.ok(button(bar, "合成（2 段）"));
+    assert.equal(labeled(bar, "移除第 2 次"), null);
+    assert.match(bar.textContent, /第 1 次.*第 3 次/s);
+  });
+});
+
+test("「取消」退出挑选后焦点回到「挑几段合成…」；切换会话、新建会话、合成成功退出时不抢焦点", async () => {
+  await withBackend("music", async (backend) => {
+    const a = backend.addSession("甲", [done("a1"), done("a2")]);
+    backend.addSession("乙", [done("b1"), done("b2")]);
+    backend.nextJob = 50;
+    const { root, parts, pane, ready } = makeGenericPane({ canCompose: true });
+    ready(); await pane.refresh();
+    const startBtn = byData(root, "musicComposeStart");
+    const bar = byData(root, "musicComposeBar");
+    await startBtn.click();
+    await button(bar, "取消").click();
+    assert.equal(bar.hidden, true);
+    assert.equal(startBtn.focused, 1);
+
+    await startBtn.click();
+    await items(parts).find((n) => n.dataset.sessionId === a.id).click(); await flush();
+    assert.equal(bar.hidden, true);
+    await startBtn.click();
+    await parts["session-new"].click(); await flush();
+    assert.equal(bar.hidden, true);
+    await items(parts).find((n) => n.dataset.sessionId === a.id).click(); await flush();
+    await startBtn.click();
+    pane.togglePick("a1"); pane.togglePick("a2");
+    await button(bar, "合成（2 段）").click(); await flush();
+    assert.equal(bar.hidden, true);
+    assert.equal(startBtn.focused, 1);
+  });
+});
+
+test("切换会话后控制器的 broken 集合清空：切回来时卡片不再标坏、可以勾选", async () => {
+  await withBackend("music", async (backend) => {
+    const a = backend.addSession("甲", [done("a1"), done("a2")]);
+    const b = backend.addSession("乙", [done("b1")]);
+    const seenBroken = new Map();
+    let breakIt = null;
+    const { parts, pane, ready } = makeGenericPane({
+      canCompose: true,
+      renderCard: (d, o) => {
+        const li = d.createElement("li");
+        li.dataset.attemptId = o.attempt.id;
+        li.dataset.pickIndex = String(o.pickIndex ?? -1);
+        seenBroken.set(o.attempt.id, o.broken);
+        if (o.attempt.id === "a1") breakIt = () => o.onBroken(o.attempt);
+        return { node: li };
+      },
+    });
+    ready(); await pane.refresh();
+    await items(parts).find((n) => n.dataset.sessionId === a.id).click(); await flush();
+    breakIt();
+    assert.equal(seenBroken.get("a1"), true);
+    await items(parts).find((n) => n.dataset.sessionId === b.id).click(); await flush();
+    await items(parts).find((n) => n.dataset.sessionId === a.id).click(); await flush();
+    await pane.refresh();
+    assert.equal(seenBroken.get("a1"), false);
+  });
+});
+
+test("renderCard 收到 actionsBlocked：可用时为空，忙碌时为原因；原因变了会重画用到它的卡片", async () => {
+  await withBackend("music", async (backend) => {
+    backend.addSession("歌", [done("a1")]);
+    const blocked = [];
+    const { pane, ready } = makeGenericPane({
+      renderCard: (d, o) => {
+        blocked.push(o.actionsBlocked);
+        const li = d.createElement("li");
+        li.dataset.attemptId = o.attempt.id;
+        return { node: li, usesActionsBlocked: true };
+      },
+    });
+    ready(); await pane.refresh();
+    assert.equal(blocked.at(-1), "");
+    pane.setHeavyAllowed(false, "对话模型正在占用内存");
+    assert.equal(blocked.at(-1), "对话模型正在占用内存");
+    pane.setHeavyAllowed(true);
+    assert.equal(blocked.at(-1), "");
+  });
+});

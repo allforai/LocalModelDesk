@@ -51,6 +51,10 @@ export function createSessionPane(root, {
   const broken = new Set();
   // 挑选合成模式（M-05–M-11）：picks 是已勾选尝试的 id，顺序即拼接顺序。
   let picking = false; let picks = []; let composeError = "";
+  // 上次画时间线时交给卡片的 actionsBlocked（「重新拼接」的不可用原因）与是否有卡片用到它：
+  // 原因变了且有卡片用到时重画，作业结束后按钮自己恢复（issue #18）。
+  let lastBlocked = null; let blockedShown = false;
+  const actionsBlockedOf = (state) => (state.disabled ? state.reason : "");
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
 
@@ -71,6 +75,7 @@ export function createSessionPane(root, {
     els.model.textContent = modelReason || "模型文件完整 · 可离线生成";
     composer.updateAvailability?.(state, { secondary: secondaryRefs });
     updateCompose(state);
+    if (blockedShown && actionsBlockedOf(state) !== lastBlocked) renderTimeline();
   }
   function setModelStatus(status) {
     modelReason = status?.state === "present" ? "" : status?.reason || (
@@ -169,7 +174,8 @@ export function createSessionPane(root, {
   }
 
   function renderTimeline({ scroll = false } = {}) {
-    runningRefs = null; secondaryRefs = null; expandedRefs = null;
+    runningRefs = null; secondaryRefs = null; expandedRefs = null; blockedShown = false;
+    lastBlocked = actionsBlockedOf(currentAvailability());
     if (scroll) scrollIntent = "bottom";
     const keep = els.timeline.scrollTop;
     if (currentCorrupt) {
@@ -185,7 +191,9 @@ export function createSessionPane(root, {
       return;
     }
     if (!attempts.some((a) => a.id === selectedId)) selectedId = attempts.at(-1).id;
+    const pickedBefore = picks.length;
     prunePicks();
+    if (picks.length !== pickedBefore) renderPicks(); // 已选的一段刷新后不可挑了：合成栏列表同步减少
     const list = doc.createElement("ol");
     list.className = `session-attempts ${dataPrefix}-attempts`;
     attempts.forEach((attempt, index) => {
@@ -194,7 +202,9 @@ export function createSessionPane(root, {
         onBroken: (a) => { if (!broken.has(a.id)) { broken.add(a.id); renderTimeline(); } },
         onImageLoad: settleView,
         picking, pickIndex: picks.indexOf(attempt.id), onTogglePick: (a) => togglePick(a.id),
+        actionsBlocked: lastBlocked,
       });
+      if (card.usesActionsBlocked) blockedShown = true;
       // 挑选模式里点卡片切换勾选而不是展开（M-06）；勾选框自己的 click 冒泡上来时不再切一次（它走 change）。
       card.node.addEventListener("click", (event) => {
         if (!picking) selectAttempt(attempt);
@@ -347,6 +357,7 @@ export function createSessionPane(root, {
   function switchTo(id) {
     if (id !== currentId) {
       composer.onSessionSwitch?.(); selectedId = null; current = null; currentCorrupt = false;
+      broken.clear(); // 播放出错的标记只在本会话内有效；切回来时文件可能已恢复
       exitPicking({ render: false }); // M-10：切换、新建会话都退出挑选模式
     }
     currentId = id;
@@ -479,7 +490,7 @@ export function createSessionPane(root, {
       if (!submit.disabled) startCompose([...picks]);
     });
     const cancel = make("button", "btn-secondary", "取消");
-    cancel.addEventListener("click", () => exitPicking());
+    cancel.addEventListener("click", () => exitPicking({ focus: true }));
     const actions = make("div", "compose-actions");
     actions.append(submit, cancel);
     const reason = make("p", "hint compose-reason");
@@ -564,12 +575,14 @@ export function createSessionPane(root, {
     renderTimeline();
   }
 
-  function exitPicking({ render = true } = {}) {
+  // focus：只有合成栏「取消」把焦点还给「挑几段合成…」；切换、新建会话与合成成功的退出不抢焦点。
+  function exitPicking({ render = true, focus = false } = {}) {
     if (!picking) return;
     picking = false; picks = []; composeError = "";
     renderPicks();
     if (render) renderTimeline();
     else updateCompose();
+    if (focus) compose.startBtn.focus?.();
   }
 
   // 只在挑选模式里、只对完成且文件在的尝试生效；再点一次取消勾选（同一段不会选两次，M-11）。
@@ -583,7 +596,9 @@ export function createSessionPane(root, {
 
   // 提交合成（M-09）；也给页面的「重新拼接」用（M-41）。合成不查内存，没有「仍要生成」确认。
   // 失败时挑选模式里写到合成栏错误行并留在模式内，否则写到页面错误行。
+  // 已在提交或生成不可用（有作业在跑等）时不再发：快速双击只发一次（issue #18）。
   async function startCompose(parts) {
+    if (pending || currentAvailability().disabled) return;
     const toBar = picking;
     pending = true; composeError = ""; setError(""); updateAvailability();
     try {
