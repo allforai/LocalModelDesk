@@ -236,6 +236,19 @@ def test_gone_song_is_404_ref_missing(tmp_path, clips):
     assert clips == []
 
 
+def test_gone_song_and_busy_still_prefers_ref_missing(tmp_path, clips):
+    """S-02 顺序：引用校验（music ref）先于忙碌门控（busy）。"""
+    service, deps = make_service(tmp_path)
+    sid, image, ref = ready(deps, tmp_path)
+    (tmp_path / "outputs" / "song.wav").unlink()
+    deps.executor.script = "block"
+    video(service, session_id=sid)
+    error = _refused(service, sid, ref_audio=ref, ref_image=image)
+    assert (error.code, error.http_status, error.message) == ("ref_missing", 404, "引用的音乐已不在")
+    assert clips == []
+    service.cancel_job()
+
+
 def test_clip_wav_is_removed_once_a_successful_job_finalizes(tmp_path, clips):
     service, deps = make_service(tmp_path)
     sid, image, ref = ready(deps, tmp_path)

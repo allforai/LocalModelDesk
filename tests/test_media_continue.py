@@ -90,6 +90,26 @@ def test_join_failure_keeps_the_segment_as_done(tmp_path):
     finished_snapshot(service, lambda: video(service, session_id=sid, continues=first))
     second = attempts(deps, "video", sid)[1]
     assert second["status"] == "done" and second["joined_error"]["code"] == "join_failed"
+    assert "joined_output" not in deps.history.entries[-1]   # only a successful join adds the key
+
+
+def test_close_during_join_settles_join_cancelled_before_returning(tmp_path):
+    """应用退出发生在拼接阶段：跟模型作业本身还在跑一样，close() 必须等到落定才返回（R-shell-04）."""
+    service, deps = make_service(tmp_path, executor=FakeExecutor(join_script="block"))
+    service._term_grace_s = 0.01
+    sid, first = first_segment(service, deps)
+    video(service, session_id=sid, continues=first)
+    deadline = time.time() + 5
+    while attempts(deps, "video", sid)[1]["output"] is None and time.time() < deadline:
+        time.sleep(0.01)
+    assert service.job_status()["status"] == "running"   # segment is done, still inside the join
+
+    service.close()
+
+    second = attempts(deps, "video", sid)[1]
+    assert second["status"] == "done"
+    assert second["joined_output"] is None and second["joined_error"]["code"] == "join_cancelled"
+    assert service.job_status()["status"] != "running"
 
 
 def test_broken_chain_still_generates_and_names_the_missing_segment(tmp_path):

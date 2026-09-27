@@ -52,6 +52,47 @@ test("kind:image——role=dialog、标题、左侧两个会话、右侧缩略�
   assert.equal(doc.body.children.length, 0, "对话框已移除");
 });
 
+test("打开后焦点落在第一个会话按钮上（issue #20）", async () => {
+  const doc = makeDoc();
+  const p = openMediaPicker(doc, { kind: "image", title: "从图片会话选首帧", emptyText: "这个会话还没有生成好的图片", ...makeImageBackend() });
+  await flush(); await flush();
+  const box = boxOf(doc);
+  const sessionButtons = findAll(box, (n) => "sessionId" in n.dataset);
+  assert.equal(sessionButtons[0].focused, 1, "第一个会话按钮已经被 focus 过一次");
+  await find(box, (n) => "mediaPickerCancel" in n.dataset).click();
+  await p;
+});
+
+test("快速切换会话：先选的会话迟到的 getSession 响应不覆盖后选会话的内容（issue #20）", async () => {
+  const doc = makeDoc();
+  let resolveA;
+  const sessions = {
+    s1: { id: "s1", title: "会话一", attempts: [attempt("a1", "图一"), attempt("a2", "图二")] },
+    s2: { id: "s2", title: "会话二", attempts: [attempt("b1", "图三")] },
+  };
+  const p = openMediaPicker(doc, {
+    kind: "image", title: "从图片会话选首帧", emptyText: "空",
+    listSessions: async () => Object.values(sessions).map((s) => ({ id: s.id, title: s.title, attempt_count: s.attempts.length })),
+    getSession: async (id) => (id === "s1" ? new Promise((resolve) => { resolveA = () => resolve(sessions.s1); }) : sessions[id]),
+    serveOutput: (name) => `/api/outputs/${name}`,
+  });
+  await flush(); await flush();
+  const box = boxOf(doc);
+  // s1 的初始 selectSession 卡在 getSession 上（还没 resolve）；这期间切到 s2，它的响应更快先回来。
+  const s2Button = findAll(box, (n) => "sessionId" in n.dataset).find((b) => b.dataset.sessionId === "s2");
+  await s2Button.click();
+  await flush(); await flush();
+  assert.equal(findAll(box, (n) => "mediaPickerThumb" in n.dataset).length, 1, "s2 的内容已经画出来（1 张）");
+
+  resolveA();   // s1 的迟到响应现在才回来
+  await flush(); await flush();
+  const thumbs = findAll(box, (n) => "mediaPickerThumb" in n.dataset);
+  assert.equal(thumbs.length, 1, "s1 的迟到响应没有覆盖 s2 的内容（s1 有 2 张，s2 有 1 张，会露馅）");
+
+  await find(box, (n) => "mediaPickerCancel" in n.dataset).click();
+  await p;
+});
+
 test("kind:image——切到没有完成图片的会话显示空态；「取消」解析为 null（V-23）", async () => {
   const doc = makeDoc();
   const p = openMediaPicker(doc, { kind: "image", title: "从图片会话选首帧", emptyText: "这个会话还没有生成好的图片", ...makeImageBackend() });

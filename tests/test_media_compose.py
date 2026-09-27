@@ -118,6 +118,8 @@ def test_soundtrack_command_copies_video_and_pads_audio_to_the_video_length(tmp_
     assert cmd[cmd.index("-c:v") + 1] == "copy" and cmd[cmd.index("-af") + 1] == "apad"
     assert "-shortest" in cmd and cmd.index("-af") < cmd.index("-shortest")
     assert cmd[cmd.index("-i") + 1] == "v.mp4" and "song.wav" in cmd
+    i = cmd.index("-map")   # video track from the video file, audio track from the song (S-04)
+    assert cmd[i:i + 4] == ["-map", "0:v", "-map", "1:a"]
 
 
 @needs_ffmpeg

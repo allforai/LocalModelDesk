@@ -69,6 +69,17 @@ def test_gone_first_frame_ref_is_404(tmp_path):
     assert (exc.value.code, exc.value.http_status, exc.value.message) == ("ref_missing", 404, "引用的图片已不在")
 
 
+@pytest.mark.parametrize("ref_name", ["ref_audio", "ref_image"])
+def test_text_mode_rejects_music_ref_only_refs(tmp_path, ref_name):
+    service, deps = make_service(tmp_path)
+    sid, ref = video_session(deps), image_ref(deps, tmp_path)
+    with pytest.raises(MediaError) as exc:
+        video(service, session_id=sid, mode="text", refs={ref_name: ref})
+    assert (exc.value.code, exc.value.http_status, exc.value.message) == \
+        ("invalid_params", 400, f"引用参数有误：{ref_name}")
+    assert deps.media_sessions["video"].get(sid)["attempts"] == []
+
+
 def test_ref_image_is_not_allowed_in_image_mode(tmp_path):
     service, deps = make_service(tmp_path)
     sid, ref = video_session(deps), image_ref(deps, tmp_path)

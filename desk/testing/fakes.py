@@ -234,6 +234,10 @@ class FakeMediaExecutor:
         argv = list(cmd)
         self.script.spawned_argvs.append(argv)
         if "--output" not in argv:
+            code = self.script._fail_next_ffmpeg
+            if code is not None:
+                self.script._fail_next_ffmpeg = None
+                return FakeMediaHandle([Exit(code)], Path(argv[-1]))
             return FakeMediaHandle([WRITE_OUTPUT, Exit(0)], Path(argv[-1]))
         output_path = Path(argv[argv.index("--output") + 1])
         return FakeMediaHandle(self.script.next_job(), output_path, _declared_png(argv))

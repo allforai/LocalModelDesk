@@ -79,8 +79,9 @@ def test_missing_or_unsafe_inputs_rejected_before_acquire(tmp_path, asset_id, me
 
 def test_invalid_upload_removed(tmp_path):
     service, _ = make_service(tmp_path)
-    with pytest.raises(MediaError):
+    with pytest.raises(MediaError) as exc:
         service.upload_input(name="bad.png", data=base64.b64encode(b"not an image").decode())
+    assert (exc.value.code, exc.value.message) == ("invalid_input", "图片文件已损坏，无法解码")
     assert not list((tmp_path / "outputs" / ".inputs").iterdir())
 
 

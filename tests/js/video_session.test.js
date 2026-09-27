@@ -11,6 +11,10 @@ test("readVideoParams", () => {
   assert.throws(() => v.readVideoParams({ prompt: " ", size: "512x288", frames: "49", steps: "16" }), /请填写视频提示词/);
   assert.throws(() => v.readVideoParams({ prompt: "p", size: "512x288", frames: "49", steps: "3" }), (e) => e.advanced && /步数须为 4–50 的整数/.test(e.message));
   assert.throws(() => v.readVideoParams({ prompt: "p", size: "512x288", frames: "49", steps: "16", seed: "x" }), /种子须为 0–4294967295 的整数/);
+  assert.throws(() => v.readVideoParams({ prompt: "p", size: "999x999", frames: "49", steps: "16" }),
+    (e) => e.advanced && /高级参数里的数值有误：画幅无效/.test(e.message));
+  assert.throws(() => v.readVideoParams({ prompt: "p", size: "512x288", frames: "50", steps: "16" }),
+    (e) => e.advanced && /高级参数里的数值有误：视频时长无效/.test(e.message));
 });
 
 test("spec line and duration label", () => {

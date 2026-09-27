@@ -47,6 +47,42 @@ def test_compose_appends_a_compose_attempt_without_arbiter_or_memory(tmp_path):
     assert deps.history.entries[-1]["params"]["op"] == "compose"
 
 
+def test_compose_of_a_continuation_pair_drops_the_seconds_first_frame(tmp_path):
+    """真续写对（b continues a）合成时，图里得有 trim=start_frame=1（B-50），不同于手动乱序的那条用例。"""
+    service, deps = make_service(tmp_path)
+    sid, first = first_segment(service, deps)
+    second = finished_snapshot(service, lambda: video(service, session_id=sid, continues=first))["attempt_id"]
+    finished_snapshot(service, lambda: service.start_compose_job(kind="video", session_id=sid, parts=[first, second]))
+    made = attempts(deps, "video", sid)[-1]
+    assert made["status"] == "done" and made["output"].startswith("h3-compose-")
+    graph = deps.executor.spawned[-1]["cmd"][deps.executor.spawned[-1]["cmd"].index("-filter_complex") + 1]
+    assert "[1:v]trim=start_frame=1" in graph
+
+
+def test_music_compose_succeeds(tmp_path):
+    service, deps = make_service(tmp_path)
+    music_ready(service, tmp_path)
+    sid, first = first_segment(service, deps, "music")
+    second = finished_snapshot(service, lambda: music(service, session_id=sid))["attempt_id"]
+    snap = finished_snapshot(service, lambda: service.start_compose_job(kind="music", session_id=sid, parts=[first, second]))
+    made = attempts(deps, "music", sid)[-1]
+    assert made["op"] == "compose" and made["status"] == "done"
+    assert made["output"].startswith("music3-compose-") and snap["output"] == made["output"]
+    cmd = deps.executor.spawned[-1]["cmd"]
+    assert "acrossfade" in cmd[cmd.index("-filter_complex") + 1]
+
+
+def test_compose_with_a_deleted_segment_file_is_segment_missing(tmp_path):
+    service, deps = make_service(tmp_path)
+    sid, first, second = two_segments(service, deps)
+    (tmp_path / "outputs" / attempts(deps, "video", sid)[0]["output"]).unlink()
+    before = len(attempts(deps, "video", sid))
+    with pytest.raises(MediaError) as exc:
+        service.start_compose_job(kind="video", session_id=sid, parts=[first, second])
+    assert (exc.value.code, exc.value.http_status) == ("segment_missing", 404)
+    assert len(attempts(deps, "video", sid)) == before
+
+
 def test_compose_can_be_continued(tmp_path):
     service, deps = make_service(tmp_path)
     sid, first, second = two_segments(service, deps)

@@ -597,8 +597,9 @@ def test_bad_video_or_music_seed_is_400(tmp_path, bad):
     with pytest.raises(MediaError) as exc:
         service.start_video_job(prompt="p", width=512, height=288, frames=49, steps=12, seed=bad)
     assert (exc.value.code, exc.value.message) == ("invalid_params", "种子须为 0–4294967295 的整数")
-    with pytest.raises(MediaError):
+    with pytest.raises(MediaError) as music_exc:
         service.start_music_job(caption="c", lyrics="l", duration=10, seed=bad)
+    assert (music_exc.value.code, music_exc.value.message) == ("invalid_params", "种子须为 0–4294967295 的整数")
     assert deps.executor.spawned == []
 
 
