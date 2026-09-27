@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import secrets
 import subprocess
 import threading
@@ -11,7 +12,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from . import compose
-from .audio import wav_seconds
+from .audio import wav_seconds, wav_seconds_exact
 from .commands import build_h3_command, build_music_command, build_image_command
 from .inputs import save_input, resolve_input
 from desk.library.errors import NotFoundError
@@ -53,6 +54,11 @@ SEED_MESSAGE = "种子须为 0–4294967295 的整数"
 SEGMENT_NOT_FOUND = "找不到要接着的那一段"
 SEGMENT_MISSING = "那一段的文件已不在，无法接着生成"
 CONTINUE_CONFLICT = "续写会用上一段的最后一帧作首帧，不能另选首帧或参考视频"
+MUSIC_REF_CONFLICT = "配乐参考不能和首帧、尾帧或续写同时使用"
+# Which cross-session references each video request may carry (S-11); any other name is a 400.
+VIDEO_REF_NAMES = {"text": {"first_frame"}, "image": {"first_frame"}, "reference": {"first_frame"},
+                   "music_ref": {"ref_image", "ref_audio"}, "soundtrack": {"soundtrack"}}
+CLIP_MIN_S, CLIP_MAX_S = 2, 15   # H3 --ref-audio accepts 2–15 s (S-12)
 JOIN_CANCELLED = {"code": "join_cancelled", "message": "成片拼接被中止"}
 
 
@@ -65,19 +71,28 @@ def _check_seed(seed) -> int:
     return seed
 
 
-def _video_assets(mode: str, first_frame, last_frame, ref_video, *, first_from_ref: bool = False) -> dict:
+def _video_assets(mode: str, first_frame, last_frame, ref_video, ref_image=None, *, first_from_ref: bool = False) -> dict:
     """Input assets a video mode uses: {param: (asset id, asset kind)}.
 
-    `first_from_ref=True` means the first frame comes from `refs.first_frame`
-    (an image-session reference) instead of an uploaded asset id, so it is
-    not part of this asset table (V-04)."""
+    `first_from_ref=True` means the mode's image (the first frame, or the
+    music_ref reference image) comes from `refs` (an image-session reference)
+    instead of an uploaded asset id, so it is not part of this asset table (V-04)."""
     if mode == "image":
         assets = {} if first_from_ref else {"first_frame": (first_frame, "image")}
         if last_frame: assets["last_frame"] = (last_frame, "image")
         return assets
     if mode == "reference":
         return {"ref_video": (ref_video, "video")}
+    if mode == "music_ref":
+        return {} if first_from_ref else {"ref_image": (ref_image, "image")}
     return {}
+
+
+def _check_ref_names(refs, allowed: set) -> None:
+    """Refuse any reference name this request cannot use (S-11)."""
+    for name in (refs or {}) if isinstance(refs, dict) else ():
+        if name not in allowed:
+            raise MediaError("invalid_params", f"引用参数有误：{name}", 400)
 
 
 class MediaService:
@@ -105,7 +120,8 @@ class MediaService:
         self._resolve_paths, self._probe_capabilities, self._arbiter = resolve_paths, probe_capabilities, arbiter
         self._list_catalog, self._append_history, self._executor = list_catalog, append_history, executor
         self._sessions = media_sessions
-        self._ref_slots = ref_slots if ref_slots is not None else {"video": {"first_frame": "image"}}
+        self._ref_slots = ref_slots if ref_slots is not None else {"video": {
+            "first_frame": "image", "soundtrack": "music", "ref_image": "image", "ref_audio": "music"}}
         self._clock, self._term_grace_s, self._log_limit = clock, term_grace_s, log_limit
         self._lock = threading.RLock()
         self._state: dict[str, Any] = {"job_id": 0, "status": "idle", "kind": None, "params": None,
@@ -149,7 +165,10 @@ class MediaService:
             except (NotFoundError, SegmentMissing):
                 raise MediaError("ref_missing", f"引用的{KIND_NAMES[target]}已不在", 404) from None
             stored[name] = {"kind": target, "session_id": ref["session_id"], "attempt_id": ref["attempt_id"]}
-            paths[name] = Path(self._resolve_paths().outputs_root) / attempt["output"]
+            output = attempt["output"]
+            if target == "music" and attempt.get("joined_output") and not attempt.get("joined_missing"):
+                output = attempt["joined_output"]   # a continued song's finished file is the whole song
+            paths[name] = Path(self._resolve_paths().outputs_root) / output
         return stored, paths
 
     def _segment(self, kind: str, session_id: str, attempt_id) -> dict:
@@ -194,53 +213,108 @@ class MediaService:
             raise MediaError("frame_extract_failed", "没能从上一段截出最后一帧", 500)
         return png.name
 
+    def _clip_audio(self, song: Path, start: float, seconds: float) -> Path:
+        """Cut the clip a music_ref job hears into `.inputs/<hex>.wav` (S-12); refusals leave no file."""
+        length = wav_seconds_exact(song)   # unrounded: `wav_seconds`'s 0.01 s rounding would let e.g. 1.996 s pass here (S-14)
+        if length is None:
+            raise MediaError("audio_clip_failed", "没能截取这段音乐", 500)
+        if length < start + CLIP_MIN_S:
+            raise MediaError("invalid_params", f"这首歌从第 {start:g} 秒起不足 {CLIP_MIN_S} 秒", 400)
+        ffmpeg = compose.ffmpeg_path()
+        if ffmpeg is None:
+            raise MediaError("capability_missing", compose.FFMPEG_MISSING, 503)
+        directory = Path(self._resolve_paths().outputs_root) / ".inputs"
+        directory.mkdir(parents=True, exist_ok=True)
+        wav = directory / f"{uuid.uuid4().hex}.wav"
+        try:
+            result = subprocess.run(compose.audio_clip_command(ffmpeg, song, start, seconds, wav),
+                                    capture_output=True, text=True, timeout=60)
+            ok = result.returncode == 0 and wav.is_file()
+        except (OSError, subprocess.SubprocessError):
+            ok = False
+        if not ok:
+            wav.unlink(missing_ok=True)
+            raise MediaError("audio_clip_failed", "没能截取这段音乐", 500)
+        return wav
+
     def start_video_job(self, *, prompt, width, height, frames, steps,
-                        mode="text", first_frame=None, last_frame=None, ref_video=None,
-                        use_audio=True, seed=None, session_id=None, continues=None, refs=None,
+                        mode="text", first_frame=None, last_frame=None, ref_video=None, ref_image=None,
+                        audio_start=0, use_audio=True, seed=None, session_id=None, continues=None, refs=None,
                         force=False) -> dict:
         _nonempty("prompt", prompt, code="prompt_required", message="请填写视频提示词")
         for name, value in (("width", width), ("height", height), ("frames", frames), ("steps", steps)):
             _positive_int(name, value)
         seed = _check_seed(seed)
+        ref_names = set(refs) if isinstance(refs, dict) else set()
+        if mode == "music_ref":
+            self._check_music_ref(ref_image, audio_start, ref_names,
+                                  conflicts=(continues is not None, first_frame, last_frame, ref_video))
         if continues is not None and (mode not in ("text", "image") or first_frame or last_frame or ref_video):
             raise MediaError("invalid_params", CONTINUE_CONFLICT, 400)
-        wants_ref_frame = isinstance(refs, dict) and "first_frame" in refs
+        wants_ref_frame = "first_frame" in ref_names
         if wants_ref_frame and continues is not None:
             raise MediaError("invalid_params", CONTINUE_CONFLICT, 400)
         if wants_ref_frame and (mode != "image" or first_frame):
             raise MediaError("invalid_params", "首帧只能从上传或图片会话二选一", 400)
-        if mode not in ("text", "image", "reference") or not isinstance(use_audio, bool):
+        if mode not in VIDEO_REF_NAMES or mode == "soundtrack" or not isinstance(use_audio, bool):
             raise MediaError("invalid_params", "生成模式或音轨选项无效", 400)
-        if any(value and key not in _video_assets(mode, first_frame, last_frame, ref_video, first_from_ref=wants_ref_frame)
-               for key, value in (("first_frame", first_frame), ("last_frame", last_frame), ("ref_video", ref_video))):
+        from_ref = wants_ref_frame or "ref_image" in ref_names
+        if any(value and key not in _video_assets(mode, first_frame, last_frame, ref_video, ref_image, first_from_ref=from_ref)
+               for key, value in (("first_frame", first_frame), ("last_frame", last_frame),
+                                  ("ref_video", ref_video), ("ref_image", ref_image))):
             raise MediaError("invalid_params", "素材与生成模式不匹配", 400)
         session_id = self._check_session("video", session_id, required=True)
-        join, frame = None, None
+        _check_ref_names(refs, VIDEO_REF_NAMES[mode])
+        join, made = None, []   # made: files this request extracted, removed again on any refusal (B-37)
+        root = Path(self._resolve_paths().outputs_root)
         if continues is not None:
             source = self._segment("video", session_id, continues)
             join = self._join_plan("video", session_id, continues)
             joined = source.get("joined_output")
-            frame = self._extract_last_frame(Path(self._resolve_paths().outputs_root)
-                                             / (joined if joined and not source.get("joined_missing") else source["output"]))
+            frame = self._extract_last_frame(root / (joined if joined and not source.get("joined_missing") else source["output"]))
+            made.append(root / ".inputs" / frame)
             mode, first_frame = "image", frame
-        try:   # from here on a refusal must not leave the extracted frame behind
+        clip_path = None
+        try:
             stored_refs, ref_paths = self._resolve_refs("video", refs)
-            assets = _video_assets(mode, first_frame, last_frame, ref_video, first_from_ref=wants_ref_frame)
+            assets = _video_assets(mode, first_frame, last_frame, ref_video, ref_image, first_from_ref=from_ref)
             try:
                 for asset_id, kind in assets.values():
-                    resolve_input(self._resolve_paths().outputs_root, asset_id, kind)
+                    resolve_input(root, asset_id, kind)
             except ValueError as exc:
                 raise MediaError("invalid_input", str(exc), 400) from exc
             params = {"prompt": prompt, "width": width, "height": height, "frames": frames, "steps": steps, "seed": seed}
+            if mode == "music_ref":
+                clip = self._clip_audio(ref_paths["ref_audio"], audio_start,
+                                        max(CLIP_MIN_S, min(CLIP_MAX_S, frames / compose.FPS)))
+                made.append(clip)
+                ref_paths["ref_audio"] = clip
+                clip_path = clip   # nothing else ever references this clip; the job deletes it when it finalizes
+                params.update(audio_start=audio_start, ref_image=None)
             if mode != "text":
                 params.update(mode=mode, use_audio=use_audio, **{key: value[0] for key, value in assets.items()})
             return self._start("video", params, force=force, session_id=session_id,
                                attempt_extra={"refs": stored_refs, "continues": continues}, join=join,
-                               ref_paths=ref_paths)
+                               ref_paths=ref_paths, clip_path=clip_path)
         except MediaError:
-            if frame:
-                (Path(self._resolve_paths().outputs_root) / ".inputs" / frame).unlink(missing_ok=True)
+            for path in made:
+                path.unlink(missing_ok=True)
             raise
+
+    @staticmethod
+    def _check_music_ref(ref_image, audio_start, ref_names: set, *, conflicts) -> None:
+        """The music_ref request's own rules (S-10/S-11), before anything touches a session."""
+        if any(conflicts) or "first_frame" in ref_names:
+            raise MediaError("invalid_params", MUSIC_REF_CONFLICT, 400)
+        if ref_image and "ref_image" in ref_names:
+            raise MediaError("invalid_params", "参考图只能从上传或图片会话二选一", 400)
+        if not ref_image and "ref_image" not in ref_names:
+            raise MediaError("invalid_params", "请先选择参考图", 400)
+        if "ref_audio" not in ref_names:
+            raise MediaError("invalid_params", "请先选择一首歌", 400)
+        if isinstance(audio_start, bool) or not isinstance(audio_start, (int, float)) \
+                or not math.isfinite(audio_start) or audio_start < 0:
+            raise MediaError("invalid_params", "起始秒数须为不小于 0 的数", 400)
 
     def start_music_job(self, *, caption, lyrics, duration, seed=None, session_id=None, continues=None,
                         refs=None, force=False) -> dict:
@@ -307,9 +381,32 @@ class MediaService:
         root = Path(self._resolve_paths().outputs_root)
         paths = [root / item["output"] for item in items]   # each segment's own file, never its joined one (B-48)
         drops = [False] + [items[i].get("continues") == items[i - 1]["id"] for i in range(1, len(items))]
+        joined = list(zip(paths, drops))
         return self._start(kind, {"op": "compose", "parts": list(parts)}, session_id=session_id,
                            attempt_extra={"op": "compose", "params": {"parts": list(parts)}},
-                           compose_parts=list(zip(paths, drops)))
+                           compose_command=lambda ffmpeg, output: self._join_command(kind, joined, output, ffmpeg),
+                           output_prefix="h3-compose" if kind == "video" else "music3-compose")
+
+    def start_soundtrack_job(self, *, session_id, source, refs, force=False) -> dict:
+        """Replace a video attempt's audio with a music-session song (S-01–S-05): ffmpeg only, like compose.
+
+        `force` is accepted and ignored, as for compose (B-45)."""
+        if not isinstance(source, str) or not isinstance(refs, dict) or set(refs) != VIDEO_REF_NAMES["soundtrack"] \
+                or not isinstance(refs["soundtrack"], dict):
+            raise MediaError("invalid_params", "配乐参数有误：需要一段视频和一首歌", 400)
+        if not isinstance(force, bool):
+            raise MediaError("invalid_params", "force 必须为布尔值", 400)
+        session_id = self._check_session("video", session_id, required=True)
+        segment = self._segment("video", session_id, source)
+        stored_refs, ref_paths = self._resolve_refs("video", refs)
+        joined = segment.get("joined_output")
+        root = Path(self._resolve_paths().outputs_root)
+        video = root / (joined if joined and not segment.get("joined_missing") else segment["output"])   # S-03
+        audio = ref_paths["soundtrack"]
+        return self._start("video", {"op": "soundtrack", "source": source}, session_id=session_id,
+                           attempt_extra={"op": "soundtrack", "refs": stored_refs},
+                           compose_command=lambda ffmpeg, output: compose.soundtrack_command(ffmpeg, video, audio, output),
+                           output_prefix="h3-soundtrack")
 
     def _base_attempt(self, session_id: str, base) -> dict:
         """The done attempt of this session an img2img job redraws from (its file must still exist)."""
@@ -341,12 +438,14 @@ class MediaService:
 
     def _start(self, kind: str, params: dict, *, force: bool = False, session_id: str | None = None,
               attempt_extra: dict | None = None, join: dict | None = None,
-              compose_parts: list | None = None, ref_paths: dict | None = None) -> dict:
+              compose_command: Callable[[str, Path], list[str]] | None = None, output_prefix: str | None = None,
+              ref_paths: dict | None = None, clip_path: Path | None = None) -> dict:
         """`join` (from `_join_plan`) makes the job join the chain into a finished file after the model (B-38).
 
-        `compose_parts` ([(path, drop_first_frame)]) makes it a compose job instead: only ffmpeg runs,
-        so arbiter, capability/model checks and the memory estimate are skipped (B-45)."""
-        heavy = compose_parts is None
+        `compose_command(ffmpeg, output) -> argv` makes it an ffmpeg-only job instead (compose B-45,
+        soundtrack S-02): arbiter, capability/model checks and the memory estimate are skipped, and
+        the output is `<output_prefix>-<stamp>-<8hex>` with the kind's suffix."""
+        heavy = compose_command is None
         with self._lock:
             if self._state["status"] == "running":
                 raise MediaError("media_busy", "a media job is already running", 409)
@@ -355,30 +454,33 @@ class MediaService:
             if heavy:
                 model_root, permit = self._admit_heavy(kind, params, force, join, roots, job_id)
             else:
-                if compose.ffmpeg_path() is None:
+                ffmpeg = compose.ffmpeg_path()
+                if ffmpeg is None:
                     raise MediaError("capability_missing", compose.FFMPEG_MISSING, 503)
                 model_root, permit = None, None
             now = self._clock()
             # Per-job state: a later `_start` must never change what this job's finalize releases or records.
             job = {"permit": permit, "released": False, "join": join, "compose": not heavy,
-                   "joined": {"joined_output": None, "joined_error": None}}
+                   "joined": {"joined_output": None, "joined_error": None}, "clip_path": clip_path}
             try:
                 stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(now))
                 root = Path(roots.outputs_root); root.mkdir(parents=True, exist_ok=True)
                 if not heavy:
-                    suffix, prefix = (".mp4", "h3") if kind == "video" else (".wav", "music3")
-                    output = root / f"{prefix}-compose-{stamp}-{uuid.uuid4().hex[:8]}{suffix}"
-                    command = self._join_command(kind, compose_parts, output)
+                    suffix = ".mp4" if kind == "video" else ".wav"
+                    output = root / f"{output_prefix}-{stamp}-{uuid.uuid4().hex[:8]}{suffix}"
+                    command = compose_command(ffmpeg, output)
                     extra_env = {}
                 elif kind == "video":
                     output = root / f"h3-{stamp}.mp4"
                     command_params = dict(params)
                     command_params.pop("mode", None)
-                    for key in ("first_frame", "last_frame", "ref_video"):
-                        if key in command_params:
+                    command_params.pop("audio_start", None)
+                    for key in ("first_frame", "last_frame", "ref_video", "ref_image"):
+                        if command_params.get(key):
                             command_params[key] = resolve_input(root, command_params[key], "video" if key == "ref_video" else "image")
-                    if ref_paths and ref_paths.get("first_frame"):
-                        command_params["first_frame"] = ref_paths["first_frame"]
+                    for key in ("first_frame", "ref_image", "ref_audio"):
+                        if ref_paths and ref_paths.get(key):
+                            command_params[key] = ref_paths[key]
                     command = build_h3_command(tuple(roots.mlx_h3_cmd), model_root, output=output, **command_params)
                     extra_env = dict(roots.mlx_h3_env)
                 elif kind == "music":
@@ -484,9 +586,9 @@ class MediaService:
                 elif code == 0 and output.is_file(): status, error = "done", None
                 elif code == 0: status, error = "error", {"code": "no_output", "message": "exit 0 but output file missing"}
                 else: status, error = "error", {"code": "exit_nonzero", "message": f"exit {code}", "log_tail": self._log_tail(5)}
-                if job["compose"] and status == "error":   # B-47: a compose job fails as a join
+                if job["compose"] and status == "error":   # B-47/S-05: an ffmpeg-only job fails as a join
                     error = {"code": "join_failed", "message": "拼接成片失败", "log_tail": self._log_tail(5)}
-                if job["compose"] and status != "done":   # B-45: no half-written *-compose-* left behind
+                if job["compose"] and status != "done":   # B-45/S-05: no half-written output left behind
                     output.unlink(missing_ok=True)
                 join = job["join"] if status == "done" else None
                 session_id, attempt_id = self._state["session_id"], self._state["attempt_id"]
@@ -573,6 +675,9 @@ class MediaService:
     def _finalize(self, job: dict, final: tuple) -> None:
         snap, callbacks, origin, joined = final
         self._release_permit(job)
+        if job.get("clip_path") is not None:   # music_ref's cut clip is referenced by nothing after the job (whatever the outcome)
+            try: job["clip_path"].unlink(missing_ok=True)
+            except Exception: log.exception("clip_path cleanup failed")
         try: self._append_history(self._history_entry(snap, joined))
         except Exception as exc: self._append_log(f"[media] append_history failed: {exc}")
         self._settle_attempt(snap, origin, joined)

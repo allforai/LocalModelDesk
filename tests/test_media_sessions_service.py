@@ -100,9 +100,10 @@ def test_registered_ref_resolves_to_a_file_and_is_stored_as_a_pointer(tmp_path):
     ref = {"kind": "image", "session_id": image_sid, "attempt_id": "a" * 32}
     stored, paths = service._resolve_refs("video", {"probe": ref})
     assert stored == {"probe": ref} and paths == {"probe": tmp_path / "outputs" / "cat.png"}
+    service._ref_slots = {"video": {"first_frame": "image"}}   # a job only takes its mode's names (S-11)
     sid = deps.media_sessions["video"].create()["id"]
-    finished_snapshot(service, lambda: video(service, session_id=sid, refs={"probe": ref}))
-    assert deps.media_sessions["video"].get(sid)["attempts"][0]["refs"] == {"probe": ref}
+    finished_snapshot(service, lambda: video(service, session_id=sid, mode="image", refs={"first_frame": ref}))
+    assert deps.media_sessions["video"].get(sid)["attempts"][0]["refs"] == {"first_frame": ref}
 
 
 @pytest.mark.parametrize("mutate", ["wrong_kind", "gone_session", "gone_file"])

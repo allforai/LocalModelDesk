@@ -32,10 +32,11 @@ KINDS = ("image", "video", "music")
 PARAM_KEYS = {
     "image": ("prompt", "width", "height", "steps", "seed"),
     "video": ("prompt", "width", "height", "frames", "steps", "seed",
-              "mode", "use_audio", "first_frame", "last_frame", "ref_video"),
+              "mode", "use_audio", "first_frame", "last_frame", "ref_video", "ref_image", "audio_start"),
     "music": ("caption", "lyrics", "duration", "seed"),
 }
 COMPOSE_PARAM_KEYS = ("parts",)
+SOUNDTRACK_PARAM_KEYS = ("source",)
 TITLE_FIELD = {"image": "prompt", "video": "prompt", "music": "caption"}
 SETTLED_STATUSES = frozenset({"done", "failed", "cancelled"})
 INTERRUPTED_ERROR = {"code": "interrupted", "message": "应用在生成途中关闭，这次没有完成"}
@@ -134,7 +135,7 @@ class MediaSessionStore:
         """Append a running attempt; False (never an exception) when the session is gone or unreadable."""
         op = attempt.get("op") or "generate"
         params = attempt.get("params") or {}
-        keys = COMPOSE_PARAM_KEYS if op == "compose" else PARAM_KEYS[self.kind]
+        keys = {"compose": COMPOSE_PARAM_KEYS, "soundtrack": SOUNDTRACK_PARAM_KEYS}.get(op, PARAM_KEYS[self.kind])
         record = {
             "id": attempt["id"], "job_id": attempt.get("job_id"), "ts": _now(), "finished": None,
             "status": "running", "op": op,

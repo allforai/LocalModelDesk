@@ -66,21 +66,21 @@ test("chip and first-frame labels", () => {
 
 test("refineFields extracts this attempt's own params for text/image-upload/image-ref/reference/continued attempts", () => {
   assert.deepEqual(v.refineFields(T("a")), { mode: "text", prompt: "雨夜街道", size: "512x288", frames: 73, steps: 16, seed: 9,
-    first: null, last: null, refVideo: null, useAudio: true });
+    first: null, last: null, refVideo: null, useAudio: true, audioStart: 0 });
   const upload = T("b", { params: { ...T("b").params, mode: "image", first_frame: "f.png", use_audio: false } });
   assert.deepEqual(v.refineFields(upload), { mode: "image", prompt: "雨夜街道", size: "512x288", frames: 73, steps: 16, seed: 9,
-    first: "f.png", last: null, refVideo: null, useAudio: false });
+    first: "f.png", last: null, refVideo: null, useAudio: false, audioStart: 0 });
   // 图片会话引用：后端记 params.first_frame 为 null（V-04），来源由 refs 另行表达（sourceOf 负责），refineFields 只读自己的字段。
   const ref = T("c", { params: { ...T("c").params, mode: "image", first_frame: null }, refs: { first_frame: { kind: "image", session_id: "s", attempt_id: "i" } } });
   assert.deepEqual(v.refineFields(ref), { mode: "image", prompt: "雨夜街道", size: "512x288", frames: 73, steps: 16, seed: 9,
-    first: null, last: null, refVideo: null, useAudio: true });
+    first: null, last: null, refVideo: null, useAudio: true, audioStart: 0 });
   const reference = T("d", { params: { ...T("d").params, mode: "reference", ref_video: "v.mp4" } });
   assert.deepEqual(v.refineFields(reference), { mode: "reference", prompt: "雨夜街道", size: "512x288", frames: 73, steps: 16, seed: 9,
-    first: null, last: null, refVideo: "v.mp4", useAudio: true });
+    first: null, last: null, refVideo: "v.mp4", useAudio: true, audioStart: 0 });
   // 续写段自己的 first_frame 也是 null（由上一段最后一帧推导），continues 不影响 refineFields 的读取。
   const continued = T("e", { continues: "a", params: { ...T("e").params, mode: "image", first_frame: null } });
   assert.deepEqual(v.refineFields(continued), { mode: "image", prompt: "雨夜街道", size: "512x288", frames: 73, steps: 16, seed: 9,
-    first: null, last: null, refVideo: null, useAudio: true });
+    first: null, last: null, refVideo: null, useAudio: true, audioStart: 0 });
 });
 
 test("canContinue requires a done attempt with a present file", () => {
@@ -94,4 +94,47 @@ test("cardTitle marks continued and compose attempts", () => {
   assert.match(v.cardTitle(attempts[1], 1, attempts), /^第 2 次 · \d\d:\d\d · 接第 1 次$/);
   assert.match(v.cardTitle(attempts[2], 2, attempts), /合成：第 1、2 次$/);
   assert.match(v.cardTitle(attempts[0], 0, attempts), /^第 1 次 · \d\d:\d\d$/);
+});
+
+const song = { kind: "music", session_id: "m1", attempt_id: "t2" };
+const img = { kind: "image", session_id: "s", attempt_id: "i" };
+const musicRef = (extra = {}, refs = { ref_audio: song }) => T("m", { params: { ...T("m").params, mode: "music_ref", use_audio: true,
+  audio_start: 12.5, ref_image: "r.png", ...extra }, refs });
+
+test("MODES 有配乐参考", () => {
+  assert.equal(v.MODES.music_ref, "配乐参考");
+});
+
+test("refineFields 读出 music_ref 的起始秒；refImageOf 区分上传与图片会话引用", () => {
+  const fields = v.refineFields(musicRef());
+  assert.equal(fields.mode, "music_ref");
+  assert.equal(fields.audioStart, 12.5);
+  assert.deepEqual(v.refImageOf(musicRef()), { type: "upload", id: "r.png" });
+  assert.deepEqual(v.refImageOf(musicRef({ ref_image: null }, { ref_audio: song, ref_image: img })), { type: "ref", ref: img });
+  assert.equal(v.refImageOf(T("a")), null);
+  assert.equal(v.refImageOf(T("b", { params: { ...T("b").params, mode: "image", first_frame: "f.png" } })), null);
+});
+
+test("versionParams 原样重发 music_ref：新种子、audio_start、ref_image 与 refs，不带 use_audio", () => {
+  assert.deepEqual(v.versionParams(musicRef(), "s1", () => 5), {
+    session_id: "s1", prompt: "雨夜街道", width: 512, height: 288, frames: 73, steps: 16, seed: 5,
+    mode: "music_ref", ref_image: "r.png", audio_start: 12.5, refs: { ref_audio: song } });
+  const fromRef = v.versionParams(musicRef({ ref_image: null, audio_start: 0 }, { ref_audio: song, ref_image: img }), "s1", () => 5);
+  assert.equal("ref_image" in fromRef, false);
+  assert.equal(fromRef.audio_start, 0);
+  assert.deepEqual(fromRef.refs, { ref_audio: song, ref_image: img });
+});
+
+test("soundtrackTitle：配乐摘要与基于第几次；取不到时省略", () => {
+  const attempts = [T("a"), { id: "s", status: "done", output: "s.mp4", ts: "2026-09-27T10:05:00", op: "soundtrack",
+    params: { source: "a" }, refs: { soundtrack: song } }];
+  assert.equal(v.soundtrackTitle(attempts[1], 1, attempts, "轻快钢琴"), "第 2 次 · 10:05 · 配乐：轻快钢琴 · 基于第 1 次");
+  assert.equal(v.soundtrackTitle(attempts[1], 1, attempts, ""), "第 2 次 · 10:05 · 配乐 · 基于第 1 次");
+  assert.equal(v.soundtrackTitle({ ...attempts[1], params: { source: "gone" } }, 1, attempts, "轻快钢琴"), "第 2 次 · 10:05 · 配乐：轻快钢琴");
+  assert.equal(v.cardTitle(attempts[1], 1, attempts), "第 2 次 · 10:05 · 配乐 · 基于第 1 次");
+});
+
+test("接着往下生：配乐尝试没有画幅参数，保留输入区当前值", () => {
+  const st = { id: "s", status: "done", output: "s.mp4", op: "soundtrack", params: { source: "a" } };
+  assert.deepEqual(v.nextFields(st, { size: "1024x576", frames: 49, steps: 20 }), { size: "1024x576", frames: 49, steps: 20 });
 });

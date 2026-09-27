@@ -1,6 +1,7 @@
 // 会话式视频页的控制逻辑（假 DOM）。真实浏览器里的布局与交互由 tests/e2e/test_video_flow.py 等覆盖。
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createVideoPane } from "../../desk/static/js/panes/video.js";
 import { Element, button, find, findAll, flush, mainFlowText, withBackend } from "./support/fake_dom.js";
 
@@ -19,15 +20,19 @@ function makeVideoPane(ctx = {}) {
   const tags = { mode: "select", prompt: "textarea", size: "select", frames: "select", steps: "input", seed: "input", start: "button",
     advanced: "details", audio: "input", "audio-row": "label", "first-upload": "input", "first-pick": "button", last: "input",
     "clear-last": "button", source: "input", "chip-clear": "button", chip: "div", assist: "div", return: "button",
+    "ref-image-upload": "input", "ref-image-pick": "button", "song-pick": "button", "audio-start": "input",
     timeline: "div", composer: "div", "session-new": "button", "session-list": "ul" };
   const names = ["mode", "prompt", "size", "frames", "steps", "seed", "start", "advanced", "advanced-error", "cost-note", "audio",
     "audio-row", "upload-status", "chip", "chip-text", "chip-clear", "composer", "assist", "first-area", "first-upload", "first-pick",
     "first-label", "first-preview", "last-area", "last", "last-label", "last-preview", "clear-last", "reference-area", "source",
-    "source-label", "source-preview", "hint", "hint-text", "return", "error", "model", "timeline", "session-list", "session-new"];
+    "source-label", "source-preview", "music-area", "ref-image-upload", "ref-image-pick", "ref-image-label", "ref-image-preview",
+    "song-pick", "song-label", "song-preview", "audio-start",
+    "hint", "hint-text", "return", "error", "model", "timeline", "session-list", "session-new"];
   const parts = Object.fromEntries(names.map((name) => [name, new Element(tags[name] ?? "p")]));
   parts.mode.value = "text"; parts.steps.value = "16"; parts.seed.value = ""; parts.audio.checked = true;
-  for (const name of ["first-upload", "last", "source"]) parts[name].type = "file";
-  parts["first-upload"].accept = parts.last.accept = "image/png,image/jpeg,image/webp";
+  for (const name of ["first-upload", "last", "source", "ref-image-upload"]) parts[name].type = "file";
+  parts["first-upload"].accept = parts.last.accept = parts["ref-image-upload"].accept = "image/png,image/jpeg,image/webp";
+  parts["audio-start"].value = "0";
   parts.source.accept = "video/mp4,video/quicktime,video/webm";
   parts.advanced.className = "image-advanced video-advanced";
   parts.advanced.append(parts.size, parts.frames, parts.steps, parts.seed, parts["cost-note"], parts["audio-row"], parts["advanced-error"]);
@@ -37,7 +42,9 @@ function makeVideoPane(ctx = {}) {
   parts["first-area"].append(parts["first-upload"], parts["first-pick"], parts["first-label"], parts["first-preview"]);
   parts["last-area"].append(parts.last, parts["last-label"], parts["clear-last"], parts["last-preview"]);
   parts["reference-area"].append(parts.source, parts["source-label"], parts["source-preview"]);
-  parts.composer.append(parts.chip, parts.mode, parts["first-area"], parts["last-area"], parts["reference-area"], parts.prompt,
+  parts["music-area"].append(parts["ref-image-upload"], parts["ref-image-pick"], parts["ref-image-label"], parts["ref-image-preview"],
+    parts["song-pick"], parts["song-label"], parts["song-preview"], parts["audio-start"]);
+  parts.composer.append(parts.chip, parts.mode, parts["first-area"], parts["last-area"], parts["reference-area"], parts["music-area"], parts.prompt,
     parts.start, parts.assist, parts.advanced, parts["upload-status"], parts.hint, parts.error);
   const main = new Element("div");
   main.append(parts.model, parts.timeline, parts.composer);
@@ -69,13 +76,13 @@ function imageSession({ missing = false } = {}) {
   return { id: "img1", title: "橘猫", attempts: [attempt("i1"), attempt("i2"), attempt("i3", missing ? { output_missing: true } : {})] };
 }
 const pick = { ref: { kind: "image", session_id: "img1", attempt_id: "i3" }, title: "橘猫", index: 2 };
-// 视频页读图片会话（首帧说明、失效检查）：在假后端外面接一层。
-function serveImages(backend, sessions) {
+// 视频页读图片会话（首帧说明、失效检查）与音乐会话（配乐说明）：在假后端外面接一层。
+function serveImages(backend, sessions, music = []) {
   const inner = backend.fetch;
   globalThis.fetch = async (url, options = {}) => {
-    const match = url.match(/^\/api\/media-sessions\/image\/(\w+)$/);
+    const match = url.match(/^\/api\/media-sessions\/(image|music)\/(\w+)$/);
     if (!match) return inner(url, options);
-    const found = sessions.find((s) => s.id === match[1]);
+    const found = (match[1] === "image" ? sessions : music).find((s) => s.id === match[2]);
     return found ? { ok: true, status: 200, json: async () => structuredClone(found) }
       : { ok: false, status: 404, statusText: "", json: async () => ({ error: "会话不存在" }) };
   };
@@ -378,6 +385,19 @@ test("素材库回填：原会话不在时按字段回填，提示条「沿用�
   });
 });
 
+test("素材库回填：music_ref 条目原会话不在时，参考图与起始秒也按字段回填", async () => {
+  await withBackend("video", async (backend) => {
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await pane.applyFill({ pane: "video", session_id: "gone", attempt_id: "x",
+      fields: { prompt: "旧提示", width: 768, height: 448, frames: 57, steps: 20, seed: 7,
+        mode: "music_ref", ref_image: "in1.png", audio_start: 12 } });
+    assert.equal(parts.mode.value, "music_ref");
+    assert.equal(parts["ref-image-label"].textContent, "已选择：之前上传的图片");
+    assert.equal(parts["audio-start"].value, "12");
+  });
+});
+
 test("耗时提示随画幅与时长变化；AI 帮写按当前方式写回提示词", async () => {
   await withBackend("video", async (backend) => {
     const { parts, pane, ready } = makeVideoPane(); ready();
@@ -468,4 +488,256 @@ test("内存可能不足：确认后带 force 重发；取消则不再发请求"
       }
     });
   }
+});
+
+// 音乐会话「夏夜」：第 2 次（t2）是可选的歌，文件在或不在由 missing 决定。
+function musicSession({ missing = false } = {}) {
+  const attempt = (id, extra = {}) => ({ id, status: "done", output: `${id}.wav`, params: { caption: "轻快钢琴 夏夜海边" }, ...extra });
+  return { id: "m1", title: "夏夜", attempts: [attempt("t1"), attempt("t2", missing ? { output_missing: true } : {})] };
+}
+const song = { ref: { kind: "music", session_id: "m1", attempt_id: "t2" }, title: "夏夜", index: 1, label: "轻快钢琴 夏夜海边" };
+const soundtrackCalls = (backend) => backend.calls.filter((c) => c.url === "/api/media/soundtrack");
+
+test("「配乐…」：选一首歌即提交配乐，新卡片被选中；挑选模式下没有这个按钮", async () => {
+  await withBackend("video", async (backend) => {
+    serveImages(backend, [], [musicSession()]);
+    const titles = [];
+    backend.addSession("片", [done("a1"), done("a2")]);
+    const { root, parts, pane, ready } = makeVideoPane({ pickMusic: async (options) => { titles.push(options?.title); return song; } }); ready();
+    await pane.refresh();
+    await cards(parts)[0].click();
+    await button(cards(parts)[0], "配乐…").click();
+    await flush();
+    assert.deepEqual(titles, ["选一首歌配到这段视频"]);
+    const [call] = soundtrackCalls(backend);
+    assert.deepEqual(call.body, { session_id: backend.sessions[0].id, source: "a1", refs: { soundtrack: song.ref } });
+    const added = cards(parts)[2];
+    assert.equal(added.dataset.attemptStatus, "running");
+    assert.equal(added.getAttribute("aria-expanded"), "true");
+    assert.equal(parts.error.textContent, "");
+
+    backend.finish("a3", { status: "done", output: "s3.mp4" });
+    await pane.refresh();
+    await find(root, (n) => "videoComposeStart" in n.dataset).click();
+    assert.equal(button(cards(parts)[1], "配乐…"), null);
+  });
+});
+
+test("「配乐…」：有作业在跑时禁用；选择框取消不发请求；ffmpeg 缺失显示后端原话", async () => {
+  await withBackend("video", async (backend) => {
+    backend.addSession("片", [done("a1")]);
+    let answer = null;
+    const { parts, pane, ready } = makeVideoPane({ pickMusic: async () => answer }); ready();
+    await pane.refresh();
+    await button(cards(parts)[0], "配乐…").click();
+    await flush();
+    assert.equal(soundtrackCalls(backend).length, 0);
+    answer = song;
+    backend.soundtrackResult = () => ({ ok: false, status: 503, statusText: "",
+      json: async () => ({ error: { code: "capability_missing", message: "需要 ffmpeg 才能拼接成片" } }) });
+    await button(cards(parts)[0], "配乐…").click();
+    await flush();
+    assert.equal(parts.error.textContent, "需要 ffmpeg 才能拼接成片");
+    pane.setHeavyAllowed(false, "已有作业在进行");
+    const btn = button(cards(parts)[0], "配乐…");
+    assert.equal(btn.disabled, true);
+    assert.equal(btn.title, "已有作业在进行");
+    const before = soundtrackCalls(backend).length;
+    await btn.click();
+    await flush();
+    assert.equal(soundtrackCalls(backend).length, before, "禁用时点击不发请求");
+  });
+});
+
+test("配乐卡片：标题带歌的风格描述摘要与基于第几次，动作只有「接着往下生」「配乐…」", async () => {
+  await withBackend("video", async (backend) => {
+    serveImages(backend, [], [musicSession()]);
+    backend.addSession("片", [done("a1"), { id: "a2", ts: "2026-09-27T09:05:00", status: "done", op: "soundtrack",
+      params: { source: "a1" }, refs: { soundtrack: song.ref }, output: "s2.mp4", error: null }]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await flush();
+    const card = cards(parts)[1];
+    assert.match(card.textContent, /第 2 次 · 09:05 · 配乐：轻快钢琴 夏夜海边 · 基于第 1 次/);
+    assert.equal(find(card, (n) => n.tagName === "video").src, "/api/outputs/s2.mp4");
+    const labels = findAll(find(card, (n) => n.classList?.contains?.("attempt-actions")), (n) => n.tagName === "button").map((b) => b.textContent);
+    assert.deepEqual(labels, ["接着往下生", "配乐…"]);
+  });
+});
+
+test("配乐参考方式：显示参考图区、歌区、起始秒与实验说明，隐藏首帧/尾帧/参考视频区", async () => {
+  await withBackend("video", async (backend) => {
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    assert.equal(parts["music-area"].hidden, true);
+    parts.mode.value = "music_ref"; await parts.mode.dispatch("change");
+    assert.equal(parts["music-area"].hidden, false);
+    assert.equal(parts["first-area"].hidden, true);
+    assert.equal(parts["last-area"].hidden, true);
+    assert.equal(parts["reference-area"].hidden, true);
+    assert.equal(parts["audio-row"].hidden, true, "配乐参考没有素材声音可用");
+    assert.equal(parts["ref-image-label"].textContent, "未选择");
+    assert.equal(parts["song-label"].textContent, "未选择");
+    assert.equal(parts["audio-start"].value, "0");
+    parts.prompt.value = "海边奔跑";
+    await parts.start.click();
+    assert.equal(parts.error.textContent, "请先选择参考图");
+    await choose(parts["ref-image-upload"], png("style.png"));
+    await parts.start.click();
+    assert.equal(parts.error.textContent, "请先选择一首歌");
+    assert.equal(videoCalls(backend).length, 0);
+    assert.equal(uploadCalls(backend).length, 0);
+  });
+});
+
+test("配乐参考提交：上传参考图先上传再生成；图片会话参考图带 refs.ref_image 不带 ref_image", async () => {
+  await withBackend("video", async (backend) => {
+    serveImages(backend, [imageSession()], [musicSession()]);
+    const imageTitles = [];
+    const { parts, pane, ready } = makeVideoPane({
+      pickMusic: async () => song, pickImage: async (options) => { imageTitles.push(options?.title); return pick; } }); ready();
+    await pane.refresh();
+    parts.mode.value = "music_ref"; await parts.mode.dispatch("change");
+    await choose(parts["ref-image-upload"], png("style.png"));
+    assert.equal(parts["ref-image-label"].textContent, "已选择：style.png");
+    await parts["song-pick"].click();
+    await flush();
+    assert.equal(parts["song-label"].textContent, "歌：轻快钢琴 夏夜海边");
+    assert.equal(find(parts["song-preview"], (n) => n.tagName === "audio").src, "/api/outputs/t2.wav");
+    parts.prompt.value = "海边奔跑";
+    await parts.start.click();
+    const order = backend.calls.filter((c) => c.url.startsWith("/api/media/")).map((c) => c.url);
+    assert.deepEqual(order, ["/api/media/inputs", "/api/media/video"]);
+    assert.deepEqual(videoCalls(backend)[0].body, { session_id: backend.sessions[0].id, prompt: "海边奔跑", width: 512, height: 288,
+      frames: 49, steps: 16, mode: "music_ref", ref_image: "in1.png", audio_start: 0, refs: { ref_audio: song.ref } });
+
+    await parts["ref-image-pick"].click();
+    await flush();
+    assert.deepEqual(imageTitles, ["从图片会话选参考图"]);
+    assert.equal(parts["ref-image-label"].textContent, "参考图：图片会话「橘猫」第 3 次");
+    parts["audio-start"].value = "7.5";
+    backend.finish("a1", { status: "done", output: "v1.mp4" });
+    await pane.refresh();
+    await parts.start.click();
+    const body = videoCalls(backend)[1].body;
+    assert.deepEqual(body.refs, { ref_image: pick.ref, ref_audio: song.ref });
+    assert.equal("ref_image" in body, false);
+    assert.equal(body.audio_start, 7.5);
+    assert.equal(uploadCalls(backend).length, 1);
+  });
+});
+
+test("「在这段基础上改」配乐参考：回填参考图、歌与起始秒；歌已被删时说明并拦下提交；「换个版本」原样重发", async () => {
+  for (const missing of [false, true]) {
+    await withBackend("video", async (backend) => {
+      serveImages(backend, [imageSession()], [musicSession({ missing })]);
+      backend.addSession("片", [done("a1", { params: { prompt: "奔跑", width: 512, height: 288, frames: 73, steps: 16, seed: 4,
+        mode: "music_ref", use_audio: true, audio_start: 12, ref_image: null }, refs: { ref_image: pick.ref, ref_audio: song.ref } })]);
+      const { root, parts, pane, ready } = makeVideoPane({ randomSeed: () => 77 }); ready();
+      await pane.refresh();
+      await button(cards(parts)[0], "在这段基础上改").click();
+      await flush();
+      assert.equal(parts.mode.value, "music_ref");
+      assert.equal(parts["music-area"].hidden, false);
+      assert.equal(parts["audio-start"].value, "12");
+      assert.equal(parts["ref-image-label"].textContent, "参考图：图片会话「橘猫」第 3 次");
+      assert.ok(!mainFlowText(root, /video-advanced|attempt-advanced/).includes("种子"));
+      if (missing) {
+        assert.equal(parts["song-label"].textContent, "引用的歌已不在");
+        await parts.start.click();
+        assert.equal(parts.error.textContent, "请先选择一首歌");
+        assert.equal(videoCalls(backend).length, 0);
+      } else {
+        assert.equal(parts["song-label"].textContent, "歌：轻快钢琴 夏夜海边");
+        await button(cards(parts)[0], "换个版本").click();
+        await flush();
+        assert.deepEqual(videoCalls(backend)[0].body, { session_id: backend.sessions[0].id, prompt: "奔跑", width: 512, height: 288,
+          frames: 73, steps: 16, seed: 77, mode: "music_ref", audio_start: 12,
+          refs: { ref_image: pick.ref, ref_audio: song.ref } });
+      }
+    });
+  }
+});
+
+test("配乐参考：上传参考图与从图片会话选互相替换；引用的参考图已不在时说明", async () => {
+  await withBackend("video", async (backend) => {
+    serveImages(backend, [imageSession({ missing: true })], [musicSession()]);
+    const { parts, pane, ready } = makeVideoPane({ pickImage: async () => pick }); ready();
+    await pane.refresh();
+    parts.mode.value = "music_ref"; await parts.mode.dispatch("change");
+    await parts["ref-image-pick"].click();
+    await flush();
+    assert.equal(parts["ref-image-label"].textContent, "引用的图片已不在");
+    await choose(parts["ref-image-upload"], png("b.png"));
+    assert.equal(parts["ref-image-label"].textContent, "已选择：b.png");
+  });
+});
+
+test("配乐参考：起始秒不是不小于 0 的数时本地拦截", async () => {
+  await withBackend("video", async (backend) => {
+    serveImages(backend, [imageSession()], [musicSession()]);
+    const { parts, pane, ready } = makeVideoPane({ pickMusic: async () => song, pickImage: async () => pick }); ready();
+    await pane.refresh();
+    parts.mode.value = "music_ref"; await parts.mode.dispatch("change");
+    await parts["ref-image-pick"].click();
+    await parts["song-pick"].click();
+    await flush();
+    parts.prompt.value = "奔跑";
+    parts["audio-start"].value = "-1";
+    await parts.start.click();
+    assert.equal(parts.error.textContent, "起始秒数须为不小于 0 的数");
+    assert.equal(videoCalls(backend).length, 0);
+  });
+});
+
+test("index.html：配乐参考区在可滚动素材区内，带「从第几秒开始」与实验说明（S-32、S-35）", () => {
+  const html = readFileSync(new URL("../../desk/static/index.html", import.meta.url), "utf8");
+  const materials = html.slice(html.indexOf('<div class="video-materials">'), html.indexOf('<div class="image-input-row">'));
+  const area = materials.slice(materials.indexOf("data-video-music-area"));
+  assert.ok(materials.includes("data-video-music-area"), "配乐参考区在 .video-materials 内");
+  assert.ok(materials.includes('<option value="music_ref">配乐参考（实验性）</option>'));
+  assert.ok(area.includes("从第几秒开始"));
+  assert.ok(area.includes("实验性：画面不保证跟随音乐节奏；参考图只影响画面风格，不作为第一帧。截取与视频等长、2–15 秒的一段音乐。"));
+});
+
+// 配乐参考已选好参考图与歌，提示词写好；返回 {parts, pane}。
+async function readyMusicRef(backend, ctx = {}) {
+  serveImages(backend, [imageSession()], [musicSession()]);
+  const made = makeVideoPane({ pickMusic: async () => song, pickImage: async () => pick, ...ctx }); made.ready();
+  await made.pane.refresh();
+  made.parts.mode.value = "music_ref"; await made.parts.mode.dispatch("change");
+  await made.parts["ref-image-pick"].click();
+  await made.parts["song-pick"].click();
+  await flush();
+  made.parts.prompt.value = "奔跑";
+  return made;
+}
+const refusal = (status, code, message) => () => ({ ok: false, status, statusText: "", json: async () => ({ error: { code, message } }) });
+
+test("配乐参考被后端拒绝：显示后端原话（起始秒超出、截取失败、缺 ffmpeg）", async () => {
+  for (const [status, code, message] of [[400, "invalid_params", "这首歌从第 30 秒起不足 2 秒"],
+    [500, "audio_clip_failed", "没能截取这段音乐"], [503, "capability_missing", "需要 ffmpeg 才能拼接成片"]]) {
+    await withBackend("video", async (backend) => {
+      const { parts } = await readyMusicRef(backend);
+      backend.startResult = refusal(status, code, message);
+      await parts.start.click();
+      await flush();
+      assert.equal(parts.error.textContent, message);
+    });
+  }
+});
+
+test("配乐参考「换个版本」时引用已不在：显示后端原话", async () => {
+  await withBackend("video", async (backend) => {
+    serveImages(backend, [imageSession()], [musicSession()]);
+    backend.addSession("片", [done("a1", { params: { ...done("a1").params, mode: "music_ref", audio_start: 0, ref_image: "r.png" },
+      refs: { ref_audio: song.ref } })]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    backend.startResult = refusal(400, "ref_missing", "引用的音乐已不在");
+    await button(cards(parts)[0], "换个版本").click();
+    await flush();
+    assert.equal(videoCalls(backend).length, 1);
+    assert.equal(parts.error.textContent, "引用的音乐已不在");
+  });
 });

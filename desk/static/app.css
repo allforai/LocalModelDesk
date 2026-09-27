@@ -312,16 +312,26 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 /* 输入区里的首帧、尾帧只是小图提示，不挤掉时间线（900×700 下时间线仍有可用高度） */
 img.video-preview-media { height: 64px; width: auto; }
 video.video-preview-media { max-height: 96px; }
+audio.video-preview-media { width: min(360px, 100%); height: 36px; }
+.video-audio-start { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.video-audio-start input { width: 96px; color: var(--text); }
 .attempt-first-frame { margin: 0; }
 .image-advanced .video-audio { display: flex; align-items: center; gap: 8px; margin-top: 8px; color: var(--text); }
 .video-audio input { width: auto; margin: 0; accent-color: var(--accent); }
-/* 从图片会话选首帧（V-23）：左栏会话列表、右侧缩略图网格，高度超出时各自滚动 */
-.image-picker { max-width: 760px; }
-.image-picker-body { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); gap: 12px; max-height: 70vh; margin: 0 0 16px; }
-.image-picker-sessions { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
-.image-picker-session { width: 100%; text-align: left; overflow-wrap: anywhere; }
-.image-picker-session.selected { border-color: var(--accent); color: var(--accent); }
-.image-picker-grid { overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; align-content: start; }
-.image-picker-thumb { width: 100%; height: auto; aspect-ratio: 1; padding: 0; border: 1px solid var(--border); background: var(--bg); cursor: pointer; }
-.image-picker-thumb:hover, .image-picker-thumb:focus-visible { border-color: var(--accent); }
-.image-picker-empty { grid-column: 1 / -1; margin: 0; }
+/* 通用媒体选择框（S-20/S-21，泛化自图片首帧选择框 V-23）：左栏会话列表、右侧内容（图片缩略图网格
+   或音乐列表），高度超出时各自滚动 */
+.media-picker { max-width: 760px; }
+.media-picker-body { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); gap: 12px; max-height: 70vh; margin: 0 0 16px; }
+.media-picker-sessions { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.media-picker-session { width: 100%; text-align: left; overflow-wrap: anywhere; }
+.media-picker-session.selected { border-color: var(--accent); color: var(--accent); }
+.media-picker-grid { overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; align-content: start; }
+.media-picker-thumb { width: 100%; height: auto; aspect-ratio: 1; padding: 0; border: 1px solid var(--border); background: var(--bg); cursor: pointer; }
+.media-picker-thumb:hover, .media-picker-thumb:focus-visible { border-color: var(--accent); }
+.media-picker-empty { grid-column: 1 / -1; margin: 0; }
+/* 音乐列表（S-20）：竖排卡片，标题 + 试听 + 「选这首」按钮 */
+.media-picker-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; align-content: start; }
+.media-picker-music-item { display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); }
+.media-picker-music-label { margin: 0; overflow-wrap: anywhere; }
+.media-picker-music-item audio { width: 100%; }
+.media-picker-pick { align-self: flex-start; }

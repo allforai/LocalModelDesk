@@ -23,7 +23,7 @@
         <div class="image-composer" data-video-composer role="form" aria-label="生成视频">
           <div class="refine-chip" data-video-chip hidden><span data-video-chip-text></span><button class="btn-quiet btn-sm" data-video-chip-clear data-icon-name="x" aria-label="取消沿用或续写"></button></div>
           <div class="video-materials">
-            <label class="video-mode">生成方式 <select data-video-mode><option value="text">文生视频</option><option value="image">图生视频</option><option value="reference">视频参考生成</option></select></label>
+            <label class="video-mode">生成方式 <select data-video-mode><option value="text">文生视频</option><option value="image">图生视频</option><option value="reference">视频参考生成</option><option value="music_ref">配乐参考（实验性）</option></select></label>
             <div class="video-assets" data-video-first-area hidden>
               <div class="file-row"><label class="file-pick"><span class="btn">上传图片</span><input type="file" class="visually-hidden" data-video-first-upload accept="image/png,image/jpeg,image/webp"></label><button type="button" class="btn-secondary" data-video-first-pick>从图片会话选…</button><span class="file-name hint" data-video-first-label>未选择</span></div>
               <div class="video-preview" data-video-first-preview></div>
@@ -37,6 +37,15 @@
               <div class="file-row"><label class="file-pick"><span class="btn">上传参考视频</span><input type="file" class="visually-hidden" data-video-source accept="video/mp4,video/quicktime,video/webm"></label><span class="file-name hint" data-video-source-label>未选择</span></div>
               <div class="video-preview" data-video-source-preview></div>
               <p class="hint">支持 MP4、MOV、WebM，最长 15 秒、最大 32 MB。参考生成不保证逐帧保留原视频动作。</p>
+            </div>
+            <div class="video-assets" data-video-music-area hidden>
+              <div class="file-row"><label class="file-pick"><span class="btn">上传图片</span><input type="file" class="visually-hidden" data-video-ref-image-upload accept="image/png,image/jpeg,image/webp"></label><button type="button" class="btn-secondary" data-video-ref-image-pick>从图片会话选…</button><span class="file-name hint" data-video-ref-image-label>未选择</span></div>
+              <div class="video-preview" data-video-ref-image-preview></div>
+              <p class="hint">参考图：支持 PNG、JPEG、WebP，最多 32 MB。</p>
+              <div class="file-row"><button type="button" class="btn-secondary" data-video-song-pick>从音乐会话选…</button><span class="file-name hint" data-video-song-label>未选择</span></div>
+              <div class="video-preview" data-video-song-preview></div>
+              <label class="video-audio-start">从第几秒开始 <input type="number" data-video-audio-start value="0" min="0" step="0.5"></label>
+              <p class="hint">实验性：画面不保证跟随音乐节奏；参考图只影响画面风格，不作为第一帧。截取与视频等长、2–15 秒的一段音乐。</p>
             </div>
           </div>
           <div class="image-input-row">

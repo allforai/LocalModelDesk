@@ -17,7 +17,7 @@ def test_every_command_ends_with_its_output(tmp_path):
     for cmd in (compose.last_frame_command("ff", Path("v.mp4"), out),
                 compose.concat_video_command("ff", [(Path("a.mp4"), False), (Path("b.mp4"), True)], (512, 288), out),
                 compose.crossfade_audio_command("ff", [(Path("a.wav"), 20.0), (Path("b.wav"), 20.0)], out),
-                compose.replace_audio_command("ff", Path("v.mp4"), Path("a.wav"), out)):
+                compose.soundtrack_command("ff", Path("v.mp4"), Path("a.wav"), out)):
         assert cmd[0] == "ff" and cmd[1] == "-y" and cmd[-1] == str(out)
 
 
@@ -80,7 +80,7 @@ def test_real_concat_with_mixed_sizes_and_dropped_frame(tmp_path):
 
 
 @needs_ffmpeg
-def test_real_crossfade_and_last_frame_and_replace_audio(tmp_path):
+def test_real_crossfade_and_last_frame_and_soundtrack(tmp_path):
     lavfi_wav(tmp_path / "a.wav", 5); lavfi_wav(tmp_path / "b.wav", 5)
     song = tmp_path / "song.wav"
     subprocess.run(compose.crossfade_audio_command(FF, [(tmp_path / "a.wav", 5.0), (tmp_path / "b.wav", 5.0)], song), check=True)
@@ -90,5 +90,40 @@ def test_real_crossfade_and_last_frame_and_replace_audio(tmp_path):
     subprocess.run(compose.last_frame_command(FF, tmp_path / "v.mp4", png), check=True)
     assert png.stat().st_size > 0
     swapped = tmp_path / "swapped.mp4"
-    subprocess.run(compose.replace_audio_command(FF, tmp_path / "v.mp4", song, swapped), check=True)
+    subprocess.run(compose.soundtrack_command(FF, tmp_path / "v.mp4", song, swapped), check=True)
     assert abs(duration(swapped) - 1.0) < 0.1
+
+
+def test_soundtrack_command_copies_video_and_pads_audio_to_the_video_length(tmp_path):
+    out = tmp_path / "o.mp4"
+    cmd = compose.soundtrack_command("ff", Path("v.mp4"), Path("song.wav"), out)
+    assert cmd[:2] == ["ff", "-y"] and cmd[-1] == str(out)
+    assert cmd[cmd.index("-c:v") + 1] == "copy" and cmd[cmd.index("-af") + 1] == "apad"
+    assert "-shortest" in cmd and cmd.index("-af") < cmd.index("-shortest")
+    assert cmd[cmd.index("-i") + 1] == "v.mp4" and "song.wav" in cmd
+
+
+@needs_ffmpeg
+@pytest.mark.parametrize("video_s, song_s", [(1, 5), (3, 1)])
+def test_real_soundtrack_output_is_as_long_as_the_video(tmp_path, video_s, song_s):
+    lavfi_video(tmp_path / "v.mp4", seconds=video_s)
+    lavfi_wav(tmp_path / "song.wav", song_s)
+    out = tmp_path / "scored.mp4"
+    subprocess.run(compose.soundtrack_command(FF, tmp_path / "v.mp4", tmp_path / "song.wav", out), check=True)
+    assert abs(duration(out) - video_s) < 0.15
+
+
+def test_audio_clip_command_seeks_then_cuts_and_writes_wav_last(tmp_path):
+    out = tmp_path / "clip.wav"
+    cmd = compose.audio_clip_command("ff", Path("song.wav"), 1.5, 3.0416, out)
+    assert cmd[:2] == ["ff", "-y"] and cmd[-1] == str(out)
+    assert float(cmd[cmd.index("-ss") + 1]) == 1.5 and float(cmd[cmd.index("-t") + 1]) == 3.0416
+    assert cmd[cmd.index("-i") + 1] == "song.wav"
+
+
+@needs_ffmpeg
+def test_real_audio_clip_is_as_long_as_asked(tmp_path):
+    lavfi_wav(tmp_path / "song.wav", 5)
+    out = tmp_path / "clip.wav"
+    subprocess.run(compose.audio_clip_command(FF, tmp_path / "song.wav", 1, 2, out), check=True)
+    assert abs(duration(out) - 2) < 0.05

@@ -38,7 +38,8 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
             height=payload.get("height"), frames=payload.get("frames"),
             steps=payload.get("steps"), mode=payload.get("mode", "text"),
             first_frame=payload.get("first_frame"), last_frame=payload.get("last_frame"),
-            ref_video=payload.get("ref_video"), use_audio=payload.get("use_audio", True),
+            ref_video=payload.get("ref_video"), ref_image=payload.get("ref_image"),
+            audio_start=payload.get("audio_start", 0), use_audio=payload.get("use_audio", True),
             seed=payload.get("seed"),
             session_id=payload.get("session_id"), continues=payload.get("continues"), refs=payload.get("refs"),
             force=bool(payload.get("force", False))))
@@ -56,6 +57,12 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
         return _run(lambda: service.start_compose_job(
             kind=payload.get("kind"), session_id=payload.get("session_id"),
             parts=payload.get("parts"), force=payload.get("force", False)))
+
+    def start_soundtrack(body, _query):
+        payload = body or {}
+        return _run(lambda: service.start_soundtrack_job(
+            session_id=payload.get("session_id"), source=payload.get("source"),
+            refs=payload.get("refs"), force=payload.get("force", False)))
 
     def cancel(_body, _query):
         return _run(service.cancel_job)
@@ -83,6 +90,7 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
         ("POST", "/api/media/music", start_music),
         ("POST", "/api/media/image", start_image),
         ("POST", "/api/media/compose", start_compose),
+        ("POST", "/api/media/soundtrack", start_soundtrack),
         ("POST", "/api/media/cancel", cancel),
         ("GET", "/api/media/job", status),
     ]

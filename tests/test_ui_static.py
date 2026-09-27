@@ -178,7 +178,7 @@ def test_file_inputs_stay_in_the_tab_order():
     import re
 
     inputs = re.findall(r'<input type="file"[^>]*>', HTML)
-    assert len(inputs) == 3
+    assert len(inputs) == 4  # 首帧、尾帧、参考视频、配乐参考的参考图（S-32）
     for tag in inputs:
         assert " hidden" not in tag
         assert 'class="visually-hidden"' in tag

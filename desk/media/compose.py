@@ -82,6 +82,13 @@ def crossfade_audio_command(ffmpeg: str, parts: list[tuple[Path, float]], output
             "-c:a", "pcm_s16le", str(output)]
 
 
-def replace_audio_command(ffmpeg: str, video: Path, audio: Path, output: Path) -> list[str]:
+def soundtrack_command(ffmpeg: str, video: Path, audio: Path, output: Path) -> list[str]:
+    """Replace the video's audio with `audio`, padded with silence or cut so the video length wins (S-04)."""
     return [ffmpeg, "-y", "-v", "error", "-i", str(video), "-i", str(audio), "-map", "0:v", "-map", "1:a",
-            "-c:v", "copy", "-c:a", "aac", "-shortest", str(output)]
+            "-c:v", "copy", "-af", "apad", "-c:a", "aac", "-shortest", str(output)]
+
+
+def audio_clip_command(ffmpeg: str, audio: Path, start: float, seconds: float, output: Path) -> list[str]:
+    """Cut `seconds` of `audio` starting at `start` into a PCM wav (配乐参考 S-12)."""
+    return [ffmpeg, "-y", "-v", "error", "-ss", str(start), "-t", str(seconds), "-i", str(audio),
+            "-c:a", "pcm_s16le", str(output)]

@@ -63,7 +63,7 @@ export function mainFlowText(node, advancedClassRe = /image-advanced|attempt-adv
 }
 
 // 一个极小的后端：某一种媒体的会话存在内存里，按路由回应；每次调用记下来。
-// startResult / composeResult 设成函数时，生成 / 合成请求改由它回应（造错误用）。
+// startResult / composeResult / soundtrackResult 设成函数时，生成 / 合成 / 配乐请求改由它回应（造错误用）。
 export function fakeBackend(kind) {
   const state = { sessions: [], calls: [], nextJob: 1, startResult: null, composeResult: null, uploads: 0 };
   const summary = (s) => ({ id: s.id, title: s.title, created: s.created, updated: s.updated,
@@ -112,6 +112,12 @@ export function fakeBackend(kind) {
       const s = state.sessions.find((item) => item.id === body.session_id);
       if (!s) return missing();
       return addRunning(s, { op: "compose", params: { parts: body.parts } });
+    }
+    if (url === "/api/media/soundtrack" && method === "POST") {
+      if (state.soundtrackResult) return state.soundtrackResult(body);
+      const s = state.sessions.find((item) => item.id === body.session_id);
+      if (!s) return missing();
+      return addRunning(s, { op: "soundtrack", params: { source: body.source }, refs: body.refs });
     }
     if (url === "/api/media/cancel") return reply(200, { job_id: 1, kind, status: "cancelled" });
     // 素材上传（视频的首帧、尾帧、参考视频）：回一个按次数编号、保留扩展名的 id。
