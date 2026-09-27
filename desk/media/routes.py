@@ -38,7 +38,8 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
             height=payload.get("height"), frames=payload.get("frames"),
             steps=payload.get("steps"), mode=payload.get("mode", "text"),
             first_frame=payload.get("first_frame"), last_frame=payload.get("last_frame"),
-            ref_video=payload.get("ref_video"), use_audio=payload.get("use_audio", True),
+            ref_video=payload.get("ref_video"), ref_image=payload.get("ref_image"),
+            audio_start=payload.get("audio_start", 0), use_audio=payload.get("use_audio", True),
             seed=payload.get("seed"),
             session_id=payload.get("session_id"), continues=payload.get("continues"), refs=payload.get("refs"),
             force=bool(payload.get("force", False))))

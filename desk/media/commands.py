@@ -33,6 +33,8 @@ def build_h3_command(
     first_frame: Path | None = None,
     last_frame: Path | None = None,
     ref_video: Path | None = None,
+    ref_image: Path | None = None,
+    ref_audio: Path | None = None,
     use_audio: bool = True,
     seed: int | None = None,
 ) -> list[str]:
@@ -56,7 +58,8 @@ def build_h3_command(
     if seed is not None:
         command.extend(("--seed", str(seed)))
     for flag, path in (("--first-frame", first_frame), ("--last-frame", last_frame),
-                       ("--ref-video" if use_audio else "--ref-video-silent", ref_video)):
+                       ("--ref-video" if use_audio else "--ref-video-silent", ref_video),
+                       ("--ref-image", ref_image), ("--ref-audio", ref_audio)):
         if path is not None:
             command.extend((flag, str(path)))
     return command

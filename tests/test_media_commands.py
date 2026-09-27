@@ -97,3 +97,11 @@ def test_h3_fixed_flags_have_one_definition_within_desk():
             if flag in path.read_text()
         ]
         assert occurrences == [Path("media/commands.py")]
+
+
+def test_build_h3_command_music_reference_uses_ref_image_and_ref_audio():
+    argv = build_h3_command(("h3",), Path("/m"), prompt="p", width=512, height=288, frames=73, steps=10,
+                            output=Path("/o.mp4"), ref_image=Path("/in/ref.png"), ref_audio=Path("/in/clip.wav"))
+    assert argv[argv.index("--ref-image") + 1] == "/in/ref.png"
+    assert argv[argv.index("--ref-audio") + 1] == "/in/clip.wav"
+    assert "--first-frame" not in argv and "--ref-video" not in argv

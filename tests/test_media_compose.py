@@ -111,3 +111,19 @@ def test_real_soundtrack_output_is_as_long_as_the_video(tmp_path, video_s, song_
     out = tmp_path / "scored.mp4"
     subprocess.run(compose.soundtrack_command(FF, tmp_path / "v.mp4", tmp_path / "song.wav", out), check=True)
     assert abs(duration(out) - video_s) < 0.15
+
+
+def test_audio_clip_command_seeks_then_cuts_and_writes_wav_last(tmp_path):
+    out = tmp_path / "clip.wav"
+    cmd = compose.audio_clip_command("ff", Path("song.wav"), 1.5, 3.0416, out)
+    assert cmd[:2] == ["ff", "-y"] and cmd[-1] == str(out)
+    assert float(cmd[cmd.index("-ss") + 1]) == 1.5 and float(cmd[cmd.index("-t") + 1]) == 3.0416
+    assert cmd[cmd.index("-i") + 1] == "song.wav"
+
+
+@needs_ffmpeg
+def test_real_audio_clip_is_as_long_as_asked(tmp_path):
+    lavfi_wav(tmp_path / "song.wav", 5)
+    out = tmp_path / "clip.wav"
+    subprocess.run(compose.audio_clip_command(FF, tmp_path / "song.wav", 1, 2, out), check=True)
+    assert abs(duration(out) - 2) < 0.05

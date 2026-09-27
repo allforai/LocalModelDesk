@@ -32,7 +32,7 @@ KINDS = ("image", "video", "music")
 PARAM_KEYS = {
     "image": ("prompt", "width", "height", "steps", "seed"),
     "video": ("prompt", "width", "height", "frames", "steps", "seed",
-              "mode", "use_audio", "first_frame", "last_frame", "ref_video"),
+              "mode", "use_audio", "first_frame", "last_frame", "ref_video", "ref_image", "audio_start"),
     "music": ("caption", "lyrics", "duration", "seed"),
 }
 COMPOSE_PARAM_KEYS = ("parts",)
