@@ -428,9 +428,11 @@ class MediaService:
         # Inputs are read here, outside the lock `_start` holds (a probe may take up to 30 s), and a bad
         # one refuses the job before anything is written (B-33).
         self._check_idle()
+        if compose.ffmpeg_path() is None or (kind == "video" and compose.ffprobe_path() is None):
+            raise MediaError("capability_missing", compose.FFMPEG_MISSING, 503)   # before any probing
         if kind == "video":
             try:
-                size = compose.probe_size(compose.ffprobe_path() or "ffprobe", paths[0])
+                size = compose.probe_size(compose.ffprobe_path(), paths[0])
             except ValueError:
                 raise MediaError("join_failed", "读不出第一段的画面尺寸", 500) from None
             command = lambda ffmpeg, output: self._join_command("video", joined, output, ffmpeg, size)
@@ -735,7 +737,8 @@ class MediaService:
                       size: tuple[int, int] | None = None) -> list[str]:
         """ffmpeg argv joining [(path, drop_first_frame)] into `target` (B-50 video / B-51 music).
 
-        Video probes the first segment's size unless `size` is given. Raises `JoinInputError(n)`
+        Video uses `size` when given (compose reads it outside the lock); probing it here is only
+        for `_run_join`, which builds its command before taking the lock. Raises `JoinInputError(n)`
         when music segment n's (1-based) duration cannot be read."""
         if kind == "video":
             size = size or compose.probe_size(compose.ffprobe_path() or "ffprobe", parts[0][0])

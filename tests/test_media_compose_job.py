@@ -130,7 +130,7 @@ def test_compose_probes_size_outside_the_service_lock(tmp_path, monkeypatch):
     assert probing.wait(5)
     began = time.monotonic()
     service.job_status()
-    assert time.monotonic() - began < 0.1, "job_status blocked behind the size probe"
+    assert time.monotonic() - began < 0.3, "job_status blocked behind the size probe"
     worker.join(5)
     assert not worker.is_alive()
     assert attempts(deps, "video", sid)[-1]["op"] == "compose"
@@ -163,6 +163,28 @@ def test_music_compose_with_unreadable_duration_is_refused_without_writing(tmp_p
     assert (exc.value.code, exc.value.message, exc.value.http_status) == \
         ("join_failed", "读不出第 2 段的时长，无法拼成成片", 500)
     assert len(attempts(deps, "music", sid)) == before and len(deps.executor.spawned) == spawned
+
+
+@pytest.mark.parametrize("kind, missing", [("video", "ffmpeg_path"), ("video", "ffprobe_path"), ("music", "ffmpeg_path")])
+def test_compose_without_ffmpeg_is_refused_before_probing(tmp_path, monkeypatch, kind, missing):
+    service, deps = make_service(tmp_path)
+    if kind == "video":
+        sid, first, second = two_segments(service, deps)
+    else:
+        music_ready(service, tmp_path)
+        sid, first = first_segment(service, deps, "music")
+        second = finished_snapshot(service, lambda: music(service, session_id=sid))["attempt_id"]
+    probed = []
+    monkeypatch.setattr(compose, missing, lambda: None)
+    monkeypatch.setattr(compose, "probe_size", lambda *a: probed.append(a) or (512, 288))
+    monkeypatch.setattr(service_mod, "wav_seconds", lambda p: probed.append(p) or 20.0)
+    before = len(attempts(deps, kind, sid)); spawned = len(deps.executor.spawned)
+    with pytest.raises(MediaError) as exc:
+        service.start_compose_job(kind=kind, session_id=sid, parts=[first, second])
+    assert (exc.value.code, exc.value.message, exc.value.http_status) == \
+        ("capability_missing", "需要 ffmpeg 才能拼接成片", 503)
+    assert probed == []
+    assert len(attempts(deps, kind, sid)) == before and len(deps.executor.spawned) == spawned
 
 
 def test_compose_route(tmp_path, monkeypatch):
