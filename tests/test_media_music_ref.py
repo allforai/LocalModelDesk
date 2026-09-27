@@ -1,12 +1,14 @@
 """配乐参考（实验性）: H3 from a reference image plus a clip of a music-session song (design S-10–S-14)."""
+import wave
 from pathlib import Path
 
 import pytest
 
 from desk.media import service as service_mod
+from desk.media.audio import wav_seconds_exact as real_wav_seconds_exact
 from desk.media.routes import build_routes
 from desk.media.service import MediaError
-from media_fakes import finished_snapshot, make_service
+from media_fakes import FakeExecutor, finished_snapshot, make_service
 from test_media_continue import attempts, fake_ffmpeg, first_segment  # noqa: F401  (autouse fixture)
 from test_media_sessions_service import done_image, video
 
@@ -68,16 +70,16 @@ def test_music_ref_cuts_a_clip_and_passes_ref_image_and_ref_audio(tmp_path, clip
     assert clip_cmd[clip_cmd.index("-i") + 1] == str(tmp_path / "outputs" / "song.wav")
     assert float(clip_cmd[clip_cmd.index("-ss") + 1]) == 0
     assert float(clip_cmd[clip_cmd.index("-t") + 1]) == pytest.approx(73 / 24)
-    [clip] = wavs(tmp_path)
-    assert clip_cmd[-1] == str(clip)
+    clip = clip_cmd[-1]   # the clip is deleted once the job finalizes (S-14b); assert its path via the ffmpeg argv, not the filesystem
     cmd = deps.executor.spawned[-1]["cmd"]
     assert cmd[cmd.index("--ref-image") + 1] == str(tmp_path / "outputs" / ".inputs" / image)
-    assert cmd[cmd.index("--ref-audio") + 1] == str(clip)
+    assert cmd[cmd.index("--ref-audio") + 1] == clip
     assert "--first-frame" not in cmd and "--audio-start" not in cmd
     made = attempts(deps, "video", sid)[-1]
     assert made["status"] == "done" and made["refs"] == {"ref_audio": ref}
     assert made["params"]["mode"] == "music_ref" and made["params"]["audio_start"] == 0
     assert made["params"]["ref_image"] == image
+    assert wavs(tmp_path) == []   # nothing references the clip after the job (S-14b)
 
 
 @pytest.mark.parametrize("frames", [24, 362])
@@ -172,9 +174,22 @@ def test_invalid_requests_are_400_and_write_nothing(tmp_path, clips, case, messa
 def test_song_too_short_from_the_start_second_is_400(tmp_path, clips, monkeypatch):
     service, deps = make_service(tmp_path)
     sid, image, ref = ready(deps, tmp_path)
-    monkeypatch.setattr(service_mod, "wav_seconds", lambda _p: 3.0)
+    monkeypatch.setattr(service_mod, "wav_seconds_exact", lambda _p: 3.0)
     error = _refused(service, sid, ref_audio=ref, ref_image=image, audio_start=2)
     assert (error.code, error.http_status, error.message) == ("invalid_params", 400, "这首歌从第 2 秒起不足 2 秒")
+    assert attempts(deps, "video", sid) == [] and clips == [] and wavs(tmp_path) == []
+
+
+def test_song_that_rounds_up_to_2s_but_is_actually_shorter_is_still_400(tmp_path, clips, monkeypatch):
+    """1.996 s rounds to 2.00 under `wav_seconds`; the check must use the unrounded duration (S-14 fix)."""
+    service, deps = make_service(tmp_path)
+    sid, image, ref = ready(deps, tmp_path)
+    monkeypatch.setattr(service_mod, "wav_seconds_exact", real_wav_seconds_exact)   # undo test_media_continue's autouse fake for this one test
+    with wave.open(str(tmp_path / "outputs" / "song.wav"), "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(1000)
+        w.writeframes(b"\x00\x00" * 1996)   # exactly 1.996 s; round(1.996, 2) == 2.0
+    error = _refused(service, sid, ref_audio=ref, ref_image=image, audio_start=0)
+    assert (error.code, error.http_status, error.message) == ("invalid_params", 400, "这首歌从第 0 秒起不足 2 秒")
     assert attempts(deps, "video", sid) == [] and clips == [] and wavs(tmp_path) == []
 
 
@@ -209,6 +224,20 @@ def test_gone_song_is_404_ref_missing(tmp_path, clips):
     error = _refused(service, sid, ref_audio=ref, ref_image=image)
     assert (error.code, error.http_status, error.message) == ("ref_missing", 404, "引用的音乐已不在")
     assert clips == []
+
+
+def test_clip_wav_is_removed_once_a_successful_job_finalizes(tmp_path, clips):
+    service, deps = make_service(tmp_path)
+    sid, image, ref = ready(deps, tmp_path)
+    finished_snapshot(service, lambda: music_ref(service, sid, ref, ref_image=image))
+    assert wavs(tmp_path) == []
+
+
+def test_clip_wav_is_removed_once_a_failed_job_finalizes(tmp_path, clips):
+    service, deps = make_service(tmp_path, executor=FakeExecutor(script="fail"))
+    sid, image, ref = ready(deps, tmp_path)
+    finished_snapshot(service, lambda: music_ref(service, sid, ref, ref_image=image))
+    assert wavs(tmp_path) == []
 
 
 def test_route_passes_ref_image_and_audio_start_through(tmp_path):

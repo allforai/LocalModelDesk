@@ -19,7 +19,8 @@ export function fillPlan(entry) {
         seed: Number.isInteger(params.seed) ? params.seed : null,
         ...(entry.refs && Object.keys(entry.refs).length ? { refs: entry.refs } : {}),
         ...(params.mode ? { mode: params.mode, first_frame: params.first_frame,
-          last_frame: params.last_frame, ref_video: params.ref_video, use_audio: params.use_audio } : {}),
+          last_frame: params.last_frame, ref_video: params.ref_video, use_audio: params.use_audio,
+          ref_image: params.ref_image ?? null, audio_start: params.audio_start ?? null } : {}),
       },
     };
   }

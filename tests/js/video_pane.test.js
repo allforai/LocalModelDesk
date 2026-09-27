@@ -385,6 +385,19 @@ test("素材库回填：原会话不在时按字段回填，提示条「沿用�
   });
 });
 
+test("素材库回填：music_ref 条目原会话不在时，参考图与起始秒也按字段回填", async () => {
+  await withBackend("video", async (backend) => {
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await pane.applyFill({ pane: "video", session_id: "gone", attempt_id: "x",
+      fields: { prompt: "旧提示", width: 768, height: 448, frames: 57, steps: 20, seed: 7,
+        mode: "music_ref", ref_image: "in1.png", audio_start: 12 } });
+    assert.equal(parts.mode.value, "music_ref");
+    assert.equal(parts["ref-image-label"].textContent, "已选择：之前上传的图片");
+    assert.equal(parts["audio-start"].value, "12");
+  });
+});
+
 test("耗时提示随画幅与时长变化；AI 帮写按当前方式写回提示词", async () => {
   await withBackend("video", async (backend) => {
     const { parts, pane, ready } = makeVideoPane(); ready();

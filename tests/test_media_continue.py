@@ -23,6 +23,7 @@ def fake_ffmpeg(monkeypatch, tmp_path):
         return type("R", (), {"returncode": 0, "stdout": "", "stderr": ""})()
     monkeypatch.setattr(service_mod.subprocess, "run", fake_run)
     monkeypatch.setattr(service_mod, "wav_seconds", lambda _p: 20.0)
+    monkeypatch.setattr(service_mod, "wav_seconds_exact", lambda _p: 20.0)
 
 
 def first_segment(service, deps, kind="video"):

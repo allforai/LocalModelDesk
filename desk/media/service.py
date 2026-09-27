@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from . import compose
-from .audio import wav_seconds
+from .audio import wav_seconds, wav_seconds_exact
 from .commands import build_h3_command, build_music_command, build_image_command
 from .inputs import save_input, resolve_input
 from desk.library.errors import NotFoundError
@@ -215,7 +215,7 @@ class MediaService:
 
     def _clip_audio(self, song: Path, start: float, seconds: float) -> Path:
         """Cut the clip a music_ref job hears into `.inputs/<hex>.wav` (S-12); refusals leave no file."""
-        length = wav_seconds(song)
+        length = wav_seconds_exact(song)   # unrounded: `wav_seconds`'s 0.01 s rounding would let e.g. 1.996 s pass here (S-14)
         if length is None:
             raise MediaError("audio_clip_failed", "没能截取这段音乐", 500)
         if length < start + CLIP_MIN_S:
@@ -274,6 +274,7 @@ class MediaService:
             frame = self._extract_last_frame(root / (joined if joined and not source.get("joined_missing") else source["output"]))
             made.append(root / ".inputs" / frame)
             mode, first_frame = "image", frame
+        clip_path = None
         try:
             stored_refs, ref_paths = self._resolve_refs("video", refs)
             assets = _video_assets(mode, first_frame, last_frame, ref_video, ref_image, first_from_ref=from_ref)
@@ -288,12 +289,13 @@ class MediaService:
                                         max(CLIP_MIN_S, min(CLIP_MAX_S, frames / compose.FPS)))
                 made.append(clip)
                 ref_paths["ref_audio"] = clip
+                clip_path = clip   # nothing else ever references this clip; the job deletes it when it finalizes
                 params.update(audio_start=audio_start, ref_image=None)
             if mode != "text":
                 params.update(mode=mode, use_audio=use_audio, **{key: value[0] for key, value in assets.items()})
             return self._start("video", params, force=force, session_id=session_id,
                                attempt_extra={"refs": stored_refs, "continues": continues}, join=join,
-                               ref_paths=ref_paths)
+                               ref_paths=ref_paths, clip_path=clip_path)
         except MediaError:
             for path in made:
                 path.unlink(missing_ok=True)
@@ -437,7 +439,7 @@ class MediaService:
     def _start(self, kind: str, params: dict, *, force: bool = False, session_id: str | None = None,
               attempt_extra: dict | None = None, join: dict | None = None,
               compose_command: Callable[[str, Path], list[str]] | None = None, output_prefix: str | None = None,
-              ref_paths: dict | None = None) -> dict:
+              ref_paths: dict | None = None, clip_path: Path | None = None) -> dict:
         """`join` (from `_join_plan`) makes the job join the chain into a finished file after the model (B-38).
 
         `compose_command(ffmpeg, output) -> argv` makes it an ffmpeg-only job instead (compose B-45,
@@ -459,7 +461,7 @@ class MediaService:
             now = self._clock()
             # Per-job state: a later `_start` must never change what this job's finalize releases or records.
             job = {"permit": permit, "released": False, "join": join, "compose": not heavy,
-                   "joined": {"joined_output": None, "joined_error": None}}
+                   "joined": {"joined_output": None, "joined_error": None}, "clip_path": clip_path}
             try:
                 stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(now))
                 root = Path(roots.outputs_root); root.mkdir(parents=True, exist_ok=True)
@@ -673,6 +675,9 @@ class MediaService:
     def _finalize(self, job: dict, final: tuple) -> None:
         snap, callbacks, origin, joined = final
         self._release_permit(job)
+        if job.get("clip_path") is not None:   # music_ref's cut clip is referenced by nothing after the job (whatever the outcome)
+            try: job["clip_path"].unlink(missing_ok=True)
+            except Exception: log.exception("clip_path cleanup failed")
         try: self._append_history(self._history_entry(snap, joined))
         except Exception as exc: self._append_log(f"[media] append_history failed: {exc}")
         self._settle_attempt(snap, origin, joined)

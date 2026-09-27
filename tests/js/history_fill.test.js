@@ -16,6 +16,13 @@ test("video 条目带种子与顶层 refs（V-05、V-61）", () => {
   assert.equal("refs" in fillPlan({ kind: "video", refs: {}, params: { prompt: "p" } }).fields, false);
 });
 
+test("video 条目 mode music_ref 带 ref_image 与 audio_start（素材库回填要恢复参考图与起始秒）", () => {
+  const plan = fillPlan({ kind: "video", params: { prompt: "p", width: 512, height: 288, frames: 49, steps: 16,
+    mode: "music_ref", ref_image: "abc.png", audio_start: 12 } });
+  assert.equal(plan.fields.ref_image, "abc.png");
+  assert.equal(plan.fields.audio_start, 12);
+});
+
 test("music 参数 → music 表单四字段，带种子（M-52：回填后能沿用素材库里这首）", () => {
   const plan = fillPlan({ kind: "music", params: { caption: "民谣", lyrics: "词", duration: 90, seed: 11 } });
   assert.deepEqual(plan, { pane: "music", session_id: null, attempt_id: null, fields: { caption: "民谣", lyrics: "词", duration: 90, seed: 11 } });
