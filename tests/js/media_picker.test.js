@@ -3,7 +3,7 @@
 // doc.body 最新的 overlay。图片用例从原 image_picker.test.js 原样搬来（断言不变，只改 import/签名）。
 import test from "node:test";
 import assert from "node:assert/strict";
-import { openMediaPicker } from "../../desk/static/js/widgets/media_picker.js";
+import { musicOutput, openMediaPicker } from "../../desk/static/js/widgets/media_picker.js";
 import { Element, find, findAll, flush } from "./support/fake_dom.js";
 
 function makeDoc() {
@@ -132,6 +132,70 @@ test("kind:music——两首 done（一首有 joined_output）+ 一首 failed �
     label: "史诗感的交响乐配吉他",
   });
   assert.equal(doc.body.children.length, 0, "对话框已移除");
+});
+
+test("musicOutput()：与后端 find_done 一致——这段自己 output_missing 时不可选，即使 joined_output 还在（issue #19）", () => {
+  assert.equal(musicOutput({ output: "a.mp3", output_missing: true, joined_output: "j.mp3" }), null, "own output_missing 优先判不可选");
+  assert.equal(musicOutput({ output: "a.mp3", joined_output: "j.mp3", joined_missing: true }), "a.mp3", "joined_missing 时退回 output");
+  assert.equal(musicOutput({ output: "a.mp3", joined_output: "j.mp3" }), "j.mp3", "都在时优先 joined_output");
+  assert.equal(musicOutput({ output: "a.mp3" }), "a.mp3", "没有 joined_output 用 output");
+  assert.equal(musicOutput({ output: null }), null);
+});
+
+test("kind:music——一段 output_missing 但带 joined_output 的尝试不出现在列表（与后端 find_done 一致，issue #19）", async () => {
+  const doc = makeDoc();
+  const sessions = {
+    s1: {
+      id: "s1",
+      title: "夏日",
+      attempts: [
+        { id: "a1", status: "done", output: "a1.mp3", output_missing: true, joined_output: "j.wav", params: { caption: "分段被删" } },
+        { id: "a2", status: "done", output: "a2.mp3", params: { caption: "还在的分段" } },
+      ],
+    },
+  };
+  const p = openMediaPicker(doc, {
+    kind: "music", title: "选一首歌", emptyText: "这个会话还没有生成好的歌",
+    listSessions: async () => Object.values(sessions).map((s) => ({ id: s.id, title: s.title, attempt_count: s.attempts.length })),
+    getSession: async (id) => sessions[id],
+    serveOutput: (name) => `/api/outputs/${name}`,
+  });
+  await flush(); await flush();
+  const box = boxOf(doc);
+  const items = findAll(box, (n) => "mediaPickerMusicItem" in n.dataset);
+  assert.equal(items.length, 1, "output_missing 的那首即使有 joined_output 也不可选");
+  await find(box, (n) => "mediaPickerCancel" in n.dataset).click();
+  await p;
+});
+
+test("listSessions 读取失败：会话栏显示「会话列表读不出来：<原因>」，右侧空，「取消」照常返回 null，无未处理 rejection（issue #19）", async () => {
+  let unhandled = 0;
+  const onUnhandled = () => { unhandled += 1; };
+  process.on("unhandledRejection", onUnhandled);
+  try {
+    const doc = makeDoc();
+    const p = openMediaPicker(doc, {
+      kind: "image", title: "从图片会话选首帧", emptyText: "这个会话还没有生成好的图片",
+      listSessions: async () => { throw new Error("网络断了"); },
+      getSession: async () => { throw new Error("不该被调用"); },
+      serveOutput: (name) => `/api/outputs/${name}`,
+    });
+    await flush(); await flush();
+    const box = boxOf(doc);
+    const error = find(box, (n) => "mediaPickerListError" in n.dataset);
+    assert.equal(error?.textContent, "会话列表读不出来：网络断了");
+    assert.equal(findAll(box, (n) => "sessionId" in n.dataset).length, 0, "会话栏没有会话按钮");
+    assert.equal(findAll(box, (n) => "mediaPickerThumb" in n.dataset).length, 0, "右侧空");
+
+    await find(box, (n) => "mediaPickerCancel" in n.dataset).click();
+    const result = await p;
+    assert.equal(result, null);
+    assert.equal(doc.body.children.length, 0);
+  } finally {
+    process.off("unhandledRejection", onUnhandled);
+  }
+  await flush();
+  assert.equal(unhandled, 0, "listSessions 的 reject 应该被 try/catch 接住，不产生未处理 rejection");
 });
 
 test("kind:music——切到没有完成曲目的会话显示 emptyText；「取消」解析为 null（S-20）", async () => {

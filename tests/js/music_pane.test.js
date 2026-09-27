@@ -128,6 +128,20 @@ test("「在这段基础上改」回填四项；改种子后提示条隐藏，�
   });
 });
 
+test("「在这段基础上改」一个续写段后，它接的前段文件不在：提示条改为不能接着写，「生成歌曲」禁用（issue #19）", async () => {
+  await withBackend("music", async (backend) => {
+    backend.addSession("歌", [done("a1"), done("a2", { continues: "a1" })]);
+    const { parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    await button(cards(parts)[1], "在这段基础上改").click();
+    assert.equal(parts["chip-text"].textContent, "沿用第 2 次");
+    backend.finish("a1", { output_missing: true });
+    await pane.refresh();
+    assert.equal(parts["chip-text"].textContent, "第 1 次的文件已不在，不能接着写");
+    assert.equal(parts.start.disabled, true);
+  });
+});
+
 test("沿用提示条可见时生成带被引用尝试的 continues", async () => {
   await withBackend("music", async (backend) => {
     backend.addSession("歌", [done("a1"), done("a2", { continues: "a1" })]);
