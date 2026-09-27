@@ -43,8 +43,8 @@ class MediaError(Exception):
 class JoinInputError(Exception):
     """A join input the ffmpeg command cannot be built from (`segment` is its 1-based position).
 
-    Raised by `_join_command` before anything is spawned; `_run_join` reports it as
-    `join_failed` with this message instead of joining with a guessed value."""
+    Raised by `_timed_parts` before anything is spawned; `_run_join` reports it as `join_failed`
+    with this message, and a compose job is refused with it (500, nothing written)."""
     def __init__(self, segment: int):
         self.segment = segment
         super().__init__(f"读不出第 {segment} 段的时长，无法拼成成片")
@@ -113,6 +113,23 @@ def _check_ref_names(refs, allowed: set) -> None:
     for name in (refs or {}) if isinstance(refs, dict) else ():
         if name not in allowed:
             raise MediaError("invalid_params", f"引用参数有误：{name}", 400)
+
+
+def _drop_flags(items: list[dict]) -> list[bool]:
+    """Per segment: drop its first frame? Only a continuation joined right after its source does (B-50)."""
+    return [False] + [items[i].get("continues") == items[i - 1]["id"] for i in range(1, len(items))]
+
+
+def _timed_parts(parts: list) -> list[tuple[Path, float]]:
+    """[(path, seconds)] for a music join; `JoinInputError(n)` when segment n's (1-based) duration is
+    unreadable: a guessed length would silently turn its crossfade into a hard cut."""
+    timed = []
+    for number, (path, _drop) in enumerate(parts, 1):
+        seconds = wav_seconds(path)
+        if seconds is None:
+            raise JoinInputError(number)
+        timed.append((path, seconds))
+    return timed
 
 
 class MediaService:
@@ -211,34 +228,41 @@ class MediaService:
                                   "message": f"第 {1 if broken else number} 段的文件已不在，无法拼成成片"}}
         root = Path(self._resolve_paths().outputs_root)
         paths = [root / item["output"] for item in items]
-        drops = [False] + [items[i].get("continues") == items[i - 1]["id"] for i in range(1, len(items))]
-        return {"parts": list(zip(paths, drops))}
+        return {"parts": list(zip(paths, _drop_flags(items)))}
+
+    def _refuse_if_busy(self) -> None:
+        """Caller holds `self._lock`: one job at a time (the single busy refusal)."""
+        if self._state["status"] == "running":
+            raise MediaError("media_busy", "a media job is already running", 409)
 
     def _check_idle(self) -> None:
-        """Refuse early while another job runs, before any costly ffmpeg extraction."""
+        """Refuse early while another job runs, before any costly ffmpeg work outside the lock."""
         with self._lock:
-            busy = self._state["status"] == "running"
-        if busy:
-            raise MediaError("media_busy", "a media job is already running", 409)
+            self._refuse_if_busy()
+
+    def _run_to_input(self, builder: Callable[[Path], list[str]], suffix: str, code: str, message: str) -> Path:
+        """Run the ffmpeg argv `builder(path)` writing `.inputs/<hex><suffix>`; on any failure delete it and
+        raise `MediaError(code, message, 500)`."""
+        directory = Path(self._resolve_paths().outputs_root) / ".inputs"
+        directory.mkdir(parents=True, exist_ok=True)
+        path = directory / f"{uuid.uuid4().hex}{suffix}"
+        try:
+            result = subprocess.run(builder(path), capture_output=True, text=True, timeout=60)
+            ok = result.returncode == 0 and path.is_file()
+        except (OSError, subprocess.SubprocessError):
+            ok = False
+        if not ok:
+            path.unlink(missing_ok=True)
+            raise MediaError(code, message, 500)
+        return path
 
     def _extract_last_frame(self, video: Path) -> str:
         """Save the continued video's last frame as an input asset; returns its asset id (B-36/B-37)."""
         ffmpeg = compose.ffmpeg_path()
         if ffmpeg is None:
             raise MediaError("capability_missing", compose.FFMPEG_MISSING, 503)
-        directory = Path(self._resolve_paths().outputs_root) / ".inputs"
-        directory.mkdir(parents=True, exist_ok=True)
-        png = directory / f"{uuid.uuid4().hex}.png"
-        try:
-            result = subprocess.run(compose.last_frame_command(ffmpeg, video, png),
-                                    capture_output=True, text=True, timeout=60)
-            ok = result.returncode == 0 and png.is_file()
-        except (OSError, subprocess.SubprocessError):
-            ok = False
-        if not ok:
-            png.unlink(missing_ok=True)
-            raise MediaError("frame_extract_failed", "没能从上一段截出最后一帧", 500)
-        return png.name
+        return self._run_to_input(lambda png: compose.last_frame_command(ffmpeg, video, png), ".png",
+                                  "frame_extract_failed", "没能从上一段截出最后一帧").name
 
     def _clip_audio(self, song: Path, start: float, seconds: float) -> Path:
         """Cut the clip a music_ref job hears into `.inputs/<hex>.wav` (S-12); refusals leave no file."""
@@ -250,19 +274,8 @@ class MediaService:
         ffmpeg = compose.ffmpeg_path()
         if ffmpeg is None:
             raise MediaError("capability_missing", compose.FFMPEG_MISSING, 503)
-        directory = Path(self._resolve_paths().outputs_root) / ".inputs"
-        directory.mkdir(parents=True, exist_ok=True)
-        wav = directory / f"{uuid.uuid4().hex}.wav"
-        try:
-            result = subprocess.run(compose.audio_clip_command(ffmpeg, song, start, seconds, wav),
-                                    capture_output=True, text=True, timeout=60)
-            ok = result.returncode == 0 and wav.is_file()
-        except (OSError, subprocess.SubprocessError):
-            ok = False
-        if not ok:
-            wav.unlink(missing_ok=True)
-            raise MediaError("audio_clip_failed", "没能截取这段音乐", 500)
-        return wav
+        return self._run_to_input(lambda wav: compose.audio_clip_command(ffmpeg, song, start, seconds, wav), ".wav",
+                                  "audio_clip_failed", "没能截取这段音乐")
 
     def start_video_job(self, *, prompt, width, height, frames, steps,
                         mode="text", first_frame=None, last_frame=None, ref_video=None, ref_image=None,
@@ -411,11 +424,25 @@ class MediaService:
         items = [self._segment(kind, session_id, part) for part in parts]
         root = Path(self._resolve_paths().outputs_root)
         paths = [root / item["output"] for item in items]   # each segment's own file, never its joined one (B-48)
-        drops = [False] + [items[i].get("continues") == items[i - 1]["id"] for i in range(1, len(items))]
-        joined = list(zip(paths, drops))
+        joined = list(zip(paths, _drop_flags(items)))
+        # Inputs are read here, outside the lock `_start` holds (a probe may take up to 30 s), and a bad
+        # one refuses the job before anything is written (B-33).
+        self._check_idle()
+        if kind == "video":
+            try:
+                size = compose.probe_size(compose.ffprobe_path() or "ffprobe", paths[0])
+            except ValueError:
+                raise MediaError("join_failed", "读不出第一段的画面尺寸", 500) from None
+            command = lambda ffmpeg, output: self._join_command("video", joined, output, ffmpeg, size)
+        else:
+            try:
+                timed = _timed_parts(joined)
+            except JoinInputError as exc:
+                raise MediaError("join_failed", str(exc), 500) from None
+            command = lambda ffmpeg, output: compose.crossfade_audio_command(ffmpeg, timed, output)
         return self._start(kind, {"op": "compose", "parts": list(parts)}, session_id=session_id,
                            attempt_extra={"op": "compose", "params": {"parts": list(parts)}},
-                           compose_command=lambda ffmpeg, output: self._join_command(kind, joined, output, ffmpeg),
+                           compose_command=command,
                            output_prefix="h3-compose" if kind == "video" else "music3-compose")
 
     def start_soundtrack_job(self, *, session_id, source, refs, force=False) -> dict:
@@ -478,8 +505,7 @@ class MediaService:
         the output is `<output_prefix>-<stamp>-<8hex>` with the kind's suffix."""
         heavy = compose_command is None
         with self._lock:
-            if self._state["status"] == "running":
-                raise MediaError("media_busy", "a media job is already running", 409)
+            self._refuse_if_busy()
             roots = self._resolve_paths()
             job_id = self._state["job_id"] + 1
             if heavy:
@@ -705,22 +731,16 @@ class MediaService:
         return {"joined_output": target.name, "joined_error": None}
 
     @staticmethod
-    def _join_command(kind: str, parts: list, target: Path, ffmpeg: str | None = None) -> list[str]:
+    def _join_command(kind: str, parts: list, target: Path, ffmpeg: str,
+                      size: tuple[int, int] | None = None) -> list[str]:
         """ffmpeg argv joining [(path, drop_first_frame)] into `target` (B-50 video / B-51 music).
 
-        Raises `JoinInputError(n)` when segment n's (1-based) duration cannot be read: a guessed
-        length would silently turn its crossfade into a hard cut."""
-        ffmpeg = ffmpeg or compose.ffmpeg_path()
+        Video probes the first segment's size unless `size` is given. Raises `JoinInputError(n)`
+        when music segment n's (1-based) duration cannot be read."""
         if kind == "video":
-            size = compose.probe_size(compose.ffprobe_path() or "ffprobe", parts[0][0])
+            size = size or compose.probe_size(compose.ffprobe_path() or "ffprobe", parts[0][0])
             return compose.concat_video_command(ffmpeg, parts, size, target)
-        timed = []
-        for number, (path, _drop) in enumerate(parts, 1):
-            seconds = wav_seconds(path)
-            if seconds is None:
-                raise JoinInputError(number)
-            timed.append((path, seconds))
-        return compose.crossfade_audio_command(ffmpeg, timed, target)
+        return compose.crossfade_audio_command(ffmpeg, _timed_parts(parts), target)
 
     def _finalize(self, job: dict, final: tuple) -> None:
         snap, callbacks, origin, joined = final

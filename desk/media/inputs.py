@@ -2,12 +2,12 @@
 import base64
 import binascii
 import json
-import os
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import uuid
+
+from . import compose
 
 MAX_INPUT_BYTES = 32 * 1024 * 1024
 EXTENSIONS = {".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image",
@@ -15,12 +15,12 @@ EXTENSIONS = {".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "imag
 
 
 def _tool(name, default=None):
-    """Locate an ffmpeg-suite binary: LOCALMODELDESK_FF* override, then PATH.
+    """Locate an ffmpeg-suite binary the way `compose.find_tool` does, else `default`, else the bare name.
 
     Absolute build-machine prefixes must not appear here: a shipped bundle that
     names one fails the self-containment check in scripts/verify-app.sh (V3).
     """
-    return os.environ.get("LOCALMODELDESK_" + name.upper()) or shutil.which(name) or default or name
+    return compose.find_tool(name) or default or name
 
 
 def resolve_input(root, asset_id, kind):

@@ -1,14 +1,17 @@
 """Manual compose jobs (B §3.5)."""
 import threading
+import time
 from pathlib import Path
 
 import pytest
 
+from desk.media import compose
+from desk.media import service as service_mod
 from desk.media.routes import build_routes
 from desk.media.service import MediaError
 from media_fakes import FakeExecutor, finished_snapshot, make_service
 from test_media_continue import attempts, fake_ffmpeg, first_segment  # noqa: F401  (autouse fixture)
-from test_media_sessions_service import video
+from test_media_sessions_service import music, music_ready, video
 
 
 def two_segments(service, deps):
@@ -112,6 +115,54 @@ def test_failed_compose_removes_its_partial_output(tmp_path):
     made = attempts(deps, "video", sid)[-1]
     assert made["status"] == "failed" and made["error"]["code"] == "join_failed"
     assert not list((tmp_path / "outputs").glob("h3-compose-*")), "failed compose left its partial file (B-45)"
+
+
+def test_compose_probes_size_outside_the_service_lock(tmp_path, monkeypatch):
+    service, deps = make_service(tmp_path)
+    sid, first, second = two_segments(service, deps)
+    probing = threading.Event()
+    def slow_probe(_probe, _video):
+        probing.set(); time.sleep(0.5)
+        return (512, 288)
+    monkeypatch.setattr(compose, "probe_size", slow_probe)
+    worker = threading.Thread(target=lambda: service.start_compose_job(kind="video", session_id=sid, parts=[first, second]))
+    worker.start()
+    assert probing.wait(5)
+    began = time.monotonic()
+    service.job_status()
+    assert time.monotonic() - began < 0.1, "job_status blocked behind the size probe"
+    worker.join(5)
+    assert not worker.is_alive()
+    assert attempts(deps, "video", sid)[-1]["op"] == "compose"
+
+
+def test_compose_with_unreadable_size_is_refused_without_writing(tmp_path, monkeypatch):
+    service, deps = make_service(tmp_path)
+    sid, first, second = two_segments(service, deps)
+    def broken(_probe, _video):
+        raise ValueError("no size")
+    monkeypatch.setattr(compose, "probe_size", broken)
+    before = len(attempts(deps, "video", sid)); spawned = len(deps.executor.spawned)
+    with pytest.raises(MediaError) as exc:
+        service.start_compose_job(kind="video", session_id=sid, parts=[first, second])
+    assert (exc.value.code, exc.value.message, exc.value.http_status) == ("join_failed", "读不出第一段的画面尺寸", 500)
+    assert len(attempts(deps, "video", sid)) == before and len(deps.executor.spawned) == spawned
+    assert service.job_status()["status"] != "error"
+
+
+def test_music_compose_with_unreadable_duration_is_refused_without_writing(tmp_path, monkeypatch):
+    service, deps = make_service(tmp_path)
+    music_ready(service, tmp_path)
+    sid, first = first_segment(service, deps, "music")
+    second = finished_snapshot(service, lambda: music(service, session_id=sid))["attempt_id"]
+    second_output = tmp_path / "outputs" / attempts(deps, "music", sid)[-1]["output"]
+    monkeypatch.setattr(service_mod, "wav_seconds", lambda p: None if Path(p) == second_output else 20.0)
+    before = len(attempts(deps, "music", sid)); spawned = len(deps.executor.spawned)
+    with pytest.raises(MediaError) as exc:
+        service.start_compose_job(kind="music", session_id=sid, parts=[first, second])
+    assert (exc.value.code, exc.value.message, exc.value.http_status) == \
+        ("join_failed", "读不出第 2 段的时长，无法拼成成片", 500)
+    assert len(attempts(deps, "music", sid)) == before and len(deps.executor.spawned) == spawned
 
 
 def test_compose_route(tmp_path, monkeypatch):
