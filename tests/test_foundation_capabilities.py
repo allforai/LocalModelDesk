@@ -89,3 +89,29 @@ def test_corrupt_config_reported_not_raised(dev_roots):
 
     assert caps["config"].present is False
     assert caps["config"].detail
+
+
+def _fake_python(path, importable: bool):
+    """A stand-in interpreter that answers the import probe with True/False."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"#!/bin/sh\necho {importable}\n")
+    path.chmod(0o755)
+    return path
+
+
+def test_dev_music_runtime_probes_the_music_interpreter(dev_roots, tmp_path, monkeypatch):
+    monkeypatch.setenv("LOCALMODELDESK_MUSIC_PYTHON", str(_fake_python(tmp_path / "ok" / "python", True)))
+    roots = paths_mod.resolve_paths(resources_root=dev_roots.resources_root)
+    assert caps_mod.probe_capabilities(roots)["music_runtime"].present is True
+
+    monkeypatch.setenv("LOCALMODELDESK_MUSIC_PYTHON", str(_fake_python(tmp_path / "no" / "python", False)))
+    roots = paths_mod.resolve_paths(resources_root=dev_roots.resources_root)
+    cap = caps_mod.probe_capabilities(roots)["music_runtime"]
+    assert cap.present is False
+    assert cap.detail == "音乐 MLX 运行环境缺失，请安装 .venv-music3 或使用包含音乐运行时的应用"
+
+
+def test_dev_music_runtime_missing_interpreter(dev_roots, tmp_path, monkeypatch):
+    monkeypatch.setenv("LOCALMODELDESK_MUSIC_PYTHON", str(tmp_path / "absent" / "python"))
+    roots = paths_mod.resolve_paths(resources_root=dev_roots.resources_root)
+    assert caps_mod.probe_capabilities(roots)["music_runtime"].present is False

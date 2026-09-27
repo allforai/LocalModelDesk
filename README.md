@@ -94,6 +94,15 @@ xcrun notarytool store-credentials LocalModelDesk \
 - 仅本机调试可用 adhoc 签名：设置环境变量 `LMD_ALLOW_ADHOC=1` 并传 `--adhoc`；adhoc 签名的应用在其他机器上会被 Gatekeeper 拒绝打开，因此构建脚本在缺少该环境变量时拒绝静默降级为 adhoc。
 - `scripts/verify-app.sh` 会额外用 `spctl --assess --type execute` 校验 Gatekeeper 是否接受该包；未设置 `LMD_ALLOW_ADHOC=1` 时若被拒绝，验证失败。
 
+### 开发模式（不打包，直接跑仓库代码）
+
+- 服务：`.venv-desk/bin/python -m desk`（端口由 `LMD_SHELL_PORT` 指定，默认 8766；`LOCALMODELDESK_DATA_ROOT` 可换一个独立数据目录）。
+- 三个媒体运行时各用各的 venv，服务本身不装它们：
+  - 视频：`mlx-h3` 可执行文件（`uv tool install` 装在 `~/.local/bin`），或用 `LOCALMODELDESK_MLX_H3` 指定。
+  - 图片：`.venv-image`，安装见 `docs/qwen-image-mlx.md`；或用 `LOCALMODELDESK_IMAGE_PYTHON` 指定。
+  - 音乐：`uv venv --python 3.13 .venv-music3 && uv pip install --python .venv-music3/bin/python -r packaging/requirements-music.txt`；或用 `LOCALMODELDESK_MUSIC_PYTHON` 指定。
+- 缺哪个，`GET /api/capabilities` 的对应项会给出原因，对应页面的生成按钮禁用并显示原因。
+
 ## 明确不做
 
 - 不把请求发到云端，也不给多人共用

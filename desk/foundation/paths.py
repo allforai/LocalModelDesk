@@ -116,6 +116,7 @@ def resolve_paths(*, data_root=None, resources_root=None, default_config_on_corr
         mlx_h3_env = {"PYTHONPATH": str(static.resources_root / "pylibs" / "h3")}
         music_env = {"PYTHONPATH": str(static.resources_root / "pylibs" / "music")}
         image_python = python
+        music_python = python
         image_env = {"PYTHONPATH": str(static.resources_root / "pylibs" / "image")}
         hf_cmd = (str(python), "-s", "-c", _HF_ENTRY)
         hf_env = {"PYTHONPATH": str(static.resources_root / "pylibs" / "desk")}
@@ -126,6 +127,9 @@ def resolve_paths(*, data_root=None, resources_root=None, default_config_on_corr
         music_env = {}
         image_python = Path(os.environ.get("LOCALMODELDESK_IMAGE_PYTHON") or
                             static.resources_root / ".venv-image" / "bin" / "python")
+        # Music 3 has its own MLX stack; like the image runtime it lives in its own venv, never the desk one.
+        music_python = Path(os.environ.get("LOCALMODELDESK_MUSIC_PYTHON") or
+                            static.resources_root / ".venv-music3" / "bin" / "python")
         image_env = {}
         hf_cmd = _hf_dev_cmd()
         hf_env = {}
@@ -137,7 +141,7 @@ def resolve_paths(*, data_root=None, resources_root=None, default_config_on_corr
         venv_python=python,
         mlx_h3_cmd=mlx_h3_cmd,
         mlx_h3_env=mlx_h3_env,
-        music_python=python,
+        music_python=music_python,
         music_env=music_env,
         media_cli_dir=static.resources_root / "desk" / "media",
         hf_cmd=hf_cmd,

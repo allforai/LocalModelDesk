@@ -1,7 +1,6 @@
 """R-foundation-05: missing pieces become queryable state, never a dead service."""
 from __future__ import annotations
 
-import importlib.util
 import os
 import subprocess
 import time
@@ -25,17 +24,23 @@ def _executable(path: Path) -> bool:
 
 
 @lru_cache(maxsize=8)
-def _image_importable(python: str, pythonpath: str, interpreter_mtime: float, freshness: int) -> bool:
+def _importable(python: str, pythonpath: str, modules: tuple, interpreter_mtime: float, freshness: int) -> bool:
+    """Whether `python` can import every module in `modules` (probed in a subprocess, cached ~10 s)."""
     env = dict(os.environ)
     if pythonpath:
         env["PYTHONPATH"] = pythonpath
     try:
         result = subprocess.run([python, "-s", "-c",
-            "import importlib.util; print(all(importlib.util.find_spec(n) is not None for n in ('mflux','mlx')))"],
+            f"import importlib.util; print(all(importlib.util.find_spec(n) is not None for n in {modules!r}))"],
             env=env, capture_output=True, text=True, timeout=5)
         return result.returncode == 0 and result.stdout.strip() == "True"
     except (OSError, subprocess.TimeoutExpired):
         return False
+
+
+def _interpreter_has(python, pythonpath: str, modules: tuple) -> bool:
+    return bool(python and _executable(python) and
+                _importable(str(python), pythonpath, modules, python.stat().st_mtime, int(time.monotonic() // 10)))
 
 
 def probe_capabilities(roots) -> dict[str, Capability]:
@@ -43,8 +48,7 @@ def probe_capabilities(roots) -> dict[str, Capability]:
     caps: dict[str, Capability] = {}
     image_python = getattr(roots, "image_python", None)
     image_path = (getattr(roots, "image_env", {}) or {}).get("PYTHONPATH", "")
-    present = bool(image_python and _executable(image_python) and
-                   _image_importable(str(image_python), image_path, image_python.stat().st_mtime, int(time.monotonic() // 10)))
+    present = _interpreter_has(image_python, image_path, ("mflux", "mlx"))
     caps["image_runtime"] = Capability(present, str(image_python or ""),
         "" if present else "图片 MLX 运行环境缺失，请安装 .venv-image 或使用包含图片运行时的应用")
 
@@ -86,11 +90,12 @@ def probe_capabilities(roots) -> dict[str, Capability]:
             "" if present else "mlx_minimax_music3 package dir missing from bundle",
         )
     else:
-        present = importlib.util.find_spec("mlx_minimax_music3") is not None
+        music_python = getattr(roots, "music_python", None)
+        present = _interpreter_has(music_python, "", ("mlx_minimax_music3",))
         caps["music_runtime"] = Capability(
             present,
-            "mlx_minimax_music3",
-            "" if present else "mlx_minimax_music3 not importable",
+            str(music_python or ""),
+            "" if present else "音乐 MLX 运行环境缺失，请安装 .venv-music3 或使用包含音乐运行时的应用",
         )
 
     try:

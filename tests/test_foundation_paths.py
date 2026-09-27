@@ -29,7 +29,7 @@ def test_dev_mode_without_bundle_marker(fake_repo, data_root):
     assert roots.static_dir == fake_repo / "desk" / "static"
     assert roots.media_cli_dir == fake_repo / "desk" / "media"
     assert roots.venv_python == Path(sys.executable)
-    assert roots.music_python == roots.venv_python
+    assert roots.music_python == fake_repo / ".venv-music3" / "bin" / "python"
     assert roots.mlx_h3_env == {} and roots.music_env == {}
 
 
@@ -143,3 +143,9 @@ def test_setup_logging_writes_under_data_root_only(fake_repo, data_root, monkeyp
     repo_root = Path(__file__).resolve().parent.parent
     assert list(repo_root.glob("*.log")) == []
     assert list((repo_root / "desk").rglob("*.log")) == []
+
+
+def test_dev_music_python_can_be_overridden(fake_repo, data_root, monkeypatch, tmp_path):
+    monkeypatch.setenv("LOCALMODELDESK_MUSIC_PYTHON", str(tmp_path / "py"))
+    roots = paths_mod.resolve_paths(resources_root=fake_repo)
+    assert roots.music_python == tmp_path / "py"
