@@ -90,6 +90,26 @@ def test_join_failure_keeps_the_segment_as_done(tmp_path):
     finished_snapshot(service, lambda: video(service, session_id=sid, continues=first))
     second = attempts(deps, "video", sid)[1]
     assert second["status"] == "done" and second["joined_error"]["code"] == "join_failed"
+    assert "joined_output" not in deps.history.entries[-1]   # only a successful join adds the key
+
+
+def test_close_during_join_settles_join_cancelled_before_returning(tmp_path):
+    """应用退出发生在拼接阶段：跟模型作业本身还在跑一样，close() 必须等到落定才返回（R-shell-04）."""
+    service, deps = make_service(tmp_path, executor=FakeExecutor(join_script="block"))
+    service._term_grace_s = 0.01
+    sid, first = first_segment(service, deps)
+    video(service, session_id=sid, continues=first)
+    deadline = time.time() + 5
+    while attempts(deps, "video", sid)[1]["output"] is None and time.time() < deadline:
+        time.sleep(0.01)
+    assert service.job_status()["status"] == "running"   # segment is done, still inside the join
+
+    service.close()
+
+    second = attempts(deps, "video", sid)[1]
+    assert second["status"] == "done"
+    assert second["joined_output"] is None and second["joined_error"]["code"] == "join_cancelled"
+    assert service.job_status()["status"] != "running"
 
 
 def test_broken_chain_still_generates_and_names_the_missing_segment(tmp_path):
@@ -211,3 +231,93 @@ def test_a_job_started_before_the_previous_finalize_cannot_steal_its_permit_or_j
     assert second["joined_output"].startswith("h3-joined-") and second["joined_error"] is None
     entry = next(e for e in deps.history.entries if e.get("attempt_id") == second["id"])
     assert entry["joined_output"] == second["joined_output"]
+
+
+class RaisingJoinExecutor(FakeExecutor):
+    """Joins block until terminated, then their `wait()` raises instead of returning a code."""
+    def spawn(self, cmd, *, extra_env=None):
+        handle = super().spawn(cmd, extra_env=extra_env)
+        if "--output" not in cmd:
+            def wait():
+                assert handle._exited.wait(10.0)
+                raise RuntimeError("wait broke")
+            handle.wait = wait
+        return handle
+
+
+def test_cancel_while_join_handle_raises_is_join_cancelled(tmp_path):
+    service, deps = make_service(tmp_path, executor=RaisingJoinExecutor(join_script="block"))
+    sid, first = first_segment(service, deps)
+    finished = threading.Event()
+    service.on_job_finished(lambda _s: finished.set())
+    video(service, session_id=sid, continues=first)
+    deadline = time.time() + 5
+    while attempts(deps, "video", sid)[1]["output"] is None and time.time() < deadline:
+        time.sleep(0.01)
+    service.cancel_job()
+    assert finished.wait(5)
+    second = attempts(deps, "video", sid)[1]
+    assert second["status"] == "done"
+    assert second["joined_output"] is None and second["joined_error"]["code"] == "join_cancelled"
+
+
+def test_unreadable_wav_duration_fails_the_join_without_running_ffmpeg(tmp_path, monkeypatch):
+    service, deps = make_service(tmp_path)
+    music_ready(service, tmp_path)
+    sid, first = first_segment(service, deps, "music")
+    first_output = tmp_path / "outputs" / attempts(deps, "music", sid)[0]["output"]
+    monkeypatch.setattr(service_mod, "wav_seconds", lambda p: None if Path(p) == first_output else 20.0)
+    spawned_before = len(deps.executor.spawned)
+    finished_snapshot(service, lambda: music(service, session_id=sid, continues=first))
+    second = attempts(deps, "music", sid)[1]
+    assert second["status"] == "done"
+    assert second["joined_error"] == {"code": "join_failed", "message": "读不出第 1 段的时长，无法拼成成片"}
+    assert len(deps.executor.spawned) == spawned_before + 1       # 只跑了模型，没跑拼接
+
+
+def test_missing_ffprobe_fails_the_join_instead_of_a_bare_name_fallback(tmp_path, monkeypatch):
+    """final review Minor 2 (service.py:744): no bare "ffprobe" name once compose.ffprobe_path() is None."""
+    service, deps = make_service(tmp_path)
+    sid, first = first_segment(service, deps)
+    monkeypatch.setattr(compose, "ffprobe_path", lambda: None)
+    probed = []
+    monkeypatch.setattr(compose, "probe_size", lambda *args: probed.append(args) or (512, 288))
+    spawned_before = len(deps.executor.spawned)
+    finished_snapshot(service, lambda: video(service, session_id=sid, continues=first))
+    second = attempts(deps, "video", sid)[1]
+    assert second["status"] == "done"
+    assert second["joined_output"] is None and second["joined_error"]["code"] == "join_failed"
+    assert probed == []                                            # 从未用裸名 "ffprobe" 去探测
+    assert len(deps.executor.spawned) == spawned_before + 1         # 只跑了模型，没跑拼接
+
+
+def test_non_media_error_after_frame_extraction_removes_the_frame(tmp_path, monkeypatch):
+    service, deps = make_service(tmp_path)
+    sid, first = first_segment(service, deps)
+    inputs = tmp_path / "outputs" / ".inputs"
+    before = set(inputs.glob("*.png"))
+    def broken(*_a, **_kw):
+        raise RuntimeError("resolver bug")
+    monkeypatch.setattr(service, "_resolve_refs", broken)
+    with pytest.raises(RuntimeError):
+        video(service, session_id=sid, continues=first)
+    assert set(inputs.glob("*.png")) == before
+    assert len(attempts(deps, "video", sid)) == 1
+
+
+def test_busy_is_refused_before_extracting_the_last_frame(tmp_path, monkeypatch):
+    service, deps = make_service(tmp_path)
+    sid, first = first_segment(service, deps)
+    runs = []
+    monkeypatch.setattr(service_mod.subprocess, "run", lambda cmd, **_kw: runs.append(cmd))
+    deps.executor.script = "block"
+    finished = threading.Event()
+    service.on_job_finished(lambda _s: finished.set())
+    video(service, session_id=deps.media_sessions["video"].create()["id"])
+    with pytest.raises(MediaError) as exc:
+        video(service, session_id=sid, continues=first)
+    assert (exc.value.code, exc.value.http_status) == ("media_busy", 409)
+    assert runs == []
+    assert len(attempts(deps, "video", sid)) == 1
+    service.cancel_job()
+    assert finished.wait(5)

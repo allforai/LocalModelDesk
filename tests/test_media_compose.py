@@ -44,11 +44,28 @@ def test_ffmpeg_path_honours_override_and_reports_absence(tmp_path, monkeypatch)
     fake.write_text("#!/bin/sh\n")
     monkeypatch.setenv("LOCALMODELDESK_FFMPEG", str(fake))
     assert compose.ffmpeg_path() == str(fake)
-    monkeypatch.setenv("LOCALMODELDESK_FFMPEG", str(tmp_path / "nope"))
-    assert compose.ffmpeg_path() is None
-    monkeypatch.delenv("LOCALMODELDESK_FFMPEG")
+    monkeypatch.setenv("LOCALMODELDESK_FFMPEG", str(tmp_path / "nope"))   # invalid override falls back to PATH
     monkeypatch.setenv("PATH", str(tmp_path / "empty"))
     assert compose.ffmpeg_path() is None
+    monkeypatch.delenv("LOCALMODELDESK_FFMPEG")
+    assert compose.ffmpeg_path() is None
+
+
+def test_find_tool_falls_back_to_path_when_override_is_invalid(tmp_path, monkeypatch):
+    bin_dir = tmp_path / "bin"; bin_dir.mkdir()
+    on_path = bin_dir / "ffmpeg"
+    on_path.write_text("#!/bin/sh\n"); on_path.chmod(0o755)
+    monkeypatch.setenv("PATH", str(bin_dir))
+    monkeypatch.setenv("LOCALMODELDESK_FFMPEG", str(tmp_path / "nope"))
+    assert compose.find_tool("ffmpeg") == str(on_path)
+
+
+def test_probe_size_timeout_is_a_value_error(monkeypatch):
+    def slow(cmd, **kw):
+        raise subprocess.TimeoutExpired(cmd, kw.get("timeout"))
+    monkeypatch.setattr(compose.subprocess, "run", slow)
+    with pytest.raises(ValueError):
+        compose.probe_size("ffprobe", Path("v.mp4"))
 
 
 def lavfi_video(path: Path, size="512x288", seconds=1):
@@ -101,6 +118,8 @@ def test_soundtrack_command_copies_video_and_pads_audio_to_the_video_length(tmp_
     assert cmd[cmd.index("-c:v") + 1] == "copy" and cmd[cmd.index("-af") + 1] == "apad"
     assert "-shortest" in cmd and cmd.index("-af") < cmd.index("-shortest")
     assert cmd[cmd.index("-i") + 1] == "v.mp4" and "song.wav" in cmd
+    i = cmd.index("-map")   # video track from the video file, audio track from the song (S-04)
+    assert cmd[i:i + 4] == ["-map", "0:v", "-map", "1:a"]
 
 
 @needs_ffmpeg

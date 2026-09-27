@@ -133,7 +133,7 @@ createSessionPane(root, {
 ### 2.5 成片问题与重新拼接
 
 - [M-40] 尝试 `done` 且 `joined_error` 非空时，展开卡片在播放器下显示一行：「这一段生成好了，但成片没拼成：<原因>」，原因取 `joined_error.message`。
-- [M-41] `joined_error.code ∈ {join_failed, join_cancelled, interrupted}` 时该行带次级按钮「重新拼接」：提交 `compose`，`parts` = 前端回溯出的链（M-31）各项 id，全部可找到且 `done`、文件在时才可用，否则按钮 `disabled`、原因「链上有一段已不在」。成功后新合成卡片追加并选中（B-75）。
+- [M-41] `joined_error.code ∈ {join_failed, join_cancelled, interrupted}` 时该行带次级按钮「重新拼接」：提交 `compose`，`parts` = 前端回溯出的链（M-31）各项 id，全部可找到且 `done`、文件在时才可用，否则按钮 `disabled`、原因「链上有一段已不在」。成功后新合成卡片追加并选中（B-75）。成片文件被删（`joined_missing`）同样显示问题行并按 M-41 提供重新拼接；问题行文案为「这一段生成好了，但成片文件已不在」。
 - [M-42] `segment_missing` 不提供按钮，只显示原因。
 
 ### 2.6 后端与接通

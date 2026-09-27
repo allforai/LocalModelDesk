@@ -85,6 +85,26 @@ def test_fake_media_executor_completes_ffmpeg_commands_without_a_scripted_job(tm
     assert script.spawned_argvs[0][0] == "ffmpeg"
 
 
+def test_fail_next_ffmpeg_fails_exactly_one_ffmpeg_command_then_clears(tmp_path):
+    script = MediaScript(jobs=[fast_media_steps()])
+    executor = FakeMediaExecutor(script)
+    script.fail_next_ffmpeg(code=7)
+
+    joined = tmp_path / "music3-joined-x.wav"
+    handle = executor.spawn(["ffmpeg", "-y", "-i", "a.wav", "-i", "b.wav", str(joined)])
+    assert list(handle.iter_output()) == []
+    assert handle.wait() == 7
+    assert not joined.exists(), "a scripted ffmpeg failure must not write the output file"
+
+    # The flag cleared itself: the next ffmpeg-shaped spawn goes back to auto-succeeding.
+    joined2 = tmp_path / "music3-joined-y.wav"
+    handle2 = executor.spawn(["ffmpeg", "-y", "-i", "a.wav", "-i", "b.wav", str(joined2)])
+    assert list(handle2.iter_output()) == [] and handle2.wait() == 0
+    assert joined2.read_bytes() == TINY_WAV
+    # The model run (has --output) is untouched by the ffmpeg flag.
+    assert len(script.jobs) == 1
+
+
 def test_fake_media_handle_blocks_until_terminate(tmp_path):
     script = MediaScript(jobs=[cancellable_media_steps()])
     script.jobs[0][1].open()

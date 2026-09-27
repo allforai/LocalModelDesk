@@ -51,15 +51,21 @@ def image_route(service):
 
 # ---- parameter validation (unchanged behaviour) ----------------------------
 
-@pytest.mark.parametrize("bad", [dict(width=True), dict(width=255), dict(height=257),
-    dict(height=2064), dict(steps=0), dict(steps=True), dict(seed=-1), dict(seed=2**32),
-    dict(seed=1.2), dict(force="false"), dict(prompt="")])
-def test_invalid_image_params_do_not_spawn(tmp_path, bad):
+@pytest.mark.parametrize("bad, code", [
+    (dict(width=True), "invalid_params"), (dict(width=255), "invalid_params"),
+    (dict(height=257), "invalid_params"), (dict(height=2064), "invalid_params"),
+    (dict(steps=0), "invalid_params"), (dict(steps=True), "invalid_params"),
+    (dict(seed=-1), "invalid_params"), (dict(seed=2**32), "invalid_params"),
+    (dict(seed=1.2), "invalid_params"), (dict(force="false"), "invalid_params"),
+    (dict(prompt=""), "prompt_required"),
+])
+def test_invalid_image_params_do_not_spawn(tmp_path, bad, code):
     service, deps = make_service(tmp_path)
     session_id = new_session(deps)
     before = session_file(tmp_path, session_id).read_bytes()
-    with pytest.raises(MediaError):
+    with pytest.raises(MediaError) as exc:
         service.start_image_job(**{**dict(prompt="cat", session_id=session_id), **bad})
+    assert exc.value.code == code
     assert deps.executor.spawned == []
     assert deps.arbiter.acquired == []
     assert session_file(tmp_path, session_id).read_bytes() == before

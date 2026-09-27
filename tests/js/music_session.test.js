@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as m from "../../desk/static/js/pure/music_session.js";
+import { sessionCardTitle } from "../../desk/static/js/pure/media_session.js";
 
 const A = (id, extra = {}) => ({ id, status: "done", output: `${id}.wav`, ts: "2026-09-27T10:0" + id.length + ":00",
   params: { caption: "民谣", lyrics: "[verse]\n早晨的风\n吹过窗", duration: 30, seed: 11 }, ...extra });
@@ -42,8 +43,8 @@ test("chip texts and stale continuation", () => {
 
 test("card title, lyrics preview, chain line with gap", () => {
   const attempts = [A("a"), A("bb", { continues: "a" }), { id: "c", status: "done", output: "c.wav", op: "compose", params: { parts: ["a", "bb"] } }, A("ddd", { continues: "zz" })];
-  assert.match(m.cardTitle(attempts[1], 1, attempts), /^第 2 次 · \d\d:\d\d · 接第 1 次$/);
-  assert.match(m.cardTitle(attempts[2], 2, attempts), /合成：第 1、2 次$/);
+  assert.match(sessionCardTitle(attempts[1], 1, attempts), /^第 2 次 · \d\d:\d\d · 接第 1 次$/);
+  assert.match(sessionCardTitle(attempts[2], 2, attempts), /合成：第 1、2 次$/);
   assert.equal(m.lyricsPreview("[verse]\n\n早晨的风\n"), "早晨的风");
   assert.equal(m.chainLine(attempts[1], attempts), "由：第 1 次 → 第 2 次");
   assert.equal(m.chainLine(attempts[0], attempts), "");
@@ -59,4 +60,12 @@ test("join problem offers rejoin only for recoverable codes and complete chains"
   const missing = A("b", { continues: "a", joined_error: { code: "segment_missing", message: "第 1 段的文件已不在，无法拼成成片" } });
   assert.deepEqual(m.joinProblem(missing, [a, missing]), { text: "这一段生成好了，但成片没拼成：第 1 段的文件已不在，无法拼成成片", rejoin: null, reason: "" });
   assert.equal(m.joinProblem(a, [a]), null);
+});
+
+test("成片文件被删（joined_missing、无 joined_error）：问题行并按链提供重新拼接（issue #18）", () => {
+  const a = A("a"), b = A("b", { continues: "a", joined_output: "j.wav", joined_missing: true });
+  assert.deepEqual(m.joinProblem(b, [a, b]), { text: "这一段生成好了，但成片文件已不在", rejoin: { parts: ["a", "b"] }, reason: "" });
+  assert.deepEqual(m.joinProblem(b, [{ ...a, output_missing: true }, b]),
+    { text: "这一段生成好了，但成片文件已不在", rejoin: null, reason: "链上有一段已不在" });
+  assert.equal(m.joinProblem({ ...b, joined_missing: false }, [a, b]), null);
 });

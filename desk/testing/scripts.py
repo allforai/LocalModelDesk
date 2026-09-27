@@ -130,6 +130,7 @@ class MediaScript:
         self.active: list | None = None
         self._opened = 0
         self.spawned_argvs: list[list[str]] = []
+        self._fail_next_ffmpeg: int | None = None
 
     def next_job(self) -> list:
         if not self.jobs:
@@ -137,6 +138,12 @@ class MediaScript:
         self.active = self.jobs.popleft()
         self._opened = 0
         return self.active
+
+    def fail_next_ffmpeg(self, code: int = 1) -> None:
+        """The next ffmpeg-shaped spawn (a join or a compose — no ``--output``) exits with
+        `code` and writes no output, instead of the usual auto-success; then the flag clears
+        and later ffmpeg commands go back to succeeding on their own."""
+        self._fail_next_ffmpeg = code
 
     def step(self) -> None:
         gates = _gates(self.active or [])

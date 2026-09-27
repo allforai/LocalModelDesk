@@ -1,5 +1,5 @@
 // 音乐会话的纯逻辑（设计 docs/superpowers/specs/2026-09-27-music-sessions-design.md）。零 DOM、零 fetch。
-import { ParamsError, SEED_MAX, attemptLabel, chainOf, randomSeed } from "./media_session.js";
+import { ParamsError, SEED_MAX, chainOf, positionOf, randomSeed } from "./media_session.js";
 
 export const DEFAULT_DURATION = 60;
 export const CANNOT_CONTINUE = "这一段没有生成好，不能接着写";
@@ -64,20 +64,6 @@ export function submitContinues(ref, seedInput) {
   return ref.continues ?? null;
 }
 
-export function cardTitle(attempt, index, attempts) {
-  const base = attemptLabel(index, attempt);
-  const position = (id) => (attempts ?? []).findIndex((a) => a?.id === id);
-  if (attempt?.op === "compose" || Array.isArray(attempt?.params?.parts)) {
-    const nums = (attempt.params?.parts ?? []).map(position);
-    return nums.length && nums.every((n) => n >= 0) ? `${base} · 合成：第 ${nums.map((n) => n + 1).join("、")} 次` : `${base} · 合成`;
-  }
-  if (attempt?.continues) {
-    const n = position(attempt.continues);
-    if (n >= 0) return `${base} · 接第 ${n + 1} 次`;
-  }
-  return base;
-}
-
 export function lyricsPreview(lyrics) {
   return String(lyrics ?? "").split("\n").map((line) => line.trim()).find((line) => line && !/^\[[^\]]*\]$/.test(line)) ?? "";
 }
@@ -85,15 +71,21 @@ export function lyricsPreview(lyrics) {
 export function chainLine(attempt, attempts) {
   const { items, gap } = chainOf(attempt, attempts);
   if (items.length < 2 && !gap) return "";
-  const position = (id) => (attempts ?? []).findIndex((a) => a?.id === id);
-  return `由：${gap ? "… → " : ""}${items.map((a) => `第 ${position(a.id) + 1} 次`).join(" → ")}`;
+  return `由：${gap ? "… → " : ""}${items.map((a) => `第 ${positionOf(attempts, a.id) + 1} 次`).join(" → ")}`;
 }
 
+// 成片问题行（M-40、M-41）：没拼成（joined_error），或拼好的成片文件已被删（joined_missing）。
+// 可重新拼接时 rejoin.parts 是整条链；链上缺段时按钮禁用、原因「链上有一段已不在」。视频卡片共用。
 export function joinProblem(attempt, attempts) {
-  const error = attempt?.joined_error;
-  if (attempt?.status !== "done" || !error) return null;
-  const text = `这一段生成好了，但成片没拼成：${error.message ?? ""}`;
-  if (!REJOINABLE.has(error.code)) return { text, rejoin: null, reason: "" };
+  if (attempt?.status !== "done") return null;
+  const error = attempt.joined_error;
+  let text;
+  if (error) {
+    text = `这一段生成好了，但成片没拼成：${error.message ?? ""}`;
+    if (!REJOINABLE.has(error.code)) return { text, rejoin: null, reason: "" };
+  } else if (attempt.joined_output && attempt.joined_missing) {
+    text = "这一段生成好了，但成片文件已不在";
+  } else return null;
   const { items, gap } = chainOf(attempt, attempts);
   if (gap || !items.every(canContinue)) return { text, rejoin: null, reason: "链上有一段已不在" };
   return { text, rejoin: { parts: items.map((a) => a.id) }, reason: "" };

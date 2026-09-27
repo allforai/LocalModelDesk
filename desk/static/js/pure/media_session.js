@@ -159,3 +159,27 @@ export function chainOf(attempt, attempts) {
   }
   return { items: items.reverse(), gap };
 }
+
+// 尝试在本会话列表里的下标，不在时 -1（卡片标题、链说明里的「第 N 次」都由它算）。
+export function positionOf(attempts, id) {
+  return (attempts ?? []).findIndex((a) => a?.id === id);
+}
+
+// 挑选合成的序号徽标（M-06）：前 20 个用圈码 ①–⑳，之后写成「(21)」，不越界到别的字符。
+export function pickBadge(index) {
+  return index < 20 ? String.fromCharCode(0x2460 + index) : `(${index + 1})`;
+}
+
+// 音乐、视频卡片标题（M-30、V-31）：合成尝试标出各段序号（有一段找不到就只写「合成」），续写段标出前段序号。
+export function sessionCardTitle(attempt, index, attempts, { composeWord = "合成" } = {}) {
+  const base = attemptLabel(index, attempt);
+  if (attempt?.op === "compose" || Array.isArray(attempt?.params?.parts)) {
+    const nums = (attempt.params?.parts ?? []).map((id) => positionOf(attempts, id));
+    return nums.length && nums.every((n) => n >= 0) ? `${base} · ${composeWord}：第 ${nums.map((n) => n + 1).join("、")} 次` : `${base} · ${composeWord}`;
+  }
+  if (attempt?.continues) {
+    const n = positionOf(attempts, attempt.continues);
+    if (n >= 0) return `${base} · 接第 ${n + 1} 次`;
+  }
+  return base;
+}

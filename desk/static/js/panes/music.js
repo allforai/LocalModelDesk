@@ -35,19 +35,30 @@ export function createMusicPane(root, ctx = {}) {
     if (ref.type === "continue") return true;
     return Number.isInteger(ref.seed) && String(els.seed.value ?? "").trim() === String(ref.seed);
   }
-  // 续写目标在会话刷新后已不是「完成且文件在」：提示条改为不能接着写（M-28）。
+  const position = (id) => (pane?.currentSession()?.attempts ?? []).findIndex((a) => a.id === id);
+
+  // 续写目标在会话刷新后已不是「完成且文件在」：提示条改为不能接着写（M-28）。「在这段基础上改」一个续写段
+  // （ref.continues 指向它接的前段）时，前段同样要 canContinue，否则这段本身也接不下去（issue #19）。
   function checkMissing() {
-    if (ref?.type !== "continue" || ref.missing) return;
+    if (!ref || ref.missing) return;
     const session = pane?.currentSession();
     if (!session) return;
-    const target = (session.attempts ?? []).find((a) => a.id === ref.attemptId);
+    const attempts = session.attempts ?? [];
+    const targetId = ref.type === "continue" ? ref.attemptId : ref.type === "refine" && ref.continues ? ref.continues : null;
+    if (!targetId) return;
+    const target = attempts.find((a) => a.id === targetId);
     if (!target || !canContinue(target) || brokenIds.has(target.id)) ref = { ...ref, missing: true };
+  }
+  // ref.type === "refine" 且已判定 missing 时，文案走续写型的「第 N 次的文件已不在」，N 是它接的那个前段的序号。
+  function chipTextFor(r) {
+    if (r?.type === "refine" && r.missing) return chipText({ type: "continue", index: position(r.continues), missing: true });
+    return chipText(r);
   }
   function syncChip() {
     checkMissing();
     const visible = chipVisible();
     els.chip.hidden = !visible;
-    els.chipText.textContent = visible ? chipText(ref) : "";
+    els.chipText.textContent = visible ? chipTextFor(ref) : "";
   }
   function clearChip() {
     if (ref?.type !== "continue") els.seed.value = "";
@@ -61,9 +72,10 @@ export function createMusicPane(root, ctx = {}) {
   function updateAvailability(state, { secondary }) {
     lastState = { state, secondary };
     syncChip();
-    const missing = !!ref?.missing;
+    // 改种子后一个 refine 提示条会隐藏（chipVisible() 假），此时请求不再带 continues，不该被挡（final review Important 1）。
+    const missing = !!ref?.missing && (ref.type === "continue" || chipVisible());
     els.start.disabled = state.disabled || missing;
-    els.start.title = state.disabled ? state.reason : missing ? chipText(ref) : "";
+    els.start.title = state.disabled ? state.reason : missing ? chipTextFor(ref) : "";
     if (secondary) {
       secondary.button.disabled = state.disabled;
       secondary.button.title = state.disabled ? state.reason : "";
@@ -102,7 +114,7 @@ export function createMusicPane(root, ctx = {}) {
     composer: {
       startLabel: "生成歌曲",
       afterStart: ({ fromInputs }) => { if (fromInputs) { els.seed.value = ""; ref = null; syncChip(); } },
-      onSessionSwitch: clearChip,
+      onSessionSwitch: () => { brokenIds.clear(); clearChip(); }, // 播放出错的标记只在本会话内有效（issue #18）
       focus: () => els.lyrics.focus?.(),
       updateAvailability,
     },

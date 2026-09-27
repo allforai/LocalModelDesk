@@ -3,10 +3,11 @@
 // 结构与 music_session_card.js 相同，差异是 <video>、方式标签与规格行、首帧来源行。
 import { addIcon } from "../icons.js";
 import { renderErrorBlock } from "./error_block.js";
-import { attemptView, runningLabel } from "../pure/media_session.js";
+import { renderSegmentSwitch } from "./segment_switch.js";
+import { attemptView, pickBadge, runningLabel } from "../pure/media_session.js";
 import { chainLine, joinProblem } from "../pure/music_session.js";
 import {
-  CANNOT_CONTINUE, MODES, canContinue, cardTitle, durationLabel, soundtrackTitle, sourceOf, specLine,
+  CANNOT_CONTINUE, MODES, canContinue, cardTitle, durationLabel, sourceOf, specLine,
 } from "../pure/video_session.js";
 
 function el(doc, tag, className, text) {
@@ -55,36 +56,31 @@ function player(doc, attempt, { serveOutput, onBroken }) {
   const video = el(doc, "video", "attempt-video");
   video.setAttribute("controls", "");
   video.setAttribute("preload", "metadata");
-  video.addEventListener("error", () => onBroken?.(attempt));
   const joined = typeof attempt.joined_output === "string" && attempt.joined_output && !attempt.joined_missing;
-  video.src = serveOutput(joined ? attempt.joined_output : attempt.output);
+  let playing = joined ? attempt.joined_output : attempt.output;
+  const play = (file) => { playing = file; video.src = serveOutput(file); };
+  play(playing);
   box.append(video);
-  if (!joined) return box;
-  const group = el(doc, "div", "segment-switch");
-  group.setAttribute("role", "radiogroup");
-  group.setAttribute("aria-label", "播放哪一版");
-  const choices = [["成片", attempt.joined_output], ["只看这一段", attempt.output]].map(([label, file], i) => {
-    const btn = el(doc, "button", "btn-secondary btn-sm", label);
-    btn.setAttribute("role", "radio");
-    btn.setAttribute("aria-checked", i === 0 ? "true" : "false");
-    btn.addEventListener("click", (event) => {
-      event.stopPropagation?.();
-      for (const other of choices) other.setAttribute("aria-checked", other === btn ? "true" : "false");
-      video.src = serveOutput(file);
-    });
-    return btn;
+  const choice = joined
+    ? renderSegmentSwitch(doc, { labels: ["成片", "只看这一段"], onChange: (i) => play(i === 0 ? attempt.joined_output : attempt.output) })
+    : null;
+  if (choice) box.append(choice);
+  // 只有本段文件出错才算这段文件不在；成片出错时退回播放本段、去掉切换，不连累这段（issue #18）。
+  video.addEventListener("error", () => {
+    if (playing === attempt.output) { onBroken?.(attempt); return; }
+    choice?.remove?.();
+    play(attempt.output);
   });
-  group.append(...choices);
-  box.append(group);
   return box;
 }
 
-// 返回 {node, running, secondary}：running 是 running 卡片里轮询要就地更新的几个元素；
+// 返回 {node, running, secondary, usesActionsBlocked}：usesActionsBlocked 表示画了受 actionsBlocked 门控的「重新拼接」，
+// 忙碌原因变化时控制器要重画时间线；running 是 running 卡片里轮询要就地更新的几个元素；
 // secondary 是「换个版本」「配乐…」按钮（buttons）与其下方原因行（由面板按生成可用性更新）。
 // firstFrameText(attempt)：首帧来自图片会话时的说明文字，由面板按已加载的图片会话算好；
 // songLabel(attempt)：配乐尝试所用歌的风格描述摘要（S-31），取不到给空串。
 export function renderVideoCard(doc, opts) {
-  const { attempt, index, attempts, selected, broken = false, serveOutput, picking = false, pickIndex = -1 } = opts;
+  const { attempt, index, attempts, selected, broken = false, serveOutput, picking = false, pickIndex = -1, actionsBlocked = "" } = opts;
   const view = attemptView(attempt, { broken, noun: "视频", icon: "video" });
   const running = view.kind === "running";
   const expanded = running || selected;
@@ -109,12 +105,12 @@ export function renderVideoCard(doc, opts) {
     pick.setAttribute("aria-label", `选中第 ${index + 1} 次`);
     pick.addEventListener("change", () => opts.onTogglePick?.(attempt));
     row.append(pick);
-    if (pickIndex >= 0) row.append(el(doc, "span", "pick-badge", String.fromCharCode(0x2460 + pickIndex)));
+    if (pickIndex >= 0) row.append(el(doc, "span", "pick-badge", pickBadge(pickIndex)));
   }
   if (view.icon) row.append(iconBlock(doc, view));
   const summary = el(doc, "div", "attempt-summary");
   const head = el(doc, "div", "attempt-head");
-  const title = soundtrack ? soundtrackTitle(attempt, index, attempts, opts.songLabel?.(attempt) ?? "") : cardTitle(attempt, index, attempts);
+  const title = cardTitle(attempt, index, attempts, soundtrack ? opts.songLabel?.(attempt) ?? "" : "");
   const label = el(doc, "span", "attempt-label", running ? runningLabel(index, opts.elapsed) : title);
   head.append(label);
   if (view.badge && !running) head.append(el(doc, "span", `badge attempt-badge tone-${view.tone}`, view.badge));
@@ -164,9 +160,11 @@ export function renderVideoCard(doc, opts) {
     if (!picking && (problem.rejoin || problem.reason)) {
       const rejoin = actionButton(doc, "重新拼接", "refresh", () => opts.onRejoin?.(problem.rejoin.parts));
       rejoin.dataset.attemptRejoin = "";
-      rejoin.disabled = !problem.rejoin;
-      if (problem.reason) rejoin.title = problem.reason;
+      // 有作业在跑、服务不可用等（actionsBlocked，同 IS §7.6）时也禁用；链上缺段的原因优先。
+      rejoin.disabled = !problem.rejoin || !!actionsBlocked;
+      rejoin.title = problem.reason || actionsBlocked;
       line.append(rejoin);
+      result.usesActionsBlocked = true;
       if (problem.reason) line.append(el(doc, "p", "hint", problem.reason));
     }
     detail.append(line);

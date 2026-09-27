@@ -17,25 +17,32 @@ SHORT_SEGMENT_S = 3.0    # a seam next to a shorter segment is a plain cut
 FFMPEG_MISSING = "需要 ffmpeg 才能拼接成片"
 
 
-def _find(name: str) -> str | None:
+def find_tool(name: str) -> str | None:
+    """Locate an ffmpeg-suite binary: a `LOCALMODELDESK_<NAME>` override naming a file, else PATH, else None.
+
+    The single lookup for every caller (`inputs._tool` too), so the override means the same everywhere."""
     override = os.environ.get("LOCALMODELDESK_" + name.upper())
-    if override:
-        return override if Path(override).is_file() else None
+    if override and Path(override).is_file():
+        return override
     return shutil.which(name)
 
 
 def ffmpeg_path() -> str | None:
-    return _find("ffmpeg")
+    return find_tool("ffmpeg")
 
 
 def ffprobe_path() -> str | None:
-    return _find("ffprobe")
+    return find_tool("ffprobe")
 
 
 def probe_size(ffprobe: str, video: Path) -> tuple[int, int]:
-    result = subprocess.run([ffprobe, "-v", "error", "-select_streams", "v:0", "-show_entries",
-                             "stream=width,height", "-of", "csv=p=0:s=x", str(video)],
-                            capture_output=True, text=True, timeout=30)
+    """(width, height) of the first video stream; any failure, a timeout included, is a ValueError."""
+    try:
+        result = subprocess.run([ffprobe, "-v", "error", "-select_streams", "v:0", "-show_entries",
+                                 "stream=width,height", "-of", "csv=p=0:s=x", str(video)],
+                                capture_output=True, text=True, timeout=30)
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        raise ValueError(f"cannot read video size of {video.name}") from exc
     try:
         width, height = (int(n) for n in result.stdout.strip().split("x"))
     except ValueError as exc:

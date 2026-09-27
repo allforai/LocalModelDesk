@@ -128,6 +128,39 @@ test("「在这段基础上改」回填四项；改种子后提示条隐藏，�
   });
 });
 
+test("「在这段基础上改」一个续写段后，它接的前段文件不在：提示条改为不能接着写，「生成歌曲」禁用（issue #19）", async () => {
+  await withBackend("music", async (backend) => {
+    backend.addSession("歌", [done("a1"), done("a2", { continues: "a1" })]);
+    const { parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    await button(cards(parts)[1], "在这段基础上改").click();
+    assert.equal(parts["chip-text"].textContent, "沿用第 2 次");
+    backend.finish("a1", { output_missing: true });
+    await pane.refresh();
+    assert.equal(parts["chip-text"].textContent, "第 1 次的文件已不在，不能接着写");
+    assert.equal(parts.start.disabled, true);
+  });
+});
+
+test("上一条之后改种子：提示条隐藏且「生成歌曲」重新可用，生成不带 continues（final review Important 1）", async () => {
+  await withBackend("music", async (backend) => {
+    backend.addSession("歌", [done("a1"), done("a2", { continues: "a1" })]);
+    const { parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    await button(cards(parts)[1], "在这段基础上改").click();
+    backend.finish("a1", { output_missing: true });
+    await pane.refresh();
+    assert.equal(parts.start.disabled, true, "改种子之前仍是不能接着写的死路");
+    parts.seed.value = "12"; await parts.seed.dispatch("input");
+    assert.equal(parts.chip.hidden, true, "改种子后提示条本就该隐藏");
+    assert.equal(parts.start.disabled, false, "改种子后不再沿用前段，不该被卡住");
+    assert.equal(parts.start.title, "");
+    await parts.start.click();
+    assert.equal("continues" in musicCalls(backend)[0].body, false);
+    assert.equal(musicCalls(backend)[0].body.seed, 12);
+  });
+});
+
 test("沿用提示条可见时生成带被引用尝试的 continues", async () => {
   await withBackend("music", async (backend) => {
     backend.addSession("歌", [done("a1"), done("a2", { continues: "a1" })]);
@@ -351,5 +384,129 @@ test("主流程文字不含「种子」", async () => {
     await pane.refresh();
     await button(cards(parts)[1], "在这段基础上改").click();
     assert.ok(!mainFlowText(root, /music-advanced|attempt-advanced/).includes(SEED));
+  });
+});
+
+// ---------- issue #18 ----------
+const composeCalls = (backend) => backend.calls.filter((c) => c.url === "/api/media/compose");
+const sessionItem = (parts, id) => findAll(parts["session-list"], (n) => n.dataset?.sessionId === id)[0];
+const cardOf = (parts, id) => cards(parts).find((n) => n.dataset.attemptId === id);
+
+test("double rejoin sends once：第一次还没返回时再点「重新拼接」只发一个合成请求", async () => {
+  await withBackend("music", async (backend) => {
+    const failed = { code: "join_failed", message: "ffmpeg 出错" };
+    backend.addSession("歌", [done("a1"), done("a2", { continues: "a1", joined_error: failed })]);
+    backend.nextJob = 50;
+    const { parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    const rejoin = button(cardOf(parts, "a2"), "重新拼接");
+    rejoin.click(); rejoin.click();
+    await flush(); await flush();
+    assert.equal(composeCalls(backend).length, 1);
+  });
+});
+
+test("有作业在跑时「重新拼接」禁用并写忙碌原因；作业结束后同一张卡上的按钮自动恢复", async () => {
+  await withBackend("music", async (backend) => {
+    const failed = { code: "join_failed", message: "ffmpeg 出错" };
+    const busy = backend.addSession("夏夜", [{ ...done("r1"), status: "running", output: null }]);
+    const mine = backend.addSession("歌", [done("a1"), done("a2", { continues: "a1", joined_error: failed })]);
+    const { parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    await sessionItem(parts, mine.id).click(); await flush();
+    let rejoin = button(cardOf(parts, "a2"), "重新拼接");
+    assert.equal(rejoin.disabled, true);
+    assert.equal(rejoin.title, "「夏夜」正在生成歌曲");
+    await rejoin.click(); await flush();
+    assert.equal(composeCalls(backend).length, 0);
+
+    backend.finish("r1", { status: "done", output: "r1.wav" });
+    pane.applyJob({ job_id: 9, kind: "music", status: "done", session_id: busy.id, attempt_id: "r1" });
+    await flush(); await flush();
+    rejoin = button(cardOf(parts, "a2"), "重新拼接");
+    assert.equal(rejoin.disabled, false);
+    assert.equal(rejoin.title, "");
+  });
+});
+
+test("成片播放出错：退回本段、去掉切换、不标文件不在、仍可接着写；本段再出错才标文件不在", async () => {
+  await withBackend("music", async (backend) => {
+    backend.addSession("歌", [done("a1"), done("a2", { continues: "a1", joined_output: "j2.wav" })]);
+    const { parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    const card = cardOf(parts, "a2");
+    const audio = find(card, (n) => n.tagName === "audio");
+    assert.equal(audio.src, "/api/outputs/j2.wav");
+    await audio.dispatch("error");
+    assert.equal(audio.src, "/api/outputs/a2.wav");
+    assert.equal(find(cardOf(parts, "a2"), (n) => n.attrs?.role === "radiogroup"), null);
+    assert.doesNotMatch(cardOf(parts, "a2").textContent, /音频文件已不在/);
+    assert.equal(button(cardOf(parts, "a2"), "接着写下一段").disabled, false);
+
+    await audio.dispatch("error");
+    assert.match(cardOf(parts, "a2").textContent, /音频文件已不在/);
+    assert.equal(button(cardOf(parts, "a2"), "接着写下一段").disabled, true);
+  });
+});
+
+test("切换会话后 brokenIds 清空：切回并刷新、文件已恢复时这段可以接着写", async () => {
+  await withBackend("music", async (backend) => {
+    const a = backend.addSession("甲", [done("a1")]);
+    const b = backend.addSession("乙", [done("b1")]);
+    const { parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    await sessionItem(parts, a.id).click(); await flush();
+    await find(cardOf(parts, "a1"), (n) => n.tagName === "audio").dispatch("error");
+    assert.equal(button(cardOf(parts, "a1"), "接着写下一段").disabled, true);
+    await sessionItem(parts, b.id).click(); await flush();
+    await sessionItem(parts, a.id).click(); await flush();
+    await pane.refresh();
+    const next = button(cardOf(parts, "a1"), "接着写下一段");
+    assert.equal(next.disabled, false);
+    await next.click();
+    assert.equal(parts["chip-text"].textContent, "接在第 1 次后面");
+  });
+});
+
+test("分段切换可用方向键：ArrowRight 到「只听这一段」并聚焦、换源；ArrowLeft 回到「成片」", async () => {
+  await withBackend("music", async (backend) => {
+    backend.addSession("歌", [done("a1"), done("a2", { continues: "a1", joined_output: "j2.wav" })]);
+    const { parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    const card = cardOf(parts, "a2");
+    const audio = find(card, (n) => n.tagName === "audio");
+    const group = find(card, (n) => n.attrs?.role === "radiogroup");
+    const whole = button(group, "成片"); const part = button(group, "只听这一段");
+    assert.equal(whole.tabIndex, 0);
+    assert.equal(part.tabIndex, -1);
+    await whole.dispatch("keydown", { key: "ArrowRight" });
+    assert.equal(part.attrs["aria-checked"], "true");
+    assert.equal(whole.attrs["aria-checked"], "false");
+    assert.equal(part.focused, 1);
+    assert.equal(part.tabIndex, 0);
+    assert.equal(audio.src, "/api/outputs/a2.wav");
+    await part.dispatch("keydown", { key: "ArrowLeft" });
+    assert.equal(whole.attrs["aria-checked"], "true");
+    assert.equal(whole.focused, 1);
+    assert.equal(audio.src, "/api/outputs/j2.wav");
+    await whole.dispatch("keydown", { key: "End" });
+    assert.equal(part.attrs["aria-checked"], "true");
+    await part.dispatch("keydown", { key: "Home" });
+    assert.equal(whole.attrs["aria-checked"], "true");
+  });
+});
+
+test("成片文件被删（joined_missing）：显示问题行并可「重新拼接」整条链", async () => {
+  await withBackend("music", async (backend) => {
+    backend.addSession("歌", [done("a1"), done("a2", { continues: "a1", joined_output: "j2.wav", joined_missing: true })]);
+    const { parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    const card = cardOf(parts, "a2");
+    assert.match(card.textContent, /这一段生成好了，但成片文件已不在/);
+    assert.equal(find(card, (n) => n.tagName === "audio").src, "/api/outputs/a2.wav");
+    const rejoin = button(card, "重新拼接");
+    assert.equal(rejoin.disabled, false);
+    await rejoin.click(); await flush();
+    assert.deepEqual(composeCalls(backend).map((c) => c.body.parts), [["a1", "a2"]]);
   });
 });

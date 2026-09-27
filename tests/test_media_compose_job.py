@@ -1,14 +1,17 @@
 """Manual compose jobs (B §3.5)."""
 import threading
+import time
 from pathlib import Path
 
 import pytest
 
+from desk.media import compose
+from desk.media import service as service_mod
 from desk.media.routes import build_routes
 from desk.media.service import MediaError
 from media_fakes import FakeExecutor, finished_snapshot, make_service
 from test_media_continue import attempts, fake_ffmpeg, first_segment  # noqa: F401  (autouse fixture)
-from test_media_sessions_service import video
+from test_media_sessions_service import music, music_ready, video
 
 
 def two_segments(service, deps):
@@ -42,6 +45,42 @@ def test_compose_appends_a_compose_attempt_without_arbiter_or_memory(tmp_path):
     graph = deps.executor.spawned[-1]["cmd"][deps.executor.spawned[-1]["cmd"].index("-filter_complex") + 1]
     assert "trim" not in graph            # 手动乱序：没有续写关系，不丢帧（B-50）
     assert deps.history.entries[-1]["params"]["op"] == "compose"
+
+
+def test_compose_of_a_continuation_pair_drops_the_seconds_first_frame(tmp_path):
+    """真续写对（b continues a）合成时，图里得有 trim=start_frame=1（B-50），不同于手动乱序的那条用例。"""
+    service, deps = make_service(tmp_path)
+    sid, first = first_segment(service, deps)
+    second = finished_snapshot(service, lambda: video(service, session_id=sid, continues=first))["attempt_id"]
+    finished_snapshot(service, lambda: service.start_compose_job(kind="video", session_id=sid, parts=[first, second]))
+    made = attempts(deps, "video", sid)[-1]
+    assert made["status"] == "done" and made["output"].startswith("h3-compose-")
+    graph = deps.executor.spawned[-1]["cmd"][deps.executor.spawned[-1]["cmd"].index("-filter_complex") + 1]
+    assert "[1:v]trim=start_frame=1" in graph
+
+
+def test_music_compose_succeeds(tmp_path):
+    service, deps = make_service(tmp_path)
+    music_ready(service, tmp_path)
+    sid, first = first_segment(service, deps, "music")
+    second = finished_snapshot(service, lambda: music(service, session_id=sid))["attempt_id"]
+    snap = finished_snapshot(service, lambda: service.start_compose_job(kind="music", session_id=sid, parts=[first, second]))
+    made = attempts(deps, "music", sid)[-1]
+    assert made["op"] == "compose" and made["status"] == "done"
+    assert made["output"].startswith("music3-compose-") and snap["output"] == made["output"]
+    cmd = deps.executor.spawned[-1]["cmd"]
+    assert "acrossfade" in cmd[cmd.index("-filter_complex") + 1]
+
+
+def test_compose_with_a_deleted_segment_file_is_segment_missing(tmp_path):
+    service, deps = make_service(tmp_path)
+    sid, first, second = two_segments(service, deps)
+    (tmp_path / "outputs" / attempts(deps, "video", sid)[0]["output"]).unlink()
+    before = len(attempts(deps, "video", sid))
+    with pytest.raises(MediaError) as exc:
+        service.start_compose_job(kind="video", session_id=sid, parts=[first, second])
+    assert (exc.value.code, exc.value.http_status) == ("segment_missing", 404)
+    assert len(attempts(deps, "video", sid)) == before
 
 
 def test_compose_can_be_continued(tmp_path):
@@ -112,6 +151,76 @@ def test_failed_compose_removes_its_partial_output(tmp_path):
     made = attempts(deps, "video", sid)[-1]
     assert made["status"] == "failed" and made["error"]["code"] == "join_failed"
     assert not list((tmp_path / "outputs").glob("h3-compose-*")), "failed compose left its partial file (B-45)"
+
+
+def test_compose_probes_size_outside_the_service_lock(tmp_path, monkeypatch):
+    service, deps = make_service(tmp_path)
+    sid, first, second = two_segments(service, deps)
+    probing = threading.Event()
+    def slow_probe(_probe, _video):
+        probing.set(); time.sleep(0.5)
+        return (512, 288)
+    monkeypatch.setattr(compose, "probe_size", slow_probe)
+    worker = threading.Thread(target=lambda: service.start_compose_job(kind="video", session_id=sid, parts=[first, second]))
+    worker.start()
+    assert probing.wait(5)
+    began = time.monotonic()
+    service.job_status()
+    assert time.monotonic() - began < 0.3, "job_status blocked behind the size probe"
+    worker.join(5)
+    assert not worker.is_alive()
+    assert attempts(deps, "video", sid)[-1]["op"] == "compose"
+
+
+def test_compose_with_unreadable_size_is_refused_without_writing(tmp_path, monkeypatch):
+    service, deps = make_service(tmp_path)
+    sid, first, second = two_segments(service, deps)
+    def broken(_probe, _video):
+        raise ValueError("no size")
+    monkeypatch.setattr(compose, "probe_size", broken)
+    before = len(attempts(deps, "video", sid)); spawned = len(deps.executor.spawned)
+    with pytest.raises(MediaError) as exc:
+        service.start_compose_job(kind="video", session_id=sid, parts=[first, second])
+    assert (exc.value.code, exc.value.message, exc.value.http_status) == ("join_failed", "读不出第一段的画面尺寸", 500)
+    assert len(attempts(deps, "video", sid)) == before and len(deps.executor.spawned) == spawned
+    assert service.job_status()["status"] != "error"
+
+
+def test_music_compose_with_unreadable_duration_is_refused_without_writing(tmp_path, monkeypatch):
+    service, deps = make_service(tmp_path)
+    music_ready(service, tmp_path)
+    sid, first = first_segment(service, deps, "music")
+    second = finished_snapshot(service, lambda: music(service, session_id=sid))["attempt_id"]
+    second_output = tmp_path / "outputs" / attempts(deps, "music", sid)[-1]["output"]
+    monkeypatch.setattr(service_mod, "wav_seconds", lambda p: None if Path(p) == second_output else 20.0)
+    before = len(attempts(deps, "music", sid)); spawned = len(deps.executor.spawned)
+    with pytest.raises(MediaError) as exc:
+        service.start_compose_job(kind="music", session_id=sid, parts=[first, second])
+    assert (exc.value.code, exc.value.message, exc.value.http_status) == \
+        ("join_failed", "读不出第 2 段的时长，无法拼成成片", 500)
+    assert len(attempts(deps, "music", sid)) == before and len(deps.executor.spawned) == spawned
+
+
+@pytest.mark.parametrize("kind, missing", [("video", "ffmpeg_path"), ("video", "ffprobe_path"), ("music", "ffmpeg_path")])
+def test_compose_without_ffmpeg_is_refused_before_probing(tmp_path, monkeypatch, kind, missing):
+    service, deps = make_service(tmp_path)
+    if kind == "video":
+        sid, first, second = two_segments(service, deps)
+    else:
+        music_ready(service, tmp_path)
+        sid, first = first_segment(service, deps, "music")
+        second = finished_snapshot(service, lambda: music(service, session_id=sid))["attempt_id"]
+    probed = []
+    monkeypatch.setattr(compose, missing, lambda: None)
+    monkeypatch.setattr(compose, "probe_size", lambda *a: probed.append(a) or (512, 288))
+    monkeypatch.setattr(service_mod, "wav_seconds", lambda p: probed.append(p) or 20.0)
+    before = len(attempts(deps, kind, sid)); spawned = len(deps.executor.spawned)
+    with pytest.raises(MediaError) as exc:
+        service.start_compose_job(kind=kind, session_id=sid, parts=[first, second])
+    assert (exc.value.code, exc.value.message, exc.value.http_status) == \
+        ("capability_missing", "需要 ffmpeg 才能拼接成片", 503)
+    assert probed == []
+    assert len(attempts(deps, kind, sid)) == before and len(deps.executor.spawned) == spawned
 
 
 def test_compose_route(tmp_path, monkeypatch):

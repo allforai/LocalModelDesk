@@ -205,16 +205,26 @@ def test_failed_clip_is_500_and_leaves_nothing(tmp_path, monkeypatch):
     assert attempts(deps, "video", sid) == [] and wavs(tmp_path) == []
 
 
-def test_busy_refusal_removes_the_clip(tmp_path, clips):
+def test_busy_is_refused_before_cutting_the_clip(tmp_path, clips):
     service, deps = make_service(tmp_path)
     sid, image, ref = ready(deps, tmp_path)
     deps.executor.script = "block"
     video(service, session_id=sid)
     error = _refused(service, sid, ref_audio=ref, ref_image=image)
     assert (error.code, error.http_status) == ("media_busy", 409)
-    assert len(clips) == 1 and wavs(tmp_path) == []
+    assert clips == [] and wavs(tmp_path) == []
     assert len(attempts(deps, "video", sid)) == 1
     service.cancel_job()
+
+
+def test_refusal_after_the_cut_removes_the_clip(tmp_path, clips):
+    service, deps = make_service(tmp_path, memory_warning={"code": "insufficient_memory",
+                                                            "required_bytes": 10, "available_bytes": 1})
+    sid, image, ref = ready(deps, tmp_path)
+    error = _refused(service, sid, ref_audio=ref, ref_image=image)
+    assert (error.code, error.http_status) == ("insufficient_memory", 409)
+    assert len(clips) == 1 and wavs(tmp_path) == []
+    assert attempts(deps, "video", sid) == []
 
 
 def test_gone_song_is_404_ref_missing(tmp_path, clips):
@@ -224,6 +234,19 @@ def test_gone_song_is_404_ref_missing(tmp_path, clips):
     error = _refused(service, sid, ref_audio=ref, ref_image=image)
     assert (error.code, error.http_status, error.message) == ("ref_missing", 404, "引用的音乐已不在")
     assert clips == []
+
+
+def test_gone_song_and_busy_still_prefers_ref_missing(tmp_path, clips):
+    """S-02 顺序：引用校验（music ref）先于忙碌门控（busy）。"""
+    service, deps = make_service(tmp_path)
+    sid, image, ref = ready(deps, tmp_path)
+    (tmp_path / "outputs" / "song.wav").unlink()
+    deps.executor.script = "block"
+    video(service, session_id=sid)
+    error = _refused(service, sid, ref_audio=ref, ref_image=image)
+    assert (error.code, error.http_status, error.message) == ("ref_missing", 404, "引用的音乐已不在")
+    assert clips == []
+    service.cancel_job()
 
 
 def test_clip_wav_is_removed_once_a_successful_job_finalizes(tmp_path, clips):

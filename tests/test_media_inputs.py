@@ -5,6 +5,7 @@ import zlib
 
 import pytest
 
+from desk.media import compose, inputs
 from desk.media.inputs import save_input
 from desk.media.routes import build_routes
 from desk.media.service import MediaError
@@ -78,6 +79,20 @@ def test_missing_or_unsafe_inputs_rejected_before_acquire(tmp_path, asset_id, me
 
 def test_invalid_upload_removed(tmp_path):
     service, _ = make_service(tmp_path)
-    with pytest.raises(MediaError):
+    with pytest.raises(MediaError) as exc:
         service.upload_input(name="bad.png", data=base64.b64encode(b"not an image").decode())
+    assert (exc.value.code, exc.value.message) == ("invalid_input", "图片文件已损坏，无法解码")
     assert not list((tmp_path / "outputs" / ".inputs").iterdir())
+
+
+@pytest.mark.parametrize("valid", [True, False])
+def test_tool_lookup_matches_compose(tmp_path, monkeypatch, valid):
+    bin_dir = tmp_path / "bin"; bin_dir.mkdir()
+    on_path = bin_dir / "ffprobe"
+    on_path.write_text("#!/bin/sh\n"); on_path.chmod(0o755)
+    override = tmp_path / "override-ffprobe"
+    if valid:
+        override.write_text("#!/bin/sh\n")
+    monkeypatch.setenv("PATH", str(bin_dir))
+    monkeypatch.setenv("LOCALMODELDESK_FFPROBE", str(override))
+    assert inputs._tool("ffprobe") == compose.find_tool("ffprobe") == str(override if valid else on_path)

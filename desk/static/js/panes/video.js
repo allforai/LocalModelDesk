@@ -96,41 +96,59 @@ export function createVideoPane(root, ctx = {}) {
   let uploading = false;
   let verbatimError = null; // 要显示后端原话的启动错误
   const brokenIds = new Set();
-  // 图片、音乐会话（按 kind/id）：卡片首帧来源行、配乐标题与输入区说明要它们的标题、序号与风格描述；null 表示读不出来。
+  // 图片、音乐会话（按 kind/id）：卡片首帧来源行、配乐标题与输入区说明要它们的标题、序号与风格描述；null 表示确认不在（404），
+  // 只有请求成功（含 404）才写缓存；其他失败（网络、5xx）不写缓存，避免把「暂时读不到」当成「已不在」（issue #19）。
   const linkedSessions = new Map();
   const linkedLoading = new Set();
+  const linkedFailedAt = new Map(); // key -> 最近一次读取失败的时间戳：5 秒内不重复请求（issue #19）
+  const LINKED_RETRY_MS = 5000;
   let pane = null;
 
   const continuing = () => first?.type === "continue";
   const position = (id) => (pane?.currentSession()?.attempts ?? []).findIndex((a) => a.id === id);
 
   // ---------- 图片、音乐会话查找 ----------
+  // 返回 session | null | undefined：null 表示 404（真的不在），undefined 表示读取失败（未知，不当作「已不在」）。
   async function loadLinked(kind, id) {
     const key = `${kind}/${id}`;
     try { linkedSessions.set(key, await api.getMediaSession(kind, id)); }
-    catch { linkedSessions.set(key, null); }
+    catch (error) {
+      // 404：真的不在。400：会话文件本身已损坏（media_session.js:351），同样是定性结论，不是暂时读不到，
+      // 不然会一直显示「暂时读不到…请稍后重试」（final review Minor 1）。其余状态才是网络/服务瞬时错误。
+      if (error?.status === 404 || error?.status === 400) linkedSessions.set(key, null);
+      else return undefined; // 读取失败：不缓存，不当作「已不在」
+    }
     return linkedSessions.get(key);
   }
-  // 画卡片时用：还没读过就返回 undefined，读完重画一次。
+  // 画卡片时用：还没读过就返回 undefined，读完重画一次；读取失败 5 秒内不重复请求。
   function linkedForCard(kind, id) {
     const key = `${kind}/${id}`;
     if (linkedSessions.has(key)) return linkedSessions.get(key);
+    const failedAt = linkedFailedAt.get(key);
+    if (failedAt != null && Date.now() - failedAt < LINKED_RETRY_MS) return undefined;
     if (!linkedLoading.has(key)) {
       linkedLoading.add(key);
-      loadLinked(kind, id).then(() => { linkedLoading.delete(key); pane?.rerender(); });
+      loadLinked(kind, id).then((result) => {
+        linkedLoading.delete(key);
+        if (result === undefined) linkedFailedAt.set(key, Date.now());
+        else linkedFailedAt.delete(key);
+        pane?.rerender();
+      });
     }
     return undefined;
   }
-  // 引用的那张图：仍是 done 且文件在才算数（V-40）；返回 {output, title, index} 或 null。
+  // 引用的那张图：仍是 done 且文件在才算数（V-40）；返回 {output, title, index} | null（已不在） | undefined（读取失败）。
   async function lookupImage(imageRef) {
     const session = await loadLinked("image", imageRef.session_id);
+    if (session === undefined) return undefined;
     const attempts = session?.attempts ?? [];
     const index = attempts.findIndex((a) => a.id === imageRef.attempt_id);
     return index >= 0 && hasImage(attempts[index]) ? { output: attempts[index].output, title: sessionTitle(session), index } : null;
   }
-  // 引用的那首歌：仍是 done 且有可用文件才算数（S-34）；返回 {file, label} 或 null。
+  // 引用的那首歌：仍是 done 且有可用文件才算数（S-34）；返回 {file, label} | null（已不在） | undefined（读取失败）。
   async function lookupSong(songRef) {
     const session = await loadLinked("music", songRef.session_id);
+    if (session === undefined) return undefined;
     const attempt = (session?.attempts ?? []).find((a) => a.id === songRef.attempt_id);
     const file = attempt?.status === "done" ? musicOutput(attempt) : null;
     return file ? { file, label: autoTitle(attempt.params?.caption) } : null;
@@ -233,11 +251,13 @@ export function createVideoPane(root, ctx = {}) {
     }
     renderInputs();
   }
-  // 图片会话引用（首帧或参考图）：取到那张图就补标题、序号与预览；已不在就清空该来源并说明（V-40、S-34）。
+  // 图片会话引用（首帧或参考图）：取到那张图就补标题、序号与预览；已不在就清空该来源并说明（V-40、S-34）；
+  // 读取失败（未知）保留当前选择，只在页面错误行提示稍后重试（issue #19）。
   // current() 取槽里当前来源（这期间换过就作罢），gone() 清空并标记失效，box 是预览框。
   async function checkImageRef(source, current, gone, box) {
     const found = await lookupImage(source.ref);
     if (current() !== source) return;
+    if (found === undefined) { pane.setError("暂时读不到图片会话，请稍后重试"); return; }
     if (!found) { gone(); renderInputs(); return; }
     source.title = found.title; source.index = found.index;
     setPreview(box, "img", api.serveOutput(found.output), { name: found.title });
@@ -254,6 +274,7 @@ export function createVideoPane(root, ctx = {}) {
   async function checkSong(value) {
     const found = await lookupSong(value.ref);
     if (song !== value) return;
+    if (found === undefined) { pane.setError("暂时读不到音乐会话，请稍后重试"); return; }
     if (!found) { song = null; songGone = true; renderInputs(); return; }
     value.label = found.label;
     setPreview(els.songPreview, "audio", api.serveOutput(found.file));
@@ -315,18 +336,28 @@ export function createVideoPane(root, ctx = {}) {
     if (ref.type === "continue" || continuing()) return true;
     return Number.isInteger(ref.seed) && String(els.seed.value ?? "").trim() === String(ref.seed);
   }
+  // 续写型提示条：目标段本身要 canContinue。「在这段基础上改」一个续写段（ref.continues 指向它接的前段）时，
+  // 前段同样要 canContinue，否则这段本身也生不了（issue #19）。
   function checkMissing() {
-    if (ref?.type !== "continue" || ref.missing) return;
+    if (!ref || ref.missing) return;
     const session = pane?.currentSession();
     if (!session) return;
-    const target = (session.attempts ?? []).find((a) => a.id === ref.attemptId);
+    const attempts = session.attempts ?? [];
+    const targetId = ref.type === "continue" ? ref.attemptId : ref.type === "refine" && ref.continues ? ref.continues : null;
+    if (!targetId) return;
+    const target = attempts.find((a) => a.id === targetId);
     if (!target || !canContinue(target) || brokenIds.has(target.id)) ref = { ...ref, missing: true };
+  }
+  // ref.type === "refine" 且已判定 missing 时，文案走续写型的「第 N 次的文件已不在」，N 是它接的那个前段的序号。
+  function chipTextFor(r) {
+    if (r?.type === "refine" && r.missing) return chipText({ type: "continue", index: position(r.continues), missing: true });
+    return chipText(r);
   }
   function syncChip() {
     checkMissing();
     const visible = chipVisible();
     els.chip.hidden = !visible;
-    els.chipText.textContent = visible ? chipText(ref) : "";
+    els.chipText.textContent = visible ? chipTextFor(ref) : "";
   }
   // 点 ×：不再沿用或续写；续写的首帧来源一起清掉，方式下拉解锁。
   function clearChip() {
@@ -342,9 +373,11 @@ export function createVideoPane(root, ctx = {}) {
   function updateAvailability(state, { secondary }) {
     lastState = { state, secondary };
     syncChip();
+    // 不需要 music.js 那个 ref.type==="continue"||chipVisible() 判断（final review Important 1）：一个续写段的
+    // refine 会把 first 也设成 {type:"continue"}（sourceOf, L46-49），chipVisible() 因 continuing() 恒真，改种子不隐藏提示条。
     const missing = !!ref?.missing;
     els.start.disabled = state.disabled || missing || uploading;
-    els.start.title = state.disabled ? state.reason : missing ? chipText(ref) : "";
+    els.start.title = state.disabled ? state.reason : missing ? chipTextFor(ref) : "";
     if (secondary) {
       for (const button of secondary.buttons) {
         button.disabled = state.disabled;
@@ -398,7 +431,7 @@ export function createVideoPane(root, ctx = {}) {
         if (continuing()) first = null;
         renderInputs(); syncChip();
       },
-      onSessionSwitch: clearChip,
+      onSessionSwitch: () => { brokenIds.clear(); clearChip(); }, // 播放出错的标记只在本会话内有效（issue #18）
       focus: () => els.prompt.focus?.(),
       updateAvailability,
     },
@@ -522,7 +555,8 @@ export function createVideoPane(root, ctx = {}) {
     const music = fields.mode === "music_ref"
       ? { refImageSource: firstFromSource(refImageOf(attempt)), song: attempt.refs?.ref_audio ?? null } : {};
     pane.keepInView(attempt.id);
-    prefill({ ...fields, ...music }, firstFromSource(sourceOf(attempt)), { type: "refine", index, attemptId: attempt.id, seed: fields.seed });
+    prefill({ ...fields, ...music }, firstFromSource(sourceOf(attempt)),
+      { type: "refine", index, attemptId: attempt.id, seed: fields.seed, continues: attempt.continues ?? null });
     pane.settleView();
   }
 
@@ -654,7 +688,7 @@ export function createVideoPane(root, ctx = {}) {
   syncChip();
   return {
     // 每次打开视频页重读图片、音乐会话：卡片上的标题与风格描述可能在别的页改过。
-    refresh: () => { linkedSessions.clear(); return pane.refresh(); },
+    refresh: () => { linkedSessions.clear(); linkedFailedAt.clear(); return pane.refresh(); },
     applyJob: pane.applyJob, poll: pane.poll,
     applyFill: (plan) => pane.applyFill(plan, { refine, prefillOnly: prefillFromLibrary }),
     setHeavyAllowed: pane.setHeavyAllowed, setModelStatus: pane.setModelStatus, setRuntimeStatus: pane.setRuntimeStatus,

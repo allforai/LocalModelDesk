@@ -77,11 +77,13 @@ function imageSession({ missing = false } = {}) {
 }
 const pick = { ref: { kind: "image", session_id: "img1", attempt_id: "i3" }, title: "橘猫", index: 2 };
 // 视频页读图片会话（首帧说明、失效检查）与音乐会话（配乐说明）：在假后端外面接一层。
-function serveImages(backend, sessions, music = []) {
+// fail：读取时回 failStatus（默认 500，网络/服务瞬时错误）的 "kind/session_id" 集合（issue #19）。
+function serveImages(backend, sessions, music = [], fail = new Set(), failStatus = 500) {
   const inner = backend.fetch;
   globalThis.fetch = async (url, options = {}) => {
     const match = url.match(/^\/api\/media-sessions\/(image|music)\/(\w+)$/);
     if (!match) return inner(url, options);
+    if (fail.has(`${match[1]}/${match[2]}`)) return { ok: false, status: failStatus, statusText: "", json: async () => ({ error: "服务出错" }) };
     const found = (match[1] === "image" ? sessions : music).find((s) => s.id === match[2]);
     return found ? { ok: true, status: 200, json: async () => structuredClone(found) }
       : { ok: false, status: 404, statusText: "", json: async () => ({ error: "会话不存在" }) };
@@ -261,6 +263,73 @@ test("引用的图片已不在：「在这段基础上改」清空首帧来源�
   });
 });
 
+test("引用查询网络失败（500）：「在这段基础上改」不清空首帧来源，只在错误行提示稍后重试（issue #19）", async () => {
+  await withBackend("video", async (backend) => {
+    serveImages(backend, [imageSession()], [], new Set(["image/img1"]));
+    backend.addSession("片", [done("a1", { params: { prompt: "猫", width: 512, height: 288, frames: 73, steps: 16, seed: 4,
+      mode: "image", use_audio: true, first_frame: null }, refs: { first_frame: pick.ref } })]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await flush();
+    await button(cards(parts)[0], "在这段基础上改").click();
+    await flush();
+    assert.notEqual(parts["first-label"].textContent, "引用的图片已不在", "网络失败不当作已不在");
+    assert.equal(parts.error.textContent, "暂时读不到图片会话，请稍后重试");
+  });
+});
+
+test("引用的图片会话确实已被删除（404）：仍清空首帧来源并显示「引用的图片已不在」（原行为，issue #19）", async () => {
+  await withBackend("video", async (backend) => {
+    serveImages(backend, [], []); // 没有 img1 这个图片会话：真的 404
+    backend.addSession("片", [done("a1", { params: { prompt: "猫", width: 512, height: 288, frames: 73, steps: 16, seed: 4,
+      mode: "image", use_audio: true, first_frame: null }, refs: { first_frame: pick.ref } })]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await button(cards(parts)[0], "在这段基础上改").click();
+    await flush();
+    assert.equal(parts["first-label"].textContent, "引用的图片已不在");
+    await parts.start.click();
+    assert.equal(parts.error.textContent, "请先选择首帧图片");
+  });
+});
+
+test("引用的图片会话已损坏（400）：当作已不在处理，清空首帧来源并显示「引用的图片已不在」（final review Minor 1）", async () => {
+  await withBackend("video", async (backend) => {
+    serveImages(backend, [imageSession()], [], new Set(["image/img1"]), 400);
+    backend.addSession("片", [done("a1", { params: { prompt: "猫", width: 512, height: 288, frames: 73, steps: 16, seed: 4,
+      mode: "image", use_audio: true, first_frame: null }, refs: { first_frame: pick.ref } })]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await flush();
+    await button(cards(parts)[0], "在这段基础上改").click();
+    await flush();
+    assert.equal(parts["first-label"].textContent, "引用的图片已不在", "损坏的引用应定性为已不在，不是暂时读不到");
+    await parts.start.click();
+    assert.equal(parts.error.textContent, "请先选择首帧图片");
+  });
+});
+
+test("配乐参考——歌引用查询网络失败（500）：不清空歌来源，只提示稍后重试；确实 404 时清空并说明（issue #19）", async () => {
+  for (const fail of [true, false]) {
+    await withBackend("video", async (backend) => {
+      const musicSessions = fail ? [musicSession()] : [];
+      serveImages(backend, [imageSession()], musicSessions, fail ? new Set(["music/m1"]) : new Set());
+      backend.addSession("片", [done("a1", { params: { prompt: "奔跑", width: 512, height: 288, frames: 73, steps: 16, seed: 4,
+        mode: "music_ref", use_audio: true, audio_start: 12, ref_image: null }, refs: { ref_image: pick.ref, ref_audio: song.ref } })]);
+      const { parts, pane, ready } = makeVideoPane(); ready();
+      await pane.refresh();
+      await button(cards(parts)[0], "在这段基础上改").click();
+      await flush();
+      if (fail) {
+        assert.notEqual(parts["song-label"].textContent, "引用的歌已不在", "网络失败不当作已不在");
+        assert.equal(parts.error.textContent, "暂时读不到音乐会话，请稍后重试");
+      } else {
+        assert.equal(parts["song-label"].textContent, "引用的歌已不在");
+      }
+    });
+  }
+});
+
 test("「在这段基础上改」一个续写段：首帧说明为续写、方式锁定，生成仍接在原位置", async () => {
   await withBackend("video", async (backend) => {
     backend.addSession("片", [done("a1"), done("a2", { continues: "a1", params: { ...done("a2").params, mode: "image", use_audio: true } })]);
@@ -274,6 +343,37 @@ test("「在这段基础上改」一个续写段：首帧说明为续写、方�
     const body = videoCalls(backend)[0].body;
     assert.equal(body.continues, "a1");
     assert.equal(body.seed, 11);
+  });
+});
+
+test("「在这段基础上改」一个续写段后，它接的前段文件不在：提示条改为不能接着往下生，「生成视频」禁用（issue #19）", async () => {
+  await withBackend("video", async (backend) => {
+    backend.addSession("片", [done("a1"), done("a2", { continues: "a1", params: { ...done("a2").params, mode: "image", use_audio: true } })]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await button(cards(parts)[1], "在这段基础上改").click();
+    assert.equal(parts["chip-text"].textContent, "沿用第 2 次");
+    backend.finish("a1", { output_missing: true });
+    await pane.refresh();
+    assert.equal(parts["chip-text"].textContent, "第 1 次的文件已不在，不能接着往下生");
+    assert.equal(parts.start.disabled, true);
+  });
+});
+
+test("上一条之后改种子：video 不受 music 那个死路影响，方式仍锁定为续写，「生成视频」仍禁用（final review Important 1 一并确认）", async () => {
+  await withBackend("video", async (backend) => {
+    backend.addSession("片", [done("a1"), done("a2", { continues: "a1", params: { ...done("a2").params, mode: "image", use_audio: true } })]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await button(cards(parts)[1], "在这段基础上改").click();
+    backend.finish("a1", { output_missing: true });
+    await pane.refresh();
+    assert.equal(parts.start.disabled, true);
+    parts.seed.value = "999"; await parts.seed.dispatch("input");
+    // video 的 refine 续写段回填时首帧来源本身就是 {type:"continue"}（sourceOf），chip 因此恒可见，
+    // 改种子不会像 music 那样隐藏提示条，所以这里仍应保持禁用。
+    assert.equal(parts.chip.hidden, false, "video 续写提示条不因改种子隐藏");
+    assert.equal(parts.start.disabled, true, "仍会带 continues，禁用是对的，不是死路");
   });
 });
 
@@ -739,5 +839,45 @@ test("配乐参考「换个版本」时引用已不在：显示后端原话", as
     await flush();
     assert.equal(videoCalls(backend).length, 1);
     assert.equal(parts.error.textContent, "引用的音乐已不在");
+  });
+});
+
+// ---------- issue #18 ----------
+test("成片播放出错退回本段、不标文件不在；分段切换可用方向键；切换会话后 brokenIds 清空", async () => {
+  await withBackend("video", async (backend) => {
+    const a = backend.addSession("甲", [done("a1"), done("a2", { continues: "a1", joined_output: "j2.mp4" })]);
+    const b = backend.addSession("乙", [done("b1")]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    const item = (id) => findAll(parts["session-list"], (n) => n.dataset?.sessionId === id)[0];
+    const cardOf = (id) => cards(parts).find((n) => n.dataset.attemptId === id);
+    await item(a.id).click(); await flush();
+
+    let video = find(cardOf("a2"), (n) => n.tagName === "video");
+    const group = find(cardOf("a2"), (n) => n.attrs?.role === "radiogroup");
+    const whole = button(group, "成片"); const part = button(group, "只看这一段");
+    await whole.dispatch("keydown", { key: "ArrowRight" });
+    assert.equal(part.attrs["aria-checked"], "true");
+    assert.equal(part.focused, 1);
+    assert.equal(video.src, "/api/outputs/a2.mp4");
+    await part.dispatch("keydown", { key: "ArrowLeft" });
+    assert.equal(whole.attrs["aria-checked"], "true");
+    assert.equal(video.src, "/api/outputs/j2.mp4");
+
+    await video.dispatch("error");
+    assert.equal(video.src, "/api/outputs/a2.mp4");
+    assert.equal(find(cardOf("a2"), (n) => n.attrs?.role === "radiogroup"), null);
+    assert.doesNotMatch(cardOf("a2").textContent, /视频文件已不在/);
+    assert.equal(button(cardOf("a2"), "接着往下生").disabled, false);
+    await video.dispatch("error");
+    assert.match(cardOf("a2").textContent, /视频文件已不在/);
+
+    await item(b.id).click(); await flush();
+    await item(a.id).click(); await flush();
+    await pane.refresh();
+    const next = button(cardOf("a2"), "接着往下生");
+    assert.equal(next.disabled, false);
+    await next.click();
+    assert.equal(parts["chip-text"].textContent, "接在第 2 次后面");
   });
 });

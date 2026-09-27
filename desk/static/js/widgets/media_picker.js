@@ -5,11 +5,12 @@ import { addIcon } from "../icons.js";
 import { hasImage } from "../pure/image_session.js";
 import { autoTitle, sessionTitle } from "../pure/media_session.js";
 
-// 音乐尝试的可选文件：优先未缺失的 joined_output，否则 output；都不在则不可选（S-20）。
+// 音乐尝试的可选文件：与后端 find_done()（desk/library/media_sessions.py）一致，只看这段自己的 output 是否在
+// （!output_missing）来判断可不可选；可选时优先给未缺失的 joined_output 播放/引用，否则给 output（S-20、issue #19）。
 export function musicOutput(attempt) {
-  if (typeof attempt?.joined_output === "string" && attempt.joined_output && !attempt.joined_missing) return attempt.joined_output;
-  if (typeof attempt?.output === "string" && attempt.output && !attempt.output_missing) return attempt.output;
-  return null;
+  if (typeof attempt?.output !== "string" || !attempt.output || attempt.output_missing) return null;
+  if (typeof attempt.joined_output === "string" && attempt.joined_output && !attempt.joined_missing) return attempt.joined_output;
+  return attempt.output;
 }
 
 // doc: 承载 DOM 的文档对象（测试可传假 DOM）。
@@ -159,7 +160,17 @@ export function openMediaPicker(doc, { kind, title, emptyText, listSessions, get
     }
 
     (async () => {
-      const raw = await listSessions();
+      let raw;
+      try { raw = await listSessions(); }
+      catch (error) {
+        const p = doc.createElement("p");
+        p.className = "inline-error media-picker-list-error";
+        (p.dataset ??= {}).mediaPickerListError = "1";
+        p.textContent = `会话列表读不出来：${error?.message ?? ""}`;
+        sessionList.replaceChildren(p);
+        content.replaceChildren();
+        return;
+      }
       // 坏文件会话读不出尝试，选不出内容：不进这个选择框（D-90 一类会话在这里没意义）。
       const sessions = raw.filter((s) => !s?.corrupt);
       renderSessions(sessions);
