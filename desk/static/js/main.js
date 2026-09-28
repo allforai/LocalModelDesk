@@ -12,6 +12,7 @@ import { createFirstRunPane } from "./panes/firstrun.js";
 import { createSettingsPane } from "./panes/settings.js";
 import { assistReason, heavyAvailability } from "./pure/desk_state.js";
 import { hydrateIcons } from "./icons.js";
+import { initSessionsCollapse } from "./widgets/sessions_collapse.js";
 import { initialTab } from "./pure/tab_hash.js";
 import { isDrawerCloseKey } from "./pure/drawer.js";
 import { showFatal } from "./widgets/fatal.js";
@@ -171,4 +172,6 @@ async function tick() {
 for (const type of ["dragover", "drop"]) document.addEventListener(type, (event) => event.preventDefault());
 
 hydrateIcons(document);
+// 聊天、图片、音乐、视频四个会话栏共用一个收起开关（在图标装好之后接管「新会话」按钮）。
+initSessionsCollapse([...document.querySelectorAll("main aside.sessions")]);
 boot();

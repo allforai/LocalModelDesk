@@ -335,3 +335,24 @@ audio.video-preview-media { width: min(360px, 100%); height: 36px; }
 .media-picker-music-label { margin: 0; overflow-wrap: anywhere; }
 .media-picker-music-item audio { width: 100%; }
 .media-picker-pick { align-self: flex-start; }
+/* 15. 会话栏收起（四个页面共用）：收起后是一条窄轨，只剩「展开会话栏」与「新会话」两个图标按钮。
+   宽度用同一条缓动曲线过渡；列表定宽、被裁剪着淡出，不在收窄过程中被挤得反复换行；
+   两个按钮由横排改为竖排只在窄于 100px 时发生（容器查询），此时按钮已缩成图标，看不出跳动。
+   减弱动效时由第 11 节的全局规则关掉所有过渡。 */
+.sessions{--sessions-ease:cubic-bezier(.2,.8,.2,1);container-type:inline-size;overflow-x:hidden;overflow-y:auto;transition:width 220ms var(--sessions-ease)}
+.sessions.is-collapsed{width:44px}
+.sessions-head{display:flex;align-items:center;gap:8px}
+.sessions-toggle{flex:none;margin-left:auto;width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);border-radius:var(--radius);transition:color 150ms ease,background-color 150ms ease}
+.sessions-toggle:hover{color:var(--text);background:var(--panel);border-color:transparent}
+.sessions-toggle:focus-visible,.sessions-new:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sessions-toggle .icon{width:18px;height:18px}
+.sessions-new{flex:none;min-width:0;white-space:nowrap;overflow:hidden;transition:padding 220ms var(--sessions-ease),gap 220ms var(--sessions-ease)}
+.sessions-new-label{display:inline-block;max-width:8em;overflow:hidden;opacity:1;transition:max-width 220ms var(--sessions-ease),opacity 160ms ease 60ms}
+.sessions > ul{min-width:240px;opacity:1;transform:none;visibility:visible;transition:opacity 180ms ease 80ms,transform 220ms var(--sessions-ease),visibility 0s linear 0s}
+.sessions.is-collapsed .sessions-new{padding:9px;gap:0}
+.sessions.is-collapsed .sessions-new-label{max-width:0;opacity:0;transition:max-width 220ms var(--sessions-ease),opacity 100ms ease}
+.sessions.is-collapsed > ul{opacity:0;transform:translateX(-8px);visibility:hidden;pointer-events:none;transition:opacity 120ms ease,transform 220ms var(--sessions-ease),visibility 0s linear 220ms}
+@container (max-width:100px){
+  .sessions-head{flex-direction:column;gap:8px}
+  .sessions-toggle{order:-1;margin-left:0}
+}
