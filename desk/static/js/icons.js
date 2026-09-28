@@ -30,6 +30,8 @@ const PATHS = {
   check: "m5 12 4 4L19 6",
   "chevron-up": "m6 15 6-6 6 6",
   "chevron-down": "m6 9 6 6 6-6",
+  "sidebar-close": "M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm5 0v16m7-11-3 3 3 3",
+  "sidebar-open": "M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm5 0v16m4-11 3 3-3 3",
 };
 
 export function iconNode(doc, name) {
