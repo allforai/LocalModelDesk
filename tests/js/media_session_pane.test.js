@@ -418,23 +418,53 @@ test("切换会话后控制器的 broken 集合清空：切回来时卡片不再
   });
 });
 
-test("renderCard 收到 actionsBlocked：可用时为空，忙碌时为原因；原因变了会重画用到它的卡片", async () => {
+test("被门控的按钮就地更新：忙碌原因变化时不重画卡片，按钮的禁用与提示跟着变（#21）", async () => {
   await withBackend("music", async (backend) => {
     backend.addSession("歌", [done("a1")]);
-    const blocked = [];
+    let renders = 0; let rejoin = null;
     const { pane, ready } = makeGenericPane({
       renderCard: (d, o) => {
-        blocked.push(o.actionsBlocked);
+        renders += 1;
         const li = d.createElement("li");
         li.dataset.attemptId = o.attempt.id;
-        return { node: li, usesActionsBlocked: true };
+        rejoin = d.createElement("button");
+        li.append(rejoin);
+        return { node: li, gated: [{ button: rejoin, ownDisabled: false, ownReason: "" }] };
       },
     });
     ready(); await pane.refresh();
-    assert.equal(blocked.at(-1), "");
+    const before = renders;
+    assert.equal(rejoin.disabled, false);
     pane.setHeavyAllowed(false, "对话模型正在占用内存");
-    assert.equal(blocked.at(-1), "对话模型正在占用内存");
+    assert.equal(renders, before);
+    assert.equal(rejoin.disabled, true);
+    assert.equal(rejoin.title, "对话模型正在占用内存");
     pane.setHeavyAllowed(true);
-    assert.equal(blocked.at(-1), "");
+    assert.equal(renders, before);
+    assert.equal(rejoin.disabled, false);
+    assert.equal(rejoin.title, "");
+  });
+});
+
+test("按钮自己的不可用原因优先于忙碌原因（链上缺段时忙碌结束也不恢复）", async () => {
+  await withBackend("music", async (backend) => {
+    backend.addSession("歌", [done("a1")]);
+    let rejoin = null;
+    const { pane, ready } = makeGenericPane({
+      renderCard: (d, o) => {
+        const li = d.createElement("li");
+        li.dataset.attemptId = o.attempt.id;
+        rejoin = d.createElement("button");
+        li.append(rejoin);
+        return { node: li, gated: [{ button: rejoin, ownDisabled: true, ownReason: "链上有一段已不在" }] };
+      },
+    });
+    ready(); await pane.refresh();
+    pane.setHeavyAllowed(false, "对话模型正在占用内存");
+    assert.equal(rejoin.disabled, true);
+    assert.equal(rejoin.title, "链上有一段已不在");
+    pane.setHeavyAllowed(true);
+    assert.equal(rejoin.disabled, true);
+    assert.equal(rejoin.title, "链上有一段已不在");
   });
 });

@@ -67,11 +67,11 @@ function player(doc, attempt, { serveOutput, onBroken }) {
   return box;
 }
 
-// 返回 {node, running, secondary, usesActionsBlocked}：usesActionsBlocked 表示画了受 actionsBlocked 门控的「重新拼接」，
-// 忙碌原因变化时控制器要重画时间线；running 是 running 卡片里轮询要就地更新的几个元素；
+// 返回 {node, running, secondary, gated}：gated 是受忙碌门控、由控制器就地更新的按钮（「重新拼接」），
+// 忙碌原因变化时控制器只就地改它们的 disabled/title，不重画卡片；running 是 running 卡片里轮询要就地更新的几个元素；
 // secondary 是「换个版本」按钮与其下方原因行（由面板按生成可用性更新，与图片页「换个构图」同一机制）。
 export function renderMusicCard(doc, opts) {
-  const { attempt, index, attempts, selected, broken = false, serveOutput, picking = false, pickIndex = -1, actionsBlocked = "" } = opts;
+  const { attempt, index, attempts, selected, broken = false, serveOutput, picking = false, pickIndex = -1 } = opts;
   const view = attemptView(attempt, { broken, noun: "音频", icon: "music" });
   const running = view.kind === "running";
   const expanded = running || selected;
@@ -150,11 +150,11 @@ export function renderMusicCard(doc, opts) {
     if (!picking && (problem.rejoin || problem.reason)) {
       const rejoin = actionButton(doc, "重新拼接", "refresh", () => opts.onRejoin?.(problem.rejoin.parts));
       rejoin.dataset.attemptRejoin = "";
-      // 有作业在跑、服务不可用等（actionsBlocked，同 IS §7.6）时也禁用；链上缺段的原因优先。
-      rejoin.disabled = !problem.rejoin || !!actionsBlocked;
-      rejoin.title = problem.reason || actionsBlocked;
+      // 按钮自己的状态（链上缺段）在这里定；有作业在跑等忙碌原因由控制器就地叠加（issue #21）。
+      rejoin.disabled = !problem.rejoin;
+      rejoin.title = problem.reason || "";
       line.append(rejoin);
-      result.usesActionsBlocked = true;
+      result.gated = [{ button: rejoin, ownDisabled: !problem.rejoin, ownReason: problem.reason || "" }];
       if (problem.reason) line.append(el(doc, "p", "hint", problem.reason));
     }
     detail.append(line);

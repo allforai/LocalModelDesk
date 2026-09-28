@@ -51,10 +51,16 @@ export function createSessionPane(root, {
   const broken = new Set();
   // 挑选合成模式（M-05–M-11）：picks 是已勾选尝试的 id，顺序即拼接顺序。
   let picking = false; let picks = []; let composeError = "";
-  // 上次画时间线时交给卡片的 actionsBlocked（「重新拼接」的不可用原因）与是否有卡片用到它：
-  // 原因变了且有卡片用到时重画，作业结束后按钮自己恢复（issue #18）。
-  let lastBlocked = null; let blockedShown = false;
-  const actionsBlockedOf = (state) => (state.disabled ? state.reason : "");
+  // 卡片交出的受忙碌门控的按钮（如「重新拼接」）：[{button, ownDisabled, ownReason}]。可用性变化时
+  // 就地改它们的 disabled/title，不重画时间线——重画会重建卡片里正在播放的音视频（issue #18、#21）。
+  let gatedRefs = [];
+  function applyGated(state) {
+    const blocked = state.disabled ? state.reason : "";
+    for (const { button, ownDisabled, ownReason } of gatedRefs) {
+      button.disabled = ownDisabled || !!blocked;   // 按钮自己的原因（如链上缺段）优先于忙碌原因
+      button.title = ownReason || blocked;
+    }
+  }
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
 
@@ -75,7 +81,7 @@ export function createSessionPane(root, {
     els.model.textContent = modelReason || "模型文件完整 · 可离线生成";
     composer.updateAvailability?.(state, { secondary: secondaryRefs });
     updateCompose(state);
-    if (blockedShown && actionsBlockedOf(state) !== lastBlocked) renderTimeline();
+    applyGated(state);
   }
   function setModelStatus(status) {
     modelReason = status?.state === "present" ? "" : status?.reason || (
@@ -174,8 +180,7 @@ export function createSessionPane(root, {
   }
 
   function renderTimeline({ scroll = false } = {}) {
-    runningRefs = null; secondaryRefs = null; expandedRefs = null; blockedShown = false;
-    lastBlocked = actionsBlockedOf(currentAvailability());
+    runningRefs = null; secondaryRefs = null; expandedRefs = null; gatedRefs = [];
     if (scroll) scrollIntent = "bottom";
     const keep = els.timeline.scrollTop;
     if (currentCorrupt) {
@@ -202,9 +207,8 @@ export function createSessionPane(root, {
         onBroken: (a) => { if (!broken.has(a.id)) { broken.add(a.id); renderTimeline(); } },
         onImageLoad: settleView,
         picking, pickIndex: picks.indexOf(attempt.id), onTogglePick: (a) => togglePick(a.id),
-        actionsBlocked: lastBlocked,
       });
-      if (card.usesActionsBlocked) blockedShown = true;
+      if (card.gated) gatedRefs.push(...card.gated);
       // 挑选模式里点卡片切换勾选而不是展开（M-06）；勾选框自己的 click 冒泡上来时不再切一次（它走 change）。
       card.node.addEventListener("click", (event) => {
         if (!picking) selectAttempt(attempt);
