@@ -510,3 +510,26 @@ test("成片文件被删（joined_missing）：显示问题行并可「重新拼
     assert.deepEqual(composeCalls(backend).map((c) => c.body.parts), [["a1", "a2"]]);
   });
 });
+
+
+test("忙碌原因变化只就地更新「重新拼接」，不重建正在播放的音频（#21）", async () => {
+  await withBackend("music", async (backend) => {
+    const failed = { code: "join_failed", message: "ffmpeg 出错" };
+    backend.addSession("片", [done("a1"), done("a2", { continues: "a1", joined_error: failed })]);
+    const { parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    const card = cardOf(parts, "a2");
+    const player = find(card, (n) => n.tagName === "audio");
+    const rejoin = button(card, "重新拼接");
+    assert.ok(player && rejoin);
+    assert.equal(rejoin.disabled, false);
+    pane.setHeavyAllowed(false, "对话模型正在占用内存");
+    assert.equal(find(cardOf(parts, "a2"), (n) => n.tagName === "audio"), player);
+    assert.equal(button(cardOf(parts, "a2"), "重新拼接"), rejoin);
+    assert.equal(rejoin.disabled, true);
+    assert.equal(rejoin.title, "对话模型正在占用内存");
+    pane.setHeavyAllowed(true);
+    assert.equal(find(cardOf(parts, "a2"), (n) => n.tagName === "audio"), player);
+    assert.equal(rejoin.disabled, false);
+  });
+});

@@ -881,3 +881,26 @@ test("成片播放出错退回本段、不标文件不在；分段切换可用�
     assert.equal(parts["chip-text"].textContent, "接在第 2 次后面");
   });
 });
+
+
+test("忙碌原因变化只就地更新「重新拼接」，不重建正在播放的视频（#21）", async () => {
+  await withBackend("video", async (backend) => {
+    const failed = { code: "join_failed", message: "ffmpeg 出错" };
+    backend.addSession("片", [done("a1"), done("a2", { continues: "a1", joined_error: failed })]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    const card = cards(parts).find((n) => n.dataset.attemptId === "a2");
+    const player = find(card, (n) => n.tagName === "video");
+    const rejoin = button(card, "重新拼接");
+    assert.ok(player && rejoin);
+    assert.equal(rejoin.disabled, false);
+    pane.setHeavyAllowed(false, "对话模型正在占用内存");
+    assert.equal(find(cards(parts).find((n) => n.dataset.attemptId === "a2"), (n) => n.tagName === "video"), player);
+    assert.equal(button(cards(parts).find((n) => n.dataset.attemptId === "a2"), "重新拼接"), rejoin);
+    assert.equal(rejoin.disabled, true);
+    assert.equal(rejoin.title, "对话模型正在占用内存");
+    pane.setHeavyAllowed(true);
+    assert.equal(find(cards(parts).find((n) => n.dataset.attemptId === "a2"), (n) => n.tagName === "video"), player);
+    assert.equal(rejoin.disabled, false);
+  });
+});
