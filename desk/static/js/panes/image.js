@@ -63,6 +63,7 @@ export function createImagePane(root, ctx = {}) {
       startLabel: "生成图片",
       afterStart: ({ fromInputs }) => { if (fromInputs) clearSeedAndChip(); },
       onSessionSwitch: clearSeedAndChip,
+      onNewSession: () => { els.prompt.value = ""; clearSeedAndChip(); },
       focus: () => els.prompt.focus?.(),
       updateAvailability,
     },

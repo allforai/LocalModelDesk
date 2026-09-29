@@ -904,3 +904,22 @@ test("忙碌原因变化只就地更新「重新拼接」，不重建正在播�
     assert.equal(rejoin.disabled, false);
   });
 });
+
+test("新会话清空提示词、种子与已选素材，方式和画幅保留", async () => {
+  await withBackend("video", async (backend) => {
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    parts.mode.value = "image"; await parts.mode.dispatch("change");
+    await choose(parts["first-upload"], png("cat.png"));
+    assert.equal(parts["first-preview"].children[0].tagName, "img");
+    parts.prompt.value = "猫跳起来"; parts.seed.value = "5";
+    const size = parts.size.value;
+    await parts["session-new"].click();
+    assert.equal(parts.prompt.value, "");
+    assert.equal(parts.seed.value, "");
+    assert.equal(parts["first-label"].textContent, "未选择");
+    assert.equal(parts["first-preview"].children.length, 0);
+    assert.equal(parts.mode.value, "image");
+    assert.equal(parts.size.value, size);
+  });
+});

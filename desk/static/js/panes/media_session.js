@@ -417,6 +417,7 @@ export function createSessionPane(root, {
       sessions = orderSessions(await api.listMediaSessions(kind), freshId);
       listState = "ready"; loadedOnce = true;
       switchTo(created.id);
+      composer.onNewSession?.(); // 新会话从空白输入区开始；画幅、时长等设置由各页保留
       await loadSession(created.id, { scroll: true });
       composer.focus?.();
     } catch (error) { setError(error.message); }

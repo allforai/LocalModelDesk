@@ -115,6 +115,7 @@ export function createMusicPane(root, ctx = {}) {
       startLabel: "生成歌曲",
       afterStart: ({ fromInputs }) => { if (fromInputs) { els.seed.value = ""; ref = null; syncChip(); } },
       onSessionSwitch: () => { brokenIds.clear(); clearChip(); }, // 播放出错的标记只在本会话内有效（issue #18）
+      onNewSession: () => { els.caption.value = ""; els.lyrics.value = ""; els.seed.value = ""; ref = null; syncChip(); refreshAvailability(); },
       focus: () => els.lyrics.focus?.(),
       updateAvailability,
     },

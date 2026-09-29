@@ -263,7 +263,9 @@ test("chat 面板的新建、改名和确认删除会写入会话 API 并重绘�
     const { root, controls, doc } = makePane();
     const pane = createChatPane(root);
     await pane.init();
+    controls.get("[data-chat-input]").value = "上个会话没发出去的话";
     await controls.get("[data-session-new]").click();
+    assert.equal(controls.get("[data-chat-input]").value, "", "新会话输入框清空");
     let list = controls.get("[data-session-list]");
     assert.equal(list.children[0].children[0].textContent, "新会话");
 
