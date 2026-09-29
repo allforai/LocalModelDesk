@@ -22,7 +22,8 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENTITLEMENTS="$REPO_ROOT/packaging/entitlements.plist"
 
 if [[ "$ADHOC" == 1 ]]; then
-  SIGN_ARGS=(--force --options runtime --entitlements "$ENTITLEMENTS" -s -)
+  # No hardened runtime: its library validation rejects ad-hoc (Team-ID-less) dylibs.
+  SIGN_ARGS=(--force --entitlements "$ENTITLEMENTS" -s -)
 else
   if [[ -z "$IDENTITY" ]]; then
     CANDIDATES="$(security find-identity -v -p codesigning 2>&1 || true)"

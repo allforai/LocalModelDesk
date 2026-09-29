@@ -122,6 +122,14 @@ def test_build_relocates_and_sanitizes_embedded_cpython_before_signing():
     assert "--timestamp=none" in sign
 
 
+def test_adhoc_signing_skips_hardened_runtime():
+    # Hardened runtime enforces library validation; ad-hoc signatures carry no
+    # Team ID, so the embedded python could not dlopen the ad-hoc-signed .so files.
+    sign = (REPO / "scripts" / "sign-app.sh").read_text()
+    adhoc_line = next(line for line in sign.splitlines() if "-s -)" in line)
+    assert "--options runtime" not in adhoc_line
+
+
 def test_build_sanitizer_uses_single_perl_quote_meta_escapes():
     build = (REPO / "scripts" / "build-app.sh").read_text()
     assert r"perl -pi -e 's/\Q$ENV{FORBIDDEN}\E//g'" in build
