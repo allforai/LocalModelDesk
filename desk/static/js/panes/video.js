@@ -432,6 +432,12 @@ export function createVideoPane(root, ctx = {}) {
         renderInputs(); syncChip();
       },
       onSessionSwitch: () => { brokenIds.clear(); clearChip(); }, // 播放出错的标记只在本会话内有效（issue #18）
+      // 新会话：提示词、种子与已选素材清空；方式、画幅、时长、步数保留。
+      onNewSession: () => {
+        els.prompt.value = ""; els.seed.value = ""; ref = null;
+        setFirst(null); setLast(null); setRefVideo(null); setRefImage(null); setSong(null);
+        syncChip(); refreshAvailability();
+      },
       focus: () => els.prompt.focus?.(),
       updateAvailability,
     },

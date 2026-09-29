@@ -533,3 +533,16 @@ test("忙碌原因变化只就地更新「重新拼接」，不重建正在播�
     assert.equal(rejoin.disabled, false);
   });
 });
+
+test("新会话清空风格、歌词与种子，时长保留", async () => {
+  await withBackend("music", async (backend) => {
+    const { parts, pane, ready } = makeMusicPane(); ready();
+    await pane.refresh();
+    parts.caption.value = "民谣"; parts.lyrics.value = "第一行"; parts.seed.value = "7"; parts.duration.value = "90";
+    await parts["session-new"].click();
+    assert.equal(parts.caption.value, "");
+    assert.equal(parts.lyrics.value, "");
+    assert.equal(parts.seed.value, "");
+    assert.equal(parts.duration.value, "90");
+  });
+});

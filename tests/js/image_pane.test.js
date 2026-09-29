@@ -569,3 +569,16 @@ test("展开的 done 卡片有「用这张生成视频」，点击带 ref/title/
     assert.deepEqual(picks, [{ ref: { kind: "image", session_id: sessionId, attempt_id: "a1" }, title: "橘猫", index: 0 }]);
   });
 });
+
+test("新会话清空提示词与种子，画幅和步数保留", async () => {
+  await withBackend(async (backend) => {
+    backend.addSession("橘猫", []);
+    const { parts, pane, ready } = makePane(); ready();
+    await pane.refresh();
+    parts.prompt.value = "橘猫"; parts.seed.value = "42"; parts.steps.value = "12";
+    await parts["session-new"].click();
+    assert.equal(parts.prompt.value, "");
+    assert.equal(parts.seed.value, "");
+    assert.equal(parts.steps.value, "12");
+  });
+});

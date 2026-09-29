@@ -906,7 +906,9 @@ export function createChatPane(root, ctx = {}) {
   els.sessionNew.addEventListener("click", async () => {
     try {
       const created = await api.createChatSession();
+      els.input.value = ""; // 新会话从空输入框开始
       await refreshSessions(created.id);
+      els.input.focus?.();
     } catch (error) { setError(error.message); }
   });
 
