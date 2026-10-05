@@ -97,6 +97,7 @@ function setDrawerOpen(open) {
 }
 
 function showTab(name) {
+  if (activeTab === "library" && name !== "library") panes.library.onHide(); // L-45：离开素材库停掉试听与悬停播放
   activeTab = name;
   setDrawerOpen(false);
   for (const button of document.querySelectorAll("#tabs [data-tab]")) button.classList.toggle("active", button.dataset.tab === name);

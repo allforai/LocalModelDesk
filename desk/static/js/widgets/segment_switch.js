@@ -1,4 +1,4 @@
-// 两项的分段切换（「成片 | 只听这一段」等，M-31、V-32）：role=radiogroup，选中项可 Tab 到（其余 tabIndex=-1），
+// 分段切换（项数由 labels 决定）（「成片 | 只听这一段」等，M-31、V-32）：role=radiogroup，选中项可 Tab 到（其余 tabIndex=-1），
 // 方向键左右（上下同）、Home、End 切换并把焦点移过去，与原生单选组一致。onChange(index) 在选中项变化时调用。
 export function renderSegmentSwitch(doc, { labels, checked = 0, onChange, ariaLabel = "播放哪一版" }) {
   const group = doc.createElement("div");
