@@ -460,12 +460,15 @@ def test_rename_delete_keeps_images_in_library(page, tmp_path):
 
         page.locator("#tabs [data-tab='library']").click()
         library = page.locator("#pane-library")
+        library.locator("[data-lib-view-btn='list']").click()
         entry = library.locator("li").filter(has_text="要被删掉分组的图")
         expect(entry).to_be_visible()
         entry.get_by_role("button", name="预览").click()
-        preview = library.locator("[data-lib-player] img")
+        preview = page.locator(".lib-preview [data-lib-preview-stage] img")
         expect(preview).to_have_attribute("src", f"/api/outputs/{output}")
-        page.wait_for_function("() => document.querySelector('[data-lib-player] img').naturalWidth > 0")
+        page.wait_for_function("() => document.querySelector('.lib-preview img').naturalWidth > 0")
+        page.keyboard.press("Escape")
+        library.locator("[data-lib-refresh]").click()
         expect(library.locator("li").filter(has_text="删除时还在生成")).to_be_visible(timeout=15_000)
 
 

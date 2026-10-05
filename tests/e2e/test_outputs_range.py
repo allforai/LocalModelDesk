@@ -11,10 +11,10 @@ def test_partial_content_and_reveal(page, tmp_path, audit_violations):
 
         page.goto(harness.base_url)
         page.get_by_role("button", name="素材库").click()
-        page.wait_for_selector("[data-lib-list] li")
+        page.wait_for_selector("[data-lib-item]")
 
         found_name = page.evaluate(
-            "() => document.querySelector('[data-lib-list] [data-output-name]')?.dataset.outputName"
+            "() => document.querySelector('[data-lib-view] [data-output-name]')?.dataset.outputName"
         )
         assert found_name == name
 
