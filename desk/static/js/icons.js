@@ -32,6 +32,13 @@ const PATHS = {
   "chevron-down": "m6 9 6 6 6-6",
   "sidebar-close": "M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm5 0v16m7-11-3 3 3 3",
   "sidebar-open": "M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm5 0v16m4-11 3 3-3 3",
+  grid: "M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z",
+  list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
+  table: "M3 4h18v16H3V4Zm0 5h18M3 14h18M9 9v11",
+  file: "M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Zm0 0v6h6",
+  alert: "M12 3 2 21h20L12 3Zm0 6v5m0 3h.01",
+  "chevron-left": "m15 18-6-6 6-6",
+  "chevron-right": "m9 18 6-6-6-6",
 };
 
 export function iconNode(doc, name) {

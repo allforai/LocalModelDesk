@@ -40,7 +40,7 @@ button:disabled,button[aria-disabled="true"]{opacity:.5;cursor:not-allowed;filte
 #tabs button{min-width:78px;background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0;color:var(--muted);padding:10px 12px}
 #tabs button:hover{color:var(--text)}
 #tabs button.active{color:var(--accent);background:transparent;border-bottom-color:var(--accent)}
-main > section { min-height:calc(100vh - 94px); padding:var(--margin); background:var(--bg); } #pane-chat { display:flex; gap:16px; } .sessions { width:220px; flex:none; } .sessions ul,[data-res-list],[data-lib-list] { list-style:none; padding:0; } .chat-main { flex:1; display:flex; flex-direction:column; } .model-row,.composer,.res-head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .messages { min-height:300px; overflow:auto; } [data-lib-player] video { max-width:100%; }
+main > section { min-height:calc(100vh - 94px); padding:var(--margin); background:var(--bg); } #pane-chat { display:flex; gap:16px; } .sessions { width:220px; flex:none; } .sessions ul,[data-res-list] { list-style:none; padding:0; } .chat-main { flex:1; display:flex; flex-direction:column; } .model-row,.composer,.res-head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .messages { min-height:300px; overflow:auto; }
 #fatal { position:fixed; inset:0; z-index:40; display:grid; place-content:center; justify-items:center; gap:16px; padding:48px; background:var(--bg); } #fatal [data-fatal-text] { color:var(--danger); max-width:40em; text-align:center; margin:0; }
 body.drawer-open { overflow:hidden; }
 body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009; z-index:24; }
@@ -99,7 +99,7 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 
 /* 6a. cards + session list */
 .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:16px}
-.sessions ul,[data-res-list],[data-lib-list]{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px}
+.sessions ul,[data-res-list]{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px}
 /* The hover-revealed actions used to sit position:absolute over the card's own
    center, so a click meant to switch sessions could land on "改名" instead
    (F7). They now get their own grid column that never overlaps the title. */
@@ -114,11 +114,10 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 /* 6b. cards: resources + library rows — actions form their own right-hand
    column spanning the full card height, instead of a third row on the left
    with the right two-thirds of a wide card sitting empty (F11/W8). */
-.res-row,.lib-row{display:grid;grid-template-columns:minmax(0,1fr) max-content;column-gap:16px;align-items:center}
-.res-row>*,.lib-row>*{grid-column:1}
-.res-row>.res-actions,.lib-row>.lib-actions{grid-column:2;grid-row:1/-1;margin-top:0}
-[data-res-list],[data-lib-list]{margin-top:16px}
-[data-lib-player]:not(:empty){margin-top:16px}
+.res-row{display:grid;grid-template-columns:minmax(0,1fr) max-content;column-gap:16px;align-items:center}
+.res-row>*{grid-column:1}
+.res-row>.res-actions{grid-column:2;grid-row:1/-1;margin-top:0}
+[data-res-list]{margin-top:16px}
 .res-name{margin:0;font-size:16px;font-weight:600}
 .res-meta,.lib-meta{color:var(--muted);font-size:13px;margin:4px 0 0}
 .res-actions,.lib-actions{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
@@ -127,7 +126,6 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .res-missing{margin-top:8px;color:var(--muted);font-size:13px}
 .lib-title{margin:0}
 .lib-error-details{font-size:13px;color:var(--muted)}.lib-error-details pre{margin:4px 0 0;white-space:pre-wrap;font:12px ui-monospace,Menlo,monospace}
-.lib-row.playing{border-color:var(--accent)}.lib-row.playing .lib-title::before{content:"▶ ";color:var(--accent)}
 /* 7. badges */
 .badge{font-size:13px;padding:2px 8px;border-radius:999px}
 .badge-ok{background:rgba(63,185,80,.15);color:var(--ok)}
@@ -139,17 +137,16 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 /* 8. media panes */
 .image-params{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .image-params input{width:100%;box-sizing:border-box}
-[data-lib-player] img{display:block;max-width:100%;max-height:70vh;object-fit:contain;border-radius:var(--radius);background:var(--panel)}
 .res-sources .hint{white-space:pre-wrap;overflow-wrap:anywhere}
 .job-log pre{max-height:240px;overflow:auto;white-space:pre-wrap;font:13px ui-monospace,Menlo,monospace;color:var(--muted);margin:8px 0 0}
-[data-lib-player] video,[data-lib-player] audio,.attempt-audio,.attempt-video{max-width:100%;border-radius:var(--radius);color-scheme:dark;background:var(--panel)}
+.attempt-audio,.attempt-video{max-width:100%;border-radius:var(--radius);color-scheme:dark;background:var(--panel)}
 .job-error{padding:12px;border:1px solid var(--danger);border-radius:var(--radius);background:rgba(229,83,75,.08)}
 .job-error:empty{display:none}.job-error details{margin-top:8px;color:var(--muted);font-size:13px}.job-error pre{white-space:pre-wrap;margin:4px 0 0;font:12px ui-monospace,Menlo,monospace}
 /* A hint paragraph with no text (e.g. the video pane's upload-status line while
    idle) must not occupy a flex row — otherwise its empty box plus the composer's
    own gap silently doubles the space before whatever comes after it (F7/W7). */
 .hint:empty{display:none}
-[data-lib-player] audio,.attempt-audio{width:100%;border:1px solid var(--border)}
+.attempt-audio{width:100%;border:1px solid var(--border)}
 .file-row{display:flex;align-items:center;gap:8px}.file-pick .btn{display:inline-block;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer}
 .visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .file-row.drag-over{outline:2px dashed var(--accent);outline-offset:4px;border-radius:var(--radius)}
@@ -355,4 +352,95 @@ audio.video-preview-media { width: min(360px, 100%); height: 36px; }
 @container (max-width:100px){
   .sessions-head{flex-direction:column;gap:8px}
   .sessions-toggle{order:-1;margin-left:0}
+}
+
+/* 16. 素材库（素材库预览设计 L-10–L-44）：工具栏 + 缩略图 / 列表 / 明细三视图 + 预览弹层 */
+#pane-library{display:flex;flex-direction:column;gap:12px}
+.lib-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:2;background:var(--bg);padding:4px 0}
+.lib-toolbar-spacer{flex:1}
+.lib-views{display:inline-flex;gap:2px;padding:2px;border:1px solid var(--border);border-radius:var(--radius)}
+.lib-view-btn{width:32px;height:28px;padding:0;display:inline-grid;place-items:center}
+.lib-view-btn[aria-pressed=true]{background:var(--panel);color:var(--accent)}
+.lib-thumb-size{width:120px;accent-color:var(--accent)}
+.lib-thumb-size[hidden]{display:none}
+.lib-view{min-width:0}
+.lib-view[data-lib-mode=table]{overflow-x:auto}
+.lib-item{all:unset;box-sizing:border-box;display:block;width:100%;border-radius:var(--radius);cursor:default}
+.lib-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lib-thumb{position:relative;overflow:hidden;border-radius:var(--radius);background:var(--panel);display:grid;place-items:center;color:var(--muted)}
+.lib-thumb>img,.lib-thumb>video{width:100%;height:100%;object-fit:cover;display:block}
+.lib-thumb>.icon{width:32%;height:32%;max-width:48px;max-height:48px}
+.lib-thumb[data-kind=music]{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 35%,var(--panel)),var(--panel))}
+.lib-thumb.is-empty{background:transparent;border:1px dashed var(--border)}
+.lib-thumb-note{position:absolute;left:6px;right:6px;bottom:6px;font-size:12px;text-align:center;color:var(--muted)}
+.lib-badge{position:absolute;right:6px;bottom:6px;padding:1px 6px;border-radius:999px;background:#000a;color:#fff;font-size:11px;font-variant-numeric:tabular-nums}
+.lib-title{margin:0;overflow-wrap:anywhere}
+.lib-item .lib-title,.lib-item .lib-meta,.lib-row-text{display:block}
+
+/* 缩略图视图 */
+.lib-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--lib-thumb,200px),1fr));gap:12px}
+.lib-card{position:relative}
+.lib-card>.lib-item{padding:6px;transition:background 120ms ease,box-shadow 120ms ease}
+.lib-card>.lib-item:hover{background:color-mix(in srgb,var(--panel) 60%,transparent)}
+.lib-card.is-selected>.lib-item{background:var(--panel);box-shadow:inset 0 0 0 2px var(--accent)}
+.lib-card .lib-thumb{aspect-ratio:1}
+.lib-card .lib-title{margin-top:8px;font-size:13px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lib-card .lib-meta{margin:2px 0 0;font-size:12px}
+.lib-audition{position:absolute;top:12px;right:12px;width:32px;height:32px;padding:0;border-radius:999px;display:grid;place-items:center;background:#000a;color:#fff;opacity:.85;transition:opacity 120ms ease,transform 120ms ease}
+.lib-audition:hover,.lib-audition[aria-pressed=true]{opacity:1;transform:scale(1.06)}
+
+/* 列表视图 */
+.lib-rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.lib-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:6px 8px;border-radius:var(--radius);transition:background 120ms ease}
+.lib-row:hover{background:color-mix(in srgb,var(--panel) 60%,transparent)}
+.lib-row.is-selected,.lib-row.is-selected:hover{background:var(--panel);box-shadow:inset 0 0 0 2px var(--accent)}
+.lib-row>.lib-item{flex:1;min-width:0;display:flex;align-items:center;gap:12px}
+.lib-row .lib-thumb{width:48px;height:48px;flex:none}
+.lib-row .lib-thumb>.icon{width:20px;height:20px}
+.lib-row .lib-thumb-note{display:none}
+.lib-row-text{min-width:0}
+.lib-row .lib-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lib-row>.lib-actions{margin-top:0}
+.lib-row>.job-error{flex-basis:100%}
+
+/* 明细视图 */
+.lib-table{width:100%;border-collapse:collapse;font-size:13px}
+.lib-table th{text-align:left;font-weight:500;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--border);white-space:nowrap}
+.lib-sort{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px;border-radius:4px}
+.lib-sort:hover{color:var(--text)}
+.lib-sort:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lib-sort>.icon{width:14px;height:14px;order:1}
+.lib-table td{padding:4px 8px;border-bottom:1px solid color-mix(in srgb,var(--border) 50%,transparent);white-space:nowrap;font-variant-numeric:tabular-nums}
+.lib-table td:nth-child(2){white-space:normal;width:100%;max-width:0}
+.lib-table td:nth-child(2) .lib-title{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lib-table tr.is-selected>td{background:var(--panel)}
+.lib-table .lib-thumb{width:32px;height:32px}
+.lib-table .lib-thumb>.icon{width:16px;height:16px}
+.lib-table .lib-badge,.lib-table .lib-thumb-note{display:none}
+
+/* 预览弹层 */
+.lib-preview-overlay{animation:lib-fade 180ms ease both}
+.dialog.lib-preview{width:100%;max-width:min(1200px,calc(100vw - 48px));max-height:calc(100vh - 48px);overflow:hidden;display:grid;grid-template-columns:auto minmax(0,1fr) auto 300px;grid-template-rows:minmax(0,auto);align-items:center;gap:12px;outline:none;animation:lib-pop 180ms cubic-bezier(.2,.8,.2,1) both}
+.lib-preview-nav{width:40px;height:40px;padding:0;border-radius:999px;display:grid;place-items:center;color:var(--text);background:color-mix(in srgb,var(--bg) 85%,var(--text));border:1px solid var(--border);transition:background 120ms ease,opacity 120ms ease}
+.lib-preview-nav>.icon{width:24px;height:24px}
+.lib-preview-nav:hover:not(:disabled){background:color-mix(in srgb,var(--bg) 70%,var(--text))}
+.lib-preview-nav:disabled{opacity:.3;cursor:default}
+.lib-preview-stage{display:grid;place-items:center;min-height:240px;max-height:calc(100vh - 96px);min-width:0}
+.lib-preview-stage>img,.lib-preview-stage>video{max-width:100%;max-height:calc(100vh - 96px);object-fit:contain;border-radius:var(--radius)}
+.lib-preview-note{color:var(--muted)}
+.lib-preview-music{display:grid;gap:16px;justify-items:center;width:100%}
+.lib-preview-art{width:200px;height:200px;border-radius:var(--radius-card);display:grid;place-items:center;color:var(--muted);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 35%,var(--panel)),var(--panel))}
+.lib-preview-art>.icon{width:72px;height:72px}
+.lib-preview-music>audio{width:100%;max-width:420px}
+.lib-preview-info{align-self:stretch;display:flex;flex-direction:column;gap:6px;min-width:0;min-height:0;max-height:calc(100vh - 88px);overflow:auto;border-left:1px solid var(--border);padding-left:16px}
+.dialog .lib-preview-title{margin:0;font-size:15px;line-height:1.5;overflow-wrap:anywhere}
+.lib-preview-info>.lib-meta{margin:0}
+.lib-preview-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding:12px 0 2px;position:sticky;bottom:0;background:var(--panel)}
+@keyframes lib-fade{from{opacity:0}}
+@keyframes lib-pop{from{opacity:0;transform:scale(.97)}}
+@media (max-width:900px){
+  .dialog.lib-preview{grid-template-columns:auto minmax(0,1fr) auto;overflow:auto}
+  .dialog.lib-preview{grid-template-rows:none}
+  .lib-preview-actions{bottom:-20px;padding-bottom:20px} /* 对话框自带 20px 内边距：粘底栏要盖住它，否则文字会从缝里露出来 */
+  .lib-preview-info{grid-column:1/-1;max-height:none;overflow:visible;border-left:0;border-top:1px solid var(--border);padding:12px 0 0}
 }

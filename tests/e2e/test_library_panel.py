@@ -84,6 +84,7 @@ def test_history_refill_and_playback(page, tmp_path, audit_violations):
 
         page.locator("#tabs [data-tab='library']").click()
         library = page.locator("#pane-library")
+        library.locator("[data-lib-view-btn='list']").click()
         video_entry = library.locator("li").filter(has_text=VIDEO_PARAMS["prompt"])
         music_entry = library.locator("li").filter(has_text=MUSIC_PARAMS["caption"])
         expect(video_entry).to_be_visible()
@@ -106,8 +107,8 @@ def test_history_refill_and_playback(page, tmp_path, audit_violations):
         assert music.locator("[data-music-duration]").input_value() == MUSIC_PARAMS["duration"]
 
         page.locator("#tabs [data-tab='library']").click()
-        video_entry.click()
-        player = library.locator("video[controls]")
+        video_entry.locator("[data-lib-item]").dblclick()
+        player = page.locator(".lib-preview video[controls]")
         expect(player).to_be_visible()
         src = player.get_attribute("src")
         assert src and src.startswith("/api/outputs/") and src.endswith(".mp4")
@@ -135,6 +136,7 @@ def test_image_refill_returns_to_its_session_or_stays_put(page, tmp_path):
 
         page.locator("#tabs [data-tab='library']").click()
         library = page.locator("#pane-library")
+        library.locator("[data-lib-view-btn='list']").click()
         entry = library.locator("li").filter(has_text="回填用的橘猫")
         entry.get_by_role("button", name="回填参数").click()
         expect(image).to_be_visible()

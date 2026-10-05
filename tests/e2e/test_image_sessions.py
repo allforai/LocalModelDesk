@@ -323,12 +323,13 @@ def test_ac5_deleting_a_session_keeps_its_images_in_the_library(page, tmp_path):
 
         page.locator("#tabs [data-tab='library']").click()
         library = page.locator("#pane-library")
+        library.locator("[data-lib-view-btn='list']").click()
         entry = library.locator("li").filter(has_text="将被删除分组的灯塔")
         expect(entry).to_be_visible()
         entry.get_by_role("button", name="预览").click()
-        preview = library.locator("[data-lib-player] img")
+        preview = page.locator(".lib-preview [data-lib-preview-stage] img")
         expect(preview).to_have_attribute("src", f"/api/outputs/{output}")
-        page.wait_for_function("() => document.querySelector('[data-lib-player] img')?.naturalWidth > 0")
+        page.wait_for_function("() => document.querySelector('.lib-preview img')?.naturalWidth > 0")
         _check_library(page, "library-after-delete", harness)
 
 
@@ -338,8 +339,9 @@ def _check_library(page, state, harness):
     for name in ("wide", "narrow"):
         width, height = VIEWPORTS[name]
         page.set_viewport_size({"width": width, "height": height})
-        page.wait_for_function("() => document.querySelector('[data-lib-player] img')?.naturalWidth > 0")
-        page.locator("[data-lib-player]").scroll_into_view_if_needed()
+        page.wait_for_function("() => document.querySelector('.lib-preview img')?.naturalWidth > 0")
+        page.wait_for_function(
+            "() => [...document.querySelectorAll('#pane-library .lib-thumb img')].every((i) => i.complete && i.naturalWidth > 0)")
         checks = page.evaluate("""() => {
           const pane = document.querySelector('#pane-library');
           const visible = (el) => el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
@@ -350,9 +352,9 @@ def _check_library(page, state, harness):
             horizontal_scroll: scroller.scrollWidth > scroller.clientWidth,
             clipped_buttons: [...pane.querySelectorAll('button')].filter(visible)
               .filter((b) => b.scrollWidth > b.clientWidth + 1).map((b) => b.innerText),
-            preview_natural_width: pane.querySelector('[data-lib-player] img')?.naturalWidth ?? 0,
-            preview_gap: pane.querySelector('[data-lib-player]').getBoundingClientRect().top
-              - pane.querySelector('[data-lib-refresh]').getBoundingClientRect().bottom,
+            preview_natural_width: document.querySelector('.lib-preview img')?.naturalWidth ?? 0,
+            preview_in_view: (() => { const r = document.querySelector('.lib-preview img').getBoundingClientRect();
+              return r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth; })(),
           };
         }""")
         if shots:
@@ -370,7 +372,7 @@ def _check_library(page, state, harness):
         assert checks["blank_images"] == 0, (state, name)
         assert not checks["horizontal_scroll"], (state, name)
         assert checks["clipped_buttons"] == [], (state, name, checks["clipped_buttons"])
-        assert checks["preview_gap"] >= 8, ("preview sits directly under 刷新", state, name, checks["preview_gap"])
+        assert checks["preview_in_view"], ("preview image overflows the viewport", state, name)
 
 
 def test_deleting_a_session_while_it_generates_sends_the_image_to_the_library_only(page, tmp_path):
@@ -416,6 +418,7 @@ def test_library_refill_reopens_the_session_and_selects_that_attempt(page, tmp_p
         pane.locator("[data-image-prompt]").fill("")
 
         page.locator("#tabs [data-tab='library']").click()
+        page.locator("#pane-library [data-lib-view-btn='list']").click()
         page.locator("#pane-library li").filter(has_text="回填：第一张").get_by_role("button", name="回填参数").click()
         expect(pane).to_be_visible()
         expect(pane.locator(CURRENT_ITEM)).to_have_attribute("data-session-id", origin)
