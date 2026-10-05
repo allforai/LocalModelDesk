@@ -42,7 +42,7 @@
 - [L-21] 图片卡片：`<img loading="lazy">`，`object-fit: cover`。
 - [L-22] 视频卡片：进入视口（IntersectionObserver；环境没有时直接加载）才设 `src=<url>#t=0.1`、`preload="metadata"`、`muted`、`playsinline`；角标显示时长。鼠标悬停静音播放，移开暂停并回到 0.1 秒；同一时刻最多一个卡片在悬停播放。
 - [L-23] 音乐卡片：渐变底 + 音乐图标 + 时长。`file` 类（不认识的文件）：文件图标 + 文件名。
-- [L-24] 音乐卡片右下角小播放按钮就地试听：页面只有一个隐藏的 `<audio>`；按钮 `aria-pressed` 与图标（播放/暂停）反映状态，再点暂停；开别的试听、打开预览、点「刷新」重画、离开素材库页时都停掉并复位按钮；点按钮不触发选中/打开。
+- [L-24] 音乐卡片右上角小播放按钮就地试听（右下角是时长角标）：页面只有一个隐藏的 `<audio>`；按钮 `aria-pressed` 与图标（播放/暂停）反映状态，再点暂停；开别的试听、打开预览、点「刷新」重画、离开素材库页时都停掉并复位按钮；点按钮不触发选中/打开。
 - [L-25] 失败/取消（无成品）：灰卡 + 警示图标 + 状态字；`missing`：灰卡 + 「文件已不在」。
 - [L-26] 媒体加载失败（img/video `error`）：该卡片退回类型图标占位，不影响其他卡片。
 - [L-27] 列表：每行 48px 缩略图（规则同 L-21/L-22，但视频不悬停播放）+ 提示词 + 元信息行（类型 · 状态 · 时间 · 耗时 · 规格）+ 右侧动作（预览、在访达中显示、回填参数）；失败记录照旧显示错误块（F3）。
@@ -69,7 +69,7 @@
 - 新增 `desk/static/js/pure/library_view.js`（L-01–L-06）、`desk/static/js/widgets/library_preview.js`（L-40–L-44）；重写 `desk/static/js/panes/library.js`（工具栏、三视图、选中、键盘）；`index.html` 素材库 section 改结构；`app.css` 新增素材库一节；`icons.js` 按需补图标（grid、list、table、music）。
 - [L-50] `node --test`：纯函数（合并含 B-43、missing、筛选、排序缺值在后）；假 DOM：视图切换与记忆（含存储抛错）、单击选中/双击打开、键盘移动、预览 ←/→ 与到头置灰、回填调用 applyFill 并关闭、reveal 失败文案、试听按钮不冒泡。现有 `library_pane.test.js` 中依赖顶部播放区的断言改为断言预览弹层。
 - [L-51] e2e（Playwright）：三视图渲染、预览打开/切换/关闭、键盘导航、回填回到对应页面（沿用 `test_library_panel.py` 的回填用例）、切页停声（L-45）；在 1280 与 900 宽截图目检，截图目录由 `$LMD_LIBRARY_SHOTS` 指定。
-- [L-52] 迁移依赖 `[data-lib-player]` 的现有 e2e：`test_image_sessions.py`（约 329–355 行，含「预览与刷新按钮的间距」断言，改为断言弹层里图片的尺寸）、`test_image_flow.py`（约 466 行）、`test_library_panel.py::test_audio_player_matches_the_dark_palette`（改为断言弹层与试听的播放器配色）；`test_outputs_range.py` 只等 `[data-lib-list] li`，改为等 `[data-lib-item]`。
+- [L-52] 迁移依赖 `[data-lib-player]` 的现有 e2e：`test_image_sessions.py`（约 329–355 行，含「预览与刷新按钮的间距」断言，改为断言弹层里图片的尺寸）、`test_image_flow.py`（约 466 行）；（`test_library_panel.py::test_audio_player_matches_the_dark_palette` 只查音乐会话卡片的播放器，不受影响）；`test_outputs_range.py` 只等 `[data-lib-list] li`，改为等 `[data-lib-item]`。
 - [L-53] WebKit 核对：应用外壳是 WKWebView，而 e2e 默认跑 Chromium。视频首帧缩略图（`#t=0.1` + `preload="metadata"`）与悬停播放须另用 Playwright WebKit（本机已装 webkit-2272）跑一条用例确认能出首帧；不行则退回「视频图标 + 时长」占位并在本文件记下。
 - 完成标准：JS、Python、e2e 全绿；L-53 通过；截图目检三视图与弹层（台面只有深色一套配色）。
 
