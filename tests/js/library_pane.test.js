@@ -99,6 +99,7 @@ test("懒加载：有 IntersectionObserver 时视频进视口才设地址（Revi
     constructor(callback) { this.callback = callback; this.targets = []; FakeObserver.last = this; }
     observe(target) { this.targets.push(target); }
     unobserve(target) { this.targets = this.targets.filter((x) => x !== target); }
+    disconnect() { this.targets = []; }
     fire() { this.callback(this.targets.map((target) => ({ target, isIntersecting: true }))); }
   }
   globalThis.IntersectionObserver = FakeObserver;
@@ -180,6 +181,7 @@ test("明细视图：表头点一下按该列排序、再点反向，aria-sort �
   assert.deepEqual(rows(parts).map((r) => r.dataset.libKey),
     ["o:h3-1.mp4", "o:cat 1.png", "o:music3-1.wav", "h:2026-09-24T10:00:00Z:video:"]);
   assert.equal(header("bytes").parentNode.attrs["aria-sort"], "descending");
+  assert.ok(header("bytes").focused > 0, "排序重绘后焦点回到新的表头按钮");
   await header("bytes").click();
   assert.equal(header("bytes").parentNode.attrs["aria-sort"], "ascending");
   assert.deepEqual(rows(parts).map((r) => r.dataset.libKey).slice(0, 3), ["o:music3-1.wav", "o:cat 1.png", "o:h3-1.mp4"]);

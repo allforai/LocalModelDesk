@@ -178,7 +178,14 @@ export function openLibraryPreview(doc, { items, index = 0, serveOutput, onFill,
     onClose?.(at);
   }
 
-  overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
+  // 只有按下和松开都落在遮罩上才算「点遮罩」：在弹层里选文字、拖到遮罩外松手不能关。
+  let pressedOverlay = false;
+  overlay.addEventListener("mousedown", (event) => { pressedOverlay = event.target === overlay; });
+  overlay.addEventListener("click", (event) => {
+    const pressed = pressedOverlay;
+    pressedOverlay = false;
+    if (event.target === overlay && pressed) close();
+  });
   doc.addEventListener?.("keydown", onKey);
   doc.body.append(overlay);
   show(at);

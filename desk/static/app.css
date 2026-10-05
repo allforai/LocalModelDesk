@@ -392,9 +392,12 @@ audio.video-preview-media { width: min(360px, 100%); height: 36px; }
 /* 列表视图 */
 .lib-rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
 .lib-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:6px 8px;border-radius:var(--radius);transition:background 120ms ease}
-.lib-row.is-selected{background:var(--panel);box-shadow:inset 0 0 0 2px var(--accent)}
+.lib-row:hover{background:color-mix(in srgb,var(--panel) 60%,transparent)}
+.lib-row.is-selected,.lib-row.is-selected:hover{background:var(--panel);box-shadow:inset 0 0 0 2px var(--accent)}
 .lib-row>.lib-item{flex:1;min-width:0;display:flex;align-items:center;gap:12px}
 .lib-row .lib-thumb{width:48px;height:48px;flex:none}
+.lib-row .lib-thumb>.icon{width:20px;height:20px}
+.lib-row .lib-thumb-note{display:none}
 .lib-row-text{min-width:0}
 .lib-row .lib-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lib-row>.lib-actions{margin-top:0}
@@ -406,7 +409,7 @@ audio.video-preview-media { width: min(360px, 100%); height: 36px; }
 .lib-sort{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px;border-radius:4px}
 .lib-sort:hover{color:var(--text)}
 .lib-sort:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.lib-sort>.icon{width:14px;height:14px}
+.lib-sort>.icon{width:14px;height:14px;order:1}
 .lib-table td{padding:4px 8px;border-bottom:1px solid color-mix(in srgb,var(--border) 50%,transparent);white-space:nowrap;font-variant-numeric:tabular-nums}
 .lib-table td:nth-child(2){white-space:normal;width:100%;max-width:0}
 .lib-table td:nth-child(2) .lib-title{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -417,8 +420,11 @@ audio.video-preview-media { width: min(360px, 100%); height: 36px; }
 
 /* 预览弹层 */
 .lib-preview-overlay{animation:lib-fade 180ms ease both}
-.dialog.lib-preview{width:100%;max-width:min(1200px,calc(100vw - 48px));max-height:calc(100vh - 48px);display:grid;grid-template-columns:auto minmax(0,1fr) auto 300px;align-items:center;gap:12px;outline:none;animation:lib-pop 180ms cubic-bezier(.2,.8,.2,1) both}
-.lib-preview-nav{width:36px;height:36px;padding:0;border-radius:999px;display:grid;place-items:center}
+.dialog.lib-preview{width:100%;max-width:min(1200px,calc(100vw - 48px));max-height:calc(100vh - 48px);overflow:hidden;display:grid;grid-template-columns:auto minmax(0,1fr) auto 300px;grid-template-rows:minmax(0,auto);align-items:center;gap:12px;outline:none;animation:lib-pop 180ms cubic-bezier(.2,.8,.2,1) both}
+.lib-preview-nav{width:40px;height:40px;padding:0;border-radius:999px;display:grid;place-items:center;color:var(--text);background:color-mix(in srgb,var(--bg) 85%,var(--text));border:1px solid var(--border);transition:background 120ms ease,opacity 120ms ease}
+.lib-preview-nav>.icon{width:24px;height:24px}
+.lib-preview-nav:hover:not(:disabled){background:color-mix(in srgb,var(--bg) 70%,var(--text))}
+.lib-preview-nav:disabled{opacity:.3;cursor:default}
 .lib-preview-stage{display:grid;place-items:center;min-height:240px;max-height:calc(100vh - 96px);min-width:0}
 .lib-preview-stage>img,.lib-preview-stage>video{max-width:100%;max-height:calc(100vh - 96px);object-fit:contain;border-radius:var(--radius)}
 .lib-preview-note{color:var(--muted)}
@@ -426,13 +432,15 @@ audio.video-preview-media { width: min(360px, 100%); height: 36px; }
 .lib-preview-art{width:200px;height:200px;border-radius:var(--radius-card);display:grid;place-items:center;color:var(--muted);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 35%,var(--panel)),var(--panel))}
 .lib-preview-art>.icon{width:72px;height:72px}
 .lib-preview-music>audio{width:100%;max-width:420px}
-.lib-preview-info{align-self:stretch;display:flex;flex-direction:column;gap:6px;min-width:0;overflow:auto;border-left:1px solid var(--border);padding-left:16px}
+.lib-preview-info{align-self:stretch;display:flex;flex-direction:column;gap:6px;min-width:0;min-height:0;max-height:calc(100vh - 88px);overflow:auto;border-left:1px solid var(--border);padding-left:16px}
 .dialog .lib-preview-title{margin:0;font-size:15px;line-height:1.5;overflow-wrap:anywhere}
 .lib-preview-info>.lib-meta{margin:0}
-.lib-preview-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:12px}
+.lib-preview-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding:12px 0 2px;position:sticky;bottom:0;background:var(--panel)}
 @keyframes lib-fade{from{opacity:0}}
 @keyframes lib-pop{from{opacity:0;transform:scale(.97)}}
 @media (max-width:900px){
   .dialog.lib-preview{grid-template-columns:auto minmax(0,1fr) auto;overflow:auto}
-  .lib-preview-info{grid-column:1/-1;border-left:0;border-top:1px solid var(--border);padding:12px 0 0}
+  .dialog.lib-preview{grid-template-rows:none}
+  .lib-preview-actions{bottom:-20px;padding-bottom:20px} /* 对话框自带 20px 内边距：粘底栏要盖住它，否则文字会从缝里露出来 */
+  .lib-preview-info{grid-column:1/-1;max-height:none;overflow:visible;border-left:0;border-top:1px solid var(--border);padding:12px 0 0}
 }

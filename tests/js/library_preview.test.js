@@ -123,6 +123,18 @@ test("回填参数：关闭弹层再调 onFill；在访达中显示失败写进�
   const closed2 = [];
   open(doc2, { onClose: (i) => closed2.push(i) });
   const overlay = doc2.body.children[0];
+  await overlay.dispatch("mousedown", { target: overlay });
   await overlay.dispatch("click", { target: overlay });
   assert.deepEqual(closed2, [0]);
+  // 在弹层里按下（比如选提示词文字）、拖到遮罩上松开：不能关。
+  const doc3 = makeDoc();
+  const closed3 = [];
+  open(doc3, { onClose: (i) => closed3.push(i) });
+  const overlay3 = doc3.body.children[0];
+  await overlay3.dispatch("mousedown", { target: overlay3.children[0] });
+  await overlay3.dispatch("click", { target: overlay3 });
+  assert.deepEqual(closed3, []);
+  await overlay3.dispatch("mousedown", { target: overlay3 });
+  await overlay3.dispatch("click", { target: overlay3 });
+  assert.deepEqual(closed3, [0]);
 });

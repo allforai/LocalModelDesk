@@ -48,5 +48,10 @@ def _check_webkit(clip, tmp_path):
                 page.wait_for_function(
                     "() => { const v = document.querySelector('[data-lib-view] .lib-thumb video');"
                     " return v && v.readyState >= 2 && v.videoWidth > 0; }", timeout=15_000)
+                # L-53：悬停卡片要真的开始播放（WKWebView 的静音 + playsinline 自动播放）。
+                page.locator("[data-lib-view] .lib-card").first.hover()
+                page.wait_for_function(
+                    "() => { const v = document.querySelector('[data-lib-view] .lib-thumb video');"
+                    " return v && !v.paused; }", timeout=5_000)
         finally:
             browser.close()

@@ -44,6 +44,7 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)；ctx.stor
   let preview = null;
   let hovering = null;
   let audition = { key: null, button: null };
+  const sortButtons = new Map(); // 明细视图当前表头的排序按钮
 
   // L-24：整页只有一个试听播放器。
   const player = el("audio");
@@ -120,12 +121,12 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)；ctx.stor
   function applyThumb() {
     els.view.style?.setProperty?.("--lib-thumb", `${prefs.thumb}px`);
   }
-  function setPrefs(patch, { rerender = true } = {}) {
+  function setPrefs(patch, { rerender = true, focusSort = null } = {}) {
     prefs = normalizePrefs({ ...prefs, ...patch });
     writePrefs();
     syncToolbar();
     applyThumb();
-    if (rerender) render();
+    if (rerender) render({ focusSort });
   }
 
   async function refreshPane() {
@@ -140,12 +141,13 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)；ctx.stor
     }
   }
 
-  function render() {
+  function render({ focusSort = null } = {}) {
     stopAudition();
     stopHover();
     shown = visibleItems(items, prefs);
     if (selectedKey && !shown.some((item) => item.key === selectedKey)) selectedKey = null;
     els.view.dataset.libMode = prefs.view;
+    observer?.disconnect();
     rows = [];
     if (!shown.length) {
       els.view.replaceChildren(emptyNode());
@@ -153,6 +155,7 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)；ctx.stor
     }
     els.view.replaceChildren(prefs.view === "table" ? renderTable() : prefs.view === "list" ? renderList() : renderGrid());
     syncSelection();
+    if (focusSort) sortButtons.get(focusSort)?.focus?.(); // 表头重绘了，键盘焦点回到刚按的那一列
   }
 
   function emptyNode() {
@@ -251,6 +254,7 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)；ctx.stor
     const table = el("table", "lib-table");
     const head = el("thead");
     const headRow = el("tr");
+    sortButtons.clear();
     for (const [key, label] of COLUMNS) {
       const th = el("th");
       th.setAttribute("scope", "col");
@@ -260,6 +264,7 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)；ctx.stor
       } else {
         const b = text("button", "lib-sort", label);
         b.dataset.libSort = key;
+        sortButtons.set(key, b);
         if (prefs.sort.key === key) {
           th.setAttribute("aria-sort", prefs.sort.dir === "asc" ? "ascending" : "descending");
           addIcon(b, prefs.sort.dir === "asc" ? "chevron-up" : "chevron-down", doc);
@@ -268,7 +273,7 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)；ctx.stor
           const dir = prefs.sort.key === key
             ? (prefs.sort.dir === "desc" ? "asc" : "desc")
             : (ASCENDING_FIRST.has(key) ? "asc" : "desc");
-          setPrefs({ sort: { key, dir } });
+          setPrefs({ sort: { key, dir } }, { focusSort: key });
         });
         th.append(b);
       }
@@ -308,7 +313,9 @@ export function createLibraryPane(root, ctx) { // ctx.applyFill(plan)；ctx.stor
     if (!hasMedia(item)) {
       box.classList.add("is-empty");
       addIcon(box, item.status === "done" && !item.missing ? KIND_ICON[item.kind] ?? "file" : "alert", doc);
-      box.append(text("span", "lib-thumb-note", item.missing ? "文件已不在" : STATUS_LABEL[item.status] ?? item.status));
+      const note = item.missing ? "文件已不在" : STATUS_LABEL[item.status] ?? item.status;
+      box.title = note; // 列表 / 明细视图藏掉文字，悬停仍能看到
+      box.append(text("span", "lib-thumb-note", note));
       return box;
     }
     const src = api.serveOutput(item.output);

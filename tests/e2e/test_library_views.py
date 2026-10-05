@@ -102,3 +102,40 @@ def _silent_wav(seconds=1, rate=8000):
     data = b"\x00\x00" * frames
     return (b"RIFF" + struct.pack("<I", 36 + len(data)) + b"WAVEfmt " + struct.pack("<IHHIIHH", 16, 1, 1, rate, rate * 2, 2, 16)
             + b"data" + struct.pack("<I", len(data)) + data)
+
+
+def test_long_prompt_keeps_preview_buttons_in_view(page, tmp_path):
+    """F1：很长的提示词只让信息栏在弹层里滚动，关闭等按钮不能被推出视口。"""
+    from desk.testing.scripts import MediaScript, fast_media_steps
+
+    long_prompt = "一只橘猫坐在窗台上看着外面下雨，" * 50  # ~800 字
+    with launch_test_harness(tmp_path, model_states={"qwen-image": "present"}, image_runtime=True,
+                             media_script=MediaScript([fast_media_steps()])) as harness:
+        page.set_viewport_size({"width": 1280, "height": 800})
+        page.goto(harness.base_url + "#tab=image")
+        image = page.locator("#pane-image")
+        image.locator("[data-image-prompt]").fill(long_prompt)
+        start = image.locator("[data-image-start]")
+        expect(start).to_be_enabled()
+        start.click()
+        expect(image.locator(".attempt").first).to_have_attribute("data-attempt-status", "done", timeout=15_000)
+        page.locator("#tabs [data-tab='library']").click()
+        library = page.locator("#pane-library")
+        expect(library.locator("[data-lib-item]").first).to_be_visible()
+        library.locator("[data-lib-item]").first.dblclick()
+        dialog = page.locator(".lib-preview[role=dialog]")
+        expect(dialog).to_be_visible()
+        expect(dialog.locator("[data-lib-preview-stage] img")).to_be_visible()
+        _shot(page, "preview-long-prompt-1280")
+        for width, height in ((1280, 800), (900, 700)):
+            page.set_viewport_size({"width": width, "height": height})
+            close = dialog.get_by_role("button", name="关闭")
+            if width <= 900:
+                close.scroll_into_view_if_needed()
+                _shot(page, "preview-long-prompt-900")
+            box = close.bounding_box()
+            assert box and box["y"] >= 0 and box["y"] + box["height"] <= height, (width, box)
+            assert box["x"] >= 0 and box["x"] + box["width"] <= width, (width, box)
+        page.set_viewport_size({"width": 1280, "height": 800})
+        dialog.get_by_role("button", name="关闭").click()
+        expect(dialog).to_have_count(0)
