@@ -446,8 +446,12 @@ audio.video-preview-media { width: min(360px, 100%); height: 36px; }
 }
 
 /* 17. 视频画幅（视频画幅设计 Z-12/Z-14）：方向分段控件在输入区主行，自定义宽高跟在画幅下拉后面 */
+.video-materials{flex-direction:row;flex-wrap:wrap;align-items:center;column-gap:16px}
+.video-materials>*{flex:1 1 100%}
+.video-materials>.video-mode,.video-materials>.video-orientation{flex:0 0 auto}
 .video-orientation{display:inline-flex;align-items:center}
-.video-custom-size{display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+.video-custom-size{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:var(--muted)}
+.video-custom-size::before{content:"宽 × 高（32 的倍数）";flex:0 0 100%;color:inherit;font-size:inherit}
 .video-custom-size[hidden]{display:none}
-.video-custom-size input{width:84px}
+.image-params .video-custom-size input{flex:1 1 0;min-width:0;width:auto}
 [data-video-shape-note]:empty{display:none}
