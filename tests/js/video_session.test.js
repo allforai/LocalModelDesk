@@ -12,9 +12,24 @@ test("readVideoParams", () => {
   assert.throws(() => v.readVideoParams({ prompt: "p", size: "512x288", frames: "49", steps: "3" }), (e) => e.advanced && /步数须为 4–50 的整数/.test(e.message));
   assert.throws(() => v.readVideoParams({ prompt: "p", size: "512x288", frames: "49", steps: "16", seed: "x" }), /种子须为 0–4294967295 的整数/);
   assert.throws(() => v.readVideoParams({ prompt: "p", size: "999x999", frames: "49", steps: "16" }),
-    (e) => e.advanced && /高级参数里的数值有误：画幅无效/.test(e.message));
+    (e) => e.advanced && e.message === "高级参数里的数值有误：宽和高须为 32 的倍数");
   assert.throws(() => v.readVideoParams({ prompt: "p", size: "512x288", frames: "50", steps: "16" }),
     (e) => e.advanced && /高级参数里的数值有误：视频时长无效/.test(e.message));
+});
+
+test("画幅：档位值或自定义宽高，按 H3 规则校验（Z-01/02/14）", () => {
+  const base = { prompt: "p", frames: "49", steps: "16" };
+  assert.deepEqual(v.readVideoParams({ ...base, size: "448x768" }), { prompt: "p", width: 448, height: 768, frames: 49, steps: 16 });
+  assert.deepEqual(v.readVideoParams({ ...base, size: "custom", width: "448", height: " 800 " }),
+    { prompt: "p", width: 448, height: 800, frames: 49, steps: 16 });
+  const refused = (values, text) => assert.throws(() => v.readVideoParams({ ...base, ...values }),
+    (e) => e.advanced && e.message === `高级参数里的数值有误：${text}`);
+  refused({ size: "abc" }, "画幅无效");
+  refused({ size: "custom", width: "", height: "800" }, "宽和高须为整数");
+  refused({ size: "custom", width: "448.5", height: "800" }, "宽和高须为整数");
+  refused({ size: "custom", width: "450", height: "800" }, "宽和高须为 32 的倍数");
+  refused({ size: "custom", width: "224", height: "800" }, "每边须在 256–1344 之间");
+  refused({ size: "custom", width: "1344", height: "1024" }, "面积不能超过 768×1344（约 103 万像素）");
 });
 
 test("spec line and duration label", () => {

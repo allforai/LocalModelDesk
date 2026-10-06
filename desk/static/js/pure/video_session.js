@@ -1,12 +1,13 @@
 // 视频会话的纯逻辑（设计 docs/superpowers/specs/2026-09-27-video-sessions-design.md，第 3a 块）。零 DOM、零 fetch。
 import { ParamsError, SEED_MAX, attemptLabel, positionOf, randomSeed, sessionCardTitle } from "./media_session.js";
+import { CUSTOM, parseSize, sizeError } from "./video_size.js";
 
 export const SIZES = [["512x288", "草稿 512×288"], ["768x448", "标准 768×448"], ["1024x576", "清晰 1024×576"]];
 export const DURATIONS = [[49, "约 2 秒（快速）"], [73, "约 3 秒"], [124, "约 5 秒（常用）"], [192, "约 8 秒"], [243, "约 10 秒"], [362, "约 15 秒（最长）"]];
 export const MODES = { text: "文生", image: "图生", reference: "参考", music_ref: "配乐参考" };
 export const CANNOT_CONTINUE = "这一段没有生成好，不能接着往下生";
 
-const DEFAULT_SIZE = SIZES[0][0];
+const DEFAULT_SIZE = "512x288";
 const DEFAULT_FRAMES = 124;
 const DEFAULT_STEPS = 16;
 
@@ -14,9 +15,14 @@ export function readVideoParams(values) {
   const prompt = String(values?.prompt ?? "");
   if (!prompt.trim()) throw new ParamsError("请填写视频提示词");
   const advanced = (reason) => new ParamsError(`高级参数里的数值有误：${reason}`, { advanced: true });
+  // 档位值「宽x高」或自定义（Z-14）：自定义读宽、高两个输入；都按 H3 画布规则校验（Z-01/02）。
   const size = String(values?.size ?? "");
-  if (!SIZES.some(([v]) => v === size)) throw advanced("画幅无效");
-  const [width, height] = size.split("x").map(Number);
+  const number = (value) => { const text = String(value ?? "").trim(); return text ? Number(text) : Number.NaN; };
+  const dims = size === CUSTOM ? { width: number(values?.width), height: number(values?.height) } : parseSize(size);
+  if (!dims) throw advanced("画幅无效");
+  const sizeProblem = sizeError(dims.width, dims.height);
+  if (sizeProblem) throw advanced(sizeProblem);
+  const { width, height } = dims;
   const frames = Number(String(values?.frames ?? "").trim());
   if (!DURATIONS.some(([v]) => v === frames)) throw advanced("视频时长无效");
   const steps = Number(String(values?.steps ?? "").trim());
