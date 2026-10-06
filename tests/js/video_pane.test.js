@@ -1040,3 +1040,131 @@ test("提醒按面积与 H3 预算；自定义尺寸也算（Z-40/41）", async 
     assert.equal(parts["cost-note"].textContent, "");
   });
 });
+
+// 图片会话 img2：一张已生成的图，宽高由参数给（Z-22 从那次生成的参数里读）。
+function sizedImage(backend, width, height) {
+  serveImages(backend, [{ id: "img2", title: "图", attempts: [
+    { id: "s1", status: "done", output: "s1.png", params: { prompt: "图", width, height } }] }]);
+}
+const pickSized = async () => ({ ref: { kind: "image", session_id: "img2", attempt_id: "s1" }, title: "图", index: 0 });
+
+test("上传方图做首帧：方向切到方形、档位不变并提示；手动改回后同一张首帧不再切（Z-21/23）", async () => {
+  await withBackend("video", async () => {
+    const { parts, pane, ready } = makeVideoPane({ imageSize: async () => ({ width: 1024, height: 1024 }) }); ready();
+    await pane.refresh();
+    parts.mode.value = "image"; await parts.mode.dispatch("change");
+    parts.size.value = "768x448"; await parts.size.dispatch("change");
+    await choose(parts["first-upload"], png("square.png"));
+    await flush();
+    assert.equal(checkedOrientation(parts), "方形");
+    assert.equal(parts.size.value, "576x576");
+    assert.equal(parts["shape-note"].textContent, "已按首帧切到方形");
+    await orientationButtons(parts)[0].click();
+    await flush();
+    assert.equal(checkedOrientation(parts), "横屏");
+    assert.equal(parts.size.value, "768x448");
+    assert.equal(parts["shape-note"].textContent, "");
+  });
+});
+
+test("首帧尺寸迟到：用户已手动改方向就不再切（Review Focus 3）", async () => {
+  await withBackend("video", async () => {
+    let resolveSize;
+    const { parts, pane, ready } = makeVideoPane({ imageSize: () => new Promise((resolve) => { resolveSize = resolve; }) }); ready();
+    await pane.refresh();
+    parts.mode.value = "image"; await parts.mode.dispatch("change");
+    await choose(parts["first-upload"], png("tall.png"));
+    await orientationButtons(parts)[2].click();
+    resolveSize({ width: 720, height: 1280 });
+    await flush();
+    assert.equal(checkedOrientation(parts), "方形");
+    assert.equal(parts["shape-note"].textContent, "");
+  });
+});
+
+test("首帧尺寸迟到：已经换了别的首帧，旧结果不生效（Review Focus 3）", async () => {
+  await withBackend("video", async () => {
+    const pending = [];
+    const { parts, pane, ready } = makeVideoPane({ imageSize: () => new Promise((resolve) => pending.push(resolve)) }); ready();
+    await pane.refresh();
+    parts.mode.value = "image"; await parts.mode.dispatch("change");
+    await choose(parts["first-upload"], png("tall.png"));
+    await choose(parts["first-upload"], png("wide.png"));
+    pending[0]({ width: 720, height: 1280 });
+    await flush();
+    assert.equal(checkedOrientation(parts), "横屏", "第一张的尺寸迟到，不能用");
+    pending[1]({ width: 1280, height: 720 });
+    await flush();
+    assert.equal(checkedOrientation(parts), "横屏");
+    assert.equal(parts["shape-note"].textContent, "");
+  });
+});
+
+test("自定义尺寸时不自动改，只提示会拉伸变形（Z-24）", async () => {
+  await withBackend("video", async () => {
+    const { parts, pane, ready } = makeVideoPane({ imageSize: async () => ({ width: 720, height: 1280 }) }); ready();
+    await pane.refresh();
+    parts.mode.value = "image"; await parts.mode.dispatch("change");
+    parts.size.value = "custom"; await parts.size.dispatch("change");
+    await choose(parts["first-upload"], png("tall.png"));
+    await flush();
+    assert.equal(parts.size.value, "custom");
+    assert.equal(parts["shape-note"].textContent, "首帧是竖屏，画幅是横屏，画面会被拉伸变形");
+  });
+});
+
+test("读不到首帧尺寸：不切也不提示（Z-22）", async () => {
+  await withBackend("video", async () => {
+    const { parts, pane, ready } = makeVideoPane({ imageSize: async () => null }); ready();
+    await pane.refresh();
+    parts.mode.value = "image"; await parts.mode.dispatch("change");
+    await choose(parts["first-upload"], png("broken.png"));
+    await flush();
+    assert.equal(checkedOrientation(parts), "横屏");
+    assert.equal(parts["shape-note"].textContent, "");
+  });
+});
+
+test("从图片会话选竖图做首帧：按那次生成的宽高切到竖屏（Z-21/22）", async () => {
+  await withBackend("video", async (backend) => {
+    sizedImage(backend, 768, 1344);
+    const { parts, pane, ready } = makeVideoPane({ pickImage: pickSized }); ready();
+    await pane.refresh();
+    parts.mode.value = "image"; await parts.mode.dispatch("change");
+    await parts["first-pick"].click();
+    await flush(); await flush();
+    assert.equal(checkedOrientation(parts), "竖屏");
+    assert.equal(parts.size.value, "288x512");
+    assert.equal(parts["shape-note"].textContent, "已按首帧切到竖屏");
+  });
+});
+
+test("在这段基础上改：恢复保存的尺寸，带回的首帧不触发跟随（Z-26，Review Focus 1）", async () => {
+  await withBackend("video", async (backend) => {
+    backend.addSession("片", [done("a1", {
+      params: { prompt: "p", mode: "image", width: 512, height: 288, frames: 73, steps: 16, seed: 3 },
+      refs: { first_frame: { kind: "image", session_id: "img2", attempt_id: "s1" } } })]);
+    sizedImage(backend, 1024, 1024);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await button(cards(parts)[0], "在这段基础上改").click();
+    await flush(); await flush();
+    assert.equal(checkedOrientation(parts), "横屏");
+    assert.equal(parts.size.value, "512x288");
+    assert.equal(parts["shape-note"].textContent, "");
+  });
+});
+
+test("接着往下生的首帧（上一段末帧）不触发跟随（Z-25）", async () => {
+  await withBackend("video", async (backend) => {
+    backend.addSession("片", [done("a1")]);
+    let asked = 0;
+    const { parts, pane, ready } = makeVideoPane({ imageSize: async () => { asked += 1; return { width: 1, height: 1 }; } }); ready();
+    await pane.refresh();
+    await button(cards(parts)[0], "接着往下生").click();
+    await flush();
+    assert.equal(asked, 0);
+    assert.equal(checkedOrientation(parts), "横屏");
+    assert.equal(parts["shape-note"].textContent, "");
+  });
+});

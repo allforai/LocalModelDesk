@@ -9,7 +9,7 @@ import { createPromptAssist } from "../widgets/prompt_assist.js";
 import { createSessionPane } from "./media_session.js";
 import { ParamsError, autoTitle, randomSeed, sessionTitle } from "../pure/media_session.js";
 import { hasImage } from "../pure/image_session.js";
-import { CUSTOM, ORIENTATIONS, matchSize, parseSize, presetsFor, snap32, tierOf, videoCostNote } from "../pure/video_size.js";
+import { CUSTOM, ORIENTATIONS, frameFollow, matchSize, parseSize, presetsFor, shapeOf, snap32, tierOf, videoCostNote } from "../pure/video_size.js";
 import { renderSegmentSwitch } from "../widgets/segment_switch.js";
 import {
   DURATIONS, canContinue, chipText, firstFrameLabel, nextFields, readVideoParams, refImageOf, refineFields, sourceOf,
@@ -43,6 +43,16 @@ function closestFrames(frames) {
   const target = Number(frames);
   return DURATIONS.reduce((best, item) => (Math.abs(item[0] - target) < Math.abs(best[0] - target) ? item : best))[0];
 }
+// Z-22：本地选的首帧在浏览器里解码读尺寸；解码不了返回 null（不跟随）。
+async function decodeImageSize(file) {
+  try {
+    if (typeof globalThis.createImageBitmap !== "function") return null;
+    const bitmap = await globalThis.createImageBitmap(file);
+    const size = { width: bitmap.width, height: bitmap.height };
+    bitmap.close?.();
+    return size;
+  } catch { return null; }
+}
 
 export function createVideoPane(root, ctx = {}) {
   const q = (name) => root.querySelector(`[data-video-${name}]`);
@@ -62,6 +72,7 @@ export function createVideoPane(root, ctx = {}) {
   };
   const doc = root.ownerDocument;
   const drawSeed = ctx.randomSeed ?? randomSeed;
+  const readFrameSize = ctx.imageSize ?? decodeImageSize;
   const pickFrom = (kind, title, emptyText) => openMediaPicker(doc, {
     kind, title, emptyText,
     listSessions: () => api.listMediaSessions(kind),
@@ -81,10 +92,23 @@ export function createVideoPane(root, ctx = {}) {
   // ---------- 画幅（视频画幅设计 Z-10–Z-31）：方向 × 档位或自定义 ----------
   let orientation = "landscape";
   let lastPreset = presetsFor("landscape")[0].value; // 最近选中的档位：选「自定义…」时框里的初值（Z-14）
+  // Z-23/Z-26：这个首帧来源的画幅由用户（手动改方向）或回填（保存的尺寸）定了，迟到的首帧尺寸不再改它。
+  let pinnedFor = null;
+  function setShapeNote(text) { if (els.shapeNote) els.shapeNote.textContent = text; }
+  // Z-21/24/25：首帧尺寸读回来后，仍是当前「图生」首帧、且没被定住，才按形状切方向或提示。
+  function followFirstFrame(source, frame) {
+    if (first !== source || source?.type === "continue" || pinnedFor === source || els.mode.value !== "image") return;
+    const custom = els.size.value === CUSTOM;
+    const size = currentSize();
+    const current = { orientation: custom ? shapeOf(size.width, size.height) : orientation, custom };
+    const result = frameFollow(current, frame);
+    if (result.orientation) chooseOrientation(result.orientation);
+    setShapeNote(result.note);
+  }
   const orientationIndex = (value) => ORIENTATIONS.findIndex((o) => o.value === value);
   const orientationSwitch = els.orientation ? renderSegmentSwitch(doc, {
     labels: ORIENTATIONS.map((o) => o.label), checked: 0, ariaLabel: "画幅方向",
-    onChange: (index) => chooseOrientation(ORIENTATIONS[index].value),
+    onChange: (index) => { pinnedFor = first; setShapeNote(""); chooseOrientation(ORIENTATIONS[index].value); },
   }) : null;
   if (orientationSwitch) els.orientation.append(orientationSwitch);
 
@@ -199,7 +223,9 @@ export function createVideoPane(root, ctx = {}) {
     if (session === undefined) return undefined;
     const attempts = session?.attempts ?? [];
     const index = attempts.findIndex((a) => a.id === imageRef.attempt_id);
-    return index >= 0 && hasImage(attempts[index]) ? { output: attempts[index].output, title: sessionTitle(session), index } : null;
+    const attempt = attempts[index];
+    return index >= 0 && hasImage(attempt)
+      ? { output: attempt.output, title: sessionTitle(session), index, width: attempt.params?.width, height: attempt.params?.height } : null;
   }
   // 引用的那首歌：仍是 done 且有可用文件才算数（S-34）；返回 {file, label} | null（已不在） | undefined（读取失败）。
   async function lookupSong(songRef) {
@@ -298,9 +324,13 @@ export function createVideoPane(root, ctx = {}) {
   function setFirst(source) {
     first = source;
     firstGone = false;
+    setShapeNote("");
     if (source?.type === "upload" && source.file) setPreview(els.firstPreview, "img", fileUrl(source.file), { name: source.name, objectUrl: true });
     else setPreview(els.firstPreview, "img", null);
-    if (source?.type === "ref") checkImageRef(source, () => first, () => { first = null; firstGone = true; }, els.firstPreview);
+    if (source?.type === "ref") {
+      checkImageRef(source, () => first, () => { first = null; firstGone = true; }, els.firstPreview,
+        (found) => followFirstFrame(source, { width: found.width, height: found.height }));
+    }
     renderInputs();
   }
   function setRefImage(source) {
@@ -316,7 +346,7 @@ export function createVideoPane(root, ctx = {}) {
   // 图片会话引用（首帧或参考图）：取到那张图就补标题、序号与预览；已不在就清空该来源并说明（V-40、S-34）；
   // 读取失败（未知）保留当前选择，只在页面错误行提示稍后重试（issue #19）。
   // current() 取槽里当前来源（这期间换过就作罢），gone() 清空并标记失效，box 是预览框。
-  async function checkImageRef(source, current, gone, box) {
+  async function checkImageRef(source, current, gone, box, onFound) {
     const found = await lookupImage(source.ref);
     if (current() !== source) return;
     if (found === undefined) { pane.setError("暂时读不到图片会话，请稍后重试"); return; }
@@ -324,6 +354,7 @@ export function createVideoPane(root, ctx = {}) {
     source.title = found.title; source.index = found.index;
     setPreview(box, "img", api.serveOutput(found.output), { name: found.title });
     renderInputs();
+    onFound?.(found);
   }
   // 歌 {ref, label?}：取到那首歌就补风格描述摘要与试听；已不在就清空并说明「引用的歌已不在」（S-34）。
   function setSong(value) {
@@ -355,7 +386,11 @@ export function createVideoPane(root, ctx = {}) {
 
   // 三个上传入口：选中即预览（32 MB 与类型检查）；拖到所在行上的文件同样处理（issue #15）。
   const slots = [
-    { input: els.firstUpload, tag: "img", take: (file) => setFirst({ type: "upload", file, name: file.name }) },
+    { input: els.firstUpload, tag: "img", take: (file) => {
+      const source = { type: "upload", file, name: file.name };
+      setFirst(source);
+      readFrameSize(file).then((frame) => followFirstFrame(source, frame));
+    } },
     { input: els.last, tag: "img", take: (file) => setLast({ file, name: file.name }) },
     { input: els.source, tag: "video", take: (file) => setRefVideo({ file, name: file.name }) },
     { input: els.refImageUpload, tag: "img", take: (file) => setRefImage({ type: "upload", file, name: file.name }) },
@@ -604,6 +639,7 @@ export function createVideoPane(root, ctx = {}) {
     setRefImage(fields.refImageSource ?? null);
     setSong(fields.song ? { ref: fields.song } : null);
     setFirst(nextFirst);
+    pinnedFor = nextFirst; // Z-26：回填恢复的是当时保存的尺寸，带回的首帧不改它
     ref = fields.seed == null && nextFirst?.type !== "continue" ? null : nextRef;
     updateCost();
     syncChip();
