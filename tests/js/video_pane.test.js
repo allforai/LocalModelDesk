@@ -1038,6 +1038,10 @@ test("提醒按面积与 H3 预算；自定义尺寸也算（Z-40/41）", async 
     parts.height.value = "1344"; await parts.height.dispatch("change");
     parts.frames.value = "49"; await parts.frames.dispatch("change");
     assert.equal(parts["cost-note"].textContent, "");
+    parts.width.value = "544"; await parts.width.dispatch("change");
+    parts.height.value = "576"; await parts.height.dispatch("change");
+    parts.frames.value = "243"; await parts.frames.dispatch("change");
+    assert.ok(parts["cost-note"].textContent.includes("约需 41 GiB"), parts["cost-note"].textContent);
   });
 });
 
@@ -1168,3 +1172,82 @@ test("接着往下生的首帧（上一段末帧）不触发跟随（Z-25）", a
     assert.equal(parts["shape-note"].textContent, "");
   });
 });
+
+async function setCustom(parts, width, height) {
+  parts.width.value = String(width); await parts.width.dispatch("change");
+  parts.height.value = String(height); await parts.height.dispatch("change");
+}
+const STRETCH = "首帧是竖屏，画幅是横屏，画面会被拉伸变形";
+
+test("自定义宽高改到与首帧同形：拉伸提示消失，改回来又出现（F2）", async () => {
+  await withBackend("video", async () => {
+    const { parts, pane, ready } = makeVideoPane({ imageSize: async () => ({ width: 720, height: 1280 }) }); ready();
+    await pane.refresh();
+    parts.mode.value = "image"; await parts.mode.dispatch("change");
+    parts.size.value = "custom"; await parts.size.dispatch("change");
+    await choose(parts["first-upload"], png("tall.png"));
+    await flush();
+    assert.equal(parts["shape-note"].textContent, STRETCH);
+    await setCustom(parts, 448, 800);
+    assert.equal(parts["shape-note"].textContent, "");
+    await setCustom(parts, 800, 448);
+    assert.equal(parts["shape-note"].textContent, STRETCH);
+  });
+});
+
+test("首帧先到、之后才选自定义并填横向宽高：出现拉伸提示（F2，Z-24）", async () => {
+  await withBackend("video", async () => {
+    const { parts, pane, ready } = makeVideoPane({ imageSize: async () => ({ width: 720, height: 1280 }) }); ready();
+    await pane.refresh();
+    parts.mode.value = "image"; await parts.mode.dispatch("change");
+    await choose(parts["first-upload"], png("tall.png"));
+    await flush();
+    assert.equal(checkedOrientation(parts), "竖屏");
+    parts.size.value = "custom"; await parts.size.dispatch("change");
+    await setCustom(parts, 800, 448);
+    assert.equal(parts["shape-note"].textContent, STRETCH);
+  });
+});
+
+test("自定义有一边留空：不提示（F2）", async () => {
+  await withBackend("video", async () => {
+    const { parts, pane, ready } = makeVideoPane({ imageSize: async () => ({ width: 720, height: 1280 }) }); ready();
+    await pane.refresh();
+    parts.mode.value = "image"; await parts.mode.dispatch("change");
+    parts.size.value = "custom"; await parts.size.dispatch("change");
+    await choose(parts["first-upload"], png("tall.png"));
+    await flush();
+    parts.height.value = ""; await parts.height.dispatch("change");
+    assert.equal(parts["shape-note"].textContent, "");
+  });
+});
+
+test("「已按首帧切到…」之后用户换档位：提示清掉（F2，Z-23）", async () => {
+  await withBackend("video", async () => {
+    const { parts, pane, ready } = makeVideoPane({ imageSize: async () => ({ width: 1024, height: 1024 }) }); ready();
+    await pane.refresh();
+    parts.mode.value = "image"; await parts.mode.dispatch("change");
+    await choose(parts["first-upload"], png("square.png"));
+    await flush();
+    assert.equal(parts["shape-note"].textContent, "已按首帧切到方形");
+    parts.size.value = sizeOptions(parts)[0]; await parts.size.dispatch("change");
+    assert.equal(parts["shape-note"].textContent, "");
+  });
+});
+
+test("自定义宽高改动后方向高亮跟着形状走，档位仍是自定义（F3）", async () => {
+  await withBackend("video", async () => {
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await orientationButtons(parts)[1].click();
+    assert.equal(checkedOrientation(parts), "竖屏");
+    parts.size.value = "custom"; await parts.size.dispatch("change");
+    await setCustom(parts, 1024, 576);
+    assert.equal(checkedOrientation(parts), "横屏");
+    assert.equal(parts.size.value, "custom");
+    await orientationButtons(parts)[1].click();
+    assert.equal(checkedOrientation(parts), "竖屏");
+    assert.equal(parts.size.value, presetsTier1(parts));
+  });
+});
+function presetsTier1(parts) { return sizeOptions(parts)[1]; }

@@ -104,6 +104,6 @@ export function videoCostNote(width, height, frames) {
     notes.push("大画幅加 10 秒以上会非常慢：实测 1024×576 曾 20 分钟只走完 2/16 步，可能要一小时以上。建议先用草稿画幅试效果。");
   }
   const need = estimateGiB(width, height, frames);
-  if (need > H3_BUDGET_GIB) notes.push(`按实测外推约需 ${need.toFixed(0)} GiB，超过视频生成的 ${H3_BUDGET_GIB} GiB 上限，可能中途失败。`);
+  if (need > H3_BUDGET_GIB) notes.push(`按实测外推约需 ${Math.ceil(need)} GiB，超过视频生成的 ${H3_BUDGET_GIB} GiB 上限，可能中途失败。`);
   return notes.join("");
 }

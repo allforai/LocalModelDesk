@@ -97,6 +97,7 @@ export function createVideoPane(root, ctx = {}) {
   function setShapeNote(text) { if (els.shapeNote) els.shapeNote.textContent = text; }
   // Z-21/24/25：首帧尺寸读回来后，仍是当前「图生」首帧、且没被定住，才按形状切方向或提示。
   function followFirstFrame(source, frame) {
+    if (first === source) source.frame = frame; // 记下首帧尺寸：之后改自定义宽高时据此重算提示
     if (first !== source || source?.type === "continue" || pinnedFor === source || els.mode.value !== "image") return;
     const custom = els.size.value === CUSTOM;
     const size = currentSize();
@@ -104,6 +105,17 @@ export function createVideoPane(root, ctx = {}) {
     const result = frameFollow(current, frame);
     if (result.orientation) chooseOrientation(result.orientation);
     setShapeNote(result.note);
+  }
+  // 用户改了画幅（选档位、改自定义宽高）后重算形状提示：只有自定义且两边都读得出、
+  // 又与已知首帧形状不同才提示拉伸；档位下不提示（也不自动切方向，只有新首帧到达才跟随，Z-21/23）。
+  function refreshShapeNote() {
+    const frame = first?.type === "continue" ? null : first?.frame;
+    const { width, height } = currentSize();
+    if (!frame || els.mode.value !== "image" || els.size.value !== CUSTOM || !Number.isFinite(width) || !Number.isFinite(height)) {
+      setShapeNote("");
+      return;
+    }
+    setShapeNote(frameFollow({ orientation: shapeOf(width, height), custom: true }, frame).note);
   }
   const orientationIndex = (value) => ORIENTATIONS.findIndex((o) => o.value === value);
   const orientationSwitch = els.orientation ? renderSegmentSwitch(doc, {
@@ -152,8 +164,8 @@ export function createVideoPane(root, ctx = {}) {
     orientationSwitch?.setChecked(orientationIndex(orientation));
     renderSizeOptions();
     if (match.size === CUSTOM) {
-      els.width.value = String(parsed.width);
-      els.height.value = String(parsed.height);
+      if (els.width) els.width.value = String(parsed.width);
+      if (els.height) els.height.value = String(parsed.height);
     }
     setSizeValue(match.size);
     updateCost();
@@ -389,7 +401,7 @@ export function createVideoPane(root, ctx = {}) {
     { input: els.firstUpload, tag: "img", take: (file) => {
       const source = { type: "upload", file, name: file.name };
       setFirst(source);
-      readFrameSize(file).then((frame) => followFirstFrame(source, frame));
+      readFrameSize(file).then((frame) => followFirstFrame(source, frame)).catch(() => {});
     } },
     { input: els.last, tag: "img", take: (file) => setLast({ file, name: file.name }) },
     { input: els.source, tag: "video", take: (file) => setRefVideo({ file, name: file.name }) },
@@ -775,13 +787,23 @@ export function createVideoPane(root, ctx = {}) {
     }
     setSizeValue(els.size.value);
     updateCost();
+    refreshShapeNote();
   });
   // Z-14：自定义宽高改完（数字框失焦时才发 change）取最近的 32 的倍数；清空就留空，提交时拦下。
   for (const input of [els.width, els.height]) {
     input?.addEventListener("change", () => {
       const snapped = snap32(input.value);
       if (Number.isFinite(snapped)) input.value = String(snapped);
+      // F3：方向高亮跟着自定义宽高的形状走；档位仍是「自定义」，下拉里的档位换成该方向的。
+      const { width, height } = currentSize();
+      if (els.size.value === CUSTOM && Number.isFinite(width) && Number.isFinite(height)) {
+        orientation = shapeOf(width, height);
+        orientationSwitch?.setChecked(orientationIndex(orientation));
+        renderSizeOptions();
+        setSizeValue(CUSTOM);
+      }
       updateCost();
+      refreshShapeNote();
     });
   }
   els.frames.addEventListener("change", updateCost);

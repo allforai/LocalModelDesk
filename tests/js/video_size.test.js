@@ -72,6 +72,7 @@ test("提醒：按面积判断很慢，按公式外推超 40 GiB 提醒（Z-40/4
   assert.match(slow, /^大画幅加 10 秒以上会非常慢：实测 1024×576 曾 20 分钟只走完 2\/16 步/);
   assert.match(slow, /超过视频生成的 40 GiB 上限，可能中途失败。$/);
   assert.equal(videoCostNote(1024, 576, 192), "按实测外推约需 48 GiB，超过视频生成的 40 GiB 上限，可能中途失败。");
+  assert.equal(videoCostNote(544, 576, 243), "按实测外推约需 41 GiB，超过视频生成的 40 GiB 上限，可能中途失败。", "40.35 不能显示成「40 超过 40」");
   assert.equal(videoCostNote(576, 1024, 192), videoCostNote(1024, 576, 192), "按面积，不分横竖");
   assert.equal(videoCostNote(768, 1344, 49), "");
   assert.equal(videoCostNote(768, 448, 362), "按实测外推约需 50 GiB，超过视频生成的 40 GiB 上限，可能中途失败。");
