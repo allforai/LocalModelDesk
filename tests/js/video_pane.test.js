@@ -17,7 +17,7 @@ globalThis.FileReader ??= class {
 
 // 按 index.html 里 #pane-video 的 data 名建元素（V-21、V-22）。
 function makeVideoPane(ctx = {}) {
-  const tags = { mode: "select", prompt: "textarea", size: "select", frames: "select", steps: "input", seed: "input", start: "button",
+  const tags = { orientation: "div", custom: "span", width: "input", height: "input", mode: "select", prompt: "textarea", size: "select", frames: "select", steps: "input", seed: "input", start: "button",
     advanced: "details", audio: "input", "audio-row": "label", "first-upload": "input", "first-pick": "button", last: "input",
     "clear-last": "button", source: "input", "chip-clear": "button", chip: "div", assist: "div", return: "button",
     "ref-image-upload": "input", "ref-image-pick": "button", "song-pick": "button", "audio-start": "input",
@@ -26,7 +26,7 @@ function makeVideoPane(ctx = {}) {
     "audio-row", "upload-status", "chip", "chip-text", "chip-clear", "composer", "assist", "first-area", "first-upload", "first-pick",
     "first-label", "first-preview", "last-area", "last", "last-label", "last-preview", "clear-last", "reference-area", "source",
     "source-label", "source-preview", "music-area", "ref-image-upload", "ref-image-pick", "ref-image-label", "ref-image-preview",
-    "song-pick", "song-label", "song-preview", "audio-start",
+    "song-pick", "song-label", "song-preview", "audio-start", "orientation", "custom", "width", "height", "shape-note",
     "hint", "hint-text", "return", "error", "model", "timeline", "session-list", "session-new"];
   const parts = Object.fromEntries(names.map((name) => [name, new Element(tags[name] ?? "p")]));
   parts.mode.value = "text"; parts.steps.value = "16"; parts.seed.value = ""; parts.audio.checked = true;
@@ -35,16 +35,17 @@ function makeVideoPane(ctx = {}) {
   parts["audio-start"].value = "0";
   parts.source.accept = "video/mp4,video/quicktime,video/webm";
   parts.advanced.className = "image-advanced video-advanced";
-  parts.advanced.append(parts.size, parts.frames, parts.steps, parts.seed, parts["cost-note"], parts["audio-row"], parts["advanced-error"]);
+  parts.custom.append(parts.width, parts.height);
+  parts.advanced.append(parts.size, parts.custom, parts.frames, parts.steps, parts.seed, parts["cost-note"], parts["audio-row"], parts["advanced-error"]);
   parts["audio-row"].append(parts.audio);
   parts.chip.append(parts["chip-text"], parts["chip-clear"]);
   parts.hint.append(parts["hint-text"], parts.return);
-  parts["first-area"].append(parts["first-upload"], parts["first-pick"], parts["first-label"], parts["first-preview"]);
+  parts["first-area"].append(parts["first-upload"], parts["first-pick"], parts["first-label"], parts["first-preview"], parts["shape-note"]);
   parts["last-area"].append(parts.last, parts["last-label"], parts["clear-last"], parts["last-preview"]);
   parts["reference-area"].append(parts.source, parts["source-label"], parts["source-preview"]);
   parts["music-area"].append(parts["ref-image-upload"], parts["ref-image-pick"], parts["ref-image-label"], parts["ref-image-preview"],
     parts["song-pick"], parts["song-label"], parts["song-preview"], parts["audio-start"]);
-  parts.composer.append(parts.chip, parts.mode, parts["first-area"], parts["last-area"], parts["reference-area"], parts["music-area"], parts.prompt,
+  parts.composer.append(parts.chip, parts.mode, parts.orientation, parts["first-area"], parts["last-area"], parts["reference-area"], parts["music-area"], parts.prompt,
     parts.start, parts.assist, parts.advanced, parts["upload-status"], parts.hint, parts.error);
   const main = new Element("div");
   main.append(parts.model, parts.timeline, parts.composer);
@@ -60,6 +61,9 @@ function makeVideoPane(ctx = {}) {
 }
 
 const cards = (parts) => findAll(parts.timeline, (n) => "attemptId" in n.dataset);
+const orientationButtons = (parts) => parts.orientation.children[0].children;
+const checkedOrientation = (parts) => orientationButtons(parts).find((b) => b.attrs["aria-checked"] === "true")?.textContent;
+const sizeOptions = (parts) => parts.size.children.map((o) => o.value);
 const done = (id, extra = {}) => ({ id, job_id: 0, ts: "2026-09-27T09:00:00", status: "done", output: `${id}.mp4`, error: null,
   params: { prompt: `提示${id}`, width: 512, height: 288, frames: 73, steps: 16, seed: 11 }, refs: {}, ...extra });
 const videoCalls = (backend) => backend.calls.filter((c) => c.url === "/api/media/video");
@@ -921,5 +925,118 @@ test("新会话清空提示词、种子与已选素材，方式和画幅保留",
     assert.equal(parts["first-preview"].children.length, 0);
     assert.equal(parts.mode.value, "image");
     assert.equal(parts.size.value, size);
+  });
+});
+
+test("画幅方向：默认横屏草稿；切竖屏保持同一档；自定义框初值是切换前那一档；自定义时切方向取标准档（Z-12–15）", async () => {
+  await withBackend("video", async () => {
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    assert.deepEqual(orientationButtons(parts).map((b) => b.textContent), ["横屏", "竖屏", "方形"]);
+    assert.equal(parts.orientation.children[0].attrs["aria-label"], "画幅方向");
+    assert.equal(checkedOrientation(parts), "横屏");
+    assert.deepEqual(sizeOptions(parts), ["512x288", "768x448", "1024x576", "custom"]);
+    assert.equal(parts.size.value, "512x288");
+    assert.equal(parts.custom.hidden, true);
+    parts.size.value = "768x448"; await parts.size.dispatch("change");
+    await orientationButtons(parts)[1].click();
+    assert.equal(checkedOrientation(parts), "竖屏");
+    assert.deepEqual(sizeOptions(parts), ["288x512", "448x768", "576x1024", "custom"]);
+    assert.equal(parts.size.value, "448x768");
+    parts.size.value = "custom"; await parts.size.dispatch("change");
+    assert.equal(parts.custom.hidden, false);
+    assert.equal(parts.width.value, "448");
+    assert.equal(parts.height.value, "768");
+    await orientationButtons(parts)[2].click();
+    assert.equal(parts.size.value, "576x576");
+    assert.equal(parts.custom.hidden, true);
+  });
+});
+
+test("自定义宽高：改完取 32 的倍数；不合规写在高级参数里并拦下；合规按宽高提交（Z-14）", async () => {
+  await withBackend("video", async (backend) => {
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    parts.prompt.value = "竖屏街景";
+    parts.size.value = "custom"; await parts.size.dispatch("change");
+    parts.width.value = "450"; await parts.width.dispatch("change");
+    assert.equal(parts.width.value, "448");
+    parts.height.value = "1376"; await parts.height.dispatch("change");
+    await parts.start.click();
+    assert.equal(parts["advanced-error"].textContent, "高级参数里的数值有误：每边须在 256–1344 之间");
+    assert.equal(videoCalls(backend).length, 0);
+    parts.height.value = ""; await parts.height.dispatch("change");
+    await parts.start.click();
+    assert.equal(parts["advanced-error"].textContent, "高级参数里的数值有误：宽和高须为整数");
+    assert.equal(videoCalls(backend).length, 0);
+    parts.height.value = "800"; await parts.height.dispatch("change");
+    await parts.start.click();
+    const [call] = videoCalls(backend);
+    assert.equal(call.body.width, 448);
+    assert.equal(call.body.height, 800);
+  });
+});
+
+test("接着往下生时画幅控件全部锁住并说明，取消续写后恢复（Z-30）", async () => {
+  await withBackend("video", async (backend) => {
+    backend.addSession("片", [done("a1", { params: { prompt: "p", width: 448, height: 768, frames: 73, steps: 16, seed: 1 } })]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await button(cards(parts)[0], "接着往下生").click();
+    assert.equal(checkedOrientation(parts), "竖屏");
+    assert.equal(parts.size.value, "448x768");
+    for (const control of [parts.size, parts.width, parts.height, ...orientationButtons(parts)]) {
+      assert.equal(control.disabled, true);
+      assert.equal(control.title, "接着往下生沿用上一段的画幅");
+    }
+    await parts["chip-clear"].click();
+    for (const control of [parts.size, parts.width, parts.height, ...orientationButtons(parts)]) {
+      assert.equal(control.disabled, false);
+      assert.equal(control.title, "");
+    }
+  });
+});
+
+test("回填按尺寸找回方向与档位，不在档位里填进自定义（Z-31）", async () => {
+  await withBackend("video", async () => {
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await pane.applyFill({ pane: "video", session_id: "gone", attempt_id: "x",
+      fields: { prompt: "竖", width: 448, height: 768, frames: 73, steps: 16 } });
+    assert.equal(checkedOrientation(parts), "竖屏");
+    assert.equal(parts.size.value, "448x768");
+    assert.equal(parts.custom.hidden, true);
+    await pane.applyFill({ pane: "video", session_id: "gone", attempt_id: "y",
+      fields: { prompt: "自", width: 448, height: 800, frames: 73, steps: 16 } });
+    assert.equal(checkedOrientation(parts), "竖屏");
+    assert.equal(parts.size.value, "custom");
+    assert.equal(parts.custom.hidden, false);
+    assert.equal(parts.width.value, "448");
+    assert.equal(parts.height.value, "800");
+  });
+});
+
+test("在这段基础上改：竖屏尝试回填竖屏（Z-31）", async () => {
+  await withBackend("video", async (backend) => {
+    backend.addSession("片", [done("a1", { params: { prompt: "p", width: 576, height: 1024, frames: 73, steps: 16, seed: 1 } })]);
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    await button(cards(parts)[0], "在这段基础上改").click();
+    assert.equal(checkedOrientation(parts), "竖屏");
+    assert.equal(parts.size.value, "576x1024");
+  });
+});
+
+test("提醒按面积与 H3 预算；自定义尺寸也算（Z-40/41）", async () => {
+  await withBackend("video", async () => {
+    const { parts, pane, ready } = makeVideoPane(); ready();
+    await pane.refresh();
+    parts.size.value = "1024x576"; parts.frames.value = "192"; await parts.frames.dispatch("change");
+    assert.equal(parts["cost-note"].textContent, "按实测外推约需 48 GiB，超过视频生成的 40 GiB 上限，可能中途失败。");
+    parts.size.value = "custom"; await parts.size.dispatch("change");
+    parts.width.value = "768"; await parts.width.dispatch("change");
+    parts.height.value = "1344"; await parts.height.dispatch("change");
+    parts.frames.value = "49"; await parts.frames.dispatch("change");
+    assert.equal(parts["cost-note"].textContent, "");
   });
 });

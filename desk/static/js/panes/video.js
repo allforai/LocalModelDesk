@@ -9,9 +9,10 @@ import { createPromptAssist } from "../widgets/prompt_assist.js";
 import { createSessionPane } from "./media_session.js";
 import { ParamsError, autoTitle, randomSeed, sessionTitle } from "../pure/media_session.js";
 import { hasImage } from "../pure/image_session.js";
-import { parseSize, videoCostNote } from "../pure/video_size.js";
+import { CUSTOM, ORIENTATIONS, matchSize, parseSize, presetsFor, snap32, tierOf, videoCostNote } from "../pure/video_size.js";
+import { renderSegmentSwitch } from "../widgets/segment_switch.js";
 import {
-  DURATIONS, SIZES, canContinue, chipText, firstFrameLabel, nextFields, readVideoParams, refImageOf, refineFields, sourceOf,
+  DURATIONS, canContinue, chipText, firstFrameLabel, nextFields, readVideoParams, refImageOf, refineFields, sourceOf,
   versionParams,
 } from "../pure/video_session.js";
 
@@ -46,7 +47,8 @@ function closestFrames(frames) {
 export function createVideoPane(root, ctx = {}) {
   const q = (name) => root.querySelector(`[data-video-${name}]`);
   const els = {
-    mode: q("mode"), prompt: q("prompt"), size: q("size"), frames: q("frames"), steps: q("steps"), seed: q("seed"),
+    mode: q("mode"), orientation: q("orientation"), custom: q("custom"), width: q("width"), height: q("height"),
+    shapeNote: q("shape-note"), prompt: q("prompt"), size: q("size"), frames: q("frames"), steps: q("steps"), seed: q("seed"),
     start: q("start"), advanced: q("advanced"), advancedError: q("advanced-error"), costNote: q("cost-note"),
     audio: q("audio"), audioRow: q("audio-row"), uploadStatus: q("upload-status"),
     chip: q("chip"), chipText: q("chip-text"), chipClear: q("chip-clear"), composer: q("composer"), assist: q("assist"),
@@ -70,16 +72,70 @@ export function createVideoPane(root, ctx = {}) {
   const pickImage = ctx.pickImage ?? (({ title }) => pickFrom("image", title, "这个会话还没有生成好的图片"));
   const pickMusic = ctx.pickMusic ?? (({ title }) => pickFrom("music", title, "这个会话还没有生成好的歌"));
 
-  for (const [value, label] of SIZES) {
-    const option = doc.createElement("option");
-    option.value = value; option.textContent = label; els.size.append(option);
-  }
   for (const [value, label] of DURATIONS) {
     const option = doc.createElement("option");
     option.value = String(value); option.textContent = label; els.frames.append(option);
   }
-  els.size.value = SIZES[0][0];
   els.frames.value = String(DURATIONS[0][0]);
+
+  // ---------- 画幅（视频画幅设计 Z-10–Z-31）：方向 × 档位或自定义 ----------
+  let orientation = "landscape";
+  let lastPreset = presetsFor("landscape")[0].value; // 最近选中的档位：选「自定义…」时框里的初值（Z-14）
+  const orientationIndex = (value) => ORIENTATIONS.findIndex((o) => o.value === value);
+  const orientationSwitch = els.orientation ? renderSegmentSwitch(doc, {
+    labels: ORIENTATIONS.map((o) => o.label), checked: 0, ariaLabel: "画幅方向",
+    onChange: (index) => chooseOrientation(ORIENTATIONS[index].value),
+  }) : null;
+  if (orientationSwitch) els.orientation.append(orientationSwitch);
+
+  function renderSizeOptions() {
+    els.size.replaceChildren();
+    for (const preset of presetsFor(orientation)) {
+      const option = doc.createElement("option");
+      option.value = preset.value; option.textContent = preset.label; els.size.append(option);
+    }
+    const custom = doc.createElement("option");
+    custom.value = CUSTOM; custom.textContent = "自定义…"; els.size.append(custom);
+  }
+  function setSizeValue(value) {
+    els.size.value = value;
+    if (value !== CUSTOM) lastPreset = value;
+    if (els.custom) els.custom.hidden = value !== CUSTOM;
+  }
+  // 当前画幅：档位值或自定义两个框；读不出的边为 NaN（提交时由 readVideoParams 拦下）。
+  function currentSize() {
+    if (els.size.value === CUSTOM) {
+      const read = (input) => { const text = String(input?.value ?? "").trim(); return text ? Number(text) : Number.NaN; };
+      return { width: read(els.width), height: read(els.height) };
+    }
+    return parseSize(els.size.value) ?? { width: Number.NaN, height: Number.NaN };
+  }
+  // Z-13：切方向保持同一档；当前是自定义时取新方向的「标准」档。
+  function chooseOrientation(next) {
+    const tier = els.size.value === CUSTOM ? 1 : Math.max(0, tierOf(els.size.value));
+    orientation = next;
+    orientationSwitch?.setChecked(orientationIndex(next));
+    renderSizeOptions();
+    setSizeValue(presetsFor(next)[tier].value);
+    updateCost();
+  }
+  // Z-31：按「宽x高」找回方向与档位；不在档位里就填进自定义。
+  function applySize(size) {
+    const parsed = parseSize(size);
+    if (!parsed) return;
+    const match = matchSize(parsed.width, parsed.height);
+    orientation = match.orientation;
+    orientationSwitch?.setChecked(orientationIndex(orientation));
+    renderSizeOptions();
+    if (match.size === CUSTOM) {
+      els.width.value = String(parsed.width);
+      els.height.value = String(parsed.height);
+    }
+    setSizeValue(match.size);
+    updateCost();
+  }
+  renderSizeOptions();
+  setSizeValue(lastPreset);
 
   // 提示条引用：{type:"refine"|"continue"|"library", index, attemptId, seed?, missing?}（V-30）。
   let ref = null;
@@ -213,6 +269,10 @@ export function createVideoPane(root, ctx = {}) {
     const locked = continuing();
     if (locked) els.mode.value = "image";
     els.mode.disabled = locked;
+    // Z-30：续写沿用上一段的画幅。
+    const sizeLock = locked ? "接着往下生沿用上一段的画幅" : "";
+    for (const control of [els.size, els.width, els.height]) if (control) { control.disabled = locked; control.title = sizeLock; }
+    orientationSwitch?.setDisabled(locked, sizeLock);
     const mode = els.mode.value || "text";
     els.firstArea.hidden = mode !== "image";
     els.lastArea.hidden = mode !== "image";
@@ -230,8 +290,9 @@ export function createVideoPane(root, ctx = {}) {
     if (els.songLabel) els.songLabel.textContent = songText();
   }
   function updateCost() {
-    const size = parseSize(els.size.value);
-    if (els.costNote) els.costNote.textContent = size ? videoCostNote(size.width, size.height, els.frames.value) : "";
+    const { width, height } = currentSize();
+    if (!els.costNote) return;
+    els.costNote.textContent = Number.isFinite(width) && Number.isFinite(height) ? videoCostNote(width, height, els.frames.value) : "";
   }
 
   function setFirst(source) {
@@ -466,7 +527,8 @@ export function createVideoPane(root, ctx = {}) {
     let params;
     try {
       params = readVideoParams({
-        prompt: els.prompt.value, size: els.size.value, frames: els.frames.value, steps: els.steps.value, seed: els.seed.value,
+        prompt: els.prompt.value, size: els.size.value, width: els.width?.value, height: els.height?.value,
+        frames: els.frames.value, steps: els.steps.value, seed: els.seed.value,
       });
     } catch (error) {
       if (!(error instanceof ParamsError)) throw error;
@@ -531,7 +593,7 @@ export function createVideoPane(root, ctx = {}) {
   function prefill(fields, nextFirst, nextRef) {
     els.mode.value = fields.mode ?? "text";
     els.prompt.value = fields.prompt ?? "";
-    if (fields.size) els.size.value = fields.size;
+    if (fields.size) applySize(fields.size);
     if (fields.frames != null) els.frames.value = String(closestFrames(fields.frames));
     if (fields.steps != null) els.steps.value = String(fields.steps);
     els.seed.value = fields.seed == null ? "" : String(fields.seed);
@@ -586,7 +648,7 @@ export function createVideoPane(root, ctx = {}) {
   function continueAfter(attempt, index) {
     if (!canContinue(attempt) || brokenIds.has(attempt.id)) return;
     const fields = nextFields(attempt, { size: els.size.value, frames: Number(els.frames.value), steps: Number(els.steps.value) });
-    els.size.value = fields.size;
+    applySize(fields.size);
     if (Number.isFinite(fields.frames)) els.frames.value = String(closestFrames(fields.frames));
     if (Number.isFinite(fields.steps)) els.steps.value = String(fields.steps);
     els.prompt.value = "";
@@ -669,7 +731,23 @@ export function createVideoPane(root, ctx = {}) {
   els.prompt.addEventListener("focus", fitPrompt);
   els.prompt.addEventListener("blur", relaxPrompt);
   els.mode.addEventListener("change", () => { pane.setError(""); renderInputs(); });
-  els.size.addEventListener("change", updateCost);
+  els.size.addEventListener("change", () => {
+    if (els.size.value === CUSTOM) {
+      const from = parseSize(lastPreset);
+      els.width.value = String(from.width);
+      els.height.value = String(from.height);
+    }
+    setSizeValue(els.size.value);
+    updateCost();
+  });
+  // Z-14：自定义宽高改完（数字框失焦时才发 change）取最近的 32 的倍数；清空就留空，提交时拦下。
+  for (const input of [els.width, els.height]) {
+    input?.addEventListener("change", () => {
+      const snapped = snap32(input.value);
+      if (Number.isFinite(snapped)) input.value = String(snapped);
+      updateCost();
+    });
+  }
   els.frames.addEventListener("change", updateCost);
   els.seed.addEventListener("input", () => { syncChip(); refreshAvailability(); });
   els.chipClear.addEventListener("click", clearChip);
