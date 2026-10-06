@@ -65,6 +65,12 @@ SEGMENT_NOT_FOUND = "找不到要接着的那一段"
 SEGMENT_MISSING = "那一段的文件已不在，无法接着生成"
 CONTINUE_CONFLICT = "续写会用上一段的最后一帧作首帧，不能另选首帧或参考视频"
 MUSIC_REF_CONFLICT = "配乐参考不能和首帧、尾帧或续写同时使用"
+# H3 画布规则（mlx_h3.layout）：每边 32 的倍数，面积不超过 768×1344；256 的下限与每边 1344 的上限是我们加的
+# （面积上限已经限住了长边）。desk/static/js/pure/video_size.js 镜像这些值（tests/test_video_size_mirror.py）。
+VIDEO_CANVAS_MULTIPLE = 32
+VIDEO_SIDE_MIN, VIDEO_SIDE_MAX = 256, 1344
+VIDEO_MAX_PIXELS = 768 * 1344
+VIDEO_CANVAS_MESSAGE = "画幅须为 32 的倍数，每边 256–1344，面积不超过 768×1344"
 # Which cross-session references each video request may carry (S-11); any other name is a 400.
 VIDEO_REF_NAMES = {"text": {"first_frame"}, "image": {"first_frame"}, "reference": {"first_frame"},
                    "music_ref": {"ref_image", "ref_audio"}, "soundtrack": {"soundtrack"}}
@@ -284,6 +290,9 @@ class MediaService:
         _nonempty("prompt", prompt, code="prompt_required", message="请填写视频提示词")
         for name, value in (("width", width), ("height", height), ("frames", frames), ("steps", steps)):
             _positive_int(name, value)
+        if (any(value % VIDEO_CANVAS_MULTIPLE or not VIDEO_SIDE_MIN <= value <= VIDEO_SIDE_MAX for value in (width, height))
+                or width * height > VIDEO_MAX_PIXELS):
+            raise MediaError("invalid_params", VIDEO_CANVAS_MESSAGE, 400)
         _validate_seed(seed)
         _check_force(force)
         ref_names = set(refs) if isinstance(refs, dict) else set()
