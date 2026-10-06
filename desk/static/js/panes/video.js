@@ -9,7 +9,7 @@ import { createPromptAssist } from "../widgets/prompt_assist.js";
 import { createSessionPane } from "./media_session.js";
 import { ParamsError, autoTitle, randomSeed, sessionTitle } from "../pure/media_session.js";
 import { hasImage } from "../pure/image_session.js";
-import { videoCostNote } from "../pure/video_cost.js";
+import { parseSize, videoCostNote } from "../pure/video_size.js";
 import {
   DURATIONS, SIZES, canContinue, chipText, firstFrameLabel, nextFields, readVideoParams, refImageOf, refineFields, sourceOf,
   versionParams,
@@ -230,7 +230,8 @@ export function createVideoPane(root, ctx = {}) {
     if (els.songLabel) els.songLabel.textContent = songText();
   }
   function updateCost() {
-    if (els.costNote) els.costNote.textContent = videoCostNote(els.size.value, els.frames.value);
+    const size = parseSize(els.size.value);
+    if (els.costNote) els.costNote.textContent = size ? videoCostNote(size.width, size.height, els.frames.value) : "";
   }
 
   function setFirst(source) {
