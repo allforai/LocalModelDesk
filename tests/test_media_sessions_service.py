@@ -144,3 +144,13 @@ def test_routes_pass_session_and_refs_through(tmp_path, monkeypatch):
     handler({"prompt": "p", "width": 512, "height": 288, "frames": 49, "steps": 12,
              "session_id": "s", "refs": {"a": 1}, "continues": "c", "seed": 3}, {})
     assert (seen["session_id"], seen["refs"], seen["continues"], seen["seed"]) == ("s", {"a": 1}, "c", 3)
+
+
+def test_bad_canvas_is_refused_before_the_session_is_touched(tmp_path):
+    service, deps = make_service(tmp_path)
+    sid = deps.media_sessions["video"].create()["id"]
+    with pytest.raises(MediaError) as exc:
+        video(service, session_id=sid, width=1344, height=1024)
+    assert (exc.value.code, exc.value.http_status) == ("invalid_params", 400)
+    assert deps.media_sessions["video"].get(sid)["attempts"] == []
+    assert deps.executor.spawned == [] and deps.arbiter.acquired == []

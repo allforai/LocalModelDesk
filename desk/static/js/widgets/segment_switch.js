@@ -32,6 +32,11 @@ export function renderSegmentSwitch(doc, { labels, checked = 0, onChange, ariaLa
     return btn;
   });
   mark(checked);
+  // 程序化改选中（不触发 onChange，如视频页回填画幅）与整组禁用（如续写时锁住画幅方向）。
+  group.setChecked = (index) => { current = index; mark(index); };
+  group.setDisabled = (disabled, title = "") => {
+    for (const btn of buttons) { btn.disabled = disabled; btn.title = title; }
+  };
   group.append(...buttons);
   return group;
 }

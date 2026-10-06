@@ -24,9 +24,11 @@
           <div class="refine-chip" data-video-chip hidden><span data-video-chip-text></span><button class="btn-quiet btn-sm" data-video-chip-clear data-icon-name="x" aria-label="取消沿用或续写"></button></div>
           <div class="video-materials">
             <label class="video-mode">生成方式 <select data-video-mode><option value="text">文生视频</option><option value="image">图生视频</option><option value="reference">视频参考生成</option><option value="music_ref">配乐参考（实验性）</option></select></label>
+            <div class="video-orientation" data-video-orientation></div>
             <div class="video-assets" data-video-first-area hidden>
               <div class="file-row"><label class="file-pick"><span class="btn">上传图片</span><input type="file" class="visually-hidden" data-video-first-upload accept="image/png,image/jpeg,image/webp"></label><button type="button" class="btn-secondary" data-video-first-pick>从图片会话选…</button><span class="file-name hint" data-video-first-label>未选择</span></div>
               <div class="video-preview" data-video-first-preview></div>
+              <p class="hint" data-video-shape-note role="status"></p>
             </div>
             <div class="video-assets" data-video-last-area hidden>
               <div class="file-row"><label class="file-pick"><span class="btn">上传图片（可选）</span><input type="file" class="visually-hidden" data-video-last accept="image/png,image/jpeg,image/webp"></label><span class="file-name hint" data-video-last-label>未选择</span><button type="button" class="btn-secondary" data-video-clear-last>清除尾帧</button></div>
@@ -56,6 +58,7 @@
           <details class="image-advanced video-advanced" data-video-advanced><summary>高级参数</summary>
             <div class="image-params">
               <label>画幅 <select data-video-size></select></label>
+              <span class="video-custom-size" data-video-custom hidden><input type="number" data-video-width min="256" max="1344" step="32" aria-label="自定义宽"> × <input type="number" data-video-height min="256" max="1344" step="32" aria-label="自定义高"></span>
               <label>视频时长 <select data-video-frames></select></label>
               <label>步数 <input data-video-steps type="number" value="16" min="4" max="50" step="1" required></label>
               <label>种子（留空则每次随机） <input data-video-seed type="number" min="0" max="4294967295" step="1" placeholder="留空则每次随机"></label>

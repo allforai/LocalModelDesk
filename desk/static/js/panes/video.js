@@ -9,9 +9,10 @@ import { createPromptAssist } from "../widgets/prompt_assist.js";
 import { createSessionPane } from "./media_session.js";
 import { ParamsError, autoTitle, randomSeed, sessionTitle } from "../pure/media_session.js";
 import { hasImage } from "../pure/image_session.js";
-import { videoCostNote } from "../pure/video_cost.js";
+import { CUSTOM, ORIENTATIONS, frameFollow, matchSize, parseSize, presetsFor, shapeOf, snap32, tierOf, videoCostNote } from "../pure/video_size.js";
+import { renderSegmentSwitch } from "../widgets/segment_switch.js";
 import {
-  DURATIONS, SIZES, canContinue, chipText, firstFrameLabel, nextFields, readVideoParams, refImageOf, refineFields, sourceOf,
+  DURATIONS, canContinue, chipText, firstFrameLabel, nextFields, readVideoParams, refImageOf, refineFields, sourceOf,
   versionParams,
 } from "../pure/video_session.js";
 
@@ -42,11 +43,22 @@ function closestFrames(frames) {
   const target = Number(frames);
   return DURATIONS.reduce((best, item) => (Math.abs(item[0] - target) < Math.abs(best[0] - target) ? item : best))[0];
 }
+// Z-22：本地选的首帧在浏览器里解码读尺寸；解码不了返回 null（不跟随）。
+async function decodeImageSize(file) {
+  try {
+    if (typeof globalThis.createImageBitmap !== "function") return null;
+    const bitmap = await globalThis.createImageBitmap(file);
+    const size = { width: bitmap.width, height: bitmap.height };
+    bitmap.close?.();
+    return size;
+  } catch { return null; }
+}
 
 export function createVideoPane(root, ctx = {}) {
   const q = (name) => root.querySelector(`[data-video-${name}]`);
   const els = {
-    mode: q("mode"), prompt: q("prompt"), size: q("size"), frames: q("frames"), steps: q("steps"), seed: q("seed"),
+    mode: q("mode"), orientation: q("orientation"), custom: q("custom"), width: q("width"), height: q("height"),
+    shapeNote: q("shape-note"), prompt: q("prompt"), size: q("size"), frames: q("frames"), steps: q("steps"), seed: q("seed"),
     start: q("start"), advanced: q("advanced"), advancedError: q("advanced-error"), costNote: q("cost-note"),
     audio: q("audio"), audioRow: q("audio-row"), uploadStatus: q("upload-status"),
     chip: q("chip"), chipText: q("chip-text"), chipClear: q("chip-clear"), composer: q("composer"), assist: q("assist"),
@@ -60,6 +72,7 @@ export function createVideoPane(root, ctx = {}) {
   };
   const doc = root.ownerDocument;
   const drawSeed = ctx.randomSeed ?? randomSeed;
+  const readFrameSize = ctx.imageSize ?? decodeImageSize;
   const pickFrom = (kind, title, emptyText) => openMediaPicker(doc, {
     kind, title, emptyText,
     listSessions: () => api.listMediaSessions(kind),
@@ -70,16 +83,95 @@ export function createVideoPane(root, ctx = {}) {
   const pickImage = ctx.pickImage ?? (({ title }) => pickFrom("image", title, "这个会话还没有生成好的图片"));
   const pickMusic = ctx.pickMusic ?? (({ title }) => pickFrom("music", title, "这个会话还没有生成好的歌"));
 
-  for (const [value, label] of SIZES) {
-    const option = doc.createElement("option");
-    option.value = value; option.textContent = label; els.size.append(option);
-  }
   for (const [value, label] of DURATIONS) {
     const option = doc.createElement("option");
     option.value = String(value); option.textContent = label; els.frames.append(option);
   }
-  els.size.value = SIZES[0][0];
   els.frames.value = String(DURATIONS[0][0]);
+
+  // ---------- 画幅（视频画幅设计 Z-10–Z-31）：方向 × 档位或自定义 ----------
+  let orientation = "landscape";
+  let lastPreset = presetsFor("landscape")[0].value; // 最近选中的档位：选「自定义…」时框里的初值（Z-14）
+  // Z-23/Z-26：这个首帧来源的画幅由用户（手动改方向）或回填（保存的尺寸）定了，迟到的首帧尺寸不再改它。
+  let pinnedFor = null;
+  function setShapeNote(text) { if (els.shapeNote) els.shapeNote.textContent = text; }
+  // Z-21/24/25：首帧尺寸读回来后，仍是当前「图生」首帧、且没被定住，才按形状切方向或提示。
+  function followFirstFrame(source, frame) {
+    if (first === source) source.frame = frame; // 记下首帧尺寸：之后改自定义宽高时据此重算提示
+    if (first !== source || source?.type === "continue" || pinnedFor === source || els.mode.value !== "image") return;
+    const custom = els.size.value === CUSTOM;
+    const size = currentSize();
+    const current = { orientation: custom ? shapeOf(size.width, size.height) : orientation, custom };
+    const result = frameFollow(current, frame);
+    if (result.orientation) chooseOrientation(result.orientation);
+    setShapeNote(result.note);
+  }
+  // 用户改了画幅（选档位、改自定义宽高）后重算形状提示：只有自定义且两边都读得出、
+  // 又与已知首帧形状不同才提示拉伸；档位下不提示（也不自动切方向，只有新首帧到达才跟随，Z-21/23）。
+  function refreshShapeNote() {
+    const frame = first?.type === "continue" ? null : first?.frame;
+    const { width, height } = currentSize();
+    if (!frame || els.mode.value !== "image" || els.size.value !== CUSTOM || !Number.isFinite(width) || !Number.isFinite(height)) {
+      setShapeNote("");
+      return;
+    }
+    setShapeNote(frameFollow({ orientation: shapeOf(width, height), custom: true }, frame).note);
+  }
+  const orientationIndex = (value) => ORIENTATIONS.findIndex((o) => o.value === value);
+  const orientationSwitch = els.orientation ? renderSegmentSwitch(doc, {
+    labels: ORIENTATIONS.map((o) => o.label), checked: 0, ariaLabel: "画幅方向",
+    onChange: (index) => { pinnedFor = first; setShapeNote(""); chooseOrientation(ORIENTATIONS[index].value); },
+  }) : null;
+  if (orientationSwitch) els.orientation.append(orientationSwitch);
+
+  function renderSizeOptions() {
+    els.size.replaceChildren();
+    for (const preset of presetsFor(orientation)) {
+      const option = doc.createElement("option");
+      option.value = preset.value; option.textContent = preset.label; els.size.append(option);
+    }
+    const custom = doc.createElement("option");
+    custom.value = CUSTOM; custom.textContent = "自定义…"; els.size.append(custom);
+  }
+  function setSizeValue(value) {
+    els.size.value = value;
+    if (value !== CUSTOM) lastPreset = value;
+    if (els.custom) els.custom.hidden = value !== CUSTOM;
+  }
+  // 当前画幅：档位值或自定义两个框；读不出的边为 NaN（提交时由 readVideoParams 拦下）。
+  function currentSize() {
+    if (els.size.value === CUSTOM) {
+      const read = (input) => { const text = String(input?.value ?? "").trim(); return text ? Number(text) : Number.NaN; };
+      return { width: read(els.width), height: read(els.height) };
+    }
+    return parseSize(els.size.value) ?? { width: Number.NaN, height: Number.NaN };
+  }
+  // Z-13：切方向保持同一档；当前是自定义时取新方向的「标准」档。
+  function chooseOrientation(next) {
+    const tier = els.size.value === CUSTOM ? 1 : Math.max(0, tierOf(els.size.value));
+    orientation = next;
+    orientationSwitch?.setChecked(orientationIndex(next));
+    renderSizeOptions();
+    setSizeValue(presetsFor(next)[tier].value);
+    updateCost();
+  }
+  // Z-31：按「宽x高」找回方向与档位；不在档位里就填进自定义。
+  function applySize(size) {
+    const parsed = parseSize(size);
+    if (!parsed) return;
+    const match = matchSize(parsed.width, parsed.height);
+    orientation = match.orientation;
+    orientationSwitch?.setChecked(orientationIndex(orientation));
+    renderSizeOptions();
+    if (match.size === CUSTOM) {
+      if (els.width) els.width.value = String(parsed.width);
+      if (els.height) els.height.value = String(parsed.height);
+    }
+    setSizeValue(match.size);
+    updateCost();
+  }
+  renderSizeOptions();
+  setSizeValue(lastPreset);
 
   // 提示条引用：{type:"refine"|"continue"|"library", index, attemptId, seed?, missing?}（V-30）。
   let ref = null;
@@ -143,7 +235,9 @@ export function createVideoPane(root, ctx = {}) {
     if (session === undefined) return undefined;
     const attempts = session?.attempts ?? [];
     const index = attempts.findIndex((a) => a.id === imageRef.attempt_id);
-    return index >= 0 && hasImage(attempts[index]) ? { output: attempts[index].output, title: sessionTitle(session), index } : null;
+    const attempt = attempts[index];
+    return index >= 0 && hasImage(attempt)
+      ? { output: attempt.output, title: sessionTitle(session), index, width: attempt.params?.width, height: attempt.params?.height } : null;
   }
   // 引用的那首歌：仍是 done 且有可用文件才算数（S-34）；返回 {file, label} | null（已不在） | undefined（读取失败）。
   async function lookupSong(songRef) {
@@ -213,6 +307,10 @@ export function createVideoPane(root, ctx = {}) {
     const locked = continuing();
     if (locked) els.mode.value = "image";
     els.mode.disabled = locked;
+    // Z-30：续写沿用上一段的画幅。
+    const sizeLock = locked ? "接着往下生沿用上一段的画幅" : "";
+    for (const control of [els.size, els.width, els.height]) if (control) { control.disabled = locked; control.title = sizeLock; }
+    orientationSwitch?.setDisabled(locked, sizeLock);
     const mode = els.mode.value || "text";
     els.firstArea.hidden = mode !== "image";
     els.lastArea.hidden = mode !== "image";
@@ -230,15 +328,21 @@ export function createVideoPane(root, ctx = {}) {
     if (els.songLabel) els.songLabel.textContent = songText();
   }
   function updateCost() {
-    if (els.costNote) els.costNote.textContent = videoCostNote(els.size.value, els.frames.value);
+    const { width, height } = currentSize();
+    if (!els.costNote) return;
+    els.costNote.textContent = Number.isFinite(width) && Number.isFinite(height) ? videoCostNote(width, height, els.frames.value) : "";
   }
 
   function setFirst(source) {
     first = source;
     firstGone = false;
+    setShapeNote("");
     if (source?.type === "upload" && source.file) setPreview(els.firstPreview, "img", fileUrl(source.file), { name: source.name, objectUrl: true });
     else setPreview(els.firstPreview, "img", null);
-    if (source?.type === "ref") checkImageRef(source, () => first, () => { first = null; firstGone = true; }, els.firstPreview);
+    if (source?.type === "ref") {
+      checkImageRef(source, () => first, () => { first = null; firstGone = true; }, els.firstPreview,
+        (found) => followFirstFrame(source, { width: found.width, height: found.height }));
+    }
     renderInputs();
   }
   function setRefImage(source) {
@@ -254,7 +358,7 @@ export function createVideoPane(root, ctx = {}) {
   // 图片会话引用（首帧或参考图）：取到那张图就补标题、序号与预览；已不在就清空该来源并说明（V-40、S-34）；
   // 读取失败（未知）保留当前选择，只在页面错误行提示稍后重试（issue #19）。
   // current() 取槽里当前来源（这期间换过就作罢），gone() 清空并标记失效，box 是预览框。
-  async function checkImageRef(source, current, gone, box) {
+  async function checkImageRef(source, current, gone, box, onFound) {
     const found = await lookupImage(source.ref);
     if (current() !== source) return;
     if (found === undefined) { pane.setError("暂时读不到图片会话，请稍后重试"); return; }
@@ -262,6 +366,7 @@ export function createVideoPane(root, ctx = {}) {
     source.title = found.title; source.index = found.index;
     setPreview(box, "img", api.serveOutput(found.output), { name: found.title });
     renderInputs();
+    onFound?.(found);
   }
   // 歌 {ref, label?}：取到那首歌就补风格描述摘要与试听；已不在就清空并说明「引用的歌已不在」（S-34）。
   function setSong(value) {
@@ -293,7 +398,11 @@ export function createVideoPane(root, ctx = {}) {
 
   // 三个上传入口：选中即预览（32 MB 与类型检查）；拖到所在行上的文件同样处理（issue #15）。
   const slots = [
-    { input: els.firstUpload, tag: "img", take: (file) => setFirst({ type: "upload", file, name: file.name }) },
+    { input: els.firstUpload, tag: "img", take: (file) => {
+      const source = { type: "upload", file, name: file.name };
+      setFirst(source);
+      readFrameSize(file).then((frame) => followFirstFrame(source, frame)).catch(() => {});
+    } },
     { input: els.last, tag: "img", take: (file) => setLast({ file, name: file.name }) },
     { input: els.source, tag: "video", take: (file) => setRefVideo({ file, name: file.name }) },
     { input: els.refImageUpload, tag: "img", take: (file) => setRefImage({ type: "upload", file, name: file.name }) },
@@ -465,7 +574,8 @@ export function createVideoPane(root, ctx = {}) {
     let params;
     try {
       params = readVideoParams({
-        prompt: els.prompt.value, size: els.size.value, frames: els.frames.value, steps: els.steps.value, seed: els.seed.value,
+        prompt: els.prompt.value, size: els.size.value, width: els.width?.value, height: els.height?.value,
+        frames: els.frames.value, steps: els.steps.value, seed: els.seed.value,
       });
     } catch (error) {
       if (!(error instanceof ParamsError)) throw error;
@@ -530,7 +640,7 @@ export function createVideoPane(root, ctx = {}) {
   function prefill(fields, nextFirst, nextRef) {
     els.mode.value = fields.mode ?? "text";
     els.prompt.value = fields.prompt ?? "";
-    if (fields.size) els.size.value = fields.size;
+    if (fields.size) applySize(fields.size);
     if (fields.frames != null) els.frames.value = String(closestFrames(fields.frames));
     if (fields.steps != null) els.steps.value = String(fields.steps);
     els.seed.value = fields.seed == null ? "" : String(fields.seed);
@@ -541,6 +651,7 @@ export function createVideoPane(root, ctx = {}) {
     setRefImage(fields.refImageSource ?? null);
     setSong(fields.song ? { ref: fields.song } : null);
     setFirst(nextFirst);
+    pinnedFor = nextFirst; // Z-26：回填恢复的是当时保存的尺寸，带回的首帧不改它
     ref = fields.seed == null && nextFirst?.type !== "continue" ? null : nextRef;
     updateCost();
     syncChip();
@@ -585,7 +696,7 @@ export function createVideoPane(root, ctx = {}) {
   function continueAfter(attempt, index) {
     if (!canContinue(attempt) || brokenIds.has(attempt.id)) return;
     const fields = nextFields(attempt, { size: els.size.value, frames: Number(els.frames.value), steps: Number(els.steps.value) });
-    els.size.value = fields.size;
+    applySize(fields.size);
     if (Number.isFinite(fields.frames)) els.frames.value = String(closestFrames(fields.frames));
     if (Number.isFinite(fields.steps)) els.steps.value = String(fields.steps);
     els.prompt.value = "";
@@ -668,7 +779,33 @@ export function createVideoPane(root, ctx = {}) {
   els.prompt.addEventListener("focus", fitPrompt);
   els.prompt.addEventListener("blur", relaxPrompt);
   els.mode.addEventListener("change", () => { pane.setError(""); renderInputs(); });
-  els.size.addEventListener("change", updateCost);
+  els.size.addEventListener("change", () => {
+    if (els.size.value === CUSTOM) {
+      const from = parseSize(lastPreset);
+      els.width.value = String(from.width);
+      els.height.value = String(from.height);
+    }
+    setSizeValue(els.size.value);
+    updateCost();
+    refreshShapeNote();
+  });
+  // Z-14：自定义宽高改完（数字框失焦时才发 change）取最近的 32 的倍数；清空就留空，提交时拦下。
+  for (const input of [els.width, els.height]) {
+    input?.addEventListener("change", () => {
+      const snapped = snap32(input.value);
+      if (Number.isFinite(snapped)) input.value = String(snapped);
+      // F3：方向高亮跟着自定义宽高的形状走；档位仍是「自定义」，下拉里的档位换成该方向的。
+      const { width, height } = currentSize();
+      if (els.size.value === CUSTOM && Number.isFinite(width) && Number.isFinite(height)) {
+        orientation = shapeOf(width, height);
+        orientationSwitch?.setChecked(orientationIndex(orientation));
+        renderSizeOptions();
+        setSizeValue(CUSTOM);
+      }
+      updateCost();
+      refreshShapeNote();
+    });
+  }
   els.frames.addEventListener("change", updateCost);
   els.seed.addEventListener("input", () => { syncChip(); refreshAvailability(); });
   els.chipClear.addEventListener("click", clearChip);

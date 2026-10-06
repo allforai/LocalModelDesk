@@ -197,6 +197,9 @@ class TestStartDiscipline:
     @pytest.mark.parametrize("bad", [
         dict(width=0), dict(width=-1), dict(width="512"), dict(width=True),
         dict(height=0), dict(frames=0), dict(steps=0),
+        # H3 画布规则（视频画幅设计 Z-01/Z-03）：每边 32 的倍数且在 256–1344，面积不超过 768×1344。
+        dict(width=500), dict(height=300), dict(width=224), dict(height=1376),
+        dict(width=1344, height=1024),
     ])
     def test_invalid_video_params_never_touch_arbiter_or_spawn(self, tmp_path, bad):
         service, deps = make_service(tmp_path)
@@ -219,6 +222,19 @@ class TestStartDiscipline:
         assert deps.arbiter.acquired == []
         assert deps.executor.spawned == []
         assert service.job_status()["status"] == "idle"
+
+    def test_canvas_violation_message_is_the_shared_rule(self, tmp_path):
+        service, deps = make_service(tmp_path)
+        with pytest.raises(MediaError) as err:
+            service.start_video_job(**{**self.VALID, "width": 500})
+        assert str(err.value) == "画幅须为 32 的倍数，每边 256–1344，面积不超过 768×1344"
+
+    @pytest.mark.parametrize("size", [dict(width=288, height=512), dict(width=448, height=800), dict(width=768, height=1344)])
+    def test_portrait_and_custom_canvases_are_accepted(self, tmp_path, size):
+        service, deps = make_service(tmp_path)
+        sid = deps.media_sessions["video"].create()["id"]
+        service.start_video_job(**{**self.VALID, "session_id": sid, **size})
+        assert deps.executor.spawned
 
     @pytest.mark.parametrize("bad", [
         dict(lyrics=None),
