@@ -30,6 +30,7 @@ def test_media_routes_adapter_and_error_envelopes(tmp_path):
     routes = route_map(service)
     assert list(routes) == [
         ("POST", "/api/media/inputs"),
+            ("POST", "/api/media/inputs/discard"),
         ("POST", "/api/media/video"),
         ("POST", "/api/media/music"),
         ("POST", "/api/media/image"),
