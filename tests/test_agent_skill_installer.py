@@ -139,3 +139,42 @@ def test_targets_table_matches_spec():
     assert links["pi"] == ".pi/agent/skills/local-model-desk"
     assert links["dsh"] == ".dsh/skills/local-model-desk"
     assert links["codex"] in (".codex/skills/local-model-desk", ".agents/skills/local-model-desk")
+
+
+def test_users_own_scripts_lmdesk_link_is_foreign(env, tmp_path):
+    home, skill, cli, _ = env
+    mine = tmp_path / "proj" / "scripts" / "lmdesk"
+    mine.parent.mkdir(parents=True)
+    mine.write_text("#!/bin/sh\n")
+    link = home / ".local/bin/lmdesk"
+    link.parent.mkdir(parents=True)
+    link.symlink_to(mine)
+    r = installer.apply(home, skill, cli, {"claude"})
+    assert r["cli"]["state"] == "occupied" and os.readlink(link) == str(mine)
+    installer.apply(home, skill, cli, set())
+    assert link.is_symlink() and os.readlink(link) == str(mine)
+
+
+def test_desk_repo_scripts_lmdesk_link_is_ours(env, tmp_path):
+    home, skill, cli, _ = env
+    repo = tmp_path / "repo"
+    (repo / "desk" / "agent_cli").mkdir(parents=True)
+    (repo / "scripts").mkdir()
+    (repo / "scripts" / "lmdesk").write_text("#!/bin/sh\n")
+    link = home / ".local/bin/lmdesk"
+    link.parent.mkdir(parents=True)
+    link.symlink_to(repo / "scripts" / "lmdesk")
+    assert installer.status(home, skill, cli)["cli"]["state"] == "stale"
+
+
+def test_dangling_stale_says_invalid_and_moved_says_old_location(env):
+    home, skill, cli, other = env
+    gone = home / ".dsh/skills/local-model-desk"
+    gone.parent.mkdir(parents=True)
+    gone.symlink_to("/nonexistent/x/desk/agent_skill/bundled/local-model-desk")
+    moved = home / ".claude/skills/local-model-desk"
+    moved.parent.mkdir(parents=True)
+    moved.symlink_to(other)
+    rows = {r["key"]: r for r in installer.status(home, skill, cli)["targets"]}
+    assert rows["dsh"]["message"] == "已失效，点应用更新"
+    assert rows["claude"]["message"] == "指向旧位置，点应用更新"

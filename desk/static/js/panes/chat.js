@@ -89,6 +89,8 @@ export function createChatPane(root, ctx = {}) {
   // 占用量，不显示分母，也不发警告，不能拿上一个模型的数字顶替（R-skill-06，
   // 2026-09-23 finding 2）。见 renderLlm 里对它的读写。
   let lastResidentModelKey = null;
+  // agentSwitchNotice 要分清「还没拿到过状态」和「上次看到的是没加载」（A-66）。
+  let llmStatusSeen = false;
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
   const current = () => sessions.find((s) => s.id === currentId) ?? null;
@@ -368,7 +370,8 @@ export function createChatPane(root, ctx = {}) {
     // 拉 /api/llm/status 就会调到这里），不用等用户再发一轮消息才发现自己在看
     // 上一个模型的数字（2026-09-23 finding 2）。
     const residentKey = state.status === "loaded" ? state.model_key : null;
-    const notice = agentSwitchNotice(lastResidentModelKey, payload);
+    const notice = agentSwitchNotice(llmStatusSeen ? lastResidentModelKey : undefined, payload);
+    llmStatusSeen = true;
     if (notice) { els.agentSwitchText.textContent = notice; els.agentSwitch.hidden = false; }
     if (lastResidentModelKey !== null && residentKey !== lastResidentModelKey) {
       lastTokenLimit = null;

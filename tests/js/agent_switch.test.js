@@ -8,6 +8,8 @@ test("agent 换了模型才提示", () => {
   assert.equal(agentSwitchNotice("glm", p("qwen27", "agent", "Qwen 27B")), "模型已被 agent 切换为 Qwen 27B");
   assert.equal(agentSwitchNotice("glm", p("qwen27", "ui")), null);
   assert.equal(agentSwitchNotice("glm", p("glm", "agent")), null);
-  assert.equal(agentSwitchNotice(null, p("glm", "agent")), null);
+  assert.equal(agentSwitchNotice(undefined, p("glm", "agent")), null, "页面第一次拿到状态不提示");
+  assert.equal(agentSwitchNotice(null, p("glm", "agent")), "模型已被 agent 切换为 glm", "从没加载到 agent 加载要提示");
+  assert.equal(agentSwitchNotice(null, p("glm", "ui")), null);
   assert.equal(agentSwitchNotice("glm", { state: { status: "loading", model_key: "x" }, loaded_by: null }), null);
 });

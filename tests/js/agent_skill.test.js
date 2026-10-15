@@ -19,15 +19,17 @@ test("应用按钮：只有会产生变化时才可点（A-64）", () => {
   assert.equal(applyEnabled(clean, new Set()), true);
 });
 
-test("勾选 occupied 的行不算变化：它装不上", () => {
+test("勾选 occupied 的行可以点应用：点了才会报出装不上的原因", () => {
   const rows = [row("claude", "occupied")];
-  assert.equal(applyEnabled(rows, new Set(["claude"])), false);
+  assert.equal(applyEnabled(rows, new Set(["claude"])), true);
+  assert.equal(applyEnabled(rows, new Set()), false, "不勾它就没有变化");
 });
 
 test("状态文字", () => {
   assert.deepEqual(rowText(row("a", "installed")), { status: "已安装", tone: "ok" });
   assert.deepEqual(rowText(row("a", "absent")), { status: "未安装", tone: "none" });
   assert.equal(rowText(row("a", "stale")).status, "指向旧位置，点应用更新");
+  assert.equal(rowText(row("a", "stale", { message: "已失效，点应用更新" })).status, "已失效，点应用更新");
   assert.equal(rowText(row("a", "stale", { target: "/gone/x" , message: null })).tone, "warn");
   assert.equal(rowText(row("a", "occupied", { message: "这里已有同名文件或目录，台面不会改动" })).status,
     "这里已有同名文件或目录，台面不会改动");

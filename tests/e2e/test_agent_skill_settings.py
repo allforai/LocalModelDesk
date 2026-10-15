@@ -42,7 +42,7 @@ def test_stale_row_is_checked_and_apply_is_enabled(page, tmp_path, monkeypatch):
         section = _open(page, h)
         row = section.locator(".agent-skill-row[data-key=claude]")
         expect(row.locator("input")).to_be_checked()
-        expect(row.locator("[data-agent-skill-status]")).to_have_text("指向旧位置，点应用更新")
+        expect(row.locator("[data-agent-skill-status]")).to_have_text("已失效，点应用更新")
         expect(section.locator("[data-agent-skill-apply]")).to_be_enabled()
 
 

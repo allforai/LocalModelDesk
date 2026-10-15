@@ -9,8 +9,16 @@ from .targets import CLI_LINK, CLI_SUFFIXES, SKILL_SUFFIX, TARGETS
 
 
 def _ours(target: str, suffixes) -> bool:
-    parts = Path(target).parts
-    return any(tuple(parts[-len(s):]) == tuple(s) for s in suffixes)
+    path = Path(target)
+    for suffix in suffixes:
+        if tuple(path.parts[-len(suffix):]) != tuple(suffix):
+            continue
+        # 「…/scripts/lmdesk」太常见：只有它旁边真是台面仓库（有 desk/agent_cli）才算我们装的，
+        # 否则用户自己项目里的同名脚本会被当成旧链接替换、卸载时删掉（A-55）。
+        if tuple(suffix) == ("scripts", "lmdesk"):
+            return (path.parent.parent / "desk" / "agent_cli").is_dir()
+        return True
+    return False
 
 
 def link_state(link: Path, current: Path, suffixes) -> dict:
@@ -20,7 +28,9 @@ def link_state(link: Path, current: Path, suffixes) -> dict:
             if Path(target) == current:
                 return {"state": "installed", "target": target, "message": None}
             if _ours(target, suffixes):
-                return {"state": "stale", "target": target, "message": "指向旧位置，点应用更新"}
+                gone = not (link.parent / target).exists()
+                return {"state": "stale", "target": target,
+                        "message": "已失效，点应用更新" if gone else "指向旧位置，点应用更新"}
             return {"state": "occupied", "target": target, "message": f"这里已有指向 {target} 的链接，台面不会改动"}
         if link.exists():
             return {"state": "occupied", "target": None, "message": "这里已有同名文件或目录，台面不会改动"}

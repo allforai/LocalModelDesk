@@ -72,7 +72,11 @@ def main(argv=None, *, env=os.environ, stdin=sys.stdin, out=sys.stdout, err=sys.
     try:
         args = parser.parse_args(argv)
     except SystemExit as exc:
-        return EXIT_OK if exc.code == 0 else EXIT_USAGE
+        if exc.code == 0:
+            return EXIT_OK
+        if "--json" in (argv if argv is not None else sys.argv[1:]):
+            print(json.dumps({"error": {"code": "usage", "message": "参数错误，见 stderr"}}, ensure_ascii=False), file=out)
+        return EXIT_USAGE
 
     def on_signal(signum, _frame):
         raise Interrupted(signum)

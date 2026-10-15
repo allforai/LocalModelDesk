@@ -43,3 +43,15 @@ def test_removes_only_our_links(tmp_path):
     assert not ours.is_symlink() and not cli.is_symlink()
     assert (theirs / "SKILL.md").read_text() == "someone else"
     assert other_link.is_symlink()
+
+
+def test_users_own_scripts_lmdesk_link_survives(tmp_path):
+    home = tmp_path / "home"
+    mine = tmp_path / "proj" / "scripts" / "lmdesk"
+    mine.parent.mkdir(parents=True)
+    mine.write_text("x")
+    link = home / ".local/bin/lmdesk"
+    link.parent.mkdir(parents=True)
+    link.symlink_to(mine)
+    _run(home)
+    assert link.is_symlink()

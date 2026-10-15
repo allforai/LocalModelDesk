@@ -20,6 +20,9 @@ class Waiter:
     def elapsed(self) -> float:
         return self._clock() - self._start
 
+    def remaining(self) -> float:
+        return max(0.0, self._deadline - self._clock())
+
     def expired(self) -> bool:
         return self._clock() >= self._deadline
 

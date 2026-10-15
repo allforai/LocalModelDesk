@@ -814,15 +814,13 @@ class MediaService:
         return entry
 
     def cancel_job(self, job_id: int | None = None) -> dict:
-        if job_id is not None:
-            with self._lock:
-                current, status = self._state["job_id"], self._state["status"]
-            if current != job_id or status != "running":
-                raise MediaError("job_not_running", f"作业 {job_id} 不在运行，未取消任何作业", 409)
-        return self._cancel("user")
+        return self._cancel("user", job_id)
 
-    def _cancel(self, origin: str) -> dict:
+    def _cancel(self, origin: str, job_id: int | None = None) -> dict:
         with self._lock:
+            # 判 id 与发起取消在同一把锁里：分两次拿锁，中间换上的别人的作业会被误杀（A-42）。
+            if job_id is not None and (self._state["job_id"] != job_id or self._state["status"] != "running"):
+                raise MediaError("job_not_running", f"作业 {job_id} 不在运行，未取消任何作业", 409)
             if self._state["status"] != "running": raise MediaError("no_running_job", "no media job is running", 409)
             if not self._cancel_requested: self._cancel_origin = origin
             self._cancel_requested = True; handle = self._handle

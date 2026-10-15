@@ -54,7 +54,8 @@ remove_agent_links() {
     [[ -L "$link" ]] || continue
     target="$(readlink "$link")"
     case "$target" in
-      */agent_skill/bundled/local-model-desk|*/Contents/Resources/bin/lmdesk|*/scripts/lmdesk) ;;
+      */agent_skill/bundled/local-model-desk|*/Contents/Resources/bin/lmdesk) ;;
+      */scripts/lmdesk) [[ -d "$(dirname "$(dirname "$target")")/desk/agent_cli" ]] || continue ;;
       *) continue ;;
     esac
     if [[ "$DRY_RUN" == 1 ]]; then

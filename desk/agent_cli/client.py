@@ -50,12 +50,12 @@ class DeskClient:
     def __init__(self, base_url: str, timeout: float = 30.0):
         self.base_url, self.timeout = base_url.rstrip("/"), timeout
 
-    def _send(self, method: str, path: str, body=None, query=None):
+    def _send(self, method: str, path: str, body=None, query=None, timeout: float | None = None):
         url = self.base_url + path + (("?" + urlencode(query)) if query else "")
         data = json.dumps(body, ensure_ascii=False).encode("utf-8") if body is not None else None
         req = Request(url, data=data, method=method, headers={"Content-Type": "application/json"})
         try:
-            with urlopen(req, timeout=self.timeout) as response:
+            with urlopen(req, timeout=timeout or self.timeout) as response:
                 raw = response.read()
         except HTTPError as exc:
             raise _http_error(exc) from None
@@ -70,8 +70,8 @@ class DeskClient:
     def get(self, path, query=None):
         return self._send("GET", path, query=query)
 
-    def post(self, path, body=None):
-        return self._send("POST", path, body if body is not None else {})
+    def post(self, path, body=None, timeout: float | None = None):
+        return self._send("POST", path, body if body is not None else {}, timeout=timeout)
 
     def patch(self, path, body):
         return self._send("PATCH", path, body)

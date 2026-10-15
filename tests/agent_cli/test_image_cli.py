@@ -203,3 +203,19 @@ def _wait_idle(h, timeout=10):
     while h.media.job_status()["status"] == "running":
         assert time.time() < deadline
         time.sleep(0.05)
+
+
+def test_out_with_trailing_slash_is_a_directory_even_if_missing(tmp_path):
+    import io
+    from desk.agent_cli.images import _copy_out
+    src = tmp_path / "a.png"
+    src.write_bytes(b"png")
+    final = _copy_out(src, str(tmp_path / "assets") + "/", io.StringIO())
+    assert final == (tmp_path / "assets" / "a.png").resolve() and final.read_bytes() == b"png"
+
+
+def test_usage_error_with_json_prints_error_object(capsys):
+    from desk.agent_cli.cli import main
+    out = __import__("io").StringIO()
+    assert main(["image", "gen", "--json"], out=out) == 2
+    assert json.loads(out.getvalue())["error"]["code"] == "usage"

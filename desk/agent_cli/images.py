@@ -1,6 +1,7 @@
 """Image sessions for agents: sessions/new/show/gen/wait/rename (A-10/A-11/A-14..A-16/A-25..A-27)."""
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import signal
@@ -83,7 +84,8 @@ def _copy_out(src: Path, out: str | None, err) -> Path:
     if not out:
         return src
     target = Path(out)
-    if target.is_dir():
+    if out.endswith(("/", os.sep)) or target.is_dir():
+        target.mkdir(parents=True, exist_ok=True)
         target = target / src.name
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists():
@@ -134,6 +136,18 @@ def _submit(client: DeskClient, args, session_id: str, width: int, height: int) 
     return client.post("/api/media/image", body)
 
 
+_GUARDED_SIGNALS = {signal.SIGINT, signal.SIGTERM}
+
+
+def _hold_signals() -> None:
+    # 提交请求在途时到达的信号无法判断作业是否已开始；先挂起，进入续等/取消的处理区再放行（A-25）。
+    signal.pthread_sigmask(signal.SIG_BLOCK, _GUARDED_SIGNALS)
+
+
+def _release_signals() -> None:
+    signal.pthread_sigmask(signal.SIG_UNBLOCK, _GUARDED_SIGNALS)
+
+
 def run_gen(client: DeskClient, args, waiter: Waiter, err) -> dict:
     match = _SIZE.match(args.size or "")
     if not match:
@@ -146,10 +160,12 @@ def run_gen(client: DeskClient, args, waiter: Waiter, err) -> dict:
         if decision.action == "wait":
             waiter.pause(decision.reason)
             continue
+        _hold_signals()
         try:
             job = _submit(client, args, session_id, width, height)
             break
         except HttpError as exc:
+            _release_signals()
             if exc.code in RETRY_CODES:
                 waiter.pause("图片任务槽位被占用")
                 continue
@@ -160,15 +176,21 @@ def run_gen(client: DeskClient, args, waiter: Waiter, err) -> dict:
             if exc.status == 400:
                 raise CliError(EXIT_USAGE, exc.code, exc.message) from None
             raise CliError(EXIT_ERROR, exc.code, exc.message) from None
+        except BaseException:
+            _release_signals()
+            raise
     job_id, attempt_id = job.get("job_id"), job.get("attempt_id")
     if job.get("status") != "running" or not attempt_id:
+        _release_signals()
         error = job.get("error") or {}
         raise CliError(EXIT_ERROR, error.get("code") or "start_failed", f"生图没能开始：{error.get('message')}")
     hint = _resume_hint(session_id, attempt_id)
     print(hint, file=err, flush=True)
     if args.no_wait:
+        _release_signals()
         return {"text": attempt_id, "session_id": session_id, "attempt_id": attempt_id}
     try:
+        _release_signals()
         return wait_attempt(client, session_id, attempt_id, job_id, waiter, err, args.out)
     except Interrupted as exc:
         if exc.signum == signal.SIGINT:

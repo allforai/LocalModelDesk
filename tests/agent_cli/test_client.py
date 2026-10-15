@@ -31,6 +31,9 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         n = int(self.headers.get("Content-Length") or 0)
+        if self.path == "/slow":
+            import time
+            time.sleep(1.5)
         self._send(200, {"echo": json.loads(self.rfile.read(n) or b"{}")})
 
 
@@ -76,3 +79,10 @@ def test_refused_connection_is_classified_refused():
 ])
 def test_classify_os_error(err, kind):
     assert classify_os_error(OSError(err, "x")) == kind
+
+
+def test_post_timeout_override_outlasts_the_default(server):
+    """A long non-streaming chat must not die on the client's default socket timeout."""
+    with pytest.raises(Unreachable):
+        DeskClient(server, timeout=0.5).post("/slow", {})
+    assert DeskClient(server, timeout=0.5).post("/slow", {"k": 1}, timeout=5) == {"echo": {"k": 1}}
