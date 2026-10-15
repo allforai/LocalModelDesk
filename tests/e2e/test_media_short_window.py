@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -26,6 +27,8 @@ PAGES = {
     "music": {"model": "music3", "input": "[data-music-lyrics]"},
 }
 SIZES = [(900, 600), (1400, 851), (2560, 1440)]
+# 结果卡片里画面（视频、图片）的最小可用高度：放不下时输入区按既定顺序让位，而不是把画面压没（用户 2026-10-16 拍板）。
+MIN_MEDIA = 140
 
 # 可见元素里内容超出、能滚动的那些（含整页）。结果区（时间线）本来就是可滚动的结果列表——卡片的完整提示词与
 # 参数在操作行下面，滚下去才看得到——不算「第二条滚动条」；会话列表只有一个会话时不滚动，所以不必排除。
@@ -121,7 +124,8 @@ def _assert_layout(page, kind, label):
             assert box, f"{label}：卡片里找不到 {part}"
             assert view["top"] <= box["top"] and box["bottom"] <= view["bottom"], (
                 f"{label}{'（滚到卡片顶）' if scroll else ''}：卡片的 {part} {box} 不在结果区可视范围 {view} 内")
-        assert fit["media"]["height"] >= 48, f"{label}：媒体被压得太小 {fit['media']}"
+        least = 48 if kind == "music" else MIN_MEDIA - 1
+        assert fit["media"]["height"] >= least, f"{label}：媒体被压得太小 {fit['media']}"
 
 
 @pytest.mark.parametrize("kind", list(PAGES))
@@ -169,8 +173,9 @@ def test_first_and_last_frames_fold_into_slots_at_the_minimum_window(page, tmp_p
         pane.locator("[data-video-prompt]").fill(LONG)
         slots = pane.locator("[data-video-slot]")
         expect(slots).to_have_count(2)
-        expect(slots.nth(0)).to_contain_text("首帧")
-        expect(slots.nth(1)).to_contain_text("尾帧")
+        expect(slots.nth(0)).to_have_attribute("aria-label", re.compile(r"^首帧："))
+        expect(slots.nth(1)).to_have_attribute("aria-label", re.compile(r"^尾帧："))
+        expect(slots.nth(0)).to_contain_text("首")
         expect(slots.nth(0).locator("img")).to_be_visible()
         expect(pane.locator("[data-video-first-area]")).not_to_be_visible()
         _assert_layout(page, "video", "图生视频首尾帧 900×600")
@@ -206,9 +211,7 @@ def test_frames_long_names_and_open_advanced_still_leave_a_whole_card(page, tmp_
         pane.locator("[data-video-last]").set_input_files(str(last))
         pane.locator("[data-video-prompt]").fill(LONG)
         pane.locator("[data-video-advanced] summary").click()
-        page.wait_for_timeout(300)
-        body = page.evaluate(VISIBLE, "[data-video-advanced] .advanced-body")
-        assert body["inside"] and body["uncovered"], f"{width}×{height}：高级参数不完整可见 {body}"
+        _assert_popover(page, "video", "[data-video-advanced] .advanced-body", f"{width}×{height} 首尾帧、展开高级参数")
         _shot(page, tmp_path, f"video-{width}x{height}-frames-advanced")
         page.keyboard.press("Escape")
         _assert_layout(page, "video", f"长文件名首尾帧 {width}×{height}")
@@ -269,3 +272,77 @@ def test_slots_are_disabled_while_continuing(page, tmp_path):
         for index in range(slots.count()):
             expect(slots.nth(index)).to_be_disabled()
         assert page.evaluate("getComputedStyle(document.querySelector('[data-video-slot]')).opacity") == "0.5"
+
+
+# 浮层（高级参数、素材块）打开时：浮层完整可见、自己不出滚动条，展开卡片的标题行不被它盖住。
+def _assert_popover(page, kind, popover, label):
+    page.wait_for_timeout(300)
+    body = page.evaluate(VISIBLE, popover)
+    assert body["inside"] and body["uncovered"], f"{label}：浮层不完整可见 {body}"
+    overflow = page.evaluate("(s) => { const n = document.querySelector(s); return [n.scrollHeight, n.clientHeight]; }", popover)
+    assert overflow[0] <= overflow[1] + 1, f"{label}：浮层里内容超出、出了滚动条 {overflow}"
+    title = page.evaluate(VISIBLE, f"#pane-{kind} .attempt[aria-expanded=true] .attempt-row")
+    assert title["inside"] and title["uncovered"], f"{label}：展开卡片的标题行被浮层盖住或不在可视范围 {title}"
+    view = page.evaluate(CARD_FIT, [kind, False])["view"]
+    assert view["top"] <= title["top"] and title["bottom"] <= view["bottom"], f"{label}：标题行 {title} 不在结果区 {view} 内"
+
+
+def test_portrait_image_with_a_base_keeps_a_usable_size(page, tmp_path):
+    """recheck 2026-10-15：900×600 下竖幅图带「以第 N 次为底稿」、填 600 字、又展开高级参数时，大图曾缩到约 33×100。"""
+    with _harness(tmp_path, "image") as harness:
+        page.set_viewport_size({"width": 900, "height": 600})
+        pane = _generate_one(page, harness, "image")
+        pane.locator("[data-attempt-refine]").first.click()
+        expect(pane.locator("[data-image-refine]")).to_be_visible()
+        pane.locator("[data-image-prompt]").fill(LONG)
+        _assert_layout(page, "image", "竖幅图带底稿 900×600")
+        expect(pane.locator("[data-image-refine]")).to_be_visible()
+        pane.locator("[data-image-advanced] summary").click()
+        _assert_popover(page, "image", "[data-image-advanced] .advanced-body", "竖幅图带底稿、展开高级参数")
+        assert page.evaluate(CARD_FIT, ["image", False])["media"]["height"] >= MIN_MEDIA - 1
+        _shot(page, tmp_path, "image-900x600-base-advanced")
+        page.keyboard.press("Escape")
+        _assert_layout(page, "image", "竖幅图带底稿、收起高级参数后")
+
+
+@pytest.mark.parametrize("kind", list(PAGES))
+def test_open_advanced_params_do_not_cover_the_card_title(page, tmp_path, kind):
+    """recheck 2026-10-15：最矮窗口下浮层最高到主列顶端，会盖住结果卡片的标题行。"""
+    with _harness(tmp_path, kind) as harness:
+        page.set_viewport_size({"width": 900, "height": 600})
+        pane = _generate_one(page, harness, kind)
+        pane.locator(PAGES[kind]["input"]).fill(LONG)
+        page.wait_for_timeout(300)
+        page.evaluate("(k) => { const t = document.querySelector('#pane-' + k + ' .image-timeline'); t.dispatchEvent(new WheelEvent('wheel')); t.scrollTop = t.scrollHeight; }", kind)
+        pane.locator(f"[data-{kind}-advanced] summary").click()
+        _assert_popover(page, kind, f"[data-{kind}-advanced] .advanced-body", f"{kind} 900×600 展开高级参数")
+        _shot(page, tmp_path, f"{kind}-900x600-advanced-title")
+
+
+MATERIALS = {
+    "image": [("firstArea", "[data-video-first-upload]"), ("lastArea", "[data-video-last]")],
+    "reference": [("referenceArea", None)],
+    "music_ref": [("musicArea", "[data-video-ref-image-upload]")],
+}
+
+
+@pytest.mark.parametrize("mode", list(MATERIALS))
+def test_material_popovers_fit_at_the_minimum_window(page, tmp_path, mode):
+    """recheck 2026-10-15：900×600 下素材块浮层多出约 33px、出了小滚动条，也会盖住卡片标题行；
+    素材收成槽位后画面也要保住最小可用高度。"""
+    frame = tmp_path / ("synthetic-frame-morning-lake-with-mist-" * 3 + "1280x720.png")
+    frame.write_bytes(gradient_png(1280, 720))
+    with _harness(tmp_path, "video") as harness:
+        page.set_viewport_size({"width": 900, "height": 600})
+        pane = _generate_one(page, harness, "video")
+        pane.locator("[data-video-mode]").select_option(mode)
+        for _, upload in MATERIALS[mode]:
+            if upload:
+                pane.locator(upload).set_input_files(str(frame))
+        pane.locator("[data-video-prompt]").fill(LONG)
+        _assert_layout(page, "video", f"{mode} 素材收起 900×600")
+        for area, _ in MATERIALS[mode]:
+            pane.locator(f"[data-video-slot={area}]").click()
+            _assert_popover(page, "video", f"#pane-video .video-assets.is-popped", f"{mode} 弹出 {area}")
+            _shot(page, tmp_path, f"video-900x600-{mode}-{area}")
+            page.keyboard.press("Escape")
