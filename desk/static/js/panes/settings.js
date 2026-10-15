@@ -2,6 +2,7 @@
 import * as api from "../api.js";
 import { baseUrls } from "../pure/base_url.js";
 import { confirmDialog } from "../widgets/confirm.js";
+import { createAgentSkillSection } from "./agent_skill.js";
 
 export function createSettingsPane(root, ctx = {}) {
   const els = {
@@ -24,6 +25,8 @@ export function createSettingsPane(root, ctx = {}) {
     modelsResult: root.querySelector("[data-settings-models-result]"),
     urlGroup: root.querySelector("[data-url-group]"),
   };
+  const agentSkillRoot = root.querySelector("[data-agent-skill]");
+  const agentSkill = agentSkillRoot ? createAgentSkillSection(agentSkillRoot) : null;
   let urls = { openai: "", anthropic: "" };
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
@@ -132,6 +135,7 @@ export function createSettingsPane(root, ctx = {}) {
   els.modelsReset?.addEventListener("click", resetModels);
 
   async function init() {
+    agentSkill?.init();
     try {
       const [gateway, config] = await Promise.all([api.gatewayConfig(), api.readConfig()]);
       render(gateway);

@@ -67,3 +67,62 @@ def test_precheck_bad_op_is_400(tmp_path):
     with launch_test_harness(tmp_path) as h:
         status, body = _get(h.base_url + "/api/agent/precheck?op=video")
         assert status == 400
+
+
+import pytest
+from urllib.request import Request
+
+from desk.agent_skill.service import AgentSkillService
+
+
+def _post(url, body):
+    req = Request(url, data=json.dumps(body).encode(), method="POST", headers={"Content-Type": "application/json"})
+    try:
+        with urlopen(req, timeout=15) as r:
+            return r.status, json.loads(r.read())
+    except HTTPError as e:
+        return e.code, json.loads(e.read())
+
+
+def test_service_paths_dev_vs_bundle(tmp_path):
+    dev = AgentSkillService(tmp_path, "dev", tmp_path / "home")
+    assert dev.cli_path == tmp_path / "scripts" / "lmdesk"
+    bundle = AgentSkillService(tmp_path, "bundle", tmp_path / "home")
+    assert bundle.cli_path == tmp_path / "bin" / "lmdesk"
+    assert dev.skill_dir == tmp_path / "desk" / "agent_skill" / "bundled" / "local-model-desk"
+
+
+def test_apply_rejects_unknown_target(tmp_path):
+    svc = AgentSkillService(tmp_path, "dev", tmp_path / "home")
+    with pytest.raises(ValueError):
+        svc.apply(["claude", "vim"])
+
+
+def test_check_reports_cli_outcome(tmp_path):
+    class Done:
+        def __init__(self, rc, out, err):
+            self.returncode, self.stdout, self.stderr = rc, out, err
+    ok = AgentSkillService(tmp_path, "dev", tmp_path / "home",
+                           run=lambda *a, **k: Done(0, '{"desk": {"reachable": true}}', ""))
+    assert ok.check()["ok"] is True
+    bad = AgentSkillService(tmp_path, "dev", tmp_path / "home", run=lambda *a, **k: Done(6, "", "被沙箱拦截"))
+    result = bad.check()
+    assert result["ok"] is False and "沙箱" in result["message"]
+
+
+def test_routes_status_apply_and_state_flag(tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    with launch_test_harness(tmp_path) as h:
+        status, body = _get(h.base_url + "/api/agent-skill")
+        assert status == 200 and [r["key"] for r in body["targets"]] == ["claude", "codex", "pi", "dsh"]
+        status, body = _post(h.base_url + "/api/agent-skill", {"targets": ["claude"]})
+        assert status == 200
+        assert next(r for r in body["targets"] if r["key"] == "claude")["state"] == "installed"
+        assert (home / ".claude/skills/local-model-desk").is_symlink()
+        status, body = _post(h.base_url + "/api/agent-skill", {"targets": ["nope"]})
+        assert status == 400
+        _, state = _get(h.base_url + "/api/state")
+        assert state["agent_skill_stale"] is False
+        _post(h.base_url + "/api/agent-skill", {"targets": []})

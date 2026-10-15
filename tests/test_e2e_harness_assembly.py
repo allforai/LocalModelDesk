@@ -93,6 +93,7 @@ def production_route_table():
     table.update({
         ("GET", "/api/state"),
         ("GET", "/api/agent/precheck"),
+        ("GET", "/api/agent-skill"), ("POST", "/api/agent-skill"), ("POST", "/api/agent-skill/check"),
         ("GET", "/api/memory"),
         ("GET", "/api/gateway/config"),
         ("POST", "/api/gateway/config"),

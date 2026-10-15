@@ -10,7 +10,8 @@ from types import SimpleNamespace
 
 from desk.app import DeskApp, Response
 from desk.agent_cli.version import read_version
-from desk.agent_skill.routes import build_precheck_routes
+from desk.agent_skill.routes import build_precheck_routes, build_routes as build_agent_skill_routes
+from desk.agent_skill.service import AgentSkillService
 from desk.arbiter.core import Arbiter
 from desk.budget.budget import Budget
 from desk.budget.device import GpuCapacity
@@ -215,6 +216,7 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, skills, a
         ))
         return Response(result.status, result.body, result.headers)
 
+    agent_skill = AgentSkillService(roots.resources_root, roots.mode, paths.user_home())
     table = [
         ("GET", "/api/config", lambda _req: config_payload(roots)),
         ("PUT", "/api/config", lambda req: config.update_config(roots, **req.body).to_json()),
@@ -245,8 +247,10 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, skills, a
         *((method, path, lambda req, handler=handler: handler(req.body, req.query))
           for method, path, handler in build_skills_routes(skills)),
         *build_precheck_routes(llm, media),
+        *build_agent_skill_routes(agent_skill),
         ("GET", "/api/state", lambda _req: {
-            **arbiter.desk_state(), "version": read_version(roots.resources_root)}),
+            **arbiter.desk_state(), "version": read_version(roots.resources_root),
+            "agent_skill_stale": agent_skill.stale()}),
         ("GET", "/api/memory", lambda _req: arbiter.memory_snapshot()),
         # 台面前端每个 tick 都会取它；测试台面不挂的话，e2e 里状态栏会一直报离线。
         # 缺省写死为「算不出」，与压缩测试前的既有行为一致；压缩 e2e 需要一个很小

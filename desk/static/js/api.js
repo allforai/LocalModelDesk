@@ -10,6 +10,7 @@ const ROUTES = {
   video: "/api/media/video", music: "/api/media/music", image: "/api/media/image", capabilities: "/api/capabilities",
   compose: "/api/media/compose", soundtrack: "/api/media/soundtrack", cancelJob: "/api/media/cancel", job: "/api/media/job", outputs: "/api/outputs",
   history: "/api/history", sessions: "/api/sessions", mediaSessions: "/api/media-sessions", gatewayConfig: "/api/gateway/config",
+  agentSkill: "/api/agent-skill", agentSkillCheck: "/api/agent-skill/check",
   skills: "/api/skills", skillsRescan: "/api/skills/rescan",
   skillsPreview: "/api/skills/preview", skillsInstall: "/api/skills/install", skillsDiscard: "/api/skills/discard",
 };
@@ -81,6 +82,10 @@ export const completeFirstRun = (modelsRoot) =>
 export const adoptLegacyModels = (legacyRoot, mode) =>
   json(ROUTES.adopt, "POST", { legacy_root: legacyRoot, mode });
 export const discoverModels = () => json(ROUTES.discoverModels, "POST");
+
+export const agentSkillStatus = () => request(ROUTES.agentSkill);
+export const agentSkillApply = (targets) => json(ROUTES.agentSkill, "POST", { targets });
+export const agentSkillCheck = () => json(ROUTES.agentSkillCheck, "POST", {});
 
 export const listCatalog = () => request(ROUTES.catalog);
 export const verifyAllModels = async (refresh = false) => {
