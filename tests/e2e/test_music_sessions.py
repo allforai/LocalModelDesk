@@ -59,13 +59,13 @@ def test_continue_version_and_compose_a_song_in_one_session(page, tmp_path, monk
         expect(pane.locator(CURRENT_ITEM)).to_have_count(1)
         session_id = pane.locator(CURRENT_ITEM).get_attribute("data-session-id")
 
-        # The lyrics box: at least four lines tall, grows to at most half the viewport.
+        # The lyrics box: at least two lines tall (layout #5, 2026-10-15), grows to at most half the viewport.
         lyrics = pane.locator("[data-music-lyrics]")
         sizes = lyrics.evaluate("""(box) => { const s = getComputedStyle(box);
             return {min: parseFloat(s.minHeight), max: s.maxHeight, line: parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.5,
                     vh: innerHeight}; }""")
-        assert sizes["min"] >= 4 * sizes["line"], sizes
-        assert abs(float(sizes["max"].removesuffix("px")) - sizes["vh"] * 0.5) <= 1, sizes
+        assert sizes["min"] >= 2 * sizes["line"], sizes
+        assert float(sizes["max"].removesuffix("px")) <= sizes["vh"] * 0.5 + 1, sizes
 
         # 1. First song.
         pane.locator("[data-music-caption]").fill("温柔的民谣，木吉他伴奏")

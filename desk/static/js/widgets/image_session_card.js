@@ -109,13 +109,6 @@ export function renderAttemptCard(doc, opts) {
     detail.append(big);
     result.image = big;
   }
-  detail.append(el(doc, "p", "attempt-full-prompt", prompt));
-  if (view.kind === "failed" && attempt.error) {
-    const block = renderErrorBlock(doc, attempt.error);
-    const more = [...(block.children ?? [])].find((child) => String(child.tagName).toLowerCase() === "details");
-    if (more) { more.classList?.add?.("attempt-error-details"); detail.append(more); }
-  }
-  detail.append(advancedList(doc, attempt.params));
   const actions = el(doc, "div", "attempt-actions");
   const refine = el(doc, "button", "btn-secondary", "在这张基础上改");
   refine.dataset.attemptRefine = "";
@@ -139,7 +132,15 @@ export function renderAttemptCard(doc, opts) {
   }
   const hint = el(doc, "p", "hint hint-busy attempt-action-hint");
   hint.setAttribute("role", "status");
+  // 操作行紧跟大图，完整提示词与参数在它下面：矮窗口里标题、大图、操作行能同时看到（layout #5）。
   detail.append(actions, hint);
+  detail.append(el(doc, "p", "attempt-full-prompt", prompt));
+  if (view.kind === "failed" && attempt.error) {
+    const block = renderErrorBlock(doc, attempt.error);
+    const more = [...(block.children ?? [])].find((child) => String(child.tagName).toLowerCase() === "details");
+    if (more) { more.classList?.add?.("attempt-error-details"); detail.append(more); }
+  }
+  detail.append(advancedList(doc, attempt.params));
   card.append(detail);
   // 没图的尝试不能当底稿（以图生图）：「换个构图」不可用并写明原因；面板更新可用性时保留这条原因。
   result.secondary = { button: recompose, hint, secondaryBlockedReason: opts.secondaryBlockedReason || "" };

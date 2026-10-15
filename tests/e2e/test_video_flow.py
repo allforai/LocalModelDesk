@@ -36,6 +36,8 @@ def test_conditioning_file_upload_preview_and_generation(page, tmp_path, mode, s
         subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=blue:s=32x32:d=1",
                         "-c:v", "libx264", "-pix_fmt", "yuv420p", str(clip)], check=True)
         content = clip.read_bytes()
+    # 高窗口：素材块照旧展开（矮于 760px 时收成槽位，见 test_media_short_window.py）。
+    page.set_viewport_size({"width": 1280, "height": 900})
     with launch_test_harness(tmp_path) as harness:
         page.goto(harness.base_url)
         page.locator("#tabs [data-tab='video']").click()
@@ -95,10 +97,17 @@ def test_video_parameters_progress_and_player_src_follow_finished_output(
     assert audit_violations == []
 
 
-def test_first_frame_picker_is_reachable_by_keyboard(page, tmp_path, audit_violations):
+@pytest.mark.parametrize("height", [900, 720])
+def test_first_frame_picker_is_reachable_by_keyboard(page, tmp_path, audit_violations, height):
+    page.set_viewport_size({"width": 1280, "height": height})
     with launch_test_harness(tmp_path) as harness:
         page.goto(harness.base_url + "#tab=video")
         page.locator("[data-video-mode]").select_option("image")
+        if height <= 760:  # 矮窗口：素材收成槽位，先用键盘打开「首帧」槽位
+            slot = page.locator("[data-video-slot=firstArea]")
+            slot.focus()
+            page.keyboard.press("Enter")
+            expect(page.locator("[data-video-first-area]")).to_be_visible()
         picker = page.locator("[data-video-first-upload]")
         picker.focus()
         assert page.evaluate("document.activeElement.matches('[data-video-first-upload]')")
@@ -135,14 +144,18 @@ def test_dropping_an_image_on_the_first_frame_row_uses_it(page, tmp_path):
         page.goto(harness.base_url + "#tab=video")
         pane = page.locator("#pane-video")
         pane.locator("[data-video-mode]").select_option("image")
+        # 900×700 是矮窗口：素材收成槽位，拖着文件经过「首帧」槽位时弹出素材块，再放到上传行上。
+        pane.locator("[data-video-slot=firstArea]").dispatch_event("dragenter")
+        expect(pane.locator("[data-video-first-area]")).to_be_visible()
         _drop_file(page, "#pane-video .file-row:has([data-video-first-upload])", "dropped.png", "image/png", _PNG)
         expect(pane.locator("[data-video-first-label]")).to_have_text("已选择：dropped.png")
         expect(pane.locator("[data-video-first-preview] > *")).to_be_visible()
-        # 首帧、尾帧都选了时，输入区最高半屏、方式与素材那块在内部滚动：900×700 下时间线仍有可用高度
-        # （实测 144px；不设上限时 118px，小图各占一行时 28px），提示词与「生成视频」在输入区里完整可见，
-        # 状态提示行出现时也不挤时间线；没有横向滚动。
+        # 首帧、尾帧都选了时，素材收成方式行里的两个槽位（带小图），900×700 下时间线仍有可用高度，
+        # 提示词与「生成视频」在输入区里完整可见，状态提示行出现时也不挤时间线；没有横向滚动（layout #5）。
+        page.keyboard.press("Escape")
         pane.locator("[data-video-last]").set_input_files({"name": "last.png", "mimeType": "image/png", "buffer": _PNG})
-        expect(pane.locator("[data-video-last-preview] > *")).to_be_visible()
+        expect(pane.locator("[data-video-slot=lastArea] img")).to_be_visible()
+        expect(pane.locator("[data-video-slot=firstArea] img")).to_be_visible()
         start = pane.locator("[data-video-start]")
         expect(start).to_be_enabled()
 

@@ -234,37 +234,75 @@ export function createSessionPane(root, {
     settleView();
   }
 
-  // ---------- 展开卡片可见（D-71、D-72、D-74、D-78） ----------
-  // 展开卡片里有大图且页面给了 fitExpanded 时，先按「时间线可视高度 − 卡片里除大图以外的高度」算出
-  // 大图可用的高度交给页面去定上限（图片页 IS D-74）；然后按 scrollIntent 贴底或把展开卡片滚入可见区。
-  // 图片加载完、窗口或输入区变高变矮、卡片里折叠块开合时都会重来一次（ResizeObserver + load）。
+  // ---------- 展开卡片可见（D-71、D-72、D-74、D-78；layout #5） ----------
+  // 卡片里操作行紧跟媒体，完整提示词与参数在操作行下面。展开卡片有媒体且页面给了 fitExpanded 时，先算媒体
+  // 可用的高度交给页面去定上限：整张卡片放得下、媒体还不小于 COMFORT 就按整张卡片算（IS D-74）；放不下（矮窗口、
+  // 提示词很长）就按「从卡片上沿到操作行下沿」算，让标题、媒体、操作行在任何窗口高度下都能同时看到。
+  // 然后按 scrollIntent 贴底或把展开卡片滚入可见区。
+  // 媒体加载完、窗口或输入区变高变矮、卡片里折叠块开合时都会重来一次（ResizeObserver + load）。
   const rect = (node) => (typeof node?.getBoundingClientRect === "function" ? node.getBoundingClientRect() : null);
   function timelineInner() {
     const style = doc.defaultView?.getComputedStyle?.(els.timeline);
     return els.timeline.clientHeight - (parseFloat(style?.paddingTop) || 0) - (parseFloat(style?.paddingBottom) || 0);
   }
+  // 卡片里必须同时看到的那一段：卡片上沿到操作行下沿（加卡片下内边距）；挑选模式没有操作行，就是整张卡片。
+  function mustSee() {
+    const card = rect(expandedRefs?.node);
+    if (!card) return null;
+    const actions = rect(expandedRefs.node.querySelector?.(".attempt-actions"));
+    if (!actions || !actions.height) return card;
+    const pad = parseFloat(doc.defaultView?.getComputedStyle?.(expandedRefs.node)?.paddingBottom) || 0;
+    const bottom = Math.min(card.bottom, actions.bottom + pad);
+    return { top: card.top, bottom, height: bottom - card.top };
+  }
+  const COMFORT = 192;
   function fitExpandedImage() {
     const image = expandedRefs?.image;
     if (!image || !fitExpanded) return;
-    const card = rect(expandedRefs?.node); const shown = rect(image); const box = rect(els.timeline);
-    if (!card || !shown || !box || !els.timeline.clientHeight) return;
-    fitExpanded(image, timelineInner() - (card.height - shown.height) - 4);
+    const card = rect(expandedRefs?.node); const part = mustSee(); const shown = rect(image); const box = rect(els.timeline);
+    if (!card || !part || !shown || !box || !els.timeline.clientHeight) return;
+    const whole = timelineInner() - (card.height - shown.height) - 4;
+    fitExpanded(image, whole >= COMFORT ? whole : timelineInner() - (part.height - shown.height) - 4);
   }
+  // 整张放得下就以整张为准，否则以标题到操作行那一段为准。
   function revealExpanded() {
     const card = rect(expandedRefs?.node); const box = rect(els.timeline);
     if (!card || !box) return;
+    const part = card.height <= timelineInner() + 1 ? card : mustSee();
     const inner = box.top + (els.timeline.clientTop || 0);
     const visibleBottom = inner + els.timeline.clientHeight;
-    // 整张放得下就对齐卡片上沿；放不下（大图到了下限）就只保证从大图上沿到两个动作都可见。
+    // 标题到操作行放得下就对齐卡片上沿；放不下（媒体到了下限）就只保证从媒体上沿到操作行都可见。
     const image = rect(expandedRefs?.image);
-    const anchor = card.height <= timelineInner() || !image ? card.top : image.top;
+    const anchor = part.height <= timelineInner() || !image ? part.top : image.top;
     if (anchor < inner) els.timeline.scrollTop -= inner - anchor + 4;
-    else if (card.bottom > visibleBottom) els.timeline.scrollTop += Math.min(card.bottom - visibleBottom + 4, anchor - inner);
+    else if (part.bottom > visibleBottom) els.timeline.scrollTop += Math.min(part.bottom - visibleBottom + 4, anchor - inner);
+  }
+  // ---------- 输入区不挤掉结果区（layout #5） ----------
+  // 输入区不整块滚动：只有提示词框（音乐是歌词框）随内容长高，长到「结果区还剩一半高度（至少 240px）」或页面给的
+  // 上限（inputCap，相对窗口高度）为止，再多就在框内滚动；CSS 的 min-height 保证它至少两行。
+  const MIN_TIMELINE = 240;
+  const composerNode = q("composer");
+  function fitComposer() {
+    const input = composer.input;
+    const main = els.timeline.parentNode;
+    if (!input?.style || !composerNode || !main?.clientHeight) return;
+    const mainHeight = main.clientHeight;
+    const others = mainHeight - els.timeline.offsetHeight - composerNode.offsetHeight;
+    const rigid = composerNode.offsetHeight - input.offsetHeight;
+    const keep = Math.max(MIN_TIMELINE, mainHeight / 2);
+    const room = Math.floor(mainHeight - others - keep - rigid);
+    const cap = composer.inputCap ? `${composer.inputCap * 100}vh` : null;
+    input.style.maxHeight = cap ? `min(${cap}, ${Math.max(0, room)}px)` : `${Math.max(0, room)}px`;
   }
   function settleView() {
+    fitComposer();
     fitExpandedImage();
-    if (scrollIntent === "bottom") els.timeline.scrollTop = els.timeline.scrollHeight;
-    else if (scrollIntent === "selected") revealExpanded();
+    if (scrollIntent === "bottom") {
+      els.timeline.scrollTop = els.timeline.scrollHeight;
+      // 贴底时最后一张展开卡片整张放不下：停在它的标题到操作行，而不是只露出底下的提示词与参数（layout #5）。
+      const card = rect(expandedRefs?.node);
+      if (card && card.height > timelineInner() + 1 && !expandedRefs.node.nextElementSibling) revealExpanded();
+    } else if (scrollIntent === "selected") revealExpanded();
   }
   // 在下一帧再调整：直接在回调里改大图尺寸会让观察目标在同一帧里再变一次（ResizeObserver 循环告警）。
   let settleFrame = 0;
@@ -275,11 +313,23 @@ export function createSessionPane(root, {
   };
   const resizeWatch = typeof doc.defaultView?.ResizeObserver === "function"
     ? new doc.defaultView.ResizeObserver(settleSoon) : null;
-  resizeWatch?.observe(els.timeline);
+  const watchFixed = () => {
+    resizeWatch?.observe(els.timeline);
+    if (composerNode) resizeWatch?.observe(composerNode);
+    if (els.timeline.parentNode?.nodeType === 1) resizeWatch?.observe(els.timeline.parentNode);
+  };
+  watchFixed();
+  // 矮窗口里「高级参数」是输入区上方的浮层：按 Esc 收起（点「高级参数」本身也收起）。
+  composerNode?.addEventListener?.("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    const open = [...(composerNode.querySelectorAll?.("details.image-advanced[open]") ?? [])];
+    for (const details of open) details.open = false;
+    if (open.length) composer.focus?.();
+  });
   function watchExpanded() {
     if (!resizeWatch) return;
     resizeWatch.disconnect();
-    resizeWatch.observe(els.timeline);
+    watchFixed();
     if (expandedRefs?.node) resizeWatch.observe(expandedRefs.node);
   }
   // 用户自己滚动（滚轮、触控板、拖滚动条）后不再替他贴底或对齐，直到下一次打开、追加或选中。
@@ -481,7 +531,10 @@ export function createSessionPane(root, {
     startBtn.dataset[camel(`${dataPrefix}-compose-start`)] = "";
     startBtn.addEventListener("click", enterPicking);
     toolbar.append(startBtn);
-    els.timeline.parentNode.insertBefore(toolbar, els.timeline);
+    // 工具条并在标题行右侧（layout #5：矮窗口里把高度留给结果区）；没有标题行时退回时间线上方。
+    const head = [...(els.timeline.parentNode.children ?? [])].find((node) => node.classList?.contains?.("image-head"));
+    if (head) head.append(toolbar);
+    else els.timeline.parentNode.insertBefore(toolbar, els.timeline);
 
     const bar = make("div", "compose-bar");
     bar.dataset[camel(`${dataPrefix}-compose-bar`)] = "";

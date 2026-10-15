@@ -4,7 +4,7 @@
 不被结果区硬边截断；输入内容超长时只在输入框内滚动，页面不出现第二条滚动条。
 
 每个用例先真生成一次（脚本化执行器写小文件），再往提示词框（音乐是歌词框）里填 600 字，然后量：
-页面上只有提示词框一个滚动区；方式行（视频）与主按钮完整可见；输入区不出窗口；结果卡片滚到顶后
+结果区之外只有提示词框一个滚动区（输入区不整块滚动，整页不滚动）；方式行（视频）与主按钮完整可见；输入区不出窗口；结果卡片滚到顶后
 标题行、媒体、操作行都在结果区可视范围内。截图写到 $LMD_SHORT_WINDOW_SHOTS（未设置时写 tmp_path）。
 """
 from __future__ import annotations
@@ -27,10 +27,12 @@ PAGES = {
 }
 SIZES = [(900, 600), (1400, 851), (2560, 1440)]
 
-# 可见元素里内容超出、能滚动的那些（含整页）。会话列表只有一个会话时不滚动，所以不必排除。
+# 可见元素里内容超出、能滚动的那些（含整页）。结果区（时间线）本来就是可滚动的结果列表——卡片的完整提示词与
+# 参数在操作行下面，滚下去才看得到——不算「第二条滚动条」；会话列表只有一个会话时不滚动，所以不必排除。
 SCROLLERS = """(pane) => {
   const root = document.querySelector('#pane-' + pane);
   const found = [...root.querySelectorAll('*')].filter((n) => {
+    if (n.classList.contains('image-timeline')) return false;
     if (!n.getClientRects().length) return false;
     const cs = getComputedStyle(n);
     return /(auto|scroll)/.test(cs.overflowY) && n.scrollHeight > n.clientHeight + 1;
@@ -39,13 +41,13 @@ SCROLLERS = """(pane) => {
   return found;
 }"""
 
-# 把展开的那张卡片滚到结果区顶端，再量标题行、媒体、操作行是否都落在结果区的可视范围里。
-CARD_FIT = """(pane) => {
+# 量展开那张卡片的标题行、媒体、操作行是否都落在结果区的可视范围里；scroll 为真时先把卡片滚到结果区顶端。
+CARD_FIT = """([pane, scroll]) => {
   const root = document.querySelector('#pane-' + pane);
   const tl = root.querySelector('.image-timeline');
   const card = tl.querySelector('.attempt[aria-expanded=true]');
   const pad = parseFloat(getComputedStyle(tl).paddingTop) || 0;
-  tl.scrollTop += card.getBoundingClientRect().top - tl.getBoundingClientRect().top - pad;
+  if (scroll) tl.scrollTop += card.getBoundingClientRect().top - tl.getBoundingClientRect().top - pad;
   const box = tl.getBoundingClientRect();
   const view = {top: box.top + tl.clientTop, bottom: box.top + tl.clientTop + tl.clientHeight};
   const part = (sel) => {
@@ -99,7 +101,7 @@ def _assert_layout(page, kind, label):
     page.wait_for_timeout(300)  # 让 ResizeObserver 的下一帧调整落定
     scrollers = page.evaluate(SCROLLERS, kind)
     expected = [page.locator(PAGES[kind]["input"]).get_attribute("aria-label")]
-    assert scrollers == expected, f"{label}：滚动区应只有提示词框，实际 {scrollers}"
+    assert scrollers == expected, f"{label}：结果区之外的滚动区应只有提示词框，实际 {scrollers}"
 
     composer = page.evaluate(VISIBLE, f"#pane-{kind} .image-composer")
     assert composer["bottom"] <= page.viewport_size["height"], f"{label}：输入区出了窗口 {composer}"
@@ -109,14 +111,16 @@ def _assert_layout(page, kind, label):
         mode = page.evaluate(VISIBLE, "#pane-video .video-mode")
         assert mode["inside"] and mode["uncovered"], f"{label}：「生成方式」一行不完整可见 {mode}"
 
-    fit = page.evaluate(CARD_FIT, kind)
-    view = fit["view"]
-    for part in ("title", "media", "actions"):
-        box = fit[part]
-        assert box, f"{label}：卡片里找不到 {part}"
-        assert view["top"] <= box["top"] and box["bottom"] <= view["bottom"], (
-            f"{label}：卡片的 {part} {box} 不在结果区可视范围 {view} 内")
-    assert fit["media"]["height"] >= 48, f"{label}：媒体被压得太小 {fit['media']}"
+    # 先看页面自己停在哪（贴底、落定之后不需要用户去滚），再看用户把卡片滚到顶时。
+    for scroll in (False, True):
+        fit = page.evaluate(CARD_FIT, [kind, scroll])
+        view = fit["view"]
+        for part in ("title", "media", "actions"):
+            box = fit[part]
+            assert box, f"{label}：卡片里找不到 {part}"
+            assert view["top"] <= box["top"] and box["bottom"] <= view["bottom"], (
+                f"{label}{'（滚到卡片顶）' if scroll else ''}：卡片的 {part} {box} 不在结果区可视范围 {view} 内")
+        assert fit["media"]["height"] >= 48, f"{label}：媒体被压得太小 {fit['media']}"
 
 
 @pytest.mark.parametrize("kind", list(PAGES))

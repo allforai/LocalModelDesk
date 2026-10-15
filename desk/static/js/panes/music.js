@@ -10,8 +10,8 @@ import {
   canContinue, chipText, nextFields, readMusicParams, refineFields, submitContinues, versionParams,
 } from "../pure/music_session.js";
 
-// 歌词框默认 4 行；内容多时长高到 50vh，失焦且不超 4 行时回落（M-21）。
-const LYRICS_ROWS = 4;
+// 歌词框默认 2 行；内容多时长高到 50vh（且给结果区留够高度，见 media_session fitComposer），失焦且不超 2 行时回落（M-21）。
+const LYRICS_ROWS = 2;
 const SEGMENT_ERRORS = new Set(["segment_missing", "segment_not_found"]);
 
 export function createMusicPane(root, ctx = {}) {
@@ -112,7 +112,7 @@ export function createMusicPane(root, ctx = {}) {
       });
     },
     composer: {
-      startLabel: "生成歌曲",
+      startLabel: "生成歌曲", input: els.lyrics, inputCap: 0.5,
       afterStart: ({ fromInputs }) => { if (fromInputs) { els.seed.value = ""; ref = null; syncChip(); } },
       onSessionSwitch: () => { brokenIds.clear(); clearChip(); }, // 播放出错的标记只在本会话内有效（issue #18）
       onNewSession: () => { els.caption.value = ""; els.lyrics.value = ""; els.seed.value = ""; ref = null; syncChip(); refreshAvailability(); },

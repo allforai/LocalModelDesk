@@ -61,6 +61,7 @@ function player(doc, attempt, { serveOutput, onBroken }) {
   const play = (file) => { playing = file; video.src = serveOutput(file); };
   play(playing);
   box.append(video);
+  box.media = video;
   const choice = joined
     ? renderSegmentSwitch(doc, { labels: ["成片", "只看这一段"], onChange: (i) => play(i === 0 ? attempt.joined_output : attempt.output) })
     : null;
@@ -149,9 +150,15 @@ export function renderVideoCard(doc, opts) {
   if (!expanded) return result;
 
   const detail = el(doc, "div", "attempt-detail");
-  if (view.kind === "done") detail.append(player(doc, attempt, { serveOutput, onBroken: opts.onBroken }));
+  if (view.kind === "done") {
+    const box = player(doc, attempt, { serveOutput, onBroken: opts.onBroken });
+    detail.append(box);
+    result.image = box.media; // 交给控制器按结果区高度定上限（layout #5）
+  }
+  // 操作行紧跟播放器，链路说明、完整提示词与参数在它下面：矮窗口里标题、画面、操作行能同时看到（layout #5）。
+  const info = [];
   const chain = chainLine(attempt, attempts);
-  if (chain) detail.append(el(doc, "p", "hint attempt-chain", chain));
+  if (chain) info.push(el(doc, "p", "hint attempt-chain", chain));
   const problem = joinProblem(attempt, attempts);
   if (problem) {
     const line = el(doc, "div", "attempt-join-problem");
@@ -167,18 +174,18 @@ export function renderVideoCard(doc, opts) {
       result.gated = [{ button: rejoin, ownDisabled: !problem.rejoin, ownReason: problem.reason || "" }];
       if (problem.reason) line.append(el(doc, "p", "hint", problem.reason));
     }
-    detail.append(line);
+    info.push(line);
   }
   if (sourceOf(attempt)?.type === "ref") {
-    detail.append(el(doc, "p", "hint attempt-first-frame", opts.firstFrameText?.(attempt) || "首帧：来自图片会话"));
+    info.push(el(doc, "p", "hint attempt-first-frame", opts.firstFrameText?.(attempt) || "首帧：来自图片会话"));
   }
-  if (prompt) detail.append(el(doc, "p", "attempt-full-prompt", prompt));
+  if (prompt) info.push(el(doc, "p", "attempt-full-prompt", prompt));
   if (view.kind === "failed" && attempt.error) {
     const block = renderErrorBlock(doc, attempt.error);
     const more = [...(block.children ?? [])].find((child) => String(child.tagName).toLowerCase() === "details");
-    if (more) { more.classList?.add?.("attempt-error-details"); detail.append(more); }
+    if (more) { more.classList?.add?.("attempt-error-details"); info.push(more); }
   }
-  if (!compose && !soundtrack) detail.append(advancedList(doc, params));
+  if (!compose && !soundtrack) info.push(advancedList(doc, params));
 
   // 挑选模式：卡片只做勾选，动作按钮都不画。合成、配乐尝试没有提示词与画幅，只有「接着往下生」「配乐…」（S-31）。
   if (!picking) {
@@ -212,6 +219,7 @@ export function renderVideoCard(doc, opts) {
     const buttons = [version, dub].filter(Boolean);
     if (buttons.length) result.secondary = { buttons, hint };
   }
+  detail.append(...info);
   card.append(detail);
   return result;
 }

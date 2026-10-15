@@ -11,8 +11,8 @@ import {
 } from "../pure/image_session.js";
 import { randomSeed, sessionTitle } from "../pure/media_session.js";
 
-// 展开卡片的大图不会为了整张放进时间线而缩到这个高度（缩略图的两倍）以下（IS D-74、B-01）。
-const IMAGE_FLOOR = 192;
+// 展开卡片的大图按结果区高度缩，好让标题、大图、操作行同时看到（layout #5）；最矮缩到这个高度为止。
+const IMAGE_FLOOR = 64;
 
 export function createImagePane(root, ctx = {}) {
   const q = (name) => root.querySelector(`[data-image-${name}]`);
@@ -60,7 +60,7 @@ export function createImagePane(root, ctx = {}) {
     },
     fitExpanded: (image, room) => { image.style.maxHeight = `min(60vh, ${Math.max(IMAGE_FLOOR, Math.floor(room))}px)`; },
     composer: {
-      startLabel: "生成图片",
+      startLabel: "生成图片", input: els.prompt,
       afterStart: ({ fromInputs }) => { if (fromInputs) clearSeedAndChip(); },
       onSessionSwitch: clearSeedAndChip,
       onNewSession: () => { els.prompt.value = ""; clearSeedAndChip(); },
