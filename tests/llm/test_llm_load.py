@@ -57,10 +57,9 @@ def test_status_reports_loaded_model_metadata_verbatim(tmp_path):
 def test_status_idle_has_no_loaded_model(tmp_path):
     testbed = make_service(tmp_path)
 
-    assert testbed.service.status() == {
-        "state": {"status": "idle", "model_key": None, "error": None, "loaded_at": None},
-        "loaded_model": None,
-    }
+    status = testbed.service.status()
+    assert status["state"] == {"status": "idle", "model_key": None, "error": None, "loaded_at": None}
+    assert status["loaded_model"] is None
 
 
 def test_a_non_dict_config_json_does_not_kill_the_load_thread(tmp_path):
