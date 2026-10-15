@@ -600,3 +600,10 @@ def test_bundle_declares_chinese_development_region():
     assert "<key>CFBundleLocalizations</key>" in template
     build = (REPO / "scripts" / "build-app.sh").read_text(encoding="utf-8")
     assert 'mkdir -p "$RES/zh-Hans.lproj"' in build
+
+
+def test_build_ships_lmdesk_launcher_using_embedded_python():
+    build = (REPO / "scripts" / "build-app.sh").read_text()
+    assert '"$RES/bin/lmdesk"' in build
+    assert "-m desk.agent_cli" in build
+    assert 'chmod 755 "$RES/bin/lmdesk"' in build

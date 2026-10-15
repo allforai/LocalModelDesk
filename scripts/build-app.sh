@@ -48,6 +48,16 @@ xcrun swiftc -O "$REPO"/macos/*.swift \
 echo "==> [2/9] Copy desk package"
 rsync -a --exclude '__pycache__' --exclude '.pytest_cache' "$REPO/desk/" "$RES/desk/"
 
+mkdir -p "$RES/bin"
+cat > "$RES/bin/lmdesk" <<'SH'
+#!/bin/bash
+# lmdesk inside LocalModelDesk.app: the embedded Python runs desk.agent_cli (A-02).
+SELF="$0"; while [[ -L "$SELF" ]]; do t="$(readlink "$SELF")"; [[ "$t" = /* ]] && SELF="$t" || SELF="$(dirname "$SELF")/$t"; done
+RES="$(cd "$(dirname "$SELF")/.." && pwd)"
+exec env -u PYTHONHOME PYTHONPATH="$RES" PYTHONDONTWRITEBYTECODE=1 "$RES/python/bin/python3.13" -s -m desk.agent_cli "$@"
+SH
+chmod 755 "$RES/bin/lmdesk"
+
 echo "==> [3/9] Embed CPython $PYVER"
 SRC_PY="${MEGASTORM_EMBEDDED_PYTHON:-}"
 if [[ -n "$SRC_PY" ]]; then
