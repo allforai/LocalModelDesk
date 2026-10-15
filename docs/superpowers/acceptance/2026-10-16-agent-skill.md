@@ -36,3 +36,12 @@
 
 - **DeepSeek Harness**：它是图形界面应用，需要用户手动试。skill 目录 `~/.dsh/skills` 是根据源码确定的，未实测。
   - 注意：codex 这一行装在 `~/.agents/skills`，DeepSeek Harness 也会读这个目录。所以本次只勾选了 codex，DeepSeek Harness 可能就已经能看到 skill 了。
+
+## 第二期：视频与音乐（真实模型，dist 版 lmdesk）
+
+| 场景 | 命令 | 结果 |
+|---|---|---|
+| 音乐（纯音乐） | `music gen … --lyrics "[instrumental]" --duration 15 --out ./music/` | 0，约 50 秒；台面没开，由命令行在后台拉起 |
+| 图生视频 | `video gen … --size 512x288 --frames 49 --first-frame image:猫:<尝试> --no-wait`，然后 `video wait … --out ./video/` | 0，约 100 秒，`mode: image` |
+| 续写 | `video gen … --continue <尝试>` | 0，输出的是 `h3-joined-*.mp4`，即到当前这一段为止的成片（B-31） |
+| 合成 | `video join … <段1> <段2> --out ./video/film.mp4` | 0，成片时长 4.6 秒 |
