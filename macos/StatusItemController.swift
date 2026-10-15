@@ -6,6 +6,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
   private let api: DeskAPI
   private let detailItem = NSMenuItem(title: "状态：启动中…", action: nil, keyEquivalent: "")
   private let memoryItem = NSMenuItem(title: "内存 —", action: nil, keyEquivalent: "")
+  private let agentSkillItem = NSMenuItem(title: "", action: #selector(openSettings), keyEquivalent: "")
   var onOpenWindow: (() -> Void)?
   var onOpenSettings: (() -> Void)?
   var onRevealOutputs: (() -> Void)?
@@ -22,7 +23,12 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     menu.delegate = self
     detailItem.isEnabled = false
     memoryItem.isEnabled = false
+    agentSkillItem.target = self
+    agentSkillItem.image = NSImage(systemSymbolName: "exclamationmark.circle", accessibilityDescription: "agent 链接失效")
+    agentSkillItem.indentationLevel = 0
+    agentSkillItem.isHidden = true
     menu.addItem(detailItem)
+    menu.addItem(agentSkillItem)
     menu.addItem(memoryItem)
     menu.addItem(.separator())
 
@@ -54,7 +60,10 @@ final class StatusItemController: NSObject, NSMenuDelegate {
   func render(_ status: ShellStatus) {
     let title = menuTitle(for: status)
     let glyph = menuGlyphState(for: status)
-    configureStatusButton(label: title, glyph: glyph)
+    let note = agentSkillMenuNote(for: status)
+    configureStatusButton(label: title, glyph: glyph, dot: note != nil)
+    agentSkillItem.isHidden = note == nil
+    agentSkillItem.title = note ?? ""
     let text = "状态：\(title)"
     detailItem.image = NSImage(systemSymbolName: glyphName(for: glyph), accessibilityDescription: nil)
     detailItem.attributedTitle = NSAttributedString(
@@ -85,7 +94,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
   /// Draws an 18x18 monochrome template "desk" glyph whose state variant marks
   /// idle/loaded/busy/down at a glance, independent of light/dark menu bars.
-  private func configureStatusButton(label: String, glyph: MenuGlyphState) {
+  private func configureStatusButton(label: String, glyph: MenuGlyphState, dot: Bool = false) {
     guard let button = statusItem.button else { return }
     let image = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { rect in
       NSColor.black.setStroke(); NSColor.black.setFill()
@@ -99,6 +108,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
       case .down:
         let slash = NSBezierPath(); slash.move(to: NSPoint(x: 3, y: 3)); slash.line(to: NSPoint(x: 15, y: 15)); slash.lineWidth = 1.5; slash.stroke()
       }
+      if dot { NSBezierPath(ovalIn: NSRect(x: 12.5, y: 12.5, width: 5, height: 5)).fill() }
       return true
     }
     image.isTemplate = true

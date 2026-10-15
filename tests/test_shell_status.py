@@ -131,3 +131,25 @@ def test_error_page_shows_escaped_log_tail():
                            "Traceback <boom>"], capture_output=True, text=True, timeout=30)
     assert "<pre>Traceback &lt;boom&gt;</pre>" in proc.stdout
     assert "被信号 9（SIGKILL）结束" in proc.stdout
+
+
+STALE = {**IDLE, "agent_skill_stale": True}
+
+
+@pytest.mark.parametrize("desk_state,expected", [
+    (IDLE, ""), (STALE, "agent 链接指向旧位置，打开设置更新"), ({**HELD_LLM, "agent_skill_stale": True},
+                                                       "agent 链接指向旧位置，打开设置更新"),
+])
+def test_agent_skill_note(desk_state, expected):
+    fixture = {"server": "owned", "needs_setup": False, "desk_state": desk_state}
+    proc = subprocess.run([harness_path(), "agent-skill-note"], input=json.dumps(fixture),
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == expected
+
+
+def test_stale_flag_does_not_change_menu_title():
+    fixture = {"server": "owned", "needs_setup": False, "desk_state": STALE}
+    proc = subprocess.run([harness_path(), "map-status"], input=json.dumps(fixture),
+                          capture_output=True, text=True, timeout=30)
+    assert proc.stdout.strip() == "空闲"

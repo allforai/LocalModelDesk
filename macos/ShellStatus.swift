@@ -22,21 +22,29 @@ struct DeskStateSnapshot: Equatable {
   var holderKind: String?
   var holderLabel: String?
   var holderDisplay: String?
+  var agentSkillStale: Bool = false
 
   /// Ignores unknown fields, but rejects an absent or malformed `holder`.
   static func parse(_ object: Any) -> DeskStateSnapshot? {
     guard let dict = object as? [String: Any], let holderValue = dict["holder"] else {
       return nil
     }
+    let stale = (dict["agent_skill_stale"] as? Bool) ?? false
     if holderValue is NSNull {
-      return DeskStateSnapshot(holderKind: nil, holderLabel: nil, holderDisplay: nil)
+      return DeskStateSnapshot(holderKind: nil, holderLabel: nil, holderDisplay: nil, agentSkillStale: stale)
     }
     guard let holder = holderValue as? [String: Any], let kind = holder["kind"] as? String else {
       return nil
     }
     return DeskStateSnapshot(holderKind: kind, holderLabel: holder["label"] as? String,
-                              holderDisplay: holder["display"] as? String)
+                              holderDisplay: holder["display"] as? String, agentSkillStale: stale)
   }
+}
+
+/// A-71: a menu note when an installed agent link points at another copy of the app.
+func agentSkillMenuNote(for status: ShellStatus) -> String? {
+  guard status.desk?.agentSkillStale == true else { return nil }
+  return "agent 链接指向旧位置，打开设置更新"
 }
 
 /// Shell-owned status derived from service state, desk state, and configuration.
