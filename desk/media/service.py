@@ -804,7 +804,12 @@ class MediaService:
             entry["audio_seconds"] = wav_seconds(Path(self._resolve_paths().outputs_root) / snap["output"])
         return entry
 
-    def cancel_job(self) -> dict:
+    def cancel_job(self, job_id: int | None = None) -> dict:
+        if job_id is not None:
+            with self._lock:
+                current, status = self._state["job_id"], self._state["status"]
+            if current != job_id or status != "running":
+                raise MediaError("job_not_running", f"作业 {job_id} 不在运行，未取消任何作业", 409)
         return self._cancel("user")
 
     def _cancel(self, origin: str) -> dict:

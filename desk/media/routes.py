@@ -64,8 +64,12 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
             session_id=payload.get("session_id"), source=payload.get("source"),
             refs=payload.get("refs"), force=payload.get("force", False)))
 
-    def cancel(_body, _query):
-        return _run(service.cancel_job)
+    def cancel(body, _query):
+        job_id = (body or {}).get("job_id")
+        if job_id is not None and (isinstance(job_id, bool) or not isinstance(job_id, int)):
+            exc = MediaError("invalid_params", "job_id 须为整数", 400)
+            return exc.http_status, _envelope(exc)
+        return _run(lambda: service.cancel_job(job_id))
 
     def start_image(body, _query):
         payload = body or {}
