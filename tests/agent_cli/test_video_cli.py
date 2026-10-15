@@ -152,3 +152,42 @@ def test_sigterm_after_submit_keeps_job_and_wait_recovers(tmp_path):
         script.step(); script.step()
         attempt = _attempts(h, "a")[0]["id"]
         assert run_cli(h, "video", "wait", "a", attempt).returncode == 0
+
+
+def test_attempt_view_falls_back_to_output_when_joined_file_is_missing(tmp_path):
+    from desk.agent_cli.media import _attempt_view
+    attempt = {"id": "a", "status": "done", "output": "v/one.mp4", "joined_output": "v/joined.mp4",
+               "joined_missing": True, "params": {}}
+    assert _attempt_view("video", attempt, tmp_path)["path"] == str(tmp_path / "v/one.mp4")
+    attempt["joined_missing"] = False
+    assert _attempt_view("video", attempt, tmp_path)["path"] == str(tmp_path / "v/joined.mp4")
+
+
+def test_failed_submit_discards_uploaded_first_frame(tmp_path, monkeypatch):
+    import io
+    import types
+    import pytest
+    from desk.agent_cli import media
+    from desk.agent_cli.client import HttpError
+    from desk.agent_cli.errors import CliError
+
+    png = tmp_path / "f.png"
+    png.write_bytes(PNG)
+    posts = []
+
+    class Client:
+        def post(self, path, body=None, **_):
+            posts.append(path)
+            if path == "/api/media/inputs":
+                return {"id": "a" * 32 + ".png"}
+            if path == "/api/media/video":
+                raise HttpError(400, "bad_request", "no", {})
+            return {}
+
+    monkeypatch.setattr(media, "snapshot", lambda *a, **k: None)
+    monkeypatch.setattr(media, "decide", lambda *a, **k: types.SimpleNamespace(action="go"))
+    args = types.SimpleNamespace(no_wait=True, out=None)
+    with pytest.raises(CliError):
+        media._run_job(Client(), "video", args, None, io.StringIO(), "s", "video", {}, "/api/media/video",
+                       {}, upload=png)
+    assert posts == ["/api/media/inputs", "/api/media/video", "/api/media/inputs/discard"]

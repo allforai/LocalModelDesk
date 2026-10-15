@@ -96,3 +96,18 @@ def test_tool_lookup_matches_compose(tmp_path, monkeypatch, valid):
     monkeypatch.setenv("PATH", str(bin_dir))
     monkeypatch.setenv("LOCALMODELDESK_FFPROBE", str(override))
     assert inputs._tool("ffprobe") == compose.find_tool("ffprobe") == str(override if valid else on_path)
+
+
+def test_discard_input_removes_only_well_formed_ids(tmp_path):
+    from desk.media.inputs import discard_input
+    folder = tmp_path / ".inputs"
+    folder.mkdir()
+    keep = folder / "notes.txt"
+    keep.write_text("x")
+    asset = folder / ("a" * 32 + ".png")
+    asset.write_bytes(b"x")
+    discard_input(tmp_path, "../notes.txt")
+    discard_input(tmp_path, "b" * 32 + ".png")
+    assert keep.exists() and asset.exists()
+    discard_input(tmp_path, asset.name)
+    assert not asset.exists() and keep.exists()

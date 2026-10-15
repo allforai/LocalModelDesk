@@ -112,7 +112,8 @@ def _prompt_of(kind: str, attempt: dict) -> str | None:
 
 
 def _attempt_view(kind: str, attempt: dict, root: Path) -> dict:
-    output = attempt.get("joined_output") or attempt.get("output")
+    joined = None if attempt.get("joined_missing") else attempt.get("joined_output")
+    output = joined or attempt.get("output")
     return {"id": attempt.get("id"), "status": attempt.get("status"), "prompt": _prompt_of(kind, attempt),
             "params": attempt.get("params"), "base": attempt.get("base"),
             "path": str(root / output) if output else None, "error": attempt.get("error")}
@@ -237,12 +238,7 @@ def _build_video(client, args, checked, session_id):
         body["continues"] = args.continues
     first = checked["first_frame"]
     if first and first[0] == "file":
-        try:
-            uploaded = client.post("/api/media/inputs", {"name": first[1].name,
-                                                          "data": base64.b64encode(first[1].read_bytes()).decode("ascii")})
-        except HttpError as exc:
-            raise CliError(EXIT_USAGE if exc.status == 400 else EXIT_ERROR, exc.code, exc.message) from None
-        body.update(mode="image", first_frame=uploaded["id"])
+        body["_first_file"] = first[1]  # uploaded by run_gen just before submit, not before the wait loop
     elif first:
         image = resolve_session(client, "image", first[1])
         body.update(mode="image", refs={"first_frame": {"kind": "image", "session_id": image["id"], "attempt_id": first[2]}})
@@ -284,8 +280,25 @@ def _compose_snapshot(client: DeskClient) -> Snapshot:
                     media_running=client.get("/api/media/job").get("status") == "running", precheck=None)
 
 
-def _run_job(client: DeskClient, kind: str, args, waiter: Waiter, err, session_id: str, op: str,
-             query: dict | None, path: str, body: dict) -> dict:
+def _upload_first_frame(client: DeskClient, path: Path) -> str:
+    try:
+        uploaded = client.post("/api/media/inputs", {"name": path.name,
+                                                      "data": base64.b64encode(path.read_bytes()).decode("ascii")})
+    except HttpError as exc:
+        raise CliError(EXIT_USAGE if exc.status == 400 else EXIT_ERROR, exc.code, exc.message) from None
+    return uploaded["id"]
+
+
+def _discard(client: DeskClient, asset_id: str | None) -> None:
+    if asset_id:
+        try:
+            client.post("/api/media/inputs/discard", {"id": asset_id})
+        except (HttpError, Unreachable):
+            pass
+
+
+def _submit(client: DeskClient, kind: str, args, waiter: Waiter, session_id: str, op: str,
+            query: dict | None, path: str, body: dict, upload: Path | None, uploaded: list) -> dict:
     label = LABELS[kind]
     while True:
         snap = _compose_snapshot(client) if query is None else snapshot(client, op, None, query)
@@ -293,10 +306,12 @@ def _run_job(client: DeskClient, kind: str, args, waiter: Waiter, err, session_i
         if decision.action == "wait":
             waiter.pause(decision.reason)
             continue
+        if upload is not None and not uploaded:
+            uploaded.append(_upload_first_frame(client, upload))  # once, only when about to submit
+            body["mode"], body["first_frame"] = "image", uploaded[0]
         _hold_signals()
         try:
-            job = client.post(path, body)
-            break
+            return client.post(path, body)
         except HttpError as exc:
             _release_signals()
             if exc.code in RETRY_CODES:
@@ -312,9 +327,21 @@ def _run_job(client: DeskClient, kind: str, args, waiter: Waiter, err, session_i
         except BaseException:
             _release_signals()
             raise
+
+
+def _run_job(client: DeskClient, kind: str, args, waiter: Waiter, err, session_id: str, op: str,
+             query: dict | None, path: str, body: dict, upload: Path | None = None) -> dict:
+    label = LABELS[kind]
+    uploaded: list = []
+    try:
+        job = _submit(client, kind, args, waiter, session_id, op, query, path, body, upload, uploaded)
+    except BaseException:
+        _discard(client, uploaded[0] if uploaded else None)
+        raise
     job_id, attempt_id = job.get("job_id"), job.get("attempt_id")
     if job.get("status") != "running" or not attempt_id:
         _release_signals()
+        _discard(client, uploaded[0] if uploaded else None)
         error = job.get("error") or {}
         raise CliError(EXIT_ERROR, error.get("code") or "start_failed", f"{label}任务没能开始：{error.get('message')}")
     hint = _resume_hint(kind, session_id, attempt_id)
@@ -345,10 +372,11 @@ def run_gen(client: DeskClient, kind: str, args, waiter: Waiter, err) -> dict:
     checked = _CHECK[kind](args)
     session_id = resolve_session(client, kind, args.session)["id"]
     query, body = _BUILD[kind](client, args, checked, session_id)
+    upload = body.pop("_first_file", None)
     if args.seed is not None:
         body["seed"] = args.seed
     body.update(session_id=session_id, force=bool(args.force), **AGENT)
-    return _run_job(client, kind, args, waiter, err, session_id, kind, query, ENDPOINTS[kind], body)
+    return _run_job(client, kind, args, waiter, err, session_id, kind, query, ENDPOINTS[kind], body, upload=upload)
 
 
 def run_join(client: DeskClient, kind: str, args, waiter: Waiter, err) -> dict:

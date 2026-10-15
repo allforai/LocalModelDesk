@@ -14,7 +14,7 @@ from typing import Any, Callable
 from . import compose
 from .audio import wav_seconds, wav_seconds_exact
 from .commands import build_h3_command, build_music_command, build_image_command
-from .inputs import save_input, resolve_input
+from .inputs import save_input, resolve_input, discard_input
 from desk.library.errors import NotFoundError
 from desk.library.media_sessions import SegmentMissing
 
@@ -180,6 +180,10 @@ class MediaService:
             return save_input(self._resolve_paths().outputs_root, name, data)
         except ValueError as exc:
             raise MediaError("invalid_input", str(exc), 400) from exc
+
+    def discard_input(self, *, id=None) -> dict:
+        discard_input(self._resolve_paths().outputs_root, id)
+        return {"ok": True}
 
     def _check_session(self, kind: str, session_id, *, required: bool) -> str | None:
         if session_id is None and not required:

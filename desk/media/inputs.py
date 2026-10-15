@@ -72,3 +72,11 @@ def save_input(root, name, data):
             raise
         raise ValueError("无法读取素材，请检查文件格式及 ffprobe 是否可用") from exc
     return {"id": path.name, "kind": EXTENSIONS[suffix], "name": name}
+
+
+def discard_input(root, asset_id):
+    """Delete an upload that no job took; unknown or malformed ids are a no-op."""
+    if isinstance(asset_id, str) and re.fullmatch(r"[0-9a-f]{32}\.[a-z0-9]+", asset_id):
+        path = Path(root) / ".inputs" / asset_id
+        if path.is_file() and not path.is_symlink():
+            path.unlink(missing_ok=True)

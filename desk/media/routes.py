@@ -90,6 +90,8 @@ def build_routes(service: MediaService) -> list[tuple[str, str, Handler]]:
     return [
         ("POST", "/api/media/inputs", lambda body, _query: _run(lambda: service.upload_input(
             name=(body or {}).get("name"), data=(body or {}).get("data")))),
+        ("POST", "/api/media/inputs/discard", lambda body, _query: _run(lambda: service.discard_input(
+            id=(body or {}).get("id")))),
         ("POST", "/api/media/video", start_video),
         ("POST", "/api/media/music", start_music),
         ("POST", "/api/media/image", start_image),
