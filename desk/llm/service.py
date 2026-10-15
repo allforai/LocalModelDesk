@@ -63,13 +63,17 @@ def _short_command(command: str, limit: int = 80) -> str:
 
 
 
+# A-40：界面最近这么多秒内对话过，agent 就不换模型、也不让生图卸掉对话模型。
+UI_CHAT_RECENT_S = 300.0
+
+
 class LlmService:
     """Coordinate asynchronous model loading without owning process details."""
 
     def __init__(self, backend: Any, arbiter: Any, catalog: Any, paths: Any, *,
                  port: int = DEFAULT_LLM_PORT, load_timeout_s: float = 180.0,
                  poll_interval_s: float = 0.4, term_grace_s: float = 8.0,
-                 budget: Any = None) -> None:
+                 budget: Any = None, clock: Any = time.monotonic) -> None:
         self._backend = backend
         self._arbiter = arbiter
         self._catalog = catalog
@@ -84,6 +88,7 @@ class LlmService:
         self._term_grace_s = term_grace_s
         self._lock = threading.Lock()
         self._state = LlmState(status=STATUS_IDLE)
+        self._loaded_by = None
         self._proc = None
         self._token: str | None = None
         self._entry = None
@@ -91,6 +96,10 @@ class LlmService:
         self._load_generation = 0
         self._unsubscribe = self._arbiter.subscribe(self._on_desk_state)
         self._closed = False
+        self._clock = clock
+        self._active_chats = 0
+        self._last_ui_chat: float | None = None
+        self._loaded_by: str | None = None
 
     def owned_pids(self) -> set[int]:
         """Pids this service spawned — the only ones the arbiter may reap (P1)."""
@@ -110,6 +119,7 @@ class LlmService:
             self._token = None
             self._entry = None
             self._state = LlmState(status=STATUS_IDLE)
+            self._loaded_by = None
         self._unsubscribe()
         if proc is not None:
             proc.terminate()
@@ -120,6 +130,19 @@ class LlmService:
         if token is not None:
             self._arbiter.release_heavy(token)
 
+    def _heavy_request(self, entry: Any) -> dict[str, Any]:
+        model_dir = Path(self._paths.resolve_paths().models_root) / entry.relpath
+        return {"config": _read_model_config(model_dir), "weights_gb": getattr(entry, "gb", None)}
+
+    def precheck_load(self, key: str) -> dict[str, Any]:
+        """A-45: what acquire_heavy would answer for loading *key*, without acquiring."""
+        entry = self._find_entry(key) if isinstance(key, str) else None
+        if entry is None:
+            raise LlmRejected(ERR_MODEL_NOT_FOUND, f"未找到模型: {key}")
+        answer = self._arbiter.can_start_heavy("llm", params=self._heavy_request(entry), key=entry.key)
+        return {"ok": bool(answer.get("ok")), "reason": answer.get("reason"),
+                "release": list(answer.get("release") or []), "memory_warning": answer.get("memory_warning")}
+
     def _find_entry(self, key: str) -> Any | None:
         return next((entry for entry in self._catalog.list_catalog() if entry.key == key), None)
 
@@ -127,7 +150,7 @@ class LlmService:
     def _log_path(roots: Any) -> Path:
         return Path(roots.logs_dir) / "mlx-lm.log"
 
-    def load(self, key: Any) -> dict[str, Any]:
+    def load(self, key: Any, origin: str = "ui") -> dict[str, Any]:
         """Start loading *key* and immediately return its loading state."""
         if not isinstance(key, str) or not key.strip():
             raise LlmRejected(ERR_KEY_REQUIRED, "缺少 key 参数")
@@ -157,6 +180,7 @@ class LlmService:
             self._load_generation += 1
             generation = self._load_generation
             if reusing_existing_token:
+                self._loaded_by = "agent" if origin == "agent" else "ui"
                 self._load_thread = threading.Thread(
                     target=self._load_worker,
                     args=(entry, model_dir, Path(roots.venv_python), self._log_path(roots), generation),
@@ -170,8 +194,7 @@ class LlmService:
         # 会把聊天算成 0 字节，于是预算对任何组合都说「装得下」（Task 9）。
         acquired = self._arbiter.acquire_heavy(
             "llm", entry.key, getattr(entry, "name", None),
-            params={"config": _read_model_config(model_dir), "weights_gb": getattr(entry, "gb", None)},
-            key=entry.key,
+            params=self._heavy_request(entry), key=entry.key,
         )
         if not acquired.get("ok"):
             reason = acquired.get("reason") or {}
@@ -184,6 +207,7 @@ class LlmService:
 
         with self._lock:
             self._token = acquired.get("token")
+            self._loaded_by = "agent" if origin == "agent" else "ui"
             self._load_thread = threading.Thread(
                 target=self._load_worker,
                 args=(entry, model_dir, Path(roots.venv_python), self._log_path(roots), generation),
@@ -371,7 +395,13 @@ class LlmService:
             loaded = None
             if self._state.status == STATUS_LOADED and self._entry is not None:
                 loaded = LoadedModel.from_entry(self._entry).to_dict()
-            result = {"state": self._state.to_dict(), "loaded_model": loaded}
+            recent = (self._last_ui_chat is not None
+                      and self._clock() - self._last_ui_chat < UI_CHAT_RECENT_S)
+            result = {
+                "state": self._state.to_dict(), "loaded_model": loaded,
+                "active_chats": self._active_chats, "ui_chat_recent": recent,
+                "loaded_by": self._loaded_by if self._state.status == STATUS_LOADED else None,
+            }
         if token is not None:
             self._arbiter.release_heavy(token)
         return result
@@ -400,6 +430,7 @@ class LlmService:
                 self._token = None
                 self._entry = None
                 self._state = LlmState(status=STATUS_IDLE)
+                self._loaded_by = None
                 result = self._state.to_dict()
             elif self._state.status == STATUS_IDLE:
                 return self._state.to_dict()
@@ -408,6 +439,7 @@ class LlmService:
                 self._token = None
                 self._entry = None
                 self._state = LlmState(status=STATUS_IDLE)
+                self._loaded_by = None
                 result = self._state.to_dict()
             else:
                 self._state = LlmState(
@@ -467,9 +499,28 @@ class LlmService:
             payload.setdefault(key, value)
         return payload
 
+    def _chat_begin(self, request: dict[str, Any]) -> None:
+        with self._lock:
+            self._active_chats += 1
+            if request.get("origin") != "agent":
+                self._last_ui_chat = self._clock()
+
+    def _chat_end(self, request: dict[str, Any]) -> None:
+        with self._lock:
+            self._active_chats = max(0, self._active_chats - 1)
+            if request.get("origin") != "agent":
+                self._last_ui_chat = self._clock()
+
     def chat_completion(self, request: dict[str, Any]) -> dict[str, Any]:
         """Forward a non-streaming chat request without fabricating response data."""
         entry = self._chat_precheck(request)
+        self._chat_begin(request)
+        try:
+            return self._chat_completion(request, entry)
+        finally:
+            self._chat_end(request)
+
+    def _chat_completion(self, request: dict[str, Any], entry: Any) -> dict[str, Any]:
         payload = self._upstream_payload(request, entry)
         payload["stream"] = False
         try:
@@ -502,7 +553,14 @@ class LlmService:
         payload = self._upstream_payload(request, entry)
         payload["stream"] = True
         payload["stream_options"] = {"include_usage": True}
-        return self._stream_events(payload, entry)
+        return self._counted_stream(request, payload, entry)
+
+    def _counted_stream(self, request: dict[str, Any], payload: dict[str, Any], entry: Any):
+        self._chat_begin(request)
+        try:
+            yield from self._stream_events(payload, entry)
+        finally:
+            self._chat_end(request)
 
     def _interruption_event(self, fallback_message: str) -> dict[str, Any]:
         """Name the real cause when the resident model was taken away mid-stream."""

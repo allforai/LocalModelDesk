@@ -62,7 +62,7 @@ def _rejected(exc: LlmRejected) -> RouteResult:
 
 def _load(service, body: dict) -> RouteResult:
     try:
-        state = service.load(body.get("key"))
+        state = service.load(body.get("key"), origin=body.get("origin") or "ui")
     except LlmRejected as exc:
         return _rejected(exc)
     if state["status"] == "error":

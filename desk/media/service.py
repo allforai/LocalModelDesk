@@ -580,6 +580,15 @@ class MediaService:
             self._worker_thread.start()
             return self.job_status()
 
+    def precheck_image(self, width: int, height: int, steps: int) -> dict:
+        """A-45: what the arbiter would answer for an image job of this size, without starting one."""
+        params = {"prompt": "", "width": width, "height": height, "steps": steps}
+        estimated, _source = self._estimate("image", params)
+        answer = self._arbiter.can_start_heavy("image", params=params, key="qwen-image",
+                                               estimated_bytes=estimated)
+        return {"ok": bool(answer.get("ok")), "reason": answer.get("reason"),
+                "release": list(answer.get("release") or []), "memory_warning": answer.get("memory_warning")}
+
     def _admit_heavy(self, kind: str, params: dict, force: bool, join: dict | None, roots, job_id: int):
         """Capability, model, memory and arbiter gates for a model job; returns (model_root, permit)."""
         cap_key = {"video": "mlx_h3", "music": "music_runtime", "image": "image_runtime"}[kind]
@@ -804,7 +813,12 @@ class MediaService:
             entry["audio_seconds"] = wav_seconds(Path(self._resolve_paths().outputs_root) / snap["output"])
         return entry
 
-    def cancel_job(self) -> dict:
+    def cancel_job(self, job_id: int | None = None) -> dict:
+        if job_id is not None:
+            with self._lock:
+                current, status = self._state["job_id"], self._state["status"]
+            if current != job_id or status != "running":
+                raise MediaError("job_not_running", f"作业 {job_id} 不在运行，未取消任何作业", 409)
         return self._cancel("user")
 
     def _cancel(self, origin: str) -> dict:

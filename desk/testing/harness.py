@@ -9,6 +9,8 @@ import socket
 from types import SimpleNamespace
 
 from desk.app import DeskApp, Response
+from desk.agent_cli.version import read_version
+from desk.agent_skill.routes import build_precheck_routes
 from desk.arbiter.core import Arbiter
 from desk.budget.budget import Budget
 from desk.budget.device import GpuCapacity
@@ -242,7 +244,9 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, skills, a
           for method, path, handler in library_http.routes(library)),
         *((method, path, lambda req, handler=handler: handler(req.body, req.query))
           for method, path, handler in build_skills_routes(skills)),
-        ("GET", "/api/state", lambda _req: arbiter.desk_state()),
+        *build_precheck_routes(llm, media),
+        ("GET", "/api/state", lambda _req: {
+            **arbiter.desk_state(), "version": read_version(roots.resources_root)}),
         ("GET", "/api/memory", lambda _req: arbiter.memory_snapshot()),
         # 台面前端每个 tick 都会取它；测试台面不挂的话，e2e 里状态栏会一直报离线。
         # 缺省写死为「算不出」，与压缩测试前的既有行为一致；压缩 e2e 需要一个很小
