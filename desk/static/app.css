@@ -469,16 +469,38 @@ audio.video-preview-media { width: min(360px, 100%); height: 36px; }
 .composer-tools>.image-advanced[open]>summary{text-align:right}
 .compact-advanced .composer-tools>.image-advanced[open]>summary{text-align:left}
 .video-slots{display:none}
-/* 浮层：贴在输入区上沿上方，临时盖住结果区下部，最高到主列顶端（--above 由 fitComposer 写）。
-   放不下时 fitComposer 逐级给输入区加 compact-advanced（高级参数改浮层）、compact-materials（视频素材收成槽位）。 */
+/* 浮层：贴在输入区上沿上方，临时盖住结果区下部；上沿停在结果区顶端那张展开卡片的标题行下面（--above 由 media_session popoverRoom 写）。
+   放不下时 fitComposer 逐级给输入区加 compact-advanced（高级参数改浮层）、compact-materials（视频素材收成槽位、图片底稿小条并进工具行）。 */
 .advanced-body{display:contents}
 .compact-advanced .composer-tools>.image-advanced[open]{flex-basis:auto;margin-left:auto}
 .compact-advanced .image-advanced[open]>.advanced-body,
 .compact-materials .video-materials>.video-assets.is-popped{display:block;position:absolute;left:0;right:0;bottom:calc(100% + 8px);z-index:5;max-height:var(--above,60vh);overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:12px 16px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 .compact-advanced .image-advanced>.advanced-body>.image-params{margin-top:0}
 .compact-materials .video-slots{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px}
-.video-slot{display:inline-flex;align-items:center;gap:6px}
-.video-slot img{height:24px;width:auto;max-width:48px;object-fit:contain;border-radius:4px;display:block}
+/* 最后一级收起时方式行与「看手气 / 优化提示词」改用小号控件，给结果区里的画面再让出十几像素（画面最小可用高度见 media_session MIN_MEDIA） */
+.compact-materials .assist-row button{padding:4px 8px;font-size:13px}
+.compact-materials .video-mode select,.compact-materials .video-orientation button{padding-top:4px;padding-bottom:4px}
+/* 槽位跟在方式行后面，放不下才换行 */
+.compact-materials .video-materials>.video-slots{flex:0 1 auto}
+.video-slot{display:inline-flex;align-items:center;gap:6px;position:relative}
+.video-slot img{height:22px;width:auto;max-width:40px;object-fit:cover;border-radius:4px;display:block}
+.video-slot-badge{position:absolute;left:2px;top:2px;padding:0 3px;border-radius:3px;font-size:11px;line-height:14px;background:rgba(0,0,0,.65);color:#fff}
+/* 素材块弹成浮层时排紧凑：预览缩略图跟在上传那一行后面、高 40px，文件名与说明只显示一行（完整内容在悬停提示里） */
+.compact-materials .video-assets.is-popped{gap:6px 10px}
+.compact-materials .video-assets.is-popped .file-row{flex:1 1 0;flex-wrap:nowrap}
+.compact-materials .video-assets.is-popped .file-row>*{flex:none;white-space:nowrap}
+.compact-materials .video-assets.is-popped .file-row>.file-name{flex:1 1 0;width:0;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.compact-materials .video-assets.is-popped .video-preview{flex:0 0 auto}
+.compact-materials .video-assets.is-popped img.video-preview-media{height:40px}
+.compact-materials .video-assets.is-popped video.video-preview-media{max-height:40px}
+.compact-materials .video-assets.is-popped audio.video-preview-media{width:160px;height:32px}
+.compact-materials .video-assets.is-popped>p{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 图片页的「以第 N 次为底稿」小条并进「高级参数」那一行的左端 */
+#pane-image .image-composer.compact-materials{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center}
+#pane-image .compact-materials>*{grid-column:1/-1}
+#pane-image .compact-materials>.image-input-row{grid-row:1}
+#pane-image .compact-materials>.refine-chip{grid-row:2;grid-column:1}
+#pane-image .compact-materials>.composer-tools{grid-row:2;grid-column:2}
 .video-slot[aria-expanded=true]{border-color:var(--accent)}
 .compact-materials .video-materials>.video-assets{display:none}
 .compact-materials .video-materials>.video-assets.is-popped{display:flex}

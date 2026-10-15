@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -172,8 +173,9 @@ def test_first_and_last_frames_fold_into_slots_at_the_minimum_window(page, tmp_p
         pane.locator("[data-video-prompt]").fill(LONG)
         slots = pane.locator("[data-video-slot]")
         expect(slots).to_have_count(2)
-        expect(slots.nth(0)).to_contain_text("首帧")
-        expect(slots.nth(1)).to_contain_text("尾帧")
+        expect(slots.nth(0)).to_have_attribute("aria-label", re.compile(r"^首帧："))
+        expect(slots.nth(1)).to_have_attribute("aria-label", re.compile(r"^尾帧："))
+        expect(slots.nth(0)).to_contain_text("首")
         expect(slots.nth(0).locator("img")).to_be_visible()
         expect(pane.locator("[data-video-first-area]")).not_to_be_visible()
         _assert_layout(page, "video", "图生视频首尾帧 900×600")

@@ -332,9 +332,10 @@ export function createVideoPane(root, ctx = {}) {
   }
 
   // ---------- 矮窗口里的素材槽位（layout #5） ----------
-  // 输入区放不下时（media_session fitComposer 加 compact-materials）首帧、尾帧等素材块收起，换成槽位「首帧 [缩略图]」；点槽位在输入区上方
+  // 输入区放不下时（media_session fitComposer 加 compact-materials）首帧、尾帧等素材块收起，换成「生成方式」一行里的槽位：
+  // 有缩略图时只放缩略图加角标（「首」「尾」），没有时写名称与「未选择」；放不下一行就换行。点槽位在输入区上方
   // 弹出原来的素材块（上传、从图片会话选、清除），再点一次或按 Esc 收起。高窗口里槽位隐藏，素材照旧展开。
-  const SLOTS = [["firstArea", "首帧"], ["lastArea", "尾帧"], ["referenceArea", "参考视频"], ["musicArea", "参考图与音乐"]];
+  const SLOTS = [["firstArea", "首帧", "首"], ["lastArea", "尾帧", "尾"], ["referenceArea", "参考视频", "参考"], ["musicArea", "参考图与音乐", "参考"]];
   const slotBox = doc.createElement("div");
   slotBox.className = "video-slots";
   els.orientation?.parentNode?.insertBefore(slotBox, els.orientation.nextSibling ?? null);
@@ -348,7 +349,7 @@ export function createVideoPane(root, ctx = {}) {
   function renderSlots() {
     if (poppedArea && els[poppedArea]?.hidden) poppedArea = null;
     const slots = [];
-    for (const [key, label] of SLOTS) {
+    for (const [key, label, badge] of SLOTS) {
       const area = els[key];
       if (!area || area.hidden) continue;
       const slot = doc.createElement("button");
@@ -357,14 +358,16 @@ export function createVideoPane(root, ctx = {}) {
       slot.dataset.videoSlot = key;
       slot.setAttribute("aria-expanded", key === poppedArea ? "true" : "false");
       const name = doc.createElement("span");
-      name.textContent = label;
-      slot.append(name);
       const thumb = area.querySelector?.(".video-preview img");
       if (thumb?.src) {
+        name.className = "video-slot-badge";
+        name.textContent = badge;
         const img = doc.createElement("img");
         img.src = thumb.src; img.alt = "";
-        slot.append(img);
+        slot.append(img, name);
       } else {
+        name.textContent = label;
+        slot.append(name);
         const state = doc.createElement("span");
         state.className = "hint";
         state.textContent = area.querySelector?.(".file-name")?.textContent || "未选择";
@@ -376,6 +379,9 @@ export function createVideoPane(root, ctx = {}) {
       const locked = controls.length > 0 && controls.every((control) => control.disabled);
       slot.disabled = locked;
       slot.title = locked ? `${label}：${name2}（接着往下生沿用上一段，不能更换）` : `${label}：${name2}，点开更换`;
+      slot.setAttribute("aria-label", slot.title);
+      // 素材块弹成浮层时说明文字只显示一行，完整内容放进悬停提示。
+      for (const note of area.querySelectorAll?.(":scope > p") ?? []) note.title = note.textContent;
       slot.addEventListener("click", () => popArea(poppedArea === key ? null : key));
       // 拖着文件经过槽位就弹出素材块，好放到上传行上（issue #15 的拖放在矮窗口里也能用）。
       slot.addEventListener("dragenter", () => { if (poppedArea !== key) popArea(key); });
