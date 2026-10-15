@@ -156,7 +156,7 @@ def _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway, 
         app.add_routes([(method, pattern, library_adapter)])
 
     app.add_routes(build_precheck_routes(llm, media))
-    agent_skill = AgentSkillService(roots.resources_root, roots.mode, Path.home())
+    agent_skill = AgentSkillService(roots.resources_root, roots.mode, paths.user_home())
     app.add_routes(build_agent_skill_routes(agent_skill))
     app.add_routes([
         ("GET", "/api/state", lambda _req: {

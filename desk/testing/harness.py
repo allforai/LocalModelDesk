@@ -216,7 +216,7 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, skills, a
         ))
         return Response(result.status, result.body, result.headers)
 
-    agent_skill = AgentSkillService(roots.resources_root, roots.mode, Path.home())
+    agent_skill = AgentSkillService(roots.resources_root, roots.mode, paths.user_home())
     table = [
         ("GET", "/api/config", lambda _req: config_payload(roots)),
         ("PUT", "/api/config", lambda req: config.update_config(roots, **req.body).to_json()),

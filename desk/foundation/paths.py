@@ -27,6 +27,11 @@ def default_data_root() -> Path:
     return Path.home() / "Library" / "Application Support" / "LocalModelDesk"
 
 
+def user_home() -> Path:
+    """The user's home directory; the only place HOME is read (agent skill links live under it)."""
+    return Path.home()
+
+
 def home_model_root_candidates() -> tuple[Path, ...]:
     """Return the small set of conventional model roots under the user home."""
     home = Path.home()
