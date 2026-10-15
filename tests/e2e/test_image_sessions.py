@@ -643,10 +643,10 @@ def _expanded_geometry(page):
 
 
 def _assert_expanded_card_in_view(page, when, settle_ms=2_000):
-    """The expanded card's large image and all three actions (V-50 adds 「用这张生成视频」) are
-    inside the timeline viewport, and so is its header whenever the whole card fits. The large image
-    is never shrunk below IMAGE_FLOOR (or 60vh / its own size when those are smaller) to make the
-    header fit (B-01): when card and floor do not both fit, the header is the part that scrolls away.
+    """The expanded card's header, large image and all three actions (V-50 adds 「用这张生成视频」) are
+    inside the timeline viewport (layout #5, 2026-10-15: actions sit right under the image, the full
+    prompt and params below them). In short windows the image shrinks for this, but never below a
+    thumbnail (or 60vh / its own size when those are smaller).
     The pane re-fits and re-pins on image load and on its ResizeObserver, so poll until settled."""
     page.wait_for_function(
         "() => [...document.querySelectorAll('#pane-image .attempt-image')].every((i) => i.complete)")
@@ -654,18 +654,16 @@ def _assert_expanded_card_in_view(page, when, settle_ms=2_000):
     while True:
         g = _expanded_geometry(page)
         top, bottom = g["timeline"]["top"] - 1, g["timeline"]["bottom"] + 1
-        fits = g["card"] is not None and g["card"]["height"] <= g["timeline_inner"] + 1
-        parts = {"image": g["image"], **{f"button{i}": b for i, b in enumerate(g["buttons"])}}
-        if fits:
-            parts["label"] = g["label"]
+        # layout #5（2026-10-15）：标题、大图、操作行总是同时在结果区里；矮窗口里大图为此可以缩，但仍比缩略图大。
+        parts = {"image": g["image"], "label": g["label"], **{f"button{i}": b for i, b in enumerate(g["buttons"])}}
         outside = {name: r for name, r in parts.items() if r is not None and (r["top"] < top or r["bottom"] > bottom)}
-        floor = min(IMAGE_FLOOR, g["vh60"], g["image_natural"] or IMAGE_FLOOR)
+        floor = min(THUMB, g["vh60"], g["image_natural"] or THUMB)
         small = g["image"] is not None and g["image"]["height"] < floor - 1
         if (not outside and not small and len(g["buttons"]) == 3) or time.monotonic() > deadline:
             break
         page.wait_for_timeout(100)
     assert len(g["buttons"]) == 3, (when, g)
-    assert not outside, (when, "expanded card's image/actions (and header when it fits) not inside the timeline viewport",
+    assert not outside, (when, "expanded card's header/image/actions not inside the timeline viewport",
                          outside, g["timeline"])
     assert not small, (when, f"expanded 大图 shrunk below {floor}px", g["image"], g)
     if g["image"] is not None:

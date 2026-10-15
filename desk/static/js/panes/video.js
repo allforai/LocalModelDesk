@@ -332,7 +332,7 @@ export function createVideoPane(root, ctx = {}) {
   }
 
   // ---------- 矮窗口里的素材槽位（layout #5） ----------
-  // 窗口矮于 760px 时 CSS 把首帧、尾帧等素材块收起，方式行里换成槽位「首帧 [缩略图]」；点槽位在输入区上方
+  // 输入区放不下时（media_session fitComposer 加 compact-materials）首帧、尾帧等素材块收起，换成槽位「首帧 [缩略图]」；点槽位在输入区上方
   // 弹出原来的素材块（上传、从图片会话选、清除），再点一次或按 Esc 收起。高窗口里槽位隐藏，素材照旧展开。
   const SLOTS = [["firstArea", "首帧"], ["lastArea", "尾帧"], ["referenceArea", "参考视频"], ["musicArea", "参考图与音乐"]];
   const slotBox = doc.createElement("div");

@@ -60,13 +60,14 @@ CARD_FIT = """([pane, scroll]) => {
           title: part('.attempt-row'), media: part('video, img.attempt-image, audio'), actions: part('.attempt-actions')};
 }"""
 
-# 元素完整在窗口里、且中心点没被别的元素盖住（elementFromPoint 落在它自己或它的子孙上）。
+# 元素完整在窗口里、且中心点与上沿都没被别的元素盖住（elementFromPoint 落在它自己或它的子孙上）。
 VISIBLE = """(sel) => {
   const n = document.querySelector(sel);
   const r = n.getBoundingClientRect();
-  const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+  const mine = (x, y) => { const hit = document.elementFromPoint(x, y); return !!hit && (hit === n || n.contains(hit)); };
   return {top: Math.round(r.top), bottom: Math.round(r.bottom), height: Math.round(r.height),
-          inside: r.top >= 0 && r.bottom <= innerHeight && r.height > 0, uncovered: !!hit && (hit === n || n.contains(hit))};
+          inside: r.top >= 0 && r.bottom <= innerHeight && r.height > 0,
+          uncovered: mine(r.left + r.width / 2, r.top + r.height / 2) && mine(r.left + r.width / 2, r.top + 3)};
 }"""
 
 
@@ -187,3 +188,49 @@ def test_first_and_last_frames_fold_into_slots_at_the_minimum_window(page, tmp_p
         page.set_viewport_size({"width": 1400, "height": 1000})  # 高窗口：素材照旧展开，没有槽位
         expect(pane.locator("[data-video-first-area]")).to_be_visible()
         expect(slots.first).not_to_be_visible()
+
+
+@pytest.mark.parametrize("width,height", [(900, 600), (1400, 851)])
+def test_frames_long_names_and_open_advanced_still_leave_a_whole_card(page, tmp_path, width, height):
+    """recheck 2026-10-15（WKWebView）：图生视频选了长文件名的首帧、尾帧，又展开高级参数、填 600 字时，1400×851 下
+    输入区曾冲出窗口、结果区只剩 20px，900×600 下高级参数浮层的上沿钻到标签栏下面。"""
+    first = tmp_path / ("synthetic-first-frame-morning-lake-with-mist-and-heron-standing-in-reeds-" * 3 + "1280x720.png")
+    last = tmp_path / ("synthetic-last-frame-morning-lake-heron-flying-away-over-golden-reeds-" * 3 + "1280x720.png")
+    first.write_bytes(gradient_png(1280, 720))
+    last.write_bytes(gradient_png(1280, 720))
+    with _harness(tmp_path, "video") as harness:
+        page.set_viewport_size({"width": width, "height": height})
+        pane = _generate_one(page, harness, "video")
+        pane.locator("[data-video-mode]").select_option("image")
+        pane.locator("[data-video-first-upload]").set_input_files(str(first))
+        pane.locator("[data-video-last]").set_input_files(str(last))
+        pane.locator("[data-video-prompt]").fill(LONG)
+        pane.locator("[data-video-advanced] summary").click()
+        page.wait_for_timeout(300)
+        body = page.evaluate(VISIBLE, "[data-video-advanced] .advanced-body")
+        assert body["inside"] and body["uncovered"], f"{width}×{height}：高级参数不完整可见 {body}"
+        _shot(page, tmp_path, f"video-{width}x{height}-frames-advanced")
+        page.keyboard.press("Escape")
+        _assert_layout(page, "video", f"长文件名首尾帧 {width}×{height}")
+
+
+def test_a_long_prompt_under_the_card_does_not_shrink_the_image(page, tmp_path):
+    """recheck 2026-10-15：竖幅图的完整提示词有 600 字时，1400×851 下大图曾被压到 193px（结果区有 568px）——
+    提示词与参数占得多时留在操作行下面滚着看，不再为了整张卡片放得下去缩大图。"""
+    with _harness(tmp_path, "image") as harness:
+        page.set_viewport_size({"width": 1400, "height": 851})
+        page.goto(harness.base_url + "#tab=image")
+        pane = page.locator("#pane-image")
+        pane.locator("[data-image-advanced] summary").click()
+        pane.locator("[data-image-width]").fill("512")
+        pane.locator("[data-image-height]").fill("1536")
+        pane.locator("[data-image-advanced] summary").click()
+        pane.locator("[data-image-prompt]").fill(LONG)
+        pane.locator("[data-image-start]").click()
+        expect(pane.locator(".attempt").first).to_have_attribute("data-attempt-status", "done", timeout=15_000)
+        pane.locator("[data-image-prompt]").fill("")
+        page.wait_for_timeout(500)
+        fit = page.evaluate(CARD_FIT, ["image", False])
+        assert fit["media"]["height"] >= 300, f"大图只有 {fit['media']}，结果区 {fit['view']}"
+        for part in ("title", "media", "actions"):
+            assert fit["view"]["top"] <= fit[part]["top"] and fit[part]["bottom"] <= fit["view"]["bottom"], (part, fit)

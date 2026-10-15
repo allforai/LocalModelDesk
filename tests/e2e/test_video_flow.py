@@ -36,7 +36,7 @@ def test_conditioning_file_upload_preview_and_generation(page, tmp_path, mode, s
         subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=blue:s=32x32:d=1",
                         "-c:v", "libx264", "-pix_fmt", "yuv420p", str(clip)], check=True)
         content = clip.read_bytes()
-    # 高窗口：素材块照旧展开（矮于 760px 时收成槽位，见 test_media_short_window.py）。
+    # 高窗口：素材块照旧展开（放不下时收成槽位，见 test_media_short_window.py）。
     page.set_viewport_size({"width": 1280, "height": 900})
     with launch_test_harness(tmp_path) as harness:
         page.goto(harness.base_url)
@@ -97,14 +97,15 @@ def test_video_parameters_progress_and_player_src_follow_finished_output(
     assert audit_violations == []
 
 
-@pytest.mark.parametrize("height", [900, 720])
+@pytest.mark.parametrize("height", [900, 600])
 def test_first_frame_picker_is_reachable_by_keyboard(page, tmp_path, audit_violations, height):
     page.set_viewport_size({"width": 1280, "height": height})
     with launch_test_harness(tmp_path) as harness:
         page.goto(harness.base_url + "#tab=video")
         page.locator("[data-video-mode]").select_option("image")
-        if height <= 760:  # 矮窗口：素材收成槽位，先用键盘打开「首帧」槽位
+        if height == 600:  # 矮窗口：素材收成槽位，先用键盘打开「首帧」槽位
             slot = page.locator("[data-video-slot=firstArea]")
+            expect(slot).to_be_visible()
             slot.focus()
             page.keyboard.press("Enter")
             expect(page.locator("[data-video-first-area]")).to_be_visible()

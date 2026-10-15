@@ -236,8 +236,8 @@ export function createSessionPane(root, {
 
   // ---------- 展开卡片可见（D-71、D-72、D-74、D-78；layout #5） ----------
   // 卡片里操作行紧跟媒体，完整提示词与参数在操作行下面。展开卡片有媒体且页面给了 fitExpanded 时，先算媒体
-  // 可用的高度交给页面去定上限：整张卡片放得下、媒体还不小于 COMFORT 就按整张卡片算（IS D-74）；放不下（矮窗口、
-  // 提示词很长）就按「从卡片上沿到操作行下沿」算，让标题、媒体、操作行在任何窗口高度下都能同时看到。
+  // 可用的高度交给页面去定上限：整张卡片放得下、且媒体不比只算到操作行时小太多（≥96px 且 ≥60%）就按整张卡片算（IS D-74）；
+  // 否则（矮窗口、提示词很长）按「从卡片上沿到操作行下沿」算，提示词与参数留在操作行下面滚着看，让标题、媒体、操作行在任何窗口高度下都能同时看到。
   // 然后按 scrollIntent 贴底或把展开卡片滚入可见区。
   // 媒体加载完、窗口或输入区变高变矮、卡片里折叠块开合时都会重来一次（ResizeObserver + load）。
   const rect = (node) => (typeof node?.getBoundingClientRect === "function" ? node.getBoundingClientRect() : null);
@@ -255,14 +255,15 @@ export function createSessionPane(root, {
     const bottom = Math.min(card.bottom, actions.bottom + pad);
     return { top: card.top, bottom, height: bottom - card.top };
   }
-  const COMFORT = 192;
   function fitExpandedImage() {
     const image = expandedRefs?.image;
     if (!image || !fitExpanded) return;
     const card = rect(expandedRefs?.node); const part = mustSee(); const shown = rect(image); const box = rect(els.timeline);
     if (!card || !part || !shown || !box || !els.timeline.clientHeight) return;
     const whole = timelineInner() - (card.height - shown.height) - 4;
-    fitExpanded(image, whole >= COMFORT ? whole : timelineInner() - (part.height - shown.height) - 4);
+    const head = timelineInner() - (part.height - shown.height) - 4;
+    // 提示词与参数只占得起媒体的一小部分时才为它们缩媒体；占得多（长提示词）就让它们留在下面滚着看。
+    fitExpanded(image, whole >= Math.max(96, head * 0.6) ? whole : head);
   }
   // 整张放得下就以整张为准，否则以标题到操作行那一段为准。
   function revealExpanded() {
@@ -280,15 +281,30 @@ export function createSessionPane(root, {
   // ---------- 输入区不挤掉结果区（layout #5） ----------
   // 输入区不整块滚动：只有提示词框（音乐是歌词框）随内容长高，长到「结果区还剩一半高度（至少 240px）」或页面给的
   // 上限（inputCap，相对窗口高度）为止，再多就在框内滚动；CSS 的 min-height 保证它至少两行。
+  // 提示词框缩到两行、结果区仍不到 240px 时逐级收起：先让「高级参数」改成输入区上方的浮层，再把视频素材收成槽位。
   const MIN_TIMELINE = 240;
+  const COMPACT_LEVELS = [[], ["compact-advanced"], ["compact-advanced", "compact-materials"]];
   const composerNode = q("composer");
+  function setCompact(level) {
+    for (const name of COMPACT_LEVELS.at(-1)) composerNode.classList?.toggle?.(name, COMPACT_LEVELS[level].includes(name));
+  }
   function fitComposer() {
     const input = composer.input;
     const main = els.timeline.parentNode;
     if (!input?.style || !composerNode || !main?.clientHeight) return;
     const mainHeight = main.clientHeight;
     const others = mainHeight - els.timeline.offsetHeight - composerNode.offsetHeight;
+    const minInput = parseFloat(doc.defaultView?.getComputedStyle?.(input)?.minHeight) || 0;
+    let level = 0;
+    for (; level < COMPACT_LEVELS.length - 1; level += 1) {
+      setCompact(level);
+      if (mainHeight - others - MIN_TIMELINE - (composerNode.offsetHeight - input.offsetHeight) >= minInput) break;
+    }
+    setCompact(level);
     const rigid = composerNode.offsetHeight - input.offsetHeight;
+    // 浮层最高到主列顶端（不盖到标签栏）
+    const above = (rect(composerNode)?.top ?? 0) - (rect(main)?.top ?? 0) - 8;
+    composerNode.style?.setProperty?.("--above", `${Math.max(0, Math.floor(above))}px`);
     const keep = Math.max(MIN_TIMELINE, mainHeight / 2);
     const room = Math.floor(mainHeight - others - keep - rigid);
     const cap = composer.inputCap ? `${composer.inputCap * 100}vh` : null;
