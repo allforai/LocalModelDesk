@@ -32,3 +32,23 @@ def build_precheck_routes(llm, media) -> list:
         return _error(400, "invalid_params", "op 只能是 chat 或 image")
 
     return [("GET", "/api/agent/precheck", precheck)]
+
+
+def build_routes(service) -> list:
+    def get_status(_req):
+        return Response(200, service.status())
+
+    def post_apply(req):
+        targets = (req.body or {}).get("targets")
+        if not isinstance(targets, list) or not all(isinstance(t, str) for t in targets):
+            return _error(400, "invalid_params", "targets 须为字符串数组")
+        try:
+            return Response(200, service.apply(targets))
+        except ValueError as exc:
+            return _error(400, "invalid_params", str(exc))
+
+    def post_check(_req):
+        return Response(200, service.check())
+
+    return [("GET", "/api/agent-skill", get_status), ("POST", "/api/agent-skill", post_apply),
+            ("POST", "/api/agent-skill/check", post_check)]

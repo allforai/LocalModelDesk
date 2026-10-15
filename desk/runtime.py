@@ -9,7 +9,8 @@ import time
 
 from .app import DeskApp, Response
 from .agent_cli.version import read_version
-from .agent_skill.routes import build_precheck_routes
+from .agent_skill.routes import build_precheck_routes, build_routes as build_agent_skill_routes
+from .agent_skill.service import AgentSkillService
 from .arbiter import Arbiter, MemoryReader
 from .budget import Budget
 from .budget.store import Measurements
@@ -155,9 +156,12 @@ def _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway, 
         app.add_routes([(method, pattern, library_adapter)])
 
     app.add_routes(build_precheck_routes(llm, media))
+    agent_skill = AgentSkillService(roots.resources_root, roots.mode, Path.home())
+    app.add_routes(build_agent_skill_routes(agent_skill))
     app.add_routes([
         ("GET", "/api/state", lambda _req: {
-            **arbiter.desk_state(), "version": read_version(roots.resources_root)}),
+            **arbiter.desk_state(), "version": read_version(roots.resources_root),
+            "agent_skill_stale": agent_skill.stale()}),
         ("GET", "/api/memory", lambda _req: arbiter.memory_snapshot()),
         ("GET", "/api/budget", lambda _req: Response(
             200, _budget_payload(budget, llm, resources, roots)
