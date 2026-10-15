@@ -234,3 +234,25 @@ def test_a_long_prompt_under_the_card_does_not_shrink_the_image(page, tmp_path):
         assert fit["media"]["height"] >= 300, f"大图只有 {fit['media']}，结果区 {fit['view']}"
         for part in ("title", "media", "actions"):
             assert fit["view"]["top"] <= fit[part]["top"] and fit[part]["bottom"] <= fit["view"]["bottom"], (part, fit)
+
+
+def test_everything_set_at_once_still_collapses(page, tmp_path):
+    """recheck 2026-10-15（WKWebView）：素材、长提示词、展开高级参数在同一刻设好（输入区一下子冲出主列）时，
+    收起判定曾把「其余部分」算成负数而不收起，结果区只剩 20px、提示词与主按钮出了窗口。"""
+    first = tmp_path / "first.png"
+    first.write_bytes(gradient_png(1280, 720))
+    with _harness(tmp_path, "video") as harness:
+        page.set_viewport_size({"width": 1400, "height": 851})
+        pane = _generate_one(page, harness, "video")
+        page.set_viewport_size({"width": 900, "height": 600})
+        pane.locator("[data-video-mode]").select_option("image")
+        pane.locator("[data-video-first-upload]").set_input_files(str(first))
+        pane.locator("[data-video-last]").set_input_files(str(first))
+        page.evaluate("""(text) => {
+          document.querySelector('[data-video-advanced]').open = true;
+          const p = document.querySelector('[data-video-prompt]');
+          p.value = text; p.dispatchEvent(new Event('input', {bubbles: true}));
+        }""", LONG)
+        page.wait_for_timeout(300)
+        page.keyboard.press("Escape")
+        _assert_layout(page, "video", "同一刻设好 900×600")

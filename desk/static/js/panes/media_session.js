@@ -293,7 +293,10 @@ export function createSessionPane(root, {
     const main = els.timeline.parentNode;
     if (!input?.style || !composerNode || !main?.clientHeight) return;
     const mainHeight = main.clientHeight;
-    const others = mainHeight - els.timeline.offsetHeight - composerNode.offsetHeight;
+    // 标题行、合成栏等其余部分直接加总（输入区已冲出主列时，用「主列 − 时间线 − 输入区」会算成负数）。
+    const others = [...(main.children ?? [])]
+      .filter((node) => node !== els.timeline && node !== composerNode)
+      .reduce((sum, node) => sum + (node.offsetHeight || 0), 0);
     const minInput = parseFloat(doc.defaultView?.getComputedStyle?.(input)?.minHeight) || 0;
     let level = 0;
     for (; level < COMPACT_LEVELS.length - 1; level += 1) {
@@ -325,7 +328,15 @@ export function createSessionPane(root, {
   const settleSoon = () => {
     const view = doc.defaultView;
     if (settleFrame || typeof view?.requestAnimationFrame !== "function") return settleFrame || settleView();
-    settleFrame = view.requestAnimationFrame(() => { settleFrame = 0; settleView(); });
+    // 窗口被遮住、锁屏时 WebKit 停发动画帧：再挂一个定时器兜底，先到的那个落定并撤掉另一个，排布不会卡在旧尺寸上。
+    let timer = 0;
+    const run = () => {
+      if (!settleFrame) return;
+      view.cancelAnimationFrame?.(settleFrame); view.clearTimeout?.(timer);
+      settleFrame = 0; settleView();
+    };
+    settleFrame = view.requestAnimationFrame(run);
+    timer = view.setTimeout?.(run, 100) ?? 0;
   };
   const resizeWatch = typeof doc.defaultView?.ResizeObserver === "function"
     ? new doc.defaultView.ResizeObserver(settleSoon) : null;
