@@ -45,6 +45,26 @@ fail() {
   FAILED=1
 }
 
+# A-57: remove agent skill / lmdesk links that point into a LocalModelDesk; never real files, never foreign links.
+remove_agent_links() {
+  local link target
+  for link in "$HOME/.claude/skills/local-model-desk" "$HOME/.codex/skills/local-model-desk" \
+              "$HOME/.agents/skills/local-model-desk" "$HOME/.pi/agent/skills/local-model-desk" \
+              "$HOME/.dsh/skills/local-model-desk" "$HOME/.local/bin/lmdesk"; do
+    [[ -L "$link" ]] || continue
+    target="$(readlink "$link")"
+    case "$target" in
+      */agent_skill/bundled/local-model-desk|*/Contents/Resources/bin/lmdesk|*/scripts/lmdesk) ;;
+      *) continue ;;
+    esac
+    if [[ "$DRY_RUN" == 1 ]]; then
+      echo "[dry-run] rm '$link'"
+    else
+      rm -f -- "$link" || fail "failed to remove $link"
+    fi
+  done
+}
+
 guarded_remove() {
   local path="$1"
   case "$path" in
@@ -142,6 +162,8 @@ if [[ -e "$LA_PLIST" || -L "$LA_PLIST" ]]; then
     rm -f -- "$LA_PLIST" || fail "failed to remove $LA_PLIST"
   fi
 fi
+
+remove_agent_links
 
 if [[ -e "$APP_PATH" || -L "$APP_PATH" ]]; then
   ACTUAL_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Contents/Info.plist" 2>/dev/null || true)"

@@ -179,6 +179,7 @@ lmdesk image rename <会话> "新名字"
   - 能识别：用 `~/.codex/skills`。
   - 不能识别：改用 `~/.agents/skills`，界面上这一行注明「同时对 pi、DeepSeek Harness 生效」。
   - 实测结论写回本节。
+- **实测（2026-10-16，codex-cli 0.160.1）**：不读 ~/.codex/skills（本机 Orca 把 CODEX_HOME 指向别处，探针放在 ~/.codex/skills 没被列出；放到 ~/.agents/skills 对照则被列出），codex 行用 ~/.agents/skills，并显示「同时对 pi、DeepSeek Harness 生效」。~/.codex/skills 只有 CODEX_HOME 恰好是 ~/.codex 时才会被读，不可靠。
   - 依据：`~/.agents/skills` 会同时被 Codex、pi、DeepSeek Harness 读取（Codex 官方文档、pi 1.2.0 源码、dsh `dsh-skill-filesystem` 源码），所以默认不用它，以保证每个 agent 能单独勾选。
 - [A-52] 命令行链接 `~/.local/bin/lmdesk` 不单独设勾选框。至少装了一个 agent 时自动建立；全部卸载时自动移除。
   - 它的状态同样按 A-53 判定。

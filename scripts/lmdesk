@@ -1,0 +1,7 @@
+#!/bin/bash
+# Development entry for lmdesk: run the repo's desk.agent_cli with a Python that has only the stdlib needs.
+set -euo pipefail
+SELF="$0"; while [[ -L "$SELF" ]]; do t="$(readlink "$SELF")"; [[ "$t" = /* ]] && SELF="$t" || SELF="$(dirname "$SELF")/$t"; done
+ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
+PY="${LMDESK_PYTHON:-$(command -v python3)}"
+exec env PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" "$PY" -m desk.agent_cli "$@"
