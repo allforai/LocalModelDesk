@@ -71,6 +71,9 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["previewSkill", ["https://github.com/o/r"], "/api/skills/preview", "POST", { url: "https://github.com/o/r" }],
     ["installSkill", ["abc123"], "/api/skills/install", "POST", { staging_id: "abc123" }],
     ["discardSkill", ["abc123"], "/api/skills/discard", "POST", { staging_id: "abc123" }],
+    ["agentSkillStatus", [], "/api/agent-skill", "GET"],
+    ["agentSkillApply", [["claude", "pi"]], "/api/agent-skill", "POST", { targets: ["claude", "pi"] }],
+    ["agentSkillCheck", [], "/api/agent-skill/check", "POST", {}],
   ];
   const names = [
     "readConfig", "writeConfig", "resetConfig", "completeFirstRun", "adoptLegacyModels", "discoverModels", "listCatalog", "verifyAllModels",
@@ -78,6 +81,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     "llmStatus", "chatStream", "promptAssist", "startVideoJob", "startMusicJob", "startImageJob", "startComposeJob", "startSoundtrackJob", "capabilities", "cancelJob", "jobStatus", "listOutputs",
     "serveOutput", "revealOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
     "listSkills", "rescanSkills", "previewSkill", "installSkill", "discardSkill",
+    "agentSkillStatus", "agentSkillApply", "agentSkillCheck",
     "listMediaSessions", "createMediaSession", "getMediaSession", "renameMediaSession", "deleteMediaSession",
   ];
   assert.deepEqual(Object.keys(api).sort(), [...names, "uploadMediaInput", "DeskApiError"].sort());
