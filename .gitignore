@@ -51,3 +51,14 @@ docs/cross-exam/**/*.webm
 docs/superpowers/runs/
 .worktrees/
 .superpowers/
+
+# 2026-10 起的两次 cross-exam run 只提交报告、ledger.json 与 requirements.json；evidence/、visual/ 等
+# 证据目录留在本地（10-07 的 evidence 有 3.5G，10-14 的有 400M+）。
+docs/cross-exam/2026-10-07-localmodeldesk-whole/*
+!docs/cross-exam/2026-10-07-localmodeldesk-whole/completion-report.md
+!docs/cross-exam/2026-10-07-localmodeldesk-whole/ledger.json
+!docs/cross-exam/2026-10-07-localmodeldesk-whole/requirements.json
+docs/cross-exam/2026-10-14-localmodeldesk-full/*
+!docs/cross-exam/2026-10-14-localmodeldesk-full/completion-report.md
+!docs/cross-exam/2026-10-14-localmodeldesk-full/ledger.json
+!docs/cross-exam/2026-10-14-localmodeldesk-full/requirements.json

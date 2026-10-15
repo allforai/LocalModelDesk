@@ -1,0 +1,1666 @@
+[
+ {
+  "id": "R-arbiter-01",
+  "text": "聊天 LLM、视频生成、音乐生成三者互斥；持有者唯一，任何时刻至多一个重活。 获取与释放必须是进程内串行化的（锁），并发获取只能有一个成功。 ｜budget-spec 改写：重活能否并存由预算判定；预算不足时退化为互斥。持有者由单个变为一组。"
+ },
+ {
+  "id": "R-arbiter-02",
+  "text": "真实内存快照：总量、已用、可用、内存压力，取自操作系统（macOS 上 `vm_stat` / `sysctl`）， **不得出现写死的 128 之类常量**。"
+ },
+ {
+  "id": "R-arbiter-03",
+  "text": "按端口收割 LLM：找出监听 LLM 端口的**任何**进程并终止（先 TERM 后 KILL）， 包含本服务未曾 spawn 的孤儿。收割后必须确认端口确已释放才算成功。"
+ },
+ {
+  "id": "R-arbiter-04",
+  "text": "媒体作业进行中拒绝加载 LLM；已有媒体作业时拒绝启动第二个媒体作业。拒绝必须带机器可读原因。 ｜budget-spec 改写：拒绝条件由「媒体在跑」变为「预算装不下」。"
+ },
+ {
+  "id": "R-arbiter-05",
+  "text": "启动媒体作业前自动让出内存（卸掉 LLM）；让出失败必须导致启动失败，不得带着 LLM 硬上。 ｜budget-spec 改写：仅在预算不足时让出，且最小让出。"
+ },
+ {
+  "id": "R-arbiter-06",
+  "text": "暴露单一台面状态对象：内存里是谁、媒体是否在跑、现在能不能开下一件重活， 以及若不能、为什么。这是状态条与菜单栏的唯一数据来源。"
+ },
+ {
+  "id": "R-arbiter-07",
+  "text": "加载某模型前比对其体积与当前可用内存，装不下要在加载前给出警告（不是加载失败后才说）。 ｜budget-spec 改写：由加载时一次性检查，变为持续生效。"
+ },
+ {
+  "id": "R-foundation-01",
+  "text": "所有路径由本模块单点解析，区分「只读 bundle 资源根」与「可写用户数据根」； 其他模块只能通过 `api:resolvePaths` / `data:pathRoots` 取路径，仓库内不得出现第二处 `Path.home()` 拼接模型或输出目录。"
+ },
+ {
+  "id": "R-foundation-02",
+  "text": "配置持久化到 `<data root>/config.json`，字段至少含： `models_root`、`outputs_root`、`first_run_done`、`gateway`（`enabled`/`host`/`port`）、`config_version`。 读取时缺字段用默认值补齐，不得因为旧配置缺键而崩。"
+ },
+ {
+  "id": "R-foundation-03",
+  "text": "首运语义：无配置或 `first_run_done` 为假时，`api:readConfig` 必须能表达 needs-setup 状态； `api:completeFirstRun` 接受一个选定的 models 根目录（默认 `<data root>/models`），校验可写后落盘并置 `first_run_done`。 目录不可写必须返回明确错误，不得静默回退到默认目录。"
+ },
+ {
+  "id": "R-foundation-04",
+  "text": "收编既有权重：给定一个 legacy 根（如 `~/LocalModelDesk`）， `api:adoptLegacyModels` 识别其中的 `llms/`、`minimax-h3/`、`minimax-music3/`， 以「指向」（把 models_root 设成该目录）或「移动」两种方式接管，**任何情况下都不得重新下载、不得删除源**。 移动模式必须先校验目标卷剩余空间，不足则拒绝并说明差多少。"
+ },
+ {
+  "id": "R-foundation-05",
+  "text": "服务在 `mlx-h3`、内嵌 venv、模型目录任一缺失时仍能启动并提供状态接口； 缺失作为可查询的能力状态暴露，**不得 `SystemExit`**（现状是缺 `mlx-h3` 就整个服务起不来，聊天跟着死）。"
+ },
+ {
+  "id": "R-foundation-06",
+  "text": "配置写入原子：先写同目录临时文件再 `os.replace`；写到一半崩掉不得留下损坏的 `config.json`。"
+ },
+ {
+  "id": "R-gateway-01",
+  "text": "`GET /v1/models`：OpenAI 格式，列出当前可服务的模型。没有模型驻留时返回空列表而非报错。"
+ },
+ {
+  "id": "R-gateway-02",
+  "text": "`POST /v1/chat/completions` 非流式：OpenAI 请求与响应形状，含 `usage`、`finish_reason`。"
+ },
+ {
+  "id": "R-gateway-03",
+  "text": "同端点流式：SSE，`data:` 分块与 OpenAI 增量格式一致，以 `data: [DONE]` 结束。"
+ },
+ {
+  "id": "R-gateway-04",
+  "text": "`POST /v1/messages` 非流式：Anthropic 请求形状（`model`/`max_tokens`/`messages`/`system`） 与响应形状（`type:\"message\"`、`content` 块数组、`stop_reason`、`usage.input_tokens`/`output_tokens`）。"
+ },
+ {
+  "id": "R-gateway-05",
+  "text": "同端点流式：发出 `message_start`、`content_block_start`、`content_block_delta`、 `content_block_stop`、`message_delta`、`message_stop` 事件，每个事件带 `event:` 与 `data:` 两行。"
+ },
+ {
+  "id": "R-gateway-06",
+  "text": "Anthropic 的 `system`（字符串或块数组）、多轮 `messages`、`stop_reason` （`end_turn` / `max_tokens`）与 token 用量必须正确映射到底层结果。"
+ },
+ {
+  "id": "R-gateway-07",
+  "text": "绑定 `0.0.0.0` 于配置端口，使同网络其他设备可达；开关关闭时不监听。"
+ },
+ {
+  "id": "R-gateway-08",
+  "text": "无模型驻留或媒体作业进行中：返回 `503`，带 `Retry-After` 头与机器可读原因码。 **绝不自动加载模型，绝不排队等待。**"
+ },
+ {
+  "id": "R-gateway-09",
+  "text": "错误按各自方言的原生错误信封返回（OpenAI 的 `{\"error\":{...}}`； Anthropic 的 `{\"type\":\"error\",\"error\":{\"type\":...,\"message\":...}}`）。不得伪造成功响应。"
+ },
+ {
+  "id": "R-gateway-10",
+  "text": "请求里的 `model` 既接受目录 key，也接受当前加载模型的标识符； 与当前驻留模型不符时按 R-gateway-08 报错说明，不静默换模型。"
+ },
+ {
+  "id": "R-library-04",
+  "text": "：`list` 返回的 entry 里 `params` 原样在场，前端「再做一版」直接从 `api:listHistory` 的结果取 `params` 回填，无需第二个取回接口（registry 中也没有）。"
+ },
+ {
+  "id": "R-library-01",
+  "text": "列出成品（视频/音频），带时间、类别、字节数。列表来源同时覆盖历史记录与磁盘上的孤儿文件 （历史里没有但磁盘上有的成品也要看得见）。"
+ },
+ {
+  "id": "R-library-02",
+  "text": "提供成品字节流并支持 HTTP `Range`，返回 `206` 与正确的 `Content-Range`，使播放器可拖动。 路径必须限制在 outputs 根内，逃逸请求返回 404。"
+ },
+ {
+  "id": "R-library-03",
+  "text": "每个作业追加一条历史：类别、提示词/全部参数、耗时、状态、产出文件名、时间戳。 追加是原子的、并发安全的（多线程同时追加不得写坏行）。"
+ },
+ {
+  "id": "R-library-05",
+  "text": "多会话聊天：新建、列出、切换、重命名、删除。"
+ },
+ {
+  "id": "R-library-06",
+  "text": "每个会话持久化其消息、所用模型、更新时间；重启后仍在。删除会话即删除其持久化文件。"
+ },
+ {
+  "id": "R-library-07",
+  "text": "历史与会话一律存于用户数据根之下，不得写进 bundle 或代码目录。"
+ },
+ {
+  "id": "R-llm-01",
+  "text": "按目录 key 加载聊天模型：先向 `arbiter` 申请许可，再启动 mlx-lm 服务， 轮询健康直到就绪。状态可查：`idle` / `loading` / `loaded` / `error`。"
+ },
+ {
+  "id": "R-llm-02",
+  "text": "卸载当前模型，并确认 LLM 端口确已释放（走 `api:reapLlmPort`，不只是终止自己的子进程）。"
+ },
+ {
+  "id": "R-llm-03",
+  "text": "流式对话：逐 token 输出正文增量，并把思考/推理增量（`reasoning_content` / `reasoning`） 作为独立字段与正文分开传给上层，不混在一起。"
+ },
+ {
+  "id": "R-llm-04",
+  "text": "加载失败必须给出原因（mlx-lm 日志尾部），不得只报一个「加载超时」。"
+ },
+ {
+  "id": "R-llm-05",
+  "text": "报出当前加载的是哪个模型及其元数据（视觉能力、量化、参数量、体积）。"
+ },
+ {
+  "id": "R-llm-06",
+  "text": "媒体作业进行中、或当前没有加载模型时，聊天请求被拒绝并带明确原因，不得挂起等待。"
+ },
+ {
+  "id": "R-llm-07",
+  "text": "对话必须经由本服务转发；前端与外部客户端都不直连 mlx-lm 端口。"
+ },
+ {
+  "id": "R-media-01",
+  "text": "启动文生视频作业：提示词、画幅（宽高）、帧数、步数。H3 命令行的构造只存在一处。"
+ },
+ {
+  "id": "R-media-02",
+  "text": "启动文生歌曲作业：风格描述、歌词、时长。Music 3 调用的构造只存在一处。"
+ },
+ {
+  "id": "R-media-03",
+  "text": "作业运行中可流式读取进度/日志输出。"
+ },
+ {
+  "id": "R-media-04",
+  "text": "作业产出落在 outputs 根，文件名带时间戳（视频 `h3-<stamp>.mp4`，音频 `music3-<stamp>.wav`）， 并通过 `api:appendHistory` 记录一条含全部参数的历史。"
+ },
+ {
+  "id": "R-media-05",
+  "text": "任何重活占着 `arbiter` 时拒绝启动新作业，拒绝带机器可读原因。 启动前必须成功取得许可（其副作用是卸掉 LLM），失败即失败。"
+ },
+ {
+  "id": "R-media-06",
+  "text": "作业失败记录失败与原因；**产出文件不存在时绝不报成功**（退出码 0 但无文件也算失败）。"
+ },
+ {
+  "id": "R-media-07",
+  "text": "取消运行中的作业：终止子进程并释放 `arbiter` 许可，状态转为已取消。"
+ },
+ {
+  "id": "R-packaging-01",
+  "text": "一个构建脚本从干净 checkout 产出 `LocalModelDesk.app`；步骤可重复，中途失败要报错退出而非产出半成品。"
+ },
+ {
+  "id": "R-packaging-02",
+  "text": "包内自带 Python 运行时与全部依赖；产物不依赖 `/opt/homebrew` 或任何用户级 site-packages。"
+ },
+ {
+  "id": "R-packaging-03",
+  "text": "`Info.plist` 含 bundle id、版本、图标、`LSMinimumSystemVersion`。"
+ },
+ {
+  "id": "R-packaging-04",
+  "text": "用 Developer ID Application 证书签名，启用 hardened runtime 与时间戳； 内嵌的二进制与动态库一并签（由内向外）。"
+ },
+ {
+  "id": "R-packaging-05",
+  "text": "构建自动验证：`codesign --verify --deep --strict` 通过， 并验证自包含性（包内不存在指向 `/opt/homebrew` 或 home checkout 的路径引用）。"
+ },
+ {
+  "id": "R-packaging-06",
+  "text": "安装步骤把 App 放到 `/Applications`。"
+ },
+ {
+  "id": "R-packaging-07",
+  "text": "卸载步骤移除 App 与旧的 `com.aa.localmodeldesk` LaunchAgent； 用户数据仅在显式选择时删除；**模型权重在任何情况下都不得被自动删除**。"
+ },
+ {
+  "id": "R-packaging-08",
+  "text": "根目录旧脚本（`initModels.sh`、`run-h3.sh`、`run-music3.py`、`unload-llm.sh`）删除， 并验证其行为在 App 内均可达（目录/下载、H3、Music、卸模型各有对应接口）。"
+ },
+ {
+  "id": "R-packaging-09",
+  "text": "README 改写为安装后的真实行为，含：不自启、菜单栏形态、模型目录位置与收编、 以及对外 API 监听 `0.0.0.0` 且无鉴权这一事实。"
+ },
+ {
+  "id": "R-resources-01",
+  "text": "单一目录定义，供服务端、前端、以及任何 CLI 入口共同消费； 仓库内不得存在第二份模型 repo/路径清单（`initModels.sh` 与 `server.py` 里现有的两份都要消失）。"
+ },
+ {
+  "id": "R-resources-02",
+  "text": "完整度以 HF 仓库文件清单为准：取得每个期望文件的路径与字节数， 逐个比对本地是否存在、大小是否一致。清单可缓存到 `<data root>` 以便离线复用，缓存失效时明确降级说明，不得假装校验过。"
+ },
+ {
+  "id": "R-resources-03",
+  "text": "每项报出 `present` | `partial` | `missing`；`partial` 必须带完成百分比 （按字节，不是按文件数）与缺失/短缺文件列表。"
+ },
+ {
+  "id": "R-resources-04",
+  "text": "报出每项实际占盘字节数，以及 models 所在卷的剩余空间。"
+ },
+ {
+  "id": "R-resources-05",
+  "text": "对某一目录项发起下载；中断后再次发起必须续传，已完整的文件不得重下。"
+ },
+ {
+  "id": "R-resources-06",
+  "text": "取消/暂停进行中的下载；已下载的部分必须保持可续传状态，不得清空。"
+ },
+ {
+  "id": "R-resources-07",
+  "text": "下载进行时可查询实时进度：已完成字节/总字节、当前文件、速率、预估剩余。"
+ },
+ {
+  "id": "R-resources-08",
+  "text": "删除某一目录项的权重并回收磁盘，需要显式确认参数（无确认参数一律拒绝执行）。 删除只允许发生在 models 根之下，路径逃逸必须拒绝。"
+ },
+ {
+  "id": "R-resources-09",
+  "text": "同时至多一个下载在跑；`arbiter` 报告有重活（媒体生成）在跑时，下载必须拒绝启动并说明原因。"
+ },
+ {
+  "id": "R-shell-01",
+  "text": "App 从 `Contents/Resources/` 内的内嵌运行时启动服务； Swift 源码中不得出现任何指向 home 下 checkout 目录的路径。"
+ },
+ {
+  "id": "R-shell-02",
+  "text": "菜单栏项显示实时台面状态（空闲 / 已加载 XX / 出片中），菜单含「打开窗口」与「退出」。"
+ },
+ {
+  "id": "R-shell-03",
+  "text": "关闭窗口不退出应用；App 留在菜单栏，服务继续存活；再次「打开窗口」能把窗口调回来。"
+ },
+ {
+  "id": "R-shell-04",
+  "text": "退出时终止内嵌服务；不得留下孤儿进程（退出后台面端口不再有监听）。 异常终止路径（如 SIGTERM）也要清理。"
+ },
+ {
+  "id": "R-shell-05",
+  "text": "Dock 图标存在，App 可被正常激活与切换（不是 LSUIElement）。"
+ },
+ {
+  "id": "R-shell-06",
+  "text": "App 不注册任何登录项、不写任何 LaunchAgent plist。"
+ },
+ {
+  "id": "R-shell-07",
+  "text": "首运弹出 models 目录选择（`NSOpenPanel`），并可选择收编既有目录树。"
+ },
+ {
+  "id": "R-shell-08",
+  "text": "服务意外死亡时在界面上说明，而不是显示一个空白 WebView。"
+ },
+ {
+  "id": "R-ui-01",
+  "text": "前端是静态文件（`index.html`、`app.css`、ES 模块），由服务端供给； Python 源码里不再存在内联 HTML/CSS/JS 字符串。"
+ },
+ {
+  "id": "R-ui-02",
+  "text": "聊天面板：模型选择、加载/卸载、流式回复、思考过程可展开、左侧会话列表（新建/切换/重命名/删除）。"
+ },
+ {
+  "id": "R-ui-03",
+  "text": "视频面板：提示词、画幅、帧数、步数、进度、完成后就地播放。"
+ },
+ {
+  "id": "R-ui-04",
+  "text": "音乐面板：风格描述、歌词、时长、进度、完成后就地播放。"
+ },
+ {
+  "id": "R-ui-05",
+  "text": "资源面板：每个模型显示 `齐` / `一半 N%` / `没下`、体积、实际占盘， 以及 下载 / 续传 / 取消 / 删除 控件；`partial` 要能看到缺哪些文件；显示卷剩余空间。"
+ },
+ {
+  "id": "R-ui-06",
+  "text": "素材库面板：成品与历史，点击播放，点击把当时的参数回填进对应表单。"
+ },
+ {
+  "id": "R-ui-07",
+  "text": "常驻状态条：真实内存（不是写死的 128）、内存里是谁、媒体是否在跑、现在能不能开下一件重活。"
+ },
+ {
+  "id": "R-ui-08",
+  "text": "加载装不下的模型前弹出内存警告，确认后才继续。"
+ },
+ {
+  "id": "R-ui-09",
+  "text": "首运界面：选择 models 目录，或收编一个既有目录树。"
+ },
+ {
+  "id": "R-ui-10",
+  "text": "设置界面：对外 API 的开关、主机、端口，并显示可复制的 base URL （OpenAI 与 Anthropic 各一条），旁边注明当前是无鉴权监听。"
+ },
+ {
+  "id": "R-budget-01",
+  "text": "每个额度必须标注来源 `predicted` / `measured` / `unavailable`， 在台面状态对象与诊断输出中可见。预测与实测不可混为一谈。"
+ },
+ {
+  "id": "R-budget-02",
+  "text": "模型声明窗口按序读取：`text_config.max_position_embeddings` → 顶层 `max_position_embeddings` → 记 `unavailable`。**禁止读取 `vision_config`**。 三条顺序不得调整，不得回落成默认值。"
+ },
+ {
+  "id": "R-budget-03",
+  "text": "冷启动额度由 `config.json` 推算（每 token 字节）与内存快照合成， 并据此向 mlx-lm 传入 `--prompt-cache-bytes` 与 `--prompt-cache-size`。 不传限额等于无上限，是当前的缺陷。"
+ },
+ {
+  "id": "R-budget-04",
+  "text": "自校准：每轮完成后，由 mlx-lm 日志的 `Prompt Cache` 字节数除以 该轮 `usage.prompt_tokens`，得出本机该模型的实测每 token 字节，写入实测档案。 档案条目须记录权重大小，与 `ModelEntry.gb` 不符即作废重测。"
+ },
+ {
+  "id": "R-budget-05",
+  "text": "修正的两个生效点必须区分：软触发（压缩阈值）立即生效； 硬边界（`--prompt-cache-bytes`）下次加载生效。二者不得混淆。"
+ },
+ {
+  "id": "R-budget-06",
+  "text": "保留 `memory_estimate.estimate_bytes(kind, params)` 的按参数估算形式—— 按作业种类给一个数会让不同分辨率的作业共用同一个估值，这是它当初就修掉的缺陷。 新增的是**标定来源**：每次媒体作业运行期采样 `available_bytes`（启动前基线、 运行中最低点、结束差值）得到本机实测峰值，写入实测档案，用于修正该公式的常数项。 本机尚无实测记录时，沿用代码内写死的 2026-09-08 标定值，并标 `predicted`。"
+ },
+ {
+  "id": "R-budget-07",
+  "text": "重活能否并存由预算判定，预算不足时结果即互斥。 判定的输入是**一组**重活而非一对：`fits(workloads)`。三件能否共存不等于 三个两两判断的合取，「最小让出」也只有在集合上才算得出来。 拒绝必须带机器可读原因与数字：需要多少、现有多少、依据来源为预测还是实测。"
+ },
+ {
+  "id": "R-budget-16",
+  "text": "预算的分母是**机器自报的重活能力**，不是此刻的可用内存。"
+ },
+ {
+  "id": "R-budget-18",
+  "text": "`can_start_heavy` 与 `acquire_heavy` 对同一个请求必须给同一个答案。"
+ },
+ {
+  "id": "R-budget-19",
+  "text": "拒绝的理由是给人看的，不是给日志看的。"
+ },
+ {
+  "id": "R-budget-17",
+  "text": "「能不能用这个模型」问的是**台面还持不持有它**，不是「有没有媒体作业在跑」。"
+ },
+ {
+  "id": "R-budget-13",
+  "text": "**无参的 `can_start_heavy(kind)` 只回答归属问题，绝不做预算算术。**"
+ },
+ {
+  "id": "R-budget-10",
+  "text": "一组重活的依据来源取其中最弱者：只要有一件是 `unavailable`， 整组按 `unavailable` 处理并走保守路径。不得让「两件实测加一件未量过」 被当作实测依据放行。"
+ },
+ {
+  "id": "R-budget-08",
+  "text": "预算判定「装得下」而实际触发内存压力时，该次失败必须落盘， 并永久收紧该组合的预算。系统必须从失败中学习，不只从成功中学习。"
+ },
+ {
+  "id": "R-budget-09",
+  "text": "内存压力升高时，按代价从轻到重处置：① 收紧对话额度并立即触发压缩； ② 拒绝新的重活；③ 才是卸载模型或终止作业。压力传感器是兜底闸，不是决策者。"
+ },
+ {
+  "id": "R-budget-11",
+  "text": "每 token 开销的推算只对标准 MHA/GQA 成立。config 中出现 MLA 标记（`kv_lora_rank` / `qk_nope_head_dim` / `v_head_dim`）或缺少显式 `head_dim` 时， 一律返回「算不出」走保守路径，**禁止用 `hidden_size // num_attention_heads` 推导**。 本机 glm-4.7-flash 即属此类：该推导会凑出 102（2048/20 = 102.4，连整数都不是）， 得出约 375 KB/token 而实际约 53 KB——高估 7 倍。一个看起来合理、实际错 7 倍的数， 比没有数更危险。自校准会在一轮之后填入真值。"
+ },
+ {
+  "id": "R-context-01",
+  "text": "会话发送给模型的内容受预算约束：超过 `Budget.for_chat()` 给出的 触发点时，较早消息由一条结构化摘要替代，尾部若干轮保持原文。 保留轮数由预算反推（尾部与摘要之和不超过触发点的一半，且至少保留最近一轮完整问答）， 不得写死为常数——各模型每 token 开销相差一个数量级。"
+ },
+ {
+  "id": "R-context-02",
+  "text": "摘要按固定模板填写，模板含且至少含：用户原始意图、关键概念、 涉及文件与代码、错误与修法、**用户历次发言逐条列出**、待办与当前工作。 不得使用开放式「总结一下」指令。"
+ },
+ {
+  "id": "R-context-03",
+  "text": "压缩只影响发送内容，不影响存储与展示。会话文件保留全部原始消息， 用户在界面上始终可以看到每一条。"
+ },
+ {
+  "id": "R-context-04",
+  "text": "压缩在两轮之间进行，使用当前驻留模型，不加载第二个模型。 压缩过程对用户可见（明确的进行中提示），不得静默阻塞。"
+ },
+ {
+  "id": "R-context-05",
+  "text": "摘要作为一条 `role: \"summary\"` 的会话消息存在，记录其替换的消息区间， 可被用户编辑，亦可在原文基础上重新生成。"
+ },
+ {
+  "id": "R-skill-01",
+  "text": "skill 是**指令，不是能力**。台面不执行 skill 里的任何东西：不跑脚本、 不发请求、不自动跟随它写的链接。skill 唯一的作用是把文字放进上下文。"
+ },
+ {
+  "id": "R-skill-02",
+  "text": "**进模型的每个字都是原文，台面不转述。**"
+ },
+ {
+  "id": "R-skill-03",
+  "text": "**选中由用户完成，不由模型判断。**"
+ },
+ {
+  "id": "R-skill-04",
+  "text": "可同时开多个，按选中顺序拼接。"
+ },
+ {
+  "id": "R-skill-05",
+  "text": "skill 的文字作为 `system` 消息排在最前，**永不参与压缩**。"
+ },
+ {
+  "id": "R-skill-06",
+  "text": "**skill 的 token 占用必须可见。**"
+ },
+ {
+  "id": "R-skill-07",
+  "text": "两个来源，用户的覆盖自带的。"
+ },
+ {
+  "id": "R-skill-08",
+  "text": "**坏的 skill 照样列出来，并写明坏在哪。**"
+ },
+ {
+  "id": "R-skill-09",
+  "text": "发现是显式的：启动时扫一次，外加一个「重新扫描」按钮。"
+ },
+ {
+  "id": "R-skill-10",
+  "text": "附件不隐身。"
+ },
+ {
+  "id": "R-skill-11",
+  "text": "从外部装：先看全文，再落盘，装完不启用。"
+ },
+ {
+  "id": "R-skill-12",
+  "text": "**压缩的预算必须扣掉 skill 的占用。**"
+ },
+ {
+  "id": "R-skill-13",
+  "text": "**skill 必须落在 `sentChars` 的度量范围之内。**"
+ },
+ {
+  "id": "R-skill-14",
+  "text": "选中集合与可用集合必须对账。"
+ },
+ {
+  "id": "R-skill-15",
+  "text": "选中状态（含附件勾选）是**会话级**的，随会话存档。"
+ },
+ {
+  "id": "R-skill-16",
+  "text": "扫描产出**唯一一份已解析列表**，注入只读它。"
+ },
+ {
+  "id": "R-skill-17",
+  "text": "安装**全部成功才落盘**，任何中断清掉暂存。"
+ },
+ {
+  "id": "D-01",
+  "text": "图片会话目录 `PathRoots.image_sessions_dir = data_root / \"image-sessions\"`，与聊天会话目录 `data_root / \"sessions\"` 分开；两边的文件互不可见（`GET /api/sessions` 不列出图片会话，反之亦然）。"
+ },
+ {
+  "id": "D-02",
+  "text": "每个会话一个文件 `<id>.json`，`id` 为 32 位小写十六进制（`uuid4().hex`，与 `SessionStore._ID_RE` 相同规则）。写入沿用 `SessionStore._write` 的方式：同目录临时文件 `.tmp-XXXX.part` + `os.replace`；列目录时跳过点开头的文件。"
+ },
+ {
+  "id": "D-03",
+  "text": "图片文件不进会话目录：仍由媒体作业写到 `outputs_root`（`qwen-image-<stamp>-<8hex>.png`），会话只存文件名。"
+ },
+ {
+  "id": "D-04",
+  "text": "`created` / `updated` / 尝试的 `ts` / `finished` 都用 `%Y-%m-%dT%H:%M:%S` 本地时间（与聊天会话一致）。"
+ },
+ {
+  "id": "D-05",
+  "text": "`updated` 在以下时刻刷新：新建、重命名、追加尝试、尝试落定。切换查看会话不刷新 `updated`。"
+ },
+ {
+  "id": "D-06",
+  "text": "`id` 是尝试自己的标识（`uuid4().hex`）。`job_id` 只是进程内作业计数（`MediaService._state[\"job_id\"]`，重启后从 0 重数），仅用于把当前轮询到的作业对上 `running` 尝试，不作为持久标识。"
+ },
+ {
+  "id": "D-07",
+  "text": "`params` 恰好五个键：`prompt`（字符串，原样保存，不截断）、`width`、`height`、`steps`、`seed`（都是整数）。`seed` 一律是**实际使用的值**，即使用户没填（随机）也记录生成时取到的那个数。"
+ },
+ {
+  "id": "D-08",
+  "text": "各状态下字段取值："
+ },
+ {
+  "id": "D-09",
+  "text": "`error.code` 取值与含义（`message` 是存进文件的原话，界面显示规则见 §7.5）："
+ },
+ {
+  "id": "D-10",
+  "text": "新建会话 `title = \"新会话\"`、`title_auto = true`。"
+ },
+ {
+  "id": "D-11",
+  "text": "会话追加**第一个**尝试时（`attempts` 为空且 `title_auto == true`），标题改为该尝试的提示词：连续空白折叠为一个空格、去首尾空白，长度超过 24 个字符时取前 24 个字符加「…」（与聊天 `displayTitle` 的 24 字规则一致）。之后的尝试不再改标题。第一个尝试失败或取消也照样取它的提示词。"
+ },
+ {
+  "id": "D-12",
+  "text": "重命名后 `title_auto = false`，此后任何生成都不再改标题。"
+ },
+ {
+  "id": "D-13",
+  "text": "重命名的标题：去首尾空白后 1–80 个字符；空串或超长 → 400，文件不变。"
+ },
+ {
+  "id": "D-14",
+  "text": "**尝试记录只由后端写**：追加 `running` 尝试和落定都在 `MediaService` 里、通过 `ImageSessionStore` 完成；前端从不 PATCH 尝试。前端轮询丢包、页面刷新、窗口关闭都不会丢写。"
+ },
+ {
+  "id": "D-15",
+  "text": "`ImageSessionStore` 的每个写方法在同一把 `threading.Lock` 内「读文件 → 改 → 原子写回」，不持有内存副本；所以作业线程的落定和 HTTP 线程的重命名/删除交错时互不覆盖（重命名后落定，标题保留；落定后重命名，状态保留）。"
+ },
+ {
+  "id": "D-16",
+  "text": "接通要求（Closure）：`runtime.py` 与 `desk/testing/harness.py` 构造 `MediaService` 时都传 `image_sessions=library.image_sessions`；`GET /api/image-sessions` 挂在生产路由和测试外壳路由上。只有文件存在、没人调用不算完成。"
+ },
+ {
+  "id": "D-17",
+  "text": "`attempt_count` 计所有状态的尝试；`running` 为该会话是否有 `status == \"running\"` 的尝试；`cover` 是最后一个 `done` 尝试的 `output`，没有则 `null`。目录不存在时返回 `[]`。"
+ },
+ {
+  "id": "D-18",
+  "text": "`session_id` 必填。缺失或不是字符串 → 400 `{\"error\":{\"code\":\"session_required\",\"message\":\"请先选择或新建一个会话\"}}`。会话不存在 → 404 `{\"error\":{\"code\":\"session_not_found\",\"message\":\"这个会话已被删除，请选择或新建一个会话\"}}`。"
+ },
+ {
+  "id": "D-19",
+  "text": "`seed` 可省略：省略时后端用 `secrets.randbelow(2**32)` 取随机值；不再有固定默认值 42（`start_image_job` 签名与 `routes.start_image` 里的 `seed=42` 默认都去掉）。给了就必须是 0–4294967295 的整数（现有校验）。"
+ },
+ {
+  "id": "D-20",
+  "text": "校验与挂接顺序（`start_image_job` → `_start`）： 1. 参数校验（提示词、宽高、步数、种子、force）→ 400； 2. `session_id` 校验（D-18）→ 400 / 404； 3. 互斥 `media_busy` → 409；运行环境 `capability_missing` → 503；模型 `model_incomplete` → 409；arbiter 拒绝 → 409；内存警告 `insufficient_memory`（未 force）→ 409； 4. 启动子进程；`spawn_failed` → 500； 5. **子进程启动成功、`_state` 已为 running 之后**，在 `MediaService._lock` 内调用 `begin_attempt(session_id, attempt)`，`attempt.job_id` 为新作业号、`params` 为实际参数（含实际 seed）。"
+ },
+ {
+  "id": "D-21",
+  "text": "第 1–4 步任何一步失败都**不写**会话文件：没有 running 尝试，也没有失败尝试（启动失败以错误提示的方式出现在输入区，见 §7.7）。"
+ },
+ {
+  "id": "D-22",
+  "text": "200 响应是现有 `job_status()` 快照，外加 `\"session_id\"` 与 `\"attempt_id\"` 两个字段；`job_status()` 在该作业存续期间也带这两个字段（其他 kind 为 null），前端据此把轮询到的作业对上尝试卡片。"
+ },
+ {
+  "id": "D-23",
+  "text": "`begin_attempt` 返回 False（会话恰好在第 2 步和第 5 步之间被删）时作业照常运行，结束后图片照常进素材库，不再写任何会话。"
+ },
+ {
+  "id": "D-24",
+  "text": "落定点是 `MediaService._finalize`：在写 history 之后、调用回调之前，对本作业调用 `settle_attempt(session_id, attempt_id, …)`："
+ },
+ {
+  "id": "D-25",
+  "text": "启动恢复：`LibraryService` 构造时调用一次 `image_sessions.recover_running()`，把上次进程遗留的 running 尝试改为 `failed` + `interrupted`。进程内任何时刻，会话文件里的 running 尝试只可能属于当前进程正在跑的那个作业。"
+ },
+ {
+  "id": "D-26",
+  "text": "history 条目：图片作业的 history 条目增加顶层字段 `session_id` 与 `attempt_id`（未挂上会话时为 null）。素材库回填据此找回会话（§8.4）。"
+ },
+ {
+  "id": "D-27",
+  "text": "前端看到轮询作业已不在 running、而当前会话里对应尝试仍是 running 时，重新 `GET` 该会话；仍是 running 就在下一次 2 秒轮询时再取，直到落定。前端从不自行把尝试标成完成或失败。"
+ },
+ {
+  "id": "D-30",
+  "text": "删除会话只删除 `image-sessions/<id>.json`。`outputs_root` 下的图片、`history.jsonl` 都不动；删除后 `GET /api/outputs` 与 `GET /api/history` 的结果与删除前相同，素材库仍能列出并打开这些图片。"
+ },
+ {
+  "id": "D-31",
+  "text": "删除一个有 running 尝试的会话：作业不取消，完成后图片进素材库，但不出现在任何会话里；history 条目里的 `session_id` 指向已不存在的会话（回填时按「不属于任何会话」处理，§8.4）。"
+ },
+ {
+  "id": "D-40",
+  "text": "点击后：把该尝试的 `prompt` 填进提示词输入框，`width`、`height`、`steps`、`seed` 填进「高级参数」对应输入框；焦点移到提示词输入框、光标放在末尾，输入区滚入可见区域。**不提交**。"
+ },
+ {
+  "id": "D-41",
+  "text": "输入框上方出现一枚提示条：「沿用第 N 次的构图」，右侧 × 按钮（`aria-label=\"不再沿用这张的构图\"`）。点 × 清空高级参数里的种子框并隐藏提示条。N 是该尝试在会话里的序号（从 1 起，按 `attempts` 顺序）。"
+ },
+ {
+  "id": "D-42",
+  "text": "提示条只在「种子框的值 == 被引用尝试的 seed」时显示；用户在高级参数里手动改了种子框，提示条隐藏。"
+ },
+ {
+  "id": "D-43",
+  "text": "「高级参数」保持用户当时的折叠/展开状态，不因回填而自动展开。"
+ },
+ {
+  "id": "D-44",
+  "text": "回填后用户点「生成图片」：新尝试的 `params.seed` 等于原尝试的 `seed`（验收：种子相同）。"
+ },
+ {
+  "id": "D-45",
+  "text": "生成中该按钮仍可用（它只改输入框，不提交）。"
+ },
+ {
+  "id": "D-46",
+  "text": "点击后立即提交：`prompt`、`width`、`height`、`steps` 取该尝试的值，`seed` 取前端新生成的随机数（`crypto.getRandomValues` 取 32 位无符号整数，0–4294967295），若恰好等于原 seed 则重取直到不同。`session_id` 为当前会话。"
+ },
+ {
+  "id": "D-47",
+  "text": "不改输入框和高级参数里的任何值；新尝试追加在时间线末尾。"
+ },
+ {
+  "id": "D-48",
+  "text": "生成中、正在提交、模型缺失、运行环境不可用、其他媒体作业占用时，该按钮 `disabled`，`title` 与按钮下方一行提示为不可用原因（与「生成图片」按钮同一原因文本，见 §7）。"
+ },
+ {
+  "id": "D-49",
+  "text": "遇到 `insufficient_memory` 走现有确认框（「内存可能不足」/「仍要生成」），确认后带 `force: true` 重发；取消则什么都不写。"
+ },
+ {
+  "id": "D-50",
+  "text": "「种子」二字只出现在「高级参数」折叠区内（输入框标签「种子（留空则每次随机）」和尝试详情的高级参数列表）。会话列表、时间线卡片、提示条、两个动作按钮、状态文案、确认框、错误提示中都不出现「种子」。"
+ },
+ {
+  "id": "D-51",
+  "text": "服务端校验错误原文（如「种子须为 0–4294967295 的整数」）只可能由高级参数里的输入触发；前端在提交前自行校验，错误提示为「高级参数里的数值有误：种子须为 0–4294967295 的整数」，出现在高级参数区内（该区自动展开以便看到）。"
+ },
+ {
+  "id": "D-60",
+  "text": "左上「新会话」按钮（主按钮样式、plus 图标，与聊天页同构）：`POST /api/image-sessions`，新会话成为当前会话、排在列表最上，时间线显示空会话态，焦点移到提示词输入框。每次点击都新建（与聊天页一致）。"
+ },
+ {
+  "id": "D-61",
+  "text": "未新建时，生成总是追加到**当前会话**末尾（D-20 的 `session_id` 就是当前会话）。新建后生成的图只进新会话。"
+ },
+ {
+  "id": "D-62",
+  "text": "首次进入图片页且没有任何会话时，**自动新建一个「新会话」并选中**，不显示「请先新建」的提示。理由：与聊天页 `refreshSessions` 相同行为（保持两个页面一致）；用户第一次来要做的事就是写提示词生成，多一步「先新建」没有任何信息量；空会话没有代价。这仍满足「会话需手动新建」——之后的每个新分组都由用户点「新会话」产生，生成本身从不暗中另开会话。"
+ },
+ {
+  "id": "D-63",
+  "text": "当前会话的恢复（刷新页面或重启 app 后进入图片页）：优先选有 running 尝试的会话；否则选 `updated` 最新的会话。不用浏览器存储、不改地址栏 hash（与聊天页一致，状态只来自服务端）。同一次页面生命周期内切换 tab 再回来，当前会话不变。"
+ },
+ {
+  "id": "D-64",
+  "text": "切换会话：清空种子框、隐藏提示条（它指向的是上一个会话里的尝试）；提示词、宽、高、步数保持不动。"
+ },
+ {
+  "id": "D-65",
+  "text": "生成成功启动后：提示词保留在输入框（方便继续微调），种子框清空、提示条隐藏（下一次直接「生成图片」就是新的随机构图；要沿用就再点一次「在这张基础上改」）。宽、高、步数保持。"
+ },
+ {
+  "id": "D-66",
+  "text": "新会话第一次生成使用随机种子：种子框默认为空（`placeholder=\"留空则每次随机\"`），前端在提交时若种子框为空则不传 `seed`，由后端 D-19 取随机值。"
+ },
+ {
+  "id": "D-70",
+  "text": "`#pane-image` 与 `#pane-chat` 同构：左侧 `aside.sessions`（宽 248px，复用 `.sessions` 样式与 `card session` 卡片、`session-actions` 的改名/删除图标按钮），右侧 `.image-main` 占满剩余宽度，内容最大宽 1400px，外边距 24px（视觉基线）。`#pane-image` 原来的「表单 | 作业」两栏 grid 与右侧 `.job` 区块取消，作业展示移入时间线里的 running 卡片。"
+ },
+ {
+  "id": "D-71",
+  "text": "时间线**旧在上、新在下**（与聊天一致，输入区在底部）。打开会话、追加新尝试、尝试落定时滚动到底部。"
+ },
+ {
+  "id": "D-72",
+  "text": "打开会话时默认选中（展开）最后一个尝试；新尝试开始时它成为选中项。同一时刻只展开一个；点击另一张卡片（或在卡片上按 Enter/空格）切换选中。卡片是可聚焦元素（`tabindex=0`、`aria-expanded`）。"
+ },
+ {
+  "id": "D-73",
+  "text": "折叠卡片内容：「第 N 次 · HH:MM」、缩略图（96×96 容器，`object-fit: contain`，仅 done 且文件在时出现）、提示词摘要（最多两行，超出用省略号，`title` 属性为完整提示词）、尺寸步数「1024×1024 · 40 步」、状态标记（生成中 / 失败 / 已取消 / 图片文件已不在；完成不加标记）。"
+ },
+ {
+  "id": "D-74",
+  "text": "展开卡片额外显示：大图（宽度不超过时间线列宽、高度不超过 60vh，`object-fit: contain`，`alt` 为提示词）、完整提示词、「高级参数」折叠块（列出 宽度、高度、步数、种子 四项实际值，默认折叠）、两个动作按钮（次级按钮样式，「在这张基础上改」在左，「换个构图」在右；「生成图片」是页面唯一主按钮）。"
+ },
+ {
+  "id": "D-75",
+  "text": "输入区：提示条（D-41，按需出现）、提示词 textarea（placeholder 沿用「例如：一只橘猫坐在窗边，午后阳光，细腻的水彩插画」，⌘Enter 等同点「生成图片」）、「生成图片」主按钮（sparkles 图标）、「高级参数」`<details>` **默认折叠**（宽度（像素）默认 1024、高度（像素）默认 1024、步数默认 40、种子（留空则每次随机）默认空；折叠区内保留现有提示「建议从 1024×1024、40 步开始；更大图片需要更多时间与内存。」）、一行状态提示 `role=status`、一行错误 `role=alert`。"
+ },
+ {
+  "id": "D-76",
+  "text": "头部一行：「生成图片」标题、模型状态（现有 `data-image-model` 文案）、「模型说明」折叠（现有 Heretic 说明文字）。"
+ },
+ {
+  "id": "D-77",
+  "text": "会话列表项：标题（单行省略，`title` 属性为全称）、元信息「N 次生成 · HH:MM」（N = `attempt_count`，时间取 `updated`）、有 running 尝试时标题右侧显示「生成中」小标记（`--busy` 色圆点 + 文字）。当前会话 `aria-current=\"true\"` 与聊天页相同高亮。"
+ },
+ {
+  "id": "D-78",
+  "text": "窄窗 900×700：左栏仍 248px，右侧约 600px；卡片、输入区、按钮不出现横向滚动和文字截断（按钮文字不换行不裁切）；两个动作按钮放不下时换到下一行而不是被裁切。"
+ },
+ {
+  "id": "D-80",
+  "text": "时间线居中显示两行：「还没有图片」／「在下面写下想要的画面，点「生成图片」。之后可以在任意一张上「在这张基础上改」或「换个构图」。」不显示空白图片框、不显示进度条。"
+ },
+ {
+  "id": "D-81",
+  "text": "running 卡片始终展开显示：「第 N 次 · 生成中…（已用 1 分 20 秒）」（沿用 jobview 的 `formatDuration` 文案）、`<progress>`（沿用 `parseStepProgress`：解析到步数时显示百分比，否则为不确定进度）、「取消」按钮（调用 `/api/media/cancel`）、「日志」折叠块（默认折叠）、提示词摘要与尺寸步数。**不显示图片框**，也不显示两个动作按钮。"
+ },
+ {
+  "id": "D-82",
+  "text": "进度数据来源：`main.js` 的 2 秒轮询 `tickJob` 取到 `kind == \"image\"` 的作业时交给图片页，图片页按 `attempt_id`（D-22）找到对应卡片更新；当前查看的会话不是该作业的会话时只更新会话列表的「生成中」标记。"
+ },
+ {
+  "id": "D-83",
+  "text": "生成中「生成图片」和「换个构图」禁用，原因见 §7.6；「在这张基础上改」、切换会话、新建会话、重命名、删除都可用。"
+ },
+ {
+  "id": "D-84",
+  "text": "这三种卡片**不渲染 `<img>`、不留空白图片框**；在缩略图位置显示一个图标块（失败：`x` 图标 + `--danger` 色；已取消：`x` 图标 + `--muted` 色；文件不在：`image` 图标 + `--muted` 色），块内无图片占位。"
+ },
+ {
+  "id": "D-85",
+  "text": "原因文案："
+ },
+ {
+  "id": "D-86",
+  "text": "这三种卡片都显示两个动作按钮（§5），参数都完整可用。"
+ },
+ {
+  "id": "D-87",
+  "text": "「会话标题」取 `title`；判定「别的会话在生成」用列表摘要的 `running` 字段（§3.1），列表在每次轮询看到作业开始/结束时刷新。"
+ },
+ {
+  "id": "D-88",
+  "text": "`POST /api/media/image` 返回错误时不出现新卡片，错误显示在输入区错误行：`insufficient_memory` 走确认框（D-49）；`session_not_found` → 刷新列表、按 D-63 选中会话，错误行显示「这个会话已被删除，已切到「<标题>」，请重新点「生成图片」」；其他错误显示 `describeJobError(error).title`（如「已有作业在进行」「图片模型不完整，请到资源页检查」「无法启动生成程序」）。"
+ },
+ {
+  "id": "D-89",
+  "text": "重命名：与聊天页相同——点铅笔图标（`aria-label=\"改名\"`）→ 列表项变成输入框并聚焦，Enter 或失焦保存，内容为空或未变则不请求；失败时错误行显示后端原因（如「标题须为 1–80 个字」）。"
+ },
+ {
+  "id": "D-90",
+  "text": "删除：点垃圾桶图标（`aria-label=\"删除会话：<标题>\"`）→ 确认框（`confirmDialog`，危险样式，默认焦点在「取消」）："
+ },
+ {
+  "id": "D-91",
+  "text": "图片页不再使用 `createJobView` 的固定 DOM（`[data-job-status]` 等）；running 卡片复用它的纯函数部分：`formatDuration`、`parseStepProgress`、`describeJobError` / `renderErrorBlock`。视频、音乐页的 jobview 用法不变。"
+ },
+ {
+  "id": "D-92",
+  "text": "`applyHeavyAvailability` 继续调用 `panes.image.setHeavyAllowed` / 忙碌原因；`tickJob` 对 `kind == \"image\"` 的作业调用图片页的 `applyJob(payload)`（替代原 `jobView.apply`）；`showTab(\"image\")` 时图片页刷新会话列表与当前会话。"
+ },
+ {
+  "id": "D-93",
+  "text": "`fillPlan` 对图片条目返回 `{pane:\"image\", session_id, attempt_id, fields:{prompt,width,height,steps,seed}}`，`seed` 缺失时为 `null`（不再补 42）。"
+ },
+ {
+  "id": "D-94",
+  "text": "该条目带 `session_id` 且 `GET /api/image-sessions/{session_id}` 成功、其中有 `attempt_id` 对应的尝试：切到图片页、打开那个会话、选中（展开）该尝试并滚动到它，同时执行该尝试的「在这张基础上改」（D-40–D-42）。"
+ },
+ {
+  "id": "D-95",
+  "text": "否则（没有 `session_id`、会话已删、尝试找不到）：切到图片页，停在当前会话，把条目参数按 D-40 填入输入区；提示条文案为「沿用素材库里这张的构图」（此时没有序号可引用）。不新建会话。"
+ },
+ {
+  "id": "B-01",
+  "text": "三个目录：`data_root/image-sessions`、`data_root/video-sessions`、`data_root/music-sessions`，由 `PathRoots.media_sessions_dirs: dict[kind, Path]` 给出（取代 `image_sessions_dir`）。互不可见。"
+ },
+ {
+  "id": "B-02",
+  "text": "写入纪律、id 规则、坏文件处理、锁、「读 → 改 → 原子写回、不持内存副本」全部继承 IS D-02、D-15。"
+ },
+ {
+  "id": "B-03",
+  "text": "`kind` 与所在目录一致；文件里写了别的 kind 视为坏文件；没写 `kind` 的按所在目录的 kind 读（下次写回时补上）。"
+ },
+ {
+  "id": "B-04",
+  "text": "标题规则继承 IS D-10–D-13。自动标题取第一个尝试的「标题来源字段」：image/video 取 `prompt`，music 取 `caption`。"
+ },
+ {
+  "id": "B-05",
+  "text": "`op`：`generate` 为模型生成；`compose` 为手动合成（§4）。"
+ },
+ {
+  "id": "B-06",
+  "text": "`params` 按 kind 的白名单保存（§1.4），白名单外的键不写入。`seed` 一律是实际使用的值。"
+ },
+ {
+  "id": "B-07",
+  "text": "`continues`：被续写的尝试 id，非续写为 `null`。仅 video/music。"
+ },
+ {
+  "id": "B-08",
+  "text": "`joined_output` / `joined_error`：仅 `continues != null` 的尝试有意义；`done` 时二者恰有一个非空，其他状态都为 `null`。`compose` 尝试的成品放 `output`，这两个字段为 `null`。"
+ },
+ {
+  "id": "B-09",
+  "text": "`refs`：`{名称: {\"kind\", \"session_id\", \"attempt_id\"}}`，名称由下游定义（例如视频的 `first_frame`、`soundtrack`）。本文只规定结构、校验与解析（§5）。"
+ },
+ {
+  "id": "B-10",
+  "text": "`base`：仅 image，含义同 IS D-47b；其他 kind 恒为 `null`。"
+ },
+ {
+  "id": "B-11",
+  "text": "状态与字段取值继承 IS D-08、D-09（含 `cancelled_on_quit`、`interrupted`）。"
+ },
+ {
+  "id": "B-12",
+  "text": "`get(id)` 对每个 `done` 尝试附加 `output_missing`；对有 `joined_output` 的尝试再附加 `joined_missing`。都只出现在响应里，不写回文件。"
+ },
+ {
+  "id": "B-13",
+  "text": "video/music 的白名单是**现有**生成参数加 `seed`；第 3 块若新增参数（如参考图、参考音频）在其 spec 中扩充白名单。"
+ },
+ {
+  "id": "B-20",
+  "text": "尝试记录只由后端写（继承 IS D-14）。"
+ },
+ {
+  "id": "B-21",
+  "text": "接通要求：`runtime.py` 与 `desk/testing/harness.py` 都传 `media_sessions`；`/api/media-sessions/{kind}` 挂在生产路由与测试外壳路由上。仓库中不再有 `/api/image-sessions`、`ImageSessionStore`、`image_sessions_dir` 的引用。"
+ },
+ {
+  "id": "B-22",
+  "text": "`chain` 防御环：回溯时记录已访问 id，重复即停（正常数据不会有环，因为 `continues` 只能指向已存在的更早尝试）。"
+ },
+ {
+  "id": "B-30",
+  "text": "`kind ∈ {image, video, music}`，其他 → 404 `不认识的媒体类型：<kind>`。"
+ },
+ {
+  "id": "B-31",
+  "text": "`GET/POST /api/media-sessions/{kind}`、`GET/PATCH/DELETE /api/media-sessions/{kind}/{id}` 的请求、响应、错误与 IS §3.1–3.5 一致；列表摘要的 `cover` 对 video/music 取最后一个 `done` 尝试的 `joined_output`（没有则 `output`）。"
+ },
+ {
+  "id": "B-32",
+  "text": "校验与挂接顺序：参数 → 会话 → `continues`（§3.3）→ `refs`（§5）→ `_start` 的既有检查（`media_busy` → `capability_missing` → `model_incomplete` → arbiter → `insufficient_memory`）→ 若需拼接则检查 ffmpeg（§6）→ 启动子进程 → 成功后 `begin_attempt`。"
+ },
+ {
+  "id": "B-33",
+  "text": "B-32 任一步失败都不写会话（继承 IS D-21）。"
+ },
+ {
+  "id": "B-34",
+  "text": "200 响应与 `job_status()` 对所有 kind 都带 `session_id`、`attempt_id`（IS D-22 推广）。"
+ },
+ {
+  "id": "B-35",
+  "text": "被续写的尝试须在同一会话、`status == done`、`output` 文件存在；否则 404 `segment_not_found` / `segment_missing`。`op == compose` 的尝试也可被续写（在成片后接着生）。"
+ },
+ {
+  "id": "B-36",
+  "text": "续写时模型的输入如何取自被续写的尝试："
+ },
+ {
+  "id": "B-37",
+  "text": "截帧失败（ffmpeg 报错）→ 启动前 500 `frame_extract_failed`「没能从上一段截出最后一帧」，不写会话。"
+ },
+ {
+  "id": "B-38",
+  "text": "`continues != null` 的作业：模型子进程成功产出后，**同一个工作线程**继续执行拼接，再落定。拼接期间作业仍是 `running`，日志追加一行 `[join] 正在拼接成片…`。"
+ },
+ {
+  "id": "B-39",
+  "text": "拼接的片段 = `chain(本尝试)` 中每一项的「单段文件」按顺序；**不使用**上一段的 `joined_output` 再加一段。理由：片段各自独立，任何一次拼接都能只从单段文件重建。"
+ },
+ {
+  "id": "B-40",
+  "text": "链断（某项文件不在、或 `broken`）→ 本尝试 `done`，`joined_output = null`，`joined_error = {\"code\": \"segment_missing\", \"message\": \"第 N 段的文件已不在，无法拼成成片\"}`（N 为链中序号，从 1 起）。"
+ },
+ {
+  "id": "B-41",
+  "text": "拼接命令失败 → 本尝试 `done`，`joined_error = {\"code\": \"join_failed\", \"message\": \"拼接成片失败\", \"log_tail\": …}`。"
+ },
+ {
+  "id": "B-42",
+  "text": "成片文件名：视频 `h3-joined-<stamp>-<8hex>.mp4`，音乐 `music3-joined-<stamp>-<8hex>.wav`，写在 `outputs_root`。"
+ },
+ {
+  "id": "B-43",
+  "text": "history：所有 kind 的条目都带 `session_id`、`attempt_id`；拼接成功时再加 `joined_output`。`HistoryStore.by_output()` 同时按 `output` 与 `joined_output` 建索引，使素材库列出成片时带上它的 history（不显示为孤儿文件）。"
+ },
+ {
+  "id": "B-44",
+  "text": "`kind` 为 image 或不认识 → 400；`parts` 须为 2 个及以上的字符串数组，可以重复同一个 id（允许同一段出现两次）；每项按 B-35 校验（`segment_not_found` / `segment_missing`）。"
+ },
+ {
+  "id": "B-45",
+  "text": "检查顺序：参数 → 会话 → parts → `media_busy` → ffmpeg 可用性 → 启动。**不经过** arbiter、模型检查、内存提醒（ffmpeg 开销小；符合「不要太严格」）。`force` 接受但无作用，保留只为前端统一重发逻辑。"
+ },
+ {
+  "id": "B-46",
+  "text": "启动成功后 `begin_attempt`：`op = \"compose\"`、`params = {\"parts\": [...]}`、`continues = null`、`refs = {}`。标题：会话第一个尝试是 compose 不可能发生（parts 需要已有尝试），故不涉及自动标题。"
+ },
+ {
+  "id": "B-47",
+  "text": "compose 作业与生成作业共用 `_state`、互斥、`job_status`、轮询、取消、`close()`、history（`kind` 为 `video|music`，`params.op = \"compose\"`）、落定。成功 → `output` 为成品；失败 → `failed` + `join_failed`。"
+ },
+ {
+  "id": "B-48",
+  "text": "片段用各自的「单段文件」：generate 尝试用 `output`（不用其 `joined_output`），compose 尝试用 `output`。"
+ },
+ {
+  "id": "B-50",
+  "text": "video：重编码 concat（`libx264`、`yuv420p`、`aac`），**每个续写关系上的后一段丢首帧**：若 `parts[i+1].continues == parts[i].id`，则 `parts[i+1]` 丢首帧；否则不丢（手动乱序合成时不是尾帧接首帧的关系）。各段宽高不一致时按第一段宽高缩放并补边（`scale` + `pad`，保持比例）。"
+ },
+ {
+  "id": "B-51",
+  "text": "music：相邻两段 `acrossfade=d=1.5:c1=tri:c2=tri`；任何一段短于 3 秒时该接缝改为直接拼接（不交叉淡化）。"
+ },
+ {
+  "id": "B-52",
+  "text": "具体数值（丢帧数、淡化时长）写在 `compose.py` 常量里，第 2、3 块如需调整在其 spec 内改。"
+ },
+ {
+  "id": "B-55",
+  "text": "每项 `{kind, session_id, attempt_id}`；`kind` 须为该引用名称注册的允许值；目标会话、尝试须存在、`done`、文件在；否则 404 `ref_missing`「引用的<图片/音乐/视频>已不在」（中文名按目标 kind）。"
+ },
+ {
+  "id": "B-56",
+  "text": "解析结果是一个文件路径，由 `MediaService` 交给该 kind 的命令构造；尝试记录只存引用三元组，不存路径。"
+ },
+ {
+  "id": "B-57",
+  "text": "引用是单向指针：删除被引用会话不影响已生成的尝试；再次用该尝试「在这个基础上改」时若引用失效，按 B-55 返回 404，由下游界面提示。"
+ },
+ {
+  "id": "B-58",
+  "text": "本文**不注册任何引用名称**；机制以测试用的假名称验证。第 3 块注册 `first_frame`（image）、`soundtrack`（music）等。"
+ },
+ {
+  "id": "B-60",
+  "text": "ffmpeg 不可用：只有**需要拼接或截帧**的请求返回 503 `capability_missing`「需要 ffmpeg 才能拼接成片」；普通生成不检查。"
+ },
+ {
+  "id": "B-61",
+  "text": "拼接（自动与手动合成）的子进程经 `MediaService` 现有 executor 运行，日志进作业日志，取消走同一套 `terminate/kill`。截末帧在请求内同步执行（不到 1 秒，超时 60 秒），失败按 B-37 返回。"
+ },
+ {
+  "id": "B-62",
+  "text": "内存：这些作业不接 `estimate_bytes`、不做内存提醒（B-45）。"
+ },
+ {
+  "id": "B-70",
+  "text": "（**2026-09-25 修订：移到第 2 块**。理由：image.js 的会话逻辑与图片专属状态（提示条、种子框、底稿、大图自适应）交织很紧，只有一个使用方时抽出的接口只能靠猜；第 2 块有了音乐页这个真实的第二使用方再抽。本块前端只改接口路径与 `fillPlan`。以下为第 2 块的要求。）`panes/media_session.js` 导出一个工厂：参数为 `kind`、输入区与卡片内容的渲染回调；负责会话列表四种状态（IS §7.2）、自动新建首个会话（IS D-62）、当前会话恢复（IS D-63）、时间线骨架与选中展开（IS D-71、D-72）、running 卡片与轮询挂接（IS D-81、D-82）、改名删除（IS D-89、D-90）、忙碌原因中「别的会话在生成」（IS §7.6）。"
+ },
+ {
+  "id": "B-71",
+  "text": "图片页改用该模块后，IS 全部 D-xx 仍成立；图片页 DOM 文本、按钮、文案逐字不变。"
+ },
+ {
+  "id": "B-72",
+  "text": "删除确认正文中的「图片」按 kind 替换为「视频 / 音乐」由工厂参数提供；本文只要求 image 的文案不变。"
+ },
+ {
+  "id": "B-73",
+  "text": "本文不改 `panes/video.js`、`panes/music.js`。它们不传 `session_id`，按 §3.2 照旧能生成；`main.js` 的 `tickJob` 对 video/music 作业（含 compose）仍交给它们的 jobView 显示。"
+ },
+ {
+  "id": "B-74",
+  "text": "`fillPlan`：video/music 条目带出 `session_id`、`attempt_id`（同 IS D-93）；`params.op == \"compose\"` 的条目返回 `null`（没有可回填的参数，素材库不显示「回填参数」）。"
+ },
+ {
+  "id": "B-75",
+  "text": "给下游的约束（第 2、3 块界面必须实现，本文后端已备好）：卡片的 `joined_error.code ∈ {join_failed, join_cancelled, interrupted}` 时提供「重新拼接」，行为是发起 `compose`，`parts = chain(该尝试)` 各项 id，结果作为新的成片卡片追加；`segment_missing` 不提供（缺的文件补不回来），只显示原因。"
+ },
+ {
+  "id": "M-01",
+  "text": "控制器承担 IS §6–§7 与 §3.7 中与媒体种类无关的全部行为：会话列表四种状态（IS §7.2）、自动新建首个会话（IS D-62）、当前会话恢复（IS D-63）、切换（IS D-64，经 `composer.onSessionSwitch`）、时间线骨架与选中展开（IS D-71、D-72）、running 卡片进度与日志（IS D-81、D-82）、落定后重取（IS D-27）、改名删除（IS D-89、D-90）、忙碌原因（IS §7.6，名词取 `noun`）、「回到该会话」、内存确认重发（IS D-49）、`session_not_found` 自动切换（IS D-88）、滚动意图（贴底 / 对齐选中 / 用户滚动后不拽）与 ResizeObserver。"
+ },
+ {
+  "id": "M-02",
+  "text": "图片页专属的「展开卡片大图自适应」（IS D-74 的 `fitExpandedImage`）经 `renderCard` 返回的 `image` 节点接入：控制器只在 `image` 存在时调用页面提供的适配（由 `image.js` 以回调形式传入 `fitExpanded(node, image)`），音乐页不传。"
+ },
+ {
+  "id": "M-03",
+  "text": "纯逻辑参数化：`availability(state, {noun})`、`deleteMessage(summary, {noun})`、`runningSessionId(job, sessions, kind)`；其余（`sessionTitle`、`sessionMeta`、`attemptLabel`、`orderSessions`、`pickCurrent`、`randomSeed`、`ParamsError`、`autoTitle`）原样迁移。图片页调用时 `noun=\"图片\"`，产出的文案与迁移前逐字相同。"
+ },
+ {
+  "id": "M-04",
+  "text": "**图片页零回归**：`tests/js/image_pane.test.js` 与 `tests/e2e/test_image_sessions.py`、`tests/e2e/test_image_flow.py` 的断言不改（只允许改 import 路径与挂载方式），全部通过。"
+ },
+ {
+  "id": "M-05",
+  "text": "时间线上方工具行出现次级按钮「挑几段合成…」（`data-<prefix>-compose-start`）。会话没有 ≥2 个 `done` 且文件在的尝试时按钮 `disabled`，`title`「至少要有两段完成的才能合成」。"
+ },
+ {
+  "id": "M-06",
+  "text": "进入模式：每张 `done` 且文件在的卡片左侧出现勾选框（`aria-label=\"选中第 N 次\"`）；其余卡片不可选、不变灰。卡片点击在此模式下切换勾选而非展开。"
+ },
+ {
+  "id": "M-07",
+  "text": "勾选顺序即拼接顺序，已选卡片显示序号徽标 ①②③…；取消勾选后其后序号前移。"
+ },
+ {
+  "id": "M-08",
+  "text": "底部输入区替换为合成栏：按顺序列出已选段（「第 N 次 · 时长」），每项「上移」「下移」「移除」（图标按钮，`aria-label` 同名）；右侧主按钮「合成（K 段）」，次级按钮「取消」。K<2 时主按钮 `disabled`，原因行「至少选两段」。有作业在跑或服务不可用时 `disabled`，原因同 IS §7.6 第一条可用原因。"
+ },
+ {
+  "id": "M-09",
+  "text": "点「合成」：`POST /api/media/compose {kind, session_id, parts}`；成功启动 → 退出挑选模式、恢复输入区、新 compose 尝试追加并选中（running 卡片）；失败 → 留在模式内，错误显示在合成栏错误行（`describeJobError` 标题，`capability_missing` 显示后端原话「需要 ffmpeg 才能拼接成片」）。"
+ },
+ {
+  "id": "M-10",
+  "text": "「取消」、切换会话、新建会话都退出挑选模式并清空已选。"
+ },
+ {
+  "id": "M-11",
+  "text": "界面不允许同一段选两次（勾选框语义）。B-44 后端允许重复，界面不提供。"
+ },
+ {
+  "id": "M-20",
+  "text": "左栏、主区宽度、外边距、窄窗 900×700 规则同 IS D-70、D-78。原 `.form | .job` 两栏与 jobview 删除。"
+ },
+ {
+  "id": "M-21",
+  "text": "输入区：提示条（M-26）；风格描述 `<input>`（`placeholder` 沿用「例如：温柔的民谣，木吉他伴奏，女声轻唱，慢速」，`aria-label=\"风格描述\"`）；歌词 `<textarea>`（`placeholder=\"歌词（必填）\"`，默认 4 行，聚焦或内容超出时增高，最高 `50vh`，失焦且内容不超 4 行时回落）；「AI 帮写」行（原 `data-music-assist`）；主按钮「生成歌曲」（sparkles 图标，⌘Enter 等同点击）；「高级参数」`<details>` 默认折叠，内含「时长（秒）」（10–300，默认 60，下方保留提示「成品时长由模型按歌词决定，常短于所填时长；素材库会标注实际时长。」）与「种子（留空则每次随机）」；状态行 `role=status`；错误行 `role=alert`。"
+ },
+ {
+  "id": "M-22",
+  "text": "头部：「生成歌曲」、模型状态（沿用现有音乐模型状态文案来源）、「模型说明」折叠（MiniMax Music 3 · MLX 本机推理；需要歌词；成品为 WAV）。"
+ },
+ {
+  "id": "M-23",
+  "text": "空会话：「还没有歌曲」／「在下面写风格描述和歌词，点「生成歌曲」。之后可以在任意一段上「在这段基础上改」「换个版本」或「接着写下一段」。」"
+ },
+ {
+  "id": "M-24",
+  "text": "生成成功启动后：风格描述、歌词、时长保留；种子框清空；提示条若为「沿用第 N 次」则隐藏，若为「接在第 N 次后面」也隐藏（下一次生成回到普通生成，除非再点「接着写下一段」）。"
+ },
+ {
+  "id": "M-25",
+  "text": "「种子」二字只出现在「高级参数」内（同 IS D-50）。"
+ },
+ {
+  "id": "M-26",
+  "text": "两种，互斥："
+ },
+ {
+  "id": "M-27",
+  "text": "提示条可见时点「生成歌曲」的请求：沿用 → 带被引用尝试的 `continues`（若它有，M-31）；续写 → `continues = 被续写尝试 id`。提示条不可见 → 不带 `continues`。"
+ },
+ {
+  "id": "M-28",
+  "text": "若被引用 / 被续写的尝试已不再是 `done` 且文件在（`output_missing` 或会话刷新后找不到），提示条改为「第 N 次的文件已不在，不能接着写」并带 ×，「生成歌曲」`disabled`、原因同文案；点 × 回到普通生成。后端返回 `segment_missing` / `segment_not_found` 时同样处理。"
+ },
+ {
+  "id": "M-30",
+  "text": "折叠：标题行「第 N 次 · HH:MM」＋（续写）「接第 M 次」／（合成）「合成：第 a、b、c 次」（引用的尝试不在列表中时显示「合成」）；风格描述摘要（一行省略，`title` 全文）；歌词首个非空、非 `[段落标记]` 行（一行省略）；状态标记（生成中 / 失败 / 已取消 / 文件已不在；完成不标）。"
+ },
+ {
+  "id": "M-31",
+  "text": "展开："
+ },
+ {
+  "id": "M-32",
+  "text": "失败 / 已取消 / 文件不在：不渲染 `<audio>`，图标块与原因同 IS D-84、D-85；动作按钮按 M-33–M-35 的可用性显示。"
+ },
+ {
+  "id": "M-33",
+  "text": "**在这段基础上改**：回填风格描述、歌词、时长、种子；提示条「沿用第 N 次」；焦点到歌词框末尾；不提交；生成中可用（同 IS D-45）。失败 / 取消的尝试也可用（参数完整）。"
+ },
+ {
+  "id": "M-34",
+  "text": "**换个版本**：立即提交 `{session_id, caption, lyrics, duration, seed: 新随机数≠原值, continues: 原尝试的 continues}`；不改输入区。不可用条件同 IS D-48（生成中、提交中、模型缺失、运行环境不可用、其他作业占用）。"
+ },
+ {
+  "id": "M-35",
+  "text": "**接着写下一段**：风格描述、时长 ← 该尝试（compose 尝试：保留输入区当前值）；歌词清空；种子框清空；提示条「接在第 N 次后面」；焦点到歌词框；不提交。仅 `done` 且文件在的尝试显示为可用；否则 `disabled`，下方原因「这一段没有生成好，不能接着写」。"
+ },
+ {
+  "id": "M-36",
+  "text": "回填不改变「高级参数」的折叠状态（同 IS D-43）。"
+ },
+ {
+  "id": "M-40",
+  "text": "尝试 `done` 且 `joined_error` 非空时，展开卡片在播放器下显示一行：「这一段生成好了，但成片没拼成：<原因>」，原因取 `joined_error.message`。"
+ },
+ {
+  "id": "M-41",
+  "text": "`joined_error.code ∈ {join_failed, join_cancelled, interrupted}` 时该行带次级按钮「重新拼接」：提交 `compose`，`parts` = 前端回溯出的链（M-31）各项 id，全部可找到且 `done`、文件在时才可用，否则按钮 `disabled`、原因「链上有一段已不在」。成功后新合成卡片追加并选中（B-75）。成片文件被删（`joined_missing`）同样显示问题行并按 M-41 提供重新拼接；问题行文案为「这一段生成好了，但成片文件已不在」。"
+ },
+ {
+  "id": "M-42",
+  "text": "`segment_missing` 不提供按钮，只显示原因。"
+ },
+ {
+  "id": "M-50",
+  "text": "`start_music_job` 的 `session_id` 改为必填：缺失 / 非字符串 → 400 `session_required`，不存在 → 404 `session_not_found`（同 IS D-18 文案）。`continues`、`refs` 规则不变。"
+ },
+ {
+  "id": "M-51",
+  "text": "`main.js`：`tickJob` 对 `kind == \"music\"`（含 compose 作业，`params.op == \"compose\"` 且 kind 为 music）调用 `panes.music.applyJob`；`showTab(\"music\")` 调 `panes.music.refresh()`；`applyHeavyAvailability` 调 `panes.music.setHeavyAllowed`；删除对 `panes.music.jobView` 的所有调用。`kind == \"video\"` 仍走视频页 jobview。"
+ },
+ {
+  "id": "M-52",
+  "text": "素材库回填：`applyFill` 对 `plan.pane == \"music\"` 调 `panes.music.applyFill(plan)`：有 `session_id`、`attempt_id` 且能找到 → 切到音乐页、打开会话、选中该尝试并执行「在这段基础上改」；否则停在当前会话按 M-33 回填字段，提示条文案「沿用素材库里这首」（同 IS D-94/95）。"
+ },
+ {
+  "id": "M-53",
+  "text": "音乐模型状态与运行环境：`main.js` 以与图片页相同的方式接通（不新增后端）——资源页 `onModels` 回调里 `panes.music.setModelStatus(models?.find((m) => m.key === \"music3\"))`；能力探测处 `panes.music.setRuntimeStatus(capabilities?.music_runtime)`。文案：模型缺失「尚未安装音乐模型，请到「资源」页下载」，不完整「模型不完整，请到「资源」页继续下载或校验」，未知「暂时无法确认模型状态，请稍后重试」；运行环境不可用「音乐 MLX 运行环境不可用，请检查服务或应用安装」（`capability.detail` 优先）；就绪时头部显示「模型文件完整 · 可离线生成」。"
+ },
+ {
+  "id": "V-01",
+  "text": "`start_video_job` 的 `session_id` 必填（同 M-50 文案与状态码）。"
+ },
+ {
+  "id": "V-02",
+  "text": "`MediaService` 默认注册引用槽 `{\"video\": {\"first_frame\": \"image\"}}`（构造参数 `ref_slots` 未传时使用该默认；测试可覆盖）。"
+ },
+ {
+  "id": "V-03",
+  "text": "请求带 `refs.first_frame`：要求 `mode == \"image\"`，且请求不再带 `first_frame` 素材 id；否则 400 `invalid_params`「首帧只能从上传或图片会话二选一」。`continues` 与 `refs.first_frame` 同时出现 → 400（沿用 CONTINUE_CONFLICT 文案）。"
+ },
+ {
+  "id": "V-04",
+  "text": "解析出的图片路径直接作为 H3 `--first-frame` 参数；`params.first_frame` 记为 `null`（尝试的 `refs` 已记下引用，B-56）。引用失效 → 404 `ref_missing`「引用的图片已不在」（B-55）。"
+ },
+ {
+  "id": "V-05",
+  "text": "历史条目与素材库不变；`fillPlan` 对 video 条目带出 `refs`（`entry.params` 不含 refs，故 history 条目增加顶层 `refs` 字段，只在非空时出现）。"
+ },
+ {
+  "id": "V-10",
+  "text": "`attemptView(attempt, {broken, noun})` 移到 `pure/media_session.js`：missing 文案「<noun>文件已不在」（图片页仍得到「图片文件已不在」，逐字不变）；音乐卡片改用它（传 `noun: \"音频\"`，文案「音频文件已不在」——音乐卡片当前的「文件已不在」改为此）。"
+ },
+ {
+  "id": "V-11",
+  "text": "控制器 `renderCard` 返回的 `recompose` 改名 `secondary`（`{button, hint}`），`composer.updateAvailability(state, {secondary})`；卡片参数 `noImageReason` 改名 `secondaryBlockedReason`。图片页行为与文案不变（M-04 规则同样适用：`tests/js/image_pane.test.js` 断言不改）。"
+ },
+ {
+  "id": "V-20",
+  "text": "左栏会话、头部「生成视频」+ 模型状态 + 「模型说明」（MiniMax H3 · MLX 本机推理；输出带声音的 MP4；「接着往下生」用上一段的最后一帧作首帧，拼接处可能有动作跳变）、时间线、底部输入区。原表单 + jobview 删除。"
+ },
+ {
+  "id": "V-21",
+  "text": "输入区（自上而下）：提示条（V-30）；「生成方式」`<select>`（文生视频 / 图生视频 / 视频参考生成）；素材行（按方式出现，V-22）；提示词 `<textarea>`（默认 3 行，聚焦/超出时增高，最高 40vh；placeholder 随方式变化，沿用现有三条）与「生成视频」主按钮（⌘Enter）；「AI 帮写」行；「高级参数」`<details>` 默认折叠：画幅（现有三档）、视频时长（现有六档）、耗时提示（`videoCostNote`）、步数（默认 16，4–50）、种子（留空则每次随机）、「使用素材的声音」勾选（仅图生/参考方式可见，默认勾选）；上传状态行；状态行；错误行。"
+ },
+ {
+  "id": "V-22",
+  "text": "素材行："
+ },
+ {
+  "id": "V-23",
+  "text": "「从图片会话选…」打开选择框（`confirmDialog` 风格的模态，`role=\"dialog\"`，标题「从图片会话选首帧」）：左侧图片会话列表（标题 + N 次生成），右侧该会话中 `done` 且文件在的图片缩略图网格；点缩略图即选中并关闭；「取消」关闭不改变。无可选图片时显示「这个会话还没有生成好的图片」。"
+ },
+ {
+  "id": "V-24",
+  "text": "空会话：「还没有视频」／「在下面写提示词，点「生成视频」。之后可以在任意一段上「在这段基础上改」「换个版本」或「接着往下生」。」"
+ },
+ {
+  "id": "V-25",
+  "text": "「种子」只出现在高级参数内。"
+ },
+ {
+  "id": "V-30",
+  "text": "提示条三种（互斥）：沿用「沿用第 N 次」（规则同 M-26 沿用型）；续写「接在第 N 次后面」（同 M-26 续写型，续写目标失效同 M-28，文案「第 N 次的文件已不在，不能接着往下生」）；素材库「沿用素材库里这段」。"
+ },
+ {
+  "id": "V-31",
+  "text": "折叠：「第 N 次 · HH:MM」＋「接第 M 次」／「合成：第 a、b 次」；方式标签（文生 / 图生 / 参考）；提示词摘要（两行省略）；规格「512×288 · 约 3 秒 · 16 步」（时长文案取 DURATIONS 最接近项）；状态标记。"
+ },
+ {
+  "id": "V-32",
+  "text": "展开 done：`<video controls preload=\"metadata\">`（宽不超过时间线列宽，高不超过 50vh），有可用成片时默认播成片，「成片 | 只看这一段」切换（同 M-31）；续写链说明「由：第 1 次 → 第 3 次」；成片问题行与「重新拼接」（同 M-40–M-42）；首帧来源行（图生且有 refs.first_frame：「首帧：图片会话「<标题>」第 N 次」；标题取不到时「首帧：来自图片会话」）；完整提示词；「高级参数」折叠（画幅、时长、步数、种子）；动作按钮。"
+ },
+ {
+  "id": "V-33",
+  "text": "失败 / 取消 / 文件不在：同图片卡片规则（图标块，无 `<video>`）。`<video>` 报错 → 文件不在状态。"
+ },
+ {
+  "id": "V-34",
+  "text": "挑选合成模式：同 M-06/M-07 与最终修订（卡片只做勾选，不显示动作与「重新拼接」）。"
+ },
+ {
+  "id": "V-40",
+  "text": "**在这段基础上改**：回填方式、提示词、画幅、时长、步数、种子；图生时回填首帧来源（上传素材 id 作为已保存素材 / 图片会话引用 / 续写关系）与尾帧；参考时回填参考视频素材 id；提示条「沿用第 N 次」；不提交。若首帧来源为图片会话引用且已失效 → 首帧区显示「引用的图片已不在」并清空首帧来源。续写段回填后生成仍接在原位置（带原 `continues`）。"
+ },
+ {
+  "id": "V-41",
+  "text": "**换个版本**：立即提交原尝试参数（含素材 id / 引用 / `continues`），种子换新随机数≠原值。"
+ },
+ {
+  "id": "V-42",
+  "text": "**接着往下生**：方式切到图生、首帧来源为续写（V-22 第三种说明）、尾帧清空；提示词清空；画幅、时长、步数沿用该段；种子清空；提示条「接在第 N 次后面」；焦点到提示词。仅 done 且文件在可用，否则原因「这一段没有生成好，不能接着往下生」。compose 尝试：画幅、时长、步数保留输入区当前值。"
+ },
+ {
+  "id": "V-43",
+  "text": "生成成功启动后：提示词、方式、画幅、时长、步数保留；种子清空；沿用/续写提示条隐藏；续写的首帧来源清空（回到「未选择」）；上传与图片会话来源保留。"
+ },
+ {
+  "id": "V-50",
+  "text": "图片卡片展开时，done 且图片在的卡片在两个动作右侧增加次级按钮「用这张生成视频」。点击：切到视频页，方式设为图生，首帧来源设为该图片的引用（`{kind:\"image\", session_id, attempt_id}`），首帧说明「首帧：图片会话「<标题>」第 N 次」，提示词不变，焦点到提示词。图片页其余行为不变（新增按钮不影响现有按钮与文案）。"
+ },
+ {
+  "id": "V-51",
+  "text": "跨页通信经 `main.js`：图片页 `ctx.onUseAsFirstFrame(ref, label)` → `showTab(\"video\")` → `panes.video.useFirstFrame(ref, label)`。"
+ },
+ {
+  "id": "V-60",
+  "text": "`main.js`：`tickJob` 对 `kind == \"video\"` 调 `panes.video.applyJob`；`showTab(\"video\")` 调 `panes.video.refresh()`；`applyFill` 对 video 与 image/music 同样走 `panes.video.applyFill`；模型状态 `h3` 目录项、运行环境 `mlx_h3` 能力；删除所有 `jobView` 使用；`widgets/jobview.js` 若不再被任何页面使用则删除（其纯函数部分已在 `pure/`）。"
+ },
+ {
+  "id": "V-61",
+  "text": "素材库回填视频条目：同 M-52（找得到会话 → 打开并执行「在这段基础上改」；否则按字段回填、提示条「沿用素材库里这段」）。"
+ },
+ {
+  "id": "S-01",
+  "text": "新接口 `POST /api/media/soundtrack`，体 `{session_id, source, refs: {soundtrack: {kind:\"music\", session_id, attempt_id}}, force?}`；`kind` 固定 video。"
+ },
+ {
+  "id": "S-02",
+  "text": "校验顺序：参数（`source` 字符串、`refs.soundtrack` 结构）→ 视频会话（必填，同 V-01）→ `source` 为本会话 done 且文件在的尝试（`segment_not_found` / `segment_missing`）→ 音乐引用解析（`ref_missing`「引用的音乐已不在」）→ `media_busy` → ffmpeg（503「需要 ffmpeg 才能拼接成片」）→ 启动。不走 arbiter、模型检查、内存提醒（同 B-45）。"
+ },
+ {
+  "id": "S-03",
+  "text": "输入视频：`source` 有未缺失的 `joined_output` 用它，否则用 `output`。"
+ },
+ {
+  "id": "S-04",
+  "text": "命令：`compose.soundtrack_command(ffmpeg, video, audio, output)`：视频流拷贝，音频 `aac`，音频 `apad` 补静音，时长以视频为准（`-shortest` 在 apad 之后生效）；输出最后一个参数（B §6 约定）。原 `replace_audio_command` 替换为此（仅此处用）。"
+ },
+ {
+  "id": "S-05",
+  "text": "尝试：`op = \"soundtrack\"`，`params = {\"source\": <attempt_id>}`，`refs = {\"soundtrack\": <music ref>}`，`continues = null`；成功 `output` 为 `h3-soundtrack-<stamp>-<8hex>.mp4`；失败 `failed` + `join_failed`，未完成时删除半成品（同合成）。"
+ },
+ {
+  "id": "S-06",
+  "text": "history 条目 `params.op = \"soundtrack\"`、顶层 `refs`；`fillPlan` 对 `op ∈ {compose, soundtrack}` 返回 null。"
+ },
+ {
+  "id": "S-07",
+  "text": "配乐尝试可被续写（B-35 放宽到 op soundtrack）与参加合成（`find_done` 不区分 op）。"
+ },
+ {
+  "id": "S-10",
+  "text": "`start_video_job` 接受 `mode = \"music_ref\"`：必须有参考图（`ref_image` 上传素材 id，或 `refs.ref_image = {kind:\"image\", …}`，二选一，否则 400「参考图只能从上传或图片会话二选一」/ 缺失 400「请先选择参考图」）与 `refs.ref_audio = {kind:\"music\", …}`（缺失 400「请先选择一首歌」），以及 `audio_start`（秒，≥0 的数，默认 0）。"
+ },
+ {
+  "id": "S-11",
+  "text": "注册引用槽：`video.ref_image → image`、`video.ref_audio → music`（与 `first_frame` 并列）。`music_ref` 不能与 `continues`、`first_frame`、`last_frame`、`ref_video`、`refs.first_frame` 同用（400 invalid_params，文案「配乐参考不能和首帧、尾帧或续写同时使用」）。"
+ },
+ {
+  "id": "S-12",
+  "text": "截取：服务端在启动前用 ffmpeg 从歌中 `audio_start` 起截取 `clip = clamp(frames / 24, 2, 15)` 秒到 `.inputs/<hex>.wav`；歌短于 `audio_start + 2` 秒 → 400「这首歌从第 N 秒起不足 2 秒」；截取失败 → 500 `audio_clip_failed`「没能截取这段音乐」；之后任一步失败删除截取文件（同 B-37 做法）。"
+ },
+ {
+  "id": "S-13",
+  "text": "命令：`build_h3_command(..., ref_image=<path>, ref_audio=<path>)` 追加 `--ref-image <path> --ref-audio <path>`（H3 Ref2VA，spike 已验证可跑）。`params` 记 `mode=\"music_ref\"`、`audio_start`、`ref_image`（上传 id 或 null），尝试 `refs` 记引用。"
+ },
+ {
+  "id": "S-14",
+  "text": "估算同普通视频（`estimate_bytes(\"video\", params)`），标 predicted。"
+ },
+ {
+  "id": "S-20",
+  "text": "`widgets/media_picker.js::openMediaPicker(doc, {kind, title, emptyText, listSessions, getSession, serveOutput})`：`kind ∈ {image, music}`；图片为缩略图网格（同 V-23），音乐为列表：每项「第 N 次 · <风格描述摘要>」+ `<audio controls preload=\"none\">` 试听 + 「选这首」按钮；只列 done 且文件在的尝试（音乐优先成片 `joined_output`，无则 `output`）。返回 `null | {ref, title, index, label}`（`label` 为风格描述摘要，图片为提示词摘要）。"
+ },
+ {
+  "id": "S-21",
+  "text": "`widgets/image_picker.js` 删除，视频页首帧改用 `openMediaPicker({kind:\"image\", title:\"从图片会话选首帧\", emptyText:\"这个会话还没有生成好的图片\"})`；音乐 `title` 由调用方给，`emptyText`「这个会话还没有生成好的歌」。"
+ },
+ {
+  "id": "S-30",
+  "text": "视频卡片（done 且文件在、非挑选模式）动作区增加次级按钮「配乐…」：打开音乐选择框（标题「选一首歌配到这段视频」）→ 选中即 `POST /api/media/soundtrack`（`source` = 该尝试）→ 新卡片追加并选中。不可用条件同「换个版本」（有作业在跑等），原因同一套。"
+ },
+ {
+  "id": "S-31",
+  "text": "配乐卡片：折叠标题「第 N 次 · HH:MM · 配乐：<风格描述摘要> · 基于第 M 次」（M 取不到则省略该段；风格描述取不到显示「配乐」）；展开播放 `output`；动作只有「接着往下生」与「配乐…」。"
+ },
+ {
+  "id": "S-32",
+  "text": "「生成方式」下拉新增「配乐参考（实验性）」。选中时素材区：参考图区（「上传图片」+「从图片会话选…」+ 说明）、歌区（「从音乐会话选…」+ 所选歌说明「歌：<风格描述摘要>」+ 试听）、数字框，标签「从第几秒开始」（默认 0，≥0）、说明「实验性：画面不保证跟随音乐节奏；参考图只影响画面风格，不作为第一帧。截取与视频等长、2–15 秒的一段音乐。」。"
+ },
+ {
+  "id": "S-33",
+  "text": "提交：`mode:\"music_ref\"`、`audio_start`、`ref_image`（上传 id）或 `refs.ref_image`、`refs.ref_audio`。缺参考图「请先选择参考图」、缺歌「请先选择一首歌」（前端先校验）。"
+ },
+ {
+  "id": "S-34",
+  "text": "「在这段基础上改」对 music_ref 尝试回填参考图来源、歌、起始秒；引用失效时对应说明「引用的图片已不在」/「引用的歌已不在」并清空。「换个版本」原样重发（新种子）。"
+ },
+ {
+  "id": "S-35",
+  "text": "900×700：新增的素材在已有可滚动的素材区内（V 块 50vh 规则），不增加输入区固定行。"
+ },
+ {
+  "id": "L-01",
+  "text": "合并规则沿用现状：历史与成品按文件名匹配；一条历史的 `output` 与 `joined_output` 各占一条（B-43）；没匹配到历史的成品单独一条（「无历史记录」）；有历史但文件都不在的也占一条。"
+ },
+ {
+  "id": "L-02",
+  "text": "每条条目归一为：`{ key, kind: \"image\"|\"video\"|\"music\"|\"file\", status, ts, title, prompt, spec, duration_s?, width?, height?, bytes?, gen_s?, output?: name, missing: bool, entry?: 历史记录, error? }`。`key` 跨刷新稳定（L-32 靠它保持选中）：有文件用 `o:<文件名>`，否则 `h:<ts>:<kind>:<attempt_id 或空>`，同一次渲染内重复时追加 `#2`、`#3`。"
+ },
+ {
+  "id": "L-03",
+  "text": "`missing`：有历史、状态为完成、`output` 名在成品列表里找不到。"
+ },
+ {
+  "id": "L-04",
+  "text": "时长：音乐取 `audio_seconds`，否则 `params.duration`；视频取 `params.frames / 24`；图片无。画幅取 `params.width×height`。"
+ },
+ {
+  "id": "L-05",
+  "text": "筛选：`all | image | video | music`；`file` 类只在 `all` 下出现。"
+ },
+ {
+  "id": "L-06",
+  "text": "排序：键为 `ts`（生成时间）| `title`（提示词）| `kind`（类型）| `duration`（时长）| `dims`（画幅，按宽×高面积）| `bytes`（文件大小）| `gen`（耗时），方向 `asc | desc`；缩略列不可排序；缺值一律排在最后（不论方向）；`title` 用 `localeCompare(…, \"zh\")`；同值按 `ts` 倒序稳定。默认 `ts desc`。"
+ },
+ {
+  "id": "L-10",
+  "text": "工具栏一行：左侧类型筛选分段控件（全部 / 图片 / 视频 / 音乐，复用 `widgets/segment_switch.js`，它按 `labels` 数组生成任意项数，只需改掉文件头「两项」的注释）；右侧视图切换三个图标按钮（缩略图 / 列表 / 明细，`aria-pressed`、`aria-label`），缩略图视图时出现大小滑块，最右「刷新」。"
+ },
+ {
+  "id": "L-11",
+  "text": "视图、筛选、缩略图大小、明细排序记在 `localStorage` 键 `lmd.library`（JSON）；读写都包 try/catch，读不到用默认值（缩略图、全部、200px、`ts desc`）；值非法时回落默认。缩略图大小滑块是普通 `input[type=range]`，方向键只调大小，不移动选中（L-31 只在条目区内生效）。"
+ },
+ {
+  "id": "L-12",
+  "text": "筛选后为空：显示「没有这类成品」并写明当前筛选（例：「当前筛选：视频」）；整体为空沿用现有引导语。"
+ },
+ {
+  "id": "L-20",
+  "text": "缩略图：自适应网格 `repeat(auto-fill, minmax(var(--lib-thumb), 1fr))`，滑块调 `--lib-thumb` 140–320px。卡片：方形媒体区 + 提示词两行截断 + 时间一行。"
+ },
+ {
+  "id": "L-21",
+  "text": "图片卡片：`<img loading=\"lazy\">`，`object-fit: cover`。"
+ },
+ {
+  "id": "L-22",
+  "text": "视频卡片：进入视口（IntersectionObserver；环境没有时直接加载）才设 `src=<url>#t=0.1`、`preload=\"metadata\"`、`muted`、`playsinline`；角标显示时长。鼠标悬停静音播放，移开暂停并回到 0.1 秒；同一时刻最多一个卡片在悬停播放。"
+ },
+ {
+  "id": "L-23",
+  "text": "音乐卡片：渐变底 + 音乐图标 + 时长。`file` 类（不认识的文件）：文件图标 + 文件名。"
+ },
+ {
+  "id": "L-24",
+  "text": "音乐卡片右上角小播放按钮就地试听（右下角是时长角标）：页面只有一个隐藏的 `<audio>`；按钮 `aria-pressed` 与图标（播放/暂停）反映状态，再点暂停；开别的试听、打开预览、点「刷新」重画、离开素材库页时都停掉并复位按钮；点按钮不触发选中/打开。"
+ },
+ {
+  "id": "L-25",
+  "text": "失败/取消（无成品）：灰卡 + 警示图标 + 状态字；`missing`：灰卡 + 「文件已不在」。"
+ },
+ {
+  "id": "L-26",
+  "text": "媒体加载失败（img/video `error`）：该卡片退回类型图标占位，不影响其他卡片。"
+ },
+ {
+  "id": "L-27",
+  "text": "列表：每行 48px 缩略图（规则同 L-21/L-22，但视频不悬停播放）+ 提示词 + 元信息行（类型 · 状态 · 时间 · 耗时 · 规格）+ 右侧动作（预览、在访达中显示、回填参数）；失败记录照旧显示错误块（F3）。"
+ },
+ {
+  "id": "L-28",
+  "text": "明细：`<table>`，列：缩略（32px）、提示词、类型、生成时间、时长、画幅、大小、耗时。除缩略列外表头是按钮，点击按该列排序，再点反向，`aria-sort` 标当前列；缺值显示「—」。"
+ },
+ {
+  "id": "L-30",
+  "text": "每个条目的主体是一个 `<button data-lib-item>`（缩略图视图是整张卡片的媒体+文字区，列表是缩略图+文字区，明细是提示词单元格），`aria-label` 为标题；动作按钮（试听、预览、在访达中显示、回填）是它的兄弟节点，不嵌套在里面（避免交互元素嵌套）。单击主体 = 选中（`aria-current=\"true\"` + 选中样式）；双击主体，或焦点在主体上按 Enter/空格 = 打开预览（`preventDefault`，不再额外触发选中之外的点击）。"
+ },
+ {
+  "id": "L-31",
+  "text": "roving tabindex：所有主体里只有选中项（没有选中时是第一项）`tabIndex=0`，其余 `-1`；方向键只在焦点位于某个主体上时处理，移动时同时移动选中与焦点并滚入视野（`block: \"nearest\"`）。缩略图视图 ←/→ 前后一个，↑/↓ 跳一行：列数 = 与第一项 `offsetTop` 相同的前导项个数，量不到（0）时 ↑/↓ 退化为 ←/→；列表/明细 ↑/↓ 前后一个。到头停住，不循环。"
+ },
+ {
+  "id": "L-32",
+  "text": "切换筛选、排序、刷新后：原选中项仍在就保持，否则清空选中。"
+ },
+ {
+  "id": "L-33",
+  "text": "动作按钮（预览、在访达中显示、回填、试听）点击与按键都不冒泡为选中/打开；各自行为同现状（reveal 失败把服务端文案写进错误行，issue #12）。"
+ },
+ {
+  "id": "L-40",
+  "text": "复用遮罩 + `role=dialog` + `aria-modal` + Esc/点遮罩关闭的骨架；打开时焦点进弹层，关闭后焦点与选中回到最后预览的条目。"
+ },
+ {
+  "id": "L-41",
+  "text": "主区：图片按窗口适配；视频 `controls autoplay`（有声）；音乐大卡片 + `<audio controls autoplay>`；失败显示错误块；`missing` 显示「文件已不在」；`file` 类显示「无法预览这种文件」，信息区照常。"
+ },
+ {
+  "id": "L-42",
+  "text": "信息区（宽屏在右，窄于 900px 在下）：完整提示词、全部参数、生成时间、耗时、文件名与大小；按钮「回填参数」（有 fillPlan 时；调用 `ctx.applyFill(plan)` 并关闭弹层）、「在访达中显示」（有文件时）、「关闭」。"
+ },
+ {
+  "id": "L-43",
+  "text": "←/→ 在当前筛选+排序顺序里切上一件/下一件（到头不循环，按钮置灰）；Esc 关闭；空格仅在焦点不在媒体控件、按钮或输入框上时关闭（否则交给该控件，如视频暂停）。切换或关闭时停止并释放上一件媒体（`pause()` + 移除 `src`）。弹层打开期间遮罩挡住页面，素材库不会被刷新，弹层按打开时的条目快照翻页。"
+ },
+ {
+  "id": "L-44",
+  "text": "动效：遮罩淡入、面板淡入+轻微缩放（180ms 左右）；全局 `prefers-reduced-motion` 规则生效。"
+ },
+ {
+  "id": "L-45",
+  "text": "离开素材库页（`main.js` 的 `showTab` 切到别的页）时调用 `panes.library.onHide()`：停掉试听（L-24）与悬停播放（L-22）。现状顶部播放区切页后仍在后台出声，本条一并修掉。"
+ },
+ {
+  "id": "L-50",
+  "text": "`node --test`：纯函数（合并含 B-43、missing、筛选、排序缺值在后）；假 DOM：视图切换与记忆（含存储抛错）、单击选中/双击打开、键盘移动、预览 ←/→ 与到头置灰、回填调用 applyFill 并关闭、reveal 失败文案、试听按钮不冒泡。现有 `library_pane.test.js` 中依赖顶部播放区的断言改为断言预览弹层。"
+ },
+ {
+  "id": "L-51",
+  "text": "e2e（Playwright）：三视图渲染、预览打开/切换/关闭、键盘导航、回填回到对应页面（沿用 `test_library_panel.py` 的回填用例）、切页停声（L-45）；在 1280 与 900 宽截图目检，截图目录由 `$LMD_LIBRARY_SHOTS` 指定。"
+ },
+ {
+  "id": "L-52",
+  "text": "迁移依赖 `[data-lib-player]` 的现有 e2e：`test_image_sessions.py`（约 329–355 行，含「预览与刷新按钮的间距」断言，改为断言弹层里图片的尺寸）、`test_image_flow.py`（约 466 行）；（`test_library_panel.py::test_audio_player_matches_the_dark_palette` 只查音乐会话卡片的播放器，不受影响）；`test_outputs_range.py` 只等 `[data-lib-list] li`，改为等 `[data-lib-item]`。"
+ },
+ {
+  "id": "L-53",
+  "text": "WebKit 核对：应用外壳是 WKWebView，而 e2e 默认跑 Chromium。视频首帧缩略图（`#t=0.1` + `preload=\"metadata\"`）与悬停播放须另用 Playwright WebKit（本机已装 webkit-2272）跑一条用例确认能出首帧；不行则退回「视频图标 + 时长」占位并在本文件记下。"
+ },
+ {
+  "id": "Z-01",
+  "text": "合法画幅：宽、高都是整数且为 32 的倍数；每边 256–1344；`宽×高 ≤ 768×1344`。"
+ },
+ {
+  "id": "Z-02",
+  "text": "违规文案（按此顺序取第一条）：「宽和高须为整数」「宽和高须为 32 的倍数」「每边须在 256–1344 之间」「面积不能超过 768×1344（约 103 万像素）」。"
+ },
+ {
+  "id": "Z-03",
+  "text": "后端 `start_video_job` 在任何会话写入之前做同样校验，违规返回 400 `invalid_params`，文案「画幅须为 32 的倍数，每边 256–1344，面积不超过 768×1344」；拒绝时会话不留尝试记录（B-33）。"
+ },
+ {
+  "id": "Z-04",
+  "text": "镜像测试：一个 Python 测试读出 JS 与 Python 两边的常量（32、256、1344、768×1344）和内存公式参数（27.0、1.4、草稿体积 512×288×49、预算 40），任何一边改了另一边不跟就失败。"
+ },
+ {
+  "id": "Z-10",
+  "text": "方向：`landscape` 横屏 / `portrait` 竖屏 / `square` 方形。"
+ },
+ {
+  "id": "Z-11",
+  "text": "档位（名称 草稿 / 标准 / 清晰）：横屏 512×288、768×448、1024×576；竖屏为横屏宽高对调；方形 384×384、576×576、768×768。全部满足 Z-01。"
+ },
+ {
+  "id": "Z-12",
+  "text": "方向控件在输入区主行，是分段控件（复用 `widgets/segment_switch.js`，`ariaLabel`「画幅方向」）；档位下拉在「高级参数」的「画幅」处，选项随方向变，末项「自定义…」。"
+ },
+ {
+  "id": "Z-13",
+  "text": "切换方向时保持同一档（草稿→草稿……）；当前是自定义时切方向，取新方向的「标准」档。"
+ },
+ {
+  "id": "Z-14",
+  "text": "选「自定义…」出现宽、高两个数字输入，初值为切换前选中的那一档；输入框失焦时取最近的 32 的倍数（`snap32`）；提交前不合规按 Z-02 写在高级参数错误行并拦下（沿用现有 `ParamsError({advanced:true})`）。"
+ },
+ {
+  "id": "Z-15",
+  "text": "默认：横屏 · 草稿（与现状 512×288 一致）。"
+ },
+ {
+  "id": "Z-20",
+  "text": "形状判定：`0.9 ≤ 宽/高 ≤ 1.1` 为方形；否则宽>高为横屏、高>宽为竖屏。"
+ },
+ {
+  "id": "Z-21",
+  "text": "「图生」模式下首帧来源变化（上传选中、本页「从图片会话选…」、图片页「用这张生成视频」）且读到首帧尺寸后：若当前不是自定义且首帧方向 ≠ 当前方向，就切到首帧方向、保持档位（Z-13），在首帧说明旁提示「已按首帧切到<方向>」。"
+ },
+ {
+  "id": "Z-22",
+  "text": "首帧尺寸来源：上传文件在浏览器里解码读 `naturalWidth/Height`；图片会话引用读该尝试的 `params.width/height`（`panes/video.js` 的 `lookupImage` 现只返回 `{output,title,index}`，需补上 `width,height`）；读不到（解码失败、参数缺失）就不跟随、不提示。"
+ },
+ {
+  "id": "Z-23",
+  "text": "跟随后用户手动改方向：照用户的，提示消失，同一个首帧不再自动切回。换了新的首帧重新判定。"
+ },
+ {
+  "id": "Z-24",
+  "text": "当前是自定义尺寸时不自动改，形状不一致时提示「首帧是<方向>，画幅是<方向>，画面会被拉伸变形」。"
+ },
+ {
+  "id": "Z-25",
+  "text": "续写的首帧（上一段末帧）不触发跟随（见 Z-30）。"
+ },
+ {
+  "id": "Z-26",
+  "text": "「在这段基础上改」「换个版本」与素材库「回填参数」恢复的是当时保存的尺寸（Z-31），带回的首帧不触发跟随，也不出提示。"
+ },
+ {
+  "id": "Z-30",
+  "text": "「接着往下生」时方向控件、档位下拉、自定义输入全部禁用，`title`「接着往下生沿用上一段的画幅」；点提示条 × 取消续写后恢复可用。"
+ },
+ {
+  "id": "Z-31",
+  "text": "续写、「换个版本」「在这张基础上改」、素材库「回填参数」带入的尺寸，用 `matchSize(width, height)` 找回方向与档位；不在任何档位里则选「自定义…」并填入宽高。"
+ },
+ {
+  "id": "Z-32",
+  "text": "卡片、素材库里显示的尺寸照旧是 `宽×高`，竖屏与自定义同样显示。"
+ },
+ {
+  "id": "Z-40",
+  "text": "耗时：`宽×高 ≥ 1024×576` 且帧数 ≥ 243（约 10 秒档）时显示「大画幅加 10 秒以上会非常慢：实测 1024×576 曾 20 分钟只走完 2/16 步，可能要一小时以上。建议先用草稿画幅试效果。」"
+ },
+ {
+  "id": "Z-41",
+  "text": "H3 预算：`估算 = 27.0 + 1.4 × max(宽×高×帧数 ÷ (512×288×49) − 1, 0)` GiB，与 `memory_estimate.py` 同源；超过 40 时显示「按实测外推约需 N GiB，超过视频生成的 40 GiB 上限，可能中途失败。」（N 取整）。"
+ },
+ {
+  "id": "Z-42",
+  "text": "两条可同时出现，显示在现有耗时提醒位置（`[data-video-cost-note]`）；参数一变就更新。"
+ },
+ {
+  "id": "Z-43",
+  "text": "`pure/video_cost.js` 并入 `pure/video_size.js` 后删除。"
+ },
+ {
+  "id": "Z-50",
+  "text": "JS 单测：Z-01 边界（255/256、1344/1376、面积恰为上限与超 1 格）、Z-02 文案顺序、`snap32`、Z-11 全部档位合法、Z-13、Z-20 边界（0.9、1.1）、Z-21/23/24、Z-30、Z-31（档位内、竖屏、自定义）、Z-40/41 文案与阈值。"
+ },
+ {
+  "id": "Z-51",
+  "text": "Python：Z-03 各类违规 400 且会话无新尝试；合法竖屏与自定义能启动；Z-04 镜像测试。"
+ },
+ {
+  "id": "Z-52",
+  "text": "e2e：竖屏 · 标准与自定义 448×800 各生成一次，请求体与卡片尺寸正确；上传方图做首帧后方向切到方形并出提示；续写时画幅控件禁用；截图目检（1280 与 900 宽），截图目录 `$LMD_VIDEO_SIZE_SHOTS`。"
+ },
+ {
+  "id": "Z-53",
+  "text": "实测（2026-10-07）：512×512 正圆首帧生成 512×288，第一帧圆被压成椭圆、8 条横线全在、输出 512×288——H3 **拉伸**首帧到画布，不裁切。Z-24 措辞据此为「拉伸变形」。"
+ },
+ {
+  "id": "R-e2e-01",
+  "text": "测试态服务可启动：注入假后端、临时数据根与临时模型根，浏览器可访问， 全流程确定性可重复；断言全程未触碰真实权重目录与真实 outputs。"
+ },
+ {
+  "id": "R-e2e-02",
+  "text": "首运流程：无配置时呈现首运界面；选定 models 目录后进入主界面；配置确已落盘。"
+ },
+ {
+  "id": "R-e2e-03",
+  "text": "聊天流程：选模型 → 加载 → 发消息 → 看到**逐步增长**的流式正文 → 思考块可展开 → 回复入库。 必须断言「增量确实是分批到达的」，而不是一次性出现（否则流式没被证明）。"
+ },
+ {
+  "id": "R-e2e-04",
+  "text": "多会话：新建 / 切换 / 重命名 / 删除；**刷新页面后仍在**。"
+ },
+ {
+  "id": "R-e2e-05",
+  "text": "资源面板：齐 / 一半 N% / 没下 三态正确渲染且百分比正确； 下载 → 进度推进 → 取消 → 续传 的控件流转；删除需二次确认；剩余空间可见。"
+ },
+ {
+  "id": "R-e2e-06",
+  "text": "视频流程：填参数 → 启动 → 进度可见 → 完成后播放器出现且 `src` 指向新成品。"
+ },
+ {
+  "id": "R-e2e-07",
+  "text": "音乐流程：同上。"
+ },
+ {
+  "id": "R-e2e-08",
+  "text": "互斥在 UI 上可见：媒体运行中，加载按钮与另一媒体按钮均被禁用，状态条给出拒绝原因； 媒体结束后恢复可用。"
+ },
+ {
+  "id": "R-e2e-09",
+  "text": "素材库：点历史项把当时参数回填进对应表单（逐字段断言）；点成品可播放。"
+ },
+ {
+  "id": "R-e2e-10",
+  "text": "状态条显示**真实内存数值**并随状态变化；断言页面上不存在写死的 `128` 内存字面量。"
+ },
+ {
+  "id": "R-e2e-11",
+  "text": "设置面板显示对外 API 的两条 base URL（OpenAI 与 Anthropic），并明示当前无鉴权。"
+ },
+ {
+  "id": "R-e2e-12",
+  "text": "**零直连断言**：通过浏览器网络拦截，断言整场 e2e 期间前端**没有向 `127.0.0.1:8767` 发出任何请求**。这条以行为方式证明 census A17，比 grep 更强。"
+ },
+ {
+  "id": "D-44a",
+  "text": "以图生图（2026-09-24 修订，用户确认）：被回填的尝试有图（`status == done`、有 `output` 且文件还在）时，提示条改为「以第 N 次为底稿」；提示条仍在时点「生成图片」，请求带 `base: {attempt_id, strength: 0.6}`，后端以那张图为底稿重绘（保留构图、重画细节），宽高取底稿的宽高。没图的尝试（失败、取消、文件不在）仍按 D-40–D-44 只回填、按文生图生成。提示条隐藏（改了种子或点 ×）后同样退回文生图。"
+ },
+ {
+  "id": "D-47a",
+  "text": "以图生图（2026-09-24 修订）：该尝试有图时，提交带 `base: {attempt_id, strength: 0.35}`，以这张为底稿重绘（保留主体与色调、换构图）。没图的尝试「换个构图」不可用，按钮下方原因行为「这一次没有图片，不能以它为底稿换个构图」。"
+ },
+ {
+  "id": "D-47b",
+  "text": "以图生图的强度只允许 0.6 与 0.35 两档（mflux 约定：强度越高越接近底稿）；后端校验底稿属于同一会话、状态为 done 且文件存在，否则分别返回 400 `invalid_params`、404 `base_not_found`、404 `base_missing`。尝试记录 `base: {attempt_id, strength}`（文生图为 `null`），卡片标题行显示「基于第 N 次」（底稿不在列表中则不显示）。"
+ },
+ {
+  "id": "D-50a",
+  "text": "例外（用户 2026-09-24 决定）：「素材库」页不属于图片主流程，其条目元数据可以显示「种子 N」；本需求只改图片页（BR-1），素材库文案保持不变。D-50 与视觉标准的「种子」全局规则只适用于图片页。"
+ },
+ {
+  "id": "BR-1",
+  "text": "只改图片页；视频、音乐页不动"
+ },
+ {
+  "id": "BR-2",
+  "text": "会话持久化在本机，重启 app 后仍在，每个会话一个 JSON 文件，沿用聊天会话的存储方式"
+ },
+ {
+  "id": "BR-3",
+  "text": "会话内按时间顺序列出每次尝试：图片、提示词、宽高、步数、种子；失败或取消的尝试也列出并写明原因"
+ },
+ {
+  "id": "BR-4",
+  "text": "会话需手动新建（像聊天的「新建」）；未新建时生成接在当前会话；会话标题默认取第一次生成的提示词"
+ },
+ {
+  "id": "BR-5",
+  "text": "会话可切换、重命名、删除；删除会话只删分组，图片文件保留并仍出现在素材库"
+ },
+ {
+  "id": "BR-6",
+  "text": "打开任意一次尝试后给两个动作：「在这张基础上改」把提示词回填到输入框并沿用该张种子，用户改完再生成；「换个构图」提示词不变、换一个新随机种子直接再生成"
+ },
+ {
+  "id": "BR-7",
+  "text": "界面主流程不出现「种子」一词；种子与宽高、步数一起收进「高级参数」"
+ },
+ {
+  "id": "BR-8",
+  "text": "新尝试总是追加到当前会话末尾，不覆盖旧图"
+ },
+ {
+  "id": "BR-9",
+  "text": "局部重绘/图生图不在本次范围"
+ },
+ {
+  "id": "AC-1",
+  "text": "连续三轮「生成 → 在这张基础上改 → 再生成」后，三张图及各自参数都在同一个会话里按顺序显示"
+ },
+ {
+  "id": "AC-2",
+  "text": "「在这张基础上改」生成的新图与原图种子相同；「换个构图」生成的新图提示词相同而种子不同"
+ },
+ {
+  "id": "AC-3",
+  "text": "重启 app 后会话列表、每个会话的尝试和图片都还在"
+ },
+ {
+  "id": "AC-4",
+  "text": "切到另一个会话再切回，内容不变；新建会话后生成的图只进新会话"
+ },
+ {
+  "id": "AC-5",
+  "text": "删除会话后会话从列表消失，其中的图片仍能在素材库打开"
+ },
+ {
+  "id": "AC-6",
+  "text": "失败或取消的尝试在会话里可见并显示原因，不会留下一张空白图"
+ },
+ {
+  "id": "AC-7",
+  "text": "在真实浏览器中截图检查图片页的会话列表、尝试列表和两个动作按钮，无遮挡、截断或空白态错误"
+ },
+ {
+  "id": "B-38a",
+  "text": "模型产出后、开始拼接前，先调用 `store.record_output(session_id, attempt_id, output)` 把单段文件名写进仍为 running 的尝试。之后任何中断都不丢这一段："
+ },
+ {
+  "id": "B-38b",
+  "text": "重活许可在**模型子进程退出时**释放（拼接只用 ffmpeg，不该继续占着 arbiter 的内存额度挡住聊天加载）；`_finalize` 对已释放的许可不再释放（只释放一次）。compose 作业没有许可（B-45）。"
+ }
+]
