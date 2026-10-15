@@ -52,6 +52,8 @@ lmdesk image rename "首页 banner" "首页大图"
   - 对话模型：不能强制加载。告诉用户，建议换一个更小的模型。
 - 退出码 5：模型、会话或尝试不存在。用 `lmdesk models`、`lmdesk image sessions`、`lmdesk image show` 查清楚再调用。
 - 退出码 6：被沙箱拦截，访问不了本机网络（127.0.0.1）。请求提升权限，或者告诉用户需要放行本机网络。
+  - Codex：默认的 workspace-write 沙箱关闭了网络。告诉用户在 `~/.codex/config.toml` 里加上 `[sandbox_workspace_write]` 和 `network_access = true`，或者用 `codex -s workspace-write -c sandbox_workspace_write.network_access=true` 启动。
+  - Claude Code 开启了沙箱时：请用户把 `127.0.0.1` 加进沙箱的网络白名单。
 
 ## 例子
 
