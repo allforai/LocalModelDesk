@@ -37,3 +37,13 @@ def test_dev_entry_script_runs_help():
     assert os.access(script, os.X_OK)
     r = subprocess.run([str(script), "--help"], capture_output=True, text=True, timeout=30)
     assert r.returncode == 0 and "lmdesk" in r.stdout
+
+
+def test_media_sections_cover_video_and_music():
+    fields, body = _frontmatter(SKILL.read_text(encoding="utf-8"))
+    assert len(fields["description"]) <= 1024
+    for word in ("本地生成视频", "本地生成音乐"):
+        assert word in fields["description"]
+    for needle in ("lmdesk video wait", "--first-frame image:", "lmdesk music gen", "--lyrics-file", "join",
+                   "--continue", "lmdesk video sessions", "lmdesk music sessions", "[instrumental]"):
+        assert needle in body, needle
