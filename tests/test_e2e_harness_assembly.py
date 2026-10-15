@@ -92,6 +92,7 @@ def production_route_table():
     table.update((method, path) for method, path, _handler in library_http.routes(fake_service))
     table.update({
         ("GET", "/api/state"),
+        ("GET", "/api/agent/precheck"),
         ("GET", "/api/memory"),
         ("GET", "/api/gateway/config"),
         ("POST", "/api/gateway/config"),

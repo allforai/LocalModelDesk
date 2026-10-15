@@ -130,6 +130,19 @@ class LlmService:
         if token is not None:
             self._arbiter.release_heavy(token)
 
+    def _heavy_request(self, entry: Any) -> dict[str, Any]:
+        model_dir = Path(self._paths.resolve_paths().models_root) / entry.relpath
+        return {"config": _read_model_config(model_dir), "weights_gb": getattr(entry, "gb", None)}
+
+    def precheck_load(self, key: str) -> dict[str, Any]:
+        """A-45: what acquire_heavy would answer for loading *key*, without acquiring."""
+        entry = self._find_entry(key) if isinstance(key, str) else None
+        if entry is None:
+            raise LlmRejected(ERR_MODEL_NOT_FOUND, f"未找到模型: {key}")
+        answer = self._arbiter.can_start_heavy("llm", params=self._heavy_request(entry), key=entry.key)
+        return {"ok": bool(answer.get("ok")), "reason": answer.get("reason"),
+                "release": list(answer.get("release") or []), "memory_warning": answer.get("memory_warning")}
+
     def _find_entry(self, key: str) -> Any | None:
         return next((entry for entry in self._catalog.list_catalog() if entry.key == key), None)
 
@@ -181,8 +194,7 @@ class LlmService:
         # 会把聊天算成 0 字节，于是预算对任何组合都说「装得下」（Task 9）。
         acquired = self._arbiter.acquire_heavy(
             "llm", entry.key, getattr(entry, "name", None),
-            params={"config": _read_model_config(model_dir), "weights_gb": getattr(entry, "gb", None)},
-            key=entry.key,
+            params=self._heavy_request(entry), key=entry.key,
         )
         if not acquired.get("ok"):
             reason = acquired.get("reason") or {}

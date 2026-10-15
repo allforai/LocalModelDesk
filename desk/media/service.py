@@ -580,6 +580,15 @@ class MediaService:
             self._worker_thread.start()
             return self.job_status()
 
+    def precheck_image(self, width: int, height: int, steps: int) -> dict:
+        """A-45: what the arbiter would answer for an image job of this size, without starting one."""
+        params = {"prompt": "", "width": width, "height": height, "steps": steps}
+        estimated, _source = self._estimate("image", params)
+        answer = self._arbiter.can_start_heavy("image", params=params, key="qwen-image",
+                                               estimated_bytes=estimated)
+        return {"ok": bool(answer.get("ok")), "reason": answer.get("reason"),
+                "release": list(answer.get("release") or []), "memory_warning": answer.get("memory_warning")}
+
     def _admit_heavy(self, kind: str, params: dict, force: bool, join: dict | None, roots, job_id: int):
         """Capability, model, memory and arbiter gates for a model job; returns (model_root, permit)."""
         cap_key = {"video": "mlx_h3", "music": "music_runtime", "image": "image_runtime"}[kind]
