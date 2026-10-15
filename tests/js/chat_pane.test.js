@@ -47,7 +47,7 @@ class Element {
 
 function makePane() {
   const controls = new Map();
-  for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error", "load-hint", "skill-toggle", "skill-panel", "skill-panel-close", "skill-list", "skill-notice", "skill-cost", "skill-rescan", "skill-install"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
+  for (const name of ["session-list", "session-new", "model-select", "load", "unload", "model-state", "messages", "chat-input", "send", "chat-error", "load-hint", "skill-toggle", "skill-panel", "skill-panel-close", "skill-list", "skill-notice", "skill-cost", "skill-rescan", "skill-install", "agent-switch", "agent-switch-text", "agent-switch-close"]) controls.set(`[data-${name}]`, new Element(name === "model-select" ? "select" : "div"));
   const doc = {
     body: new Element("body"),
     createElement: (tag) => new Element(tag),

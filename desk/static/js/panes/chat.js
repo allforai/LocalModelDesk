@@ -1,5 +1,6 @@
 // ui:chatPane —— 模型选择/加载/卸载、流式回复（思考可展开）、左侧会话列表（R-ui-02、R-ui-08）。
 // 只做「取数 → 调纯函数 → 写 DOM」；一律 createElement/textContent，无 innerHTML。
+import { agentSwitchNotice } from "../pure/agent_switch.js";
 import * as api from "../api.js";
 import { sseDataLines } from "../stream.js";
 import { initialStream, reduceChunk, wireMessages } from "../pure/chat_stream.js";
@@ -26,6 +27,9 @@ export function createChatPane(root, ctx = {}) {
     loadBtn: root.querySelector("[data-load]"),
     unloadBtn: root.querySelector("[data-unload]"),
     modelState: root.querySelector("[data-model-state]"),
+    agentSwitch: root.querySelector("[data-agent-switch]"),
+    agentSwitchText: root.querySelector("[data-agent-switch-text]"),
+    agentSwitchClose: root.querySelector("[data-agent-switch-close]"),
     messages: root.querySelector("[data-messages]"),
     input: root.querySelector("[data-chat-input]"),
     sendBtn: root.querySelector("[data-send]"),
@@ -364,6 +368,8 @@ export function createChatPane(root, ctx = {}) {
     // 拉 /api/llm/status 就会调到这里），不用等用户再发一轮消息才发现自己在看
     // 上一个模型的数字（2026-09-23 finding 2）。
     const residentKey = state.status === "loaded" ? state.model_key : null;
+    const notice = agentSwitchNotice(lastResidentModelKey, payload);
+    if (notice) { els.agentSwitchText.textContent = notice; els.agentSwitch.hidden = false; }
     if (lastResidentModelKey !== null && residentKey !== lastResidentModelKey) {
       lastTokenLimit = null;
       lastCharsPerToken = null;
@@ -371,6 +377,8 @@ export function createChatPane(root, ctx = {}) {
     }
     lastResidentModelKey = residentKey;
   }
+
+  els.agentSwitchClose.addEventListener("click", () => { els.agentSwitch.hidden = true; });
 
   async function pollUntilSettled() {
     for (;;) {
