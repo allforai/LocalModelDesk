@@ -8,3 +8,10 @@ class CliError(Exception):
     def __init__(self, exit_code: int, code: str, message: str, hint: str | None = None):
         super().__init__(message)
         self.exit_code, self.code, self.message, self.hint = exit_code, code, message, hint
+
+
+class Interrupted(Exception):
+    """Raised from the SIGINT/SIGTERM handler; images decides cancel vs. keep-running by signum (A-25)."""
+    def __init__(self, signum: int):
+        super().__init__(signum)
+        self.signum = signum

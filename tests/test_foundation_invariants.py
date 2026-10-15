@@ -5,6 +5,7 @@ from pathlib import Path
 
 DESK = Path(__file__).resolve().parent.parent / "desk"
 PATHS_PY = DESK / "foundation" / "paths.py"
+CLI_MAIN = DESK / "agent_cli" / "__main__.py"
 
 
 def _py_files():
@@ -27,6 +28,8 @@ def test_home_expansion_only_in_paths_py():
 def test_no_system_exit_anywhere_in_desk():
     offenders = []
     for source in _py_files():
+        if source == CLI_MAIN:  # lmdesk 命令行入口：进程退出码就是它的接口（A-13）
+            continue
         text = source.read_text(encoding="utf-8")
         if "raise SystemExit" in text or "sys.exit(" in text:
             offenders.append(str(source))
