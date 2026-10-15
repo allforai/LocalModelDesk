@@ -29,8 +29,8 @@ def _parser() -> argparse.ArgumentParser:
     ask.add_argument("--system")
     ask.add_argument("--file", action="append", default=[])
     ask.add_argument("--max-tokens", type=int)
-    from . import images
-    images.add_parsers(sub, common)
+    from . import media
+    media.add_parsers(sub, common)
     return p
 
 
@@ -122,5 +122,5 @@ def _dispatch(args, client, waiter, stdin, err):
     if args.command == "ask":
         return chat.run_ask(client, question=args.question, model=args.model, system=args.system, files=args.file,
                             stdin_text=_read_stdin(stdin), max_tokens=args.max_tokens, waiter=waiter)
-    from . import images
-    return images.dispatch(args, client, waiter, err)
+    from . import media
+    return media.dispatch(args, client, waiter, err)

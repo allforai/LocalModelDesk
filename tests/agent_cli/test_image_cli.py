@@ -207,7 +207,7 @@ def _wait_idle(h, timeout=10):
 
 def test_out_with_trailing_slash_is_a_directory_even_if_missing(tmp_path):
     import io
-    from desk.agent_cli.images import _copy_out
+    from desk.agent_cli.media import _copy_out
     src = tmp_path / "a.png"
     src.write_bytes(b"png")
     final = _copy_out(src, str(tmp_path / "assets") + "/", io.StringIO())
