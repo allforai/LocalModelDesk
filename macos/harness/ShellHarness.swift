@@ -11,6 +11,7 @@ struct ShellHarness {
     }
     switch command {
     case "map-status": runMapStatus()
+    case "agent-skill-note": print(agentSkillMenuNote(for: parseStatusFixture()) ?? "")
     case "glyph-state": print(menuGlyphState(for: parseStatusFixture()).rawValue)
     case "memory-line":
       guard args.count >= 4, let used = Int64(args[1]), let total = Int64(args[2]),
