@@ -19,6 +19,7 @@
     - 记录模型是被谁换上的；
     - 媒体取消接口带任务 id；
     - `/api/agent-skill` 接口；
+    - 只读预检接口 `/api/agent/precheck`；
     - `/api/state` 返回版本号；
   - 聊天页显示「模型已被 agent 切换」的提示；
   - 启动时检查已装链接是否失效，失效时在菜单栏显示提示点（含 Swift 侧改动）；
@@ -102,7 +103,7 @@ lmdesk image rename <会话> "新名字"
 | 空闲 | 不是要的模型：swap；然后 submit | submit（由 arbiter 决定，必要时它自己卸掉对话模型） |
 
   - 说明：生图的 arbiter 若需要卸掉对话模型，而界面最近 5 分钟内有过对话，命令行在提交前改为 wait。理由与换模型相同：不在你聊天的间隙抢走模型。
-  - 这个判断由 `decide()` 根据 `/api/state` 的 `can_start.release` 是否包含对话模型来做。
+  - 这个判断由 `decide()` 根据预检接口（A-45）返回的 `release` 里有没有 `kind: "llm"` 来做。`/api/state` 的 `can_start` 只回答「谁占着」，不带 `release`，所以不能用它判断。
 
 - [A-21] 选模型：
   - 有 `--model`：用它。
@@ -122,7 +123,8 @@ lmdesk image rename <会话> "新名字"
 - [A-26] 内存不足分两种情况：
   - **生图**：台面要求确认时，退出码 4，stderr 原样转述台面的内存估算文案。带 `--force` 时，把 `force: true` 透传给接口。
   - **加载对话模型**：arbiter 返回 `insufficient_budget`，而且对话模型不能加 force。
-    - 拒绝时带有可以释放的项（`release` 不为空，比如正在跑的媒体任务）：等待。
+    - 加载接口的拒绝里不带 `release`（`LlmRejected` 只有 code 和 message），所以换模型前先调用预检接口（A-45）。
+    - 预检拒绝时带有可以释放的项（`release` 不为空，比如正在跑的媒体任务）：等待。
     - 没有可以释放的项（说明这个模型对这台机器太大）：立即以退出码 4 退出，原样转述台面的说明，并注明「对话模型不能强制加载，请换一个更小的模型」。
 - [A-27] 图片的结果以**会话里的尝试记录**为准，不依赖媒体任务槽位：
   - 提交后，命令行记下 `session_id` 和 `attempt_id`。
@@ -156,6 +158,10 @@ lmdesk image rename <会话> "新名字"
   - 带了 `job_id`，但它不是当前正在跑的任务：返回 409 `job_not_running`，不取消任何任务。
   - 不带：保持现在的行为，界面用的就是这种。
 - [A-43] `LlmService` 记录当前模型的来源 `loaded_by`，取值为 `"agent"` 或 `"ui"`，依据 `/api/llm/load` 请求里的 `origin` 字段。在 `/api/llm/status` 中返回。
+- [A-45] 新增只读预检接口 `GET /api/agent/precheck`，不改变任何状态：
+  - `?op=chat&model=KEY`：按 `/api/llm/load` 相同的参数（模型 config、权重大小）调用 `arbiter.can_start_heavy("llm", …)`；
+  - `?op=image&width=W&height=H&steps=N`：按 `start_image_job` 相同的参数调用 `arbiter.can_start_heavy("image", …, key="qwen-image")`；
+  - 原样返回 `{ok, reason, release, memory_warning}`。模型不存在时返回 404 `model_not_found`。
 - [A-44] `/api/state` 增加 `version` 字段，取值规则同 A-32。现在 `/api/state` 只有 `holder`、`holders`、`media_busy`、`can_start` 这几个字段，没有版本信息。
 
 ## 6. 安装目标与状态
@@ -270,7 +276,7 @@ lmdesk image rename <会话> "新名字"
   - 版本不一致只警告；
   - 会话名有歧义时返回 2；
   - 模拟权限错误时返回 6。
-  - 测试环境的 arbiter 默认是旧的单槽位模式。凡是涉及「媒体任务和对话模型能否并存」的用例，都要改用正式环境的按内存预算调度模式（与 `desk/runtime.py` 一致）。
+  - 测试环境（`launch_test_harness`）已经按正式环境装配了按内存预算调度的 arbiter，并存规则可以直接在其中测试。新增的路由要同时挂进 `desk/testing/harness.py`，`tests/test_e2e_harness_assembly.py` 会核对两边的路由表一致。
 - [A-T3] 服务端单元测试：
   - `active_chats` 在正常结束、出错、流被中途关闭这几种情况下都只减一次；
   - `ui_chat_recent` 不受 agent 对话影响，5 分钟后变回 false（用假时钟）；
