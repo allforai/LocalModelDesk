@@ -465,6 +465,9 @@ audio.video-preview-media { width: min(360px, 100%); height: 36px; }
 .composer-tools>.assist-row{flex:1 1 auto;min-width:0}
 .composer-tools>.image-advanced{margin-left:auto}
 .composer-tools>.image-advanced[open]{flex-basis:100%;margin-left:0}
+/* 展开后「高级参数」本身仍在右端，不从右跳到左 */
+.composer-tools>.image-advanced[open]>summary{text-align:right}
+.compact-advanced .composer-tools>.image-advanced[open]>summary{text-align:left}
 .video-slots{display:none}
 /* 浮层：贴在输入区上沿上方，临时盖住结果区下部，最高到主列顶端（--above 由 fitComposer 写）。
    放不下时 fitComposer 逐级给输入区加 compact-advanced（高级参数改浮层）、compact-materials（视频素材收成槽位）。 */

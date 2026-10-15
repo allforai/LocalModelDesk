@@ -256,3 +256,16 @@ def test_everything_set_at_once_still_collapses(page, tmp_path):
         page.wait_for_timeout(300)
         page.keyboard.press("Escape")
         _assert_layout(page, "video", "同一刻设好 900×600")
+
+
+def test_slots_are_disabled_while_continuing(page, tmp_path):
+    """recheck 2026-10-15：接着往下生时首帧、尾帧被锁，矮窗口里的槽位也要禁用变暗，而不是照常亮着。"""
+    with _harness(tmp_path, "video") as harness:
+        page.set_viewport_size({"width": 900, "height": 600})
+        pane = _generate_one(page, harness, "video")
+        pane.locator(".attempt[aria-expanded=true] [data-attempt-continue]").click()
+        slots = pane.locator("[data-video-slot]")
+        expect(slots.first).to_be_visible()
+        for index in range(slots.count()):
+            expect(slots.nth(index)).to_be_disabled()
+        assert page.evaluate("getComputedStyle(document.querySelector('[data-video-slot]')).opacity") == "0.5"

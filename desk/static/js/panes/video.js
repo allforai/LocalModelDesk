@@ -370,7 +370,12 @@ export function createVideoPane(root, ctx = {}) {
         state.textContent = area.querySelector?.(".file-name")?.textContent || "未选择";
         slot.append(state);
       }
-      slot.title = `${label}：点开更换`;
+      const name2 = area.querySelector?.(".file-name")?.textContent || "未选择";
+      // 素材里能操作的控件全被锁住（接着往下生沿用上一段）时槽位跟着禁用、变暗，说明写在提示里。
+      const controls = [...(area.querySelectorAll?.("input, button") ?? [])];
+      const locked = controls.length > 0 && controls.every((control) => control.disabled);
+      slot.disabled = locked;
+      slot.title = locked ? `${label}：${name2}（接着往下生沿用上一段，不能更换）` : `${label}：${name2}，点开更换`;
       slot.addEventListener("click", () => popArea(poppedArea === key ? null : key));
       // 拖着文件经过槽位就弹出素材块，好放到上传行上（issue #15 的拖放在矮窗口里也能用）。
       slot.addEventListener("dragenter", () => { if (poppedArea !== key) popArea(key); });
