@@ -29,7 +29,18 @@ def build_precheck_routes(llm, media) -> list:
             if None in (width, height, steps):
                 return _error(400, "invalid_params", "width/height/steps 须为整数")
             return Response(200, media.precheck_image(width, height, steps))
-        return _error(400, "invalid_params", "op 只能是 chat 或 image")
+        if op == "video":
+            names = ("width", "height", "frames", "steps")
+            values = [_int(req.query, name) for name in names]
+            if None in values:
+                return _error(400, "invalid_params", "width/height/frames/steps 须为整数")
+            return Response(200, media.precheck_media("video", dict(zip(names, values))))
+        if op == "music":
+            duration = _int(req.query, "duration")
+            if duration is None:
+                return _error(400, "invalid_params", "duration 须为整数")
+            return Response(200, media.precheck_media("music", {"duration": duration}))
+        return _error(400, "invalid_params", "op 只能是 chat、image、video 或 music")
 
     return [("GET", "/api/agent/precheck", precheck)]
 

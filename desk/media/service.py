@@ -582,9 +582,13 @@ class MediaService:
 
     def precheck_image(self, width: int, height: int, steps: int) -> dict:
         """A-45: what the arbiter would answer for an image job of this size, without starting one."""
-        params = {"prompt": "", "width": width, "height": height, "steps": steps}
-        estimated, _source = self._estimate("image", params)
-        answer = self._arbiter.can_start_heavy("image", params=params, key="qwen-image",
+        return self.precheck_media("image", {"prompt": "", "width": width, "height": height, "steps": steps})
+
+    def precheck_media(self, kind: str, params: dict) -> dict:
+        """B-30: what the arbiter would answer for a heavy job of this kind and size, without starting one."""
+        catalog_key = {"video": "h3", "music": "music3", "image": "qwen-image"}[kind]
+        estimated, _source = self._estimate(kind, params)
+        answer = self._arbiter.can_start_heavy(kind, params=params, key=catalog_key,
                                                estimated_bytes=estimated)
         return {"ok": bool(answer.get("ok")), "reason": answer.get("reason"),
                 "release": list(answer.get("release") or []), "memory_warning": answer.get("memory_warning")}

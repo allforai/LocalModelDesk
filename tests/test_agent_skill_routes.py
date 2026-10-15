@@ -65,8 +65,37 @@ def test_precheck_image_is_ok_when_idle(tmp_path):
 
 def test_precheck_bad_op_is_400(tmp_path):
     with launch_test_harness(tmp_path) as h:
-        status, body = _get(h.base_url + "/api/agent/precheck?op=video")
+        status, body = _get(h.base_url + "/api/agent/precheck?op=bogus")
         assert status == 400
+
+
+def test_precheck_video_and_music_are_ok_when_idle(tmp_path):
+    with launch_test_harness(tmp_path, model_states={"h3": "present", "music3": "present"}) as h:
+        status, body = _get(h.base_url + "/api/agent/precheck?op=video&width=768&height=448&frames=124&steps=8")
+        assert status == 200
+        assert set(body) == {"ok", "reason", "release", "memory_warning"}
+        status, body = _get(h.base_url + "/api/agent/precheck?op=music&duration=30")
+        assert status == 200
+        assert set(body) == {"ok", "reason", "release", "memory_warning"}
+
+
+def test_precheck_video_and_music_reject_non_integers(tmp_path):
+    with launch_test_harness(tmp_path) as h:
+        status, body = _get(h.base_url + "/api/agent/precheck?op=video&width=768&height=x&frames=124&steps=8")
+        assert status == 400 and body["error"]["code"] == "invalid_params"
+        status, _ = _get(h.base_url + "/api/agent/precheck?op=music&duration=abc")
+        assert status == 400
+        status, _ = _get(h.base_url + "/api/agent/precheck?op=music")
+        assert status == 400
+
+
+def test_precheck_image_delegates_to_precheck_media():
+    from desk.media.service import MediaService
+    seen = []
+    svc = MediaService.__new__(MediaService)
+    svc.precheck_media = lambda kind, params: seen.append((kind, params)) or {"ok": True}
+    assert svc.precheck_image(512, 256, 4) == {"ok": True}
+    assert seen[0][0] == "image" and seen[0][1]["width"] == 512 and seen[0][1]["steps"] == 4
 
 
 import pytest
