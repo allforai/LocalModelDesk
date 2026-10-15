@@ -1,0 +1,976 @@
+{
+  "platform": "web",
+  "form_factor": "desktop",
+  "width_range": {
+    "min": 900,
+    "max": 2560,
+    "basis": "普查 contentMinSize 900（macos/MainWindowController.swift:32）；max 2560 用户确认「900–2560（推荐）」（普查 max 1920，只放宽）"
+  },
+  "height_range": {
+    "min": 600,
+    "basis": "普查 macos/VisualProbe.swift:9 → MainWindowController.swift:32 contentMinSize 高 600"
+  },
+  "layout_thresholds": [
+    {
+      "width": 1100,
+      "unit": "px",
+      "basis": "desk/static/app.css:38 @media (max-width:1100px) 状态栏宽或窄文案切换"
+    },
+    {
+      "width": 900,
+      "unit": "px",
+      "basis": "desk/static/app.css:441 @media (max-width:900px) 素材库预览改成三列，信息栏下移"
+    },
+    {
+      "width": 100,
+      "unit": "px",
+      "basis": "desk/static/app.css:352 @container (max-width:100px) 会话栏头部（容器宽度，收起后 44px，app.css:340）"
+    },
+    {
+      "width": 1400,
+      "unit": "px",
+      "basis": "desk/static/app.css:2 --chat-col:1400px；app.css:54,83,199,288 主列 max-width，两侧各 24px"
+    },
+    {
+      "width": 1300,
+      "unit": "px",
+      "basis": "desk/static/app.css:174 .firstrun-wrap max-width:min(1300px,calc(100% - 48px))"
+    },
+    {
+      "width": 1200,
+      "unit": "px",
+      "basis": "desk/static/app.css:423 .dialog.lib-preview max-width:min(1200px,calc(100vw - 48px))"
+    },
+    {
+      "width": 760,
+      "unit": "px",
+      "basis": "desk/static/app.css:320 .media-picker max-width"
+    },
+    {
+      "width": 640,
+      "unit": "px",
+      "basis": "desk/static/app.css:74,162 skill 面板与 .dialog-wide max-width"
+    },
+    {
+      "width": 480,
+      "unit": "px",
+      "basis": "desk/static/app.css:156 .dialog max-width"
+    },
+    {
+      "width": 420,
+      "unit": "px",
+      "basis": "desk/static/app.css:165 #pane-settings width:min(420px,100%)"
+    },
+    {
+      "width": 248,
+      "unit": "px",
+      "basis": "desk/static/app.css:51 .sessions width:248px；app.css:348 .sessions>ul min-width:240px"
+    },
+    {
+      "width": 900,
+      "unit": "pt",
+      "basis": "macos/VisualProbe.swift:8 MainWindowMinSize.width → macos/MainWindowController.swift:32 contentMinSize"
+    }
+  ],
+  "locales": {
+    "supported": [
+      "zh-CN"
+    ],
+    "default": "zh-CN",
+    "rtl": [],
+    "basis": "没有 i18n 资源，文案写死在源码里：desk/static/index.html:2 lang=zh-CN；packaging/Info.plist.template:11-15 CFBundleDevelopmentRegion zh_CN，CFBundleLocalizations zh-Hans；macos/*.swift 文案也是中文硬编码",
+    "declined": []
+  },
+  "axis_support": {
+    "appearance": {
+      "supported": [
+        "dark"
+      ],
+      "basis": "desk/static/app.css:2 :root{color-scheme:dark}，没有 prefers-color-scheme 和 data-theme；macos/AppDelegate.swift:16 NSApp.appearance=.darkAqua；errorPageHTML 写死深色（macos/ShellStatus.swift:105）。菜单栏状态图标是模板图（macos/StatusItemController.swift:88-91），会跟随系统菜单栏明暗",
+      "declined": []
+    },
+    "dynamic_type": {
+      "supported": [
+        "固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）",
+        "WKWebView 没有开 allowsMagnification/pageZoom；在普通浏览器里可用浏览器缩放"
+      ],
+      "basis": "desk/static/app.css:7,11,12; 在 macos/ 中搜 magnification/pageZoom 没有结果；应用内读回值为「浏览器缩放 100%」（macos/VisualProbe.swift），轴值写成「浏览器缩放 100% + <普查官原文>」",
+      "declined": [
+        {
+          "value": "WKWebView 没有开 allowsMagnification/pageZoom；在普通浏览器里可用浏览器缩放",
+          "confirmation": "只验 100%（推荐）",
+          "confirmed_at": "2026-10-14T17:42:00+09:00"
+        }
+      ]
+    },
+    "orientation": {
+      "supported": [
+        "landscape"
+      ],
+      "basis": "桌面窗口，没有 orientation 媒体查询；窗口只设了最小尺寸，用户可拖成竖长窗口（macos/MainWindowController.swift:16 .resizable）",
+      "declined": []
+    },
+    "pointer": {
+      "supported": [
+        "mouse"
+      ],
+      "basis": "macOS 加鼠标或触控板，服务只监听 loopback；没有 hover/pointer 媒体查询；悬停才出现的控件：app.css:112,270 .session:hover .session-actions，app.css:390 .lib-audition:hover，library.js:345 mouseenter 悬停播放；media_session.js:286 只监听 touchmove 用于判断滚动意图；app.css:190-194 细滚动条（接鼠标时 macOS 常显）",
+      "declined": []
+    }
+  },
+  "scroll_regions": [
+    {
+      "id": "chat-messages",
+      "surfaces": [
+        "chat"
+      ],
+      "cap": "flex:1，在 #pane-chat height:calc(100vh - 94px) 内",
+      "basis": "desk/static/app.css:49 #pane-chat height:calc(100vh - 94px);overflow:hidden; app.css:54 .messages flex:1;min-height:0;overflow:auto"
+    },
+    {
+      "id": "chat-composer",
+      "surfaces": [
+        "chat"
+      ],
+      "cap": "不封顶（min-height 72px，resize:vertical，没有 max-height，也没有 JS 自增高）",
+      "basis": "desk/static/app.css:10 textarea min-height:72px;resize:vertical; app.css:84; 位于 .messages 下方"
+    },
+    {
+      "id": "sessions-list",
+      "surfaces": [
+        "chat",
+        "image",
+        "video",
+        "music"
+      ],
+      "cap": "父 pane 高 calc(100vh - 94px)",
+      "basis": "desk/static/app.css:50 .sessions overflow:auto;min-height:0; app.css:339 overflow-y:auto; app.css:197"
+    },
+    {
+      "id": "media-timeline",
+      "surfaces": [
+        "image",
+        "video",
+        "music"
+      ],
+      "cap": "flex:1，在 height:calc(100vh - 94px) 内",
+      "basis": "desk/static/app.css:197 #pane-image,#pane-music,#pane-video height:calc(100vh - 94px);overflow:hidden; app.css:204 .image-timeline flex:1;min-height:0;overflow:auto"
+    },
+    {
+      "id": "video-composer",
+      "surfaces": [
+        "video"
+      ],
+      "cap": "50vh",
+      "basis": "desk/static/app.css:297 max-height:50vh;overflow-y:auto（与上方 media-timeline 相邻）"
+    },
+    {
+      "id": "video-materials",
+      "surfaces": [
+        "video"
+      ],
+      "cap": "受 video-composer 50vh 约束（flex:0 1 auto）",
+      "basis": "desk/static/app.css:298 min-height:0;overflow-y:auto"
+    },
+    {
+      "id": "video-prompt",
+      "surfaces": [
+        "video"
+      ],
+      "cap": "40vh（JS 取 innerHeight*0.4）",
+      "basis": "desk/static/app.css:293 max-height:40vh;field-sizing:content; desk/static/js/panes/video.js:757"
+    },
+    {
+      "id": "music-lyrics",
+      "surfaces": [
+        "music"
+      ],
+      "cap": "50vh（JS 取 innerHeight*0.5）；外层 composer 不封顶",
+      "basis": "desk/static/app.css:273 max-height:50vh;field-sizing:content; desk/static/js/panes/music.js:205（与上方 media-timeline 相邻）"
+    },
+    {
+      "id": "image-composer",
+      "surfaces": [
+        "image",
+        "music"
+      ],
+      "cap": "不封顶（只有 #pane-video 有 50vh）",
+      "basis": "desk/static/app.css:199,297（只选中 #pane-video）"
+    },
+    {
+      "id": "skill-panel",
+      "surfaces": [
+        "skill-panel"
+      ],
+      "cap": "80vh",
+      "basis": "desk/static/app.css:74 max-height:80vh;overflow:auto"
+    },
+    {
+      "id": "media-picker",
+      "surfaces": [
+        "media-picker"
+      ],
+      "cap": "70vh",
+      "basis": "desk/static/app.css:321 max-height:70vh; app.css:322,325,330 overflow-y:auto"
+    },
+    {
+      "id": "lib-preview",
+      "surfaces": [
+        "lib-preview"
+      ],
+      "cap": "calc(100vh - 48px) / calc(100vh - 96px) / calc(100vh - 88px)",
+      "basis": "desk/static/app.css:423 overflow:hidden; app.css:428-429; app.css:435 overflow:auto; ≤900px 时 app.css:442 overflow:auto"
+    },
+    {
+      "id": "settings-drawer",
+      "surfaces": [
+        "settings"
+      ],
+      "cap": "视口高（position:fixed top:0 bottom:0）",
+      "basis": "desk/static/app.css:165 overflow:auto"
+    },
+    {
+      "id": "firstrun",
+      "surfaces": [
+        "firstrun"
+      ],
+      "cap": "视口（fixed inset:0）",
+      "basis": "desk/static/app.css:173 overflow:auto"
+    },
+    {
+      "id": "attempt-media",
+      "surfaces": [
+        "image",
+        "video"
+      ],
+      "cap": "60vh / 50vh（只限媒体尺寸，不滚动）",
+      "basis": "desk/static/app.css:228,294"
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "chat",
+      "entry": "#tab=chat",
+      "census_id": "U10",
+      "kind": "screen",
+      "scrollable": false,
+      "groups": [],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "conversation",
+          "empty-session",
+          "streaming",
+          "model-unloaded",
+          "session-hover-actions",
+          "keyboard-focus",
+          "overflow-chat-messages",
+          "overflow-chat-composer",
+          "overflow-sessions-list",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "image",
+      "entry": "#tab=image",
+      "census_id": "U14",
+      "kind": "screen",
+      "scrollable": false,
+      "groups": [
+        "media-composer"
+      ],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "empty",
+          "with-results",
+          "generating",
+          "overflow-media-timeline",
+          "overflow-image-composer",
+          "overflow-sessions-list",
+          "overflow-attempt-media",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "video",
+      "entry": "#tab=video",
+      "census_id": "U15",
+      "kind": "screen",
+      "scrollable": false,
+      "groups": [],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "empty",
+          "with-result",
+          "generating",
+          "mode-image-first-frame",
+          "custom-size",
+          "continue-locked",
+          "overflow-media-timeline",
+          "overflow-video-composer",
+          "overflow-video-materials",
+          "overflow-video-prompt",
+          "overflow-sessions-list",
+          "overflow-attempt-media",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "music",
+      "entry": "#tab=music",
+      "census_id": "U16",
+      "kind": "screen",
+      "scrollable": false,
+      "groups": [
+        "media-composer"
+      ],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "empty",
+          "with-result",
+          "generating",
+          "overflow-media-timeline",
+          "overflow-music-lyrics",
+          "overflow-image-composer",
+          "overflow-sessions-list",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "resources",
+      "entry": "#tab=resources",
+      "census_id": "U18",
+      "kind": "screen",
+      "scrollable": true,
+      "groups": [
+        "list-cards"
+      ],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "default",
+          "partial-model",
+          "scroll-top",
+          "scroll-bottom",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "library",
+      "entry": "#tab=library",
+      "census_id": "U19",
+      "kind": "screen",
+      "scrollable": true,
+      "groups": [
+        "list-cards"
+      ],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "grid",
+          "list",
+          "detail",
+          "empty",
+          "scroll-top",
+          "scroll-bottom",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "lib-preview",
+      "entry": "素材库预览弹层",
+      "census_id": "U20",
+      "kind": "screen",
+      "scrollable": false,
+      "groups": [
+        "dialogs"
+      ],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "image",
+          "video",
+          "music",
+          "overflow-lib-preview",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "settings",
+      "entry": "设置抽屉",
+      "census_id": "U21",
+      "kind": "screen",
+      "scrollable": false,
+      "groups": [
+        "drawer"
+      ],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "default",
+          "gateway-on-warning",
+          "overflow-settings-drawer",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "firstrun",
+      "entry": "首次运行页",
+      "census_id": "U22",
+      "kind": "screen",
+      "scrollable": false,
+      "groups": [
+        "fullscreen"
+      ],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "default",
+          "adopt-candidates",
+          "fit-report",
+          "overflow-firstrun",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "fatal",
+      "entry": "致命错误覆盖层",
+      "census_id": "U23",
+      "kind": "screen",
+      "scrollable": false,
+      "groups": [
+        "fullscreen"
+      ],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "config-corrupt",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "skill-panel",
+      "entry": "指令面板",
+      "census_id": "U11",
+      "kind": "screen",
+      "scrollable": false,
+      "groups": [
+        "dialogs"
+      ],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "list",
+          "overflow-skill-panel",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "skill-install",
+      "entry": "从 GitHub 安装技能",
+      "census_id": "U12",
+      "kind": "screen",
+      "scrollable": false,
+      "groups": [
+        "dialogs"
+      ],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "input",
+          "preview",
+          "error",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "confirm",
+      "entry": "通用确认对话框",
+      "census_id": "U13",
+      "kind": "screen",
+      "scrollable": false,
+      "groups": [
+        "dialogs"
+      ],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "delete-session",
+          "memory-warning",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "media-picker",
+      "entry": "从会话选素材",
+      "census_id": "U17",
+      "kind": "screen",
+      "scrollable": false,
+      "groups": [
+        "dialogs"
+      ],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "first-frame-grid",
+          "song-list",
+          "empty",
+          "overflow-media-picker",
+          "resize-shrink-to-min"
+        ]
+      }
+    },
+    {
+      "id": "shell-error",
+      "entry": "外壳本地错误页（WKWebView 内 HTML）",
+      "census_id": "U2",
+      "kind": "screen",
+      "scrollable": false,
+      "groups": [
+        "fullscreen"
+      ],
+      "motion_states": [],
+      "axes": {
+        "device": [
+          "900x600@1",
+          "1100x800@1",
+          "1200x800@1",
+          "1300x800@1",
+          "1400x900@1",
+          "2560x1440@1"
+        ],
+        "os": [
+          "WebKit (WKWebView, macOS 15+)"
+        ],
+        "appearance": [
+          "dark"
+        ],
+        "dynamic_type": [
+          "浏览器缩放 100% + 固定 px 字号（app.css:7 14px，其余全是 px，没有 rem）"
+        ],
+        "locale": [
+          "zh-CN"
+        ],
+        "orientation": [
+          "landscape"
+        ],
+        "pointer": [
+          "mouse"
+        ],
+        "state": [
+          "health-timeout",
+          "details-open",
+          "resize-shrink-to-min"
+        ]
+      }
+    }
+  ],
+  "excluded_native": {
+    "surfaces": [
+      "U1",
+      "U3",
+      "U4",
+      "U5",
+      "U6",
+      "U7"
+    ],
+    "reason": "AppKit 原生窗口框/菜单/菜单栏项/NSAlert/NSOpenPanel 不是 WKWebView 内容，platform=web 的矩阵无法承载；本 run 视觉未验收，报告声明"
+  },
+  "abstractions": [
+    {
+      "axis": "device",
+      "basis": "代码：1100px 阈值只切状态条长短文案（app.css:38）；1200px 只是素材库预览弹层 max-width（app.css:423）；1300px 只是首运页列 max-width（app.css:174）；其余布局在 900–1400 间按流式规则连续变化。故 1100/1200/1300 三档只在锚点状态拍，900×600、1400×900、2560×1440 全状态。",
+      "confirmation": "抽象到 300（推荐）",
+      "confirmed_at": "2026-10-14T17:58:00+09:00",
+      "keep_coupled": [
+        "900x600@1",
+        "1400x900@1",
+        "2560x1440@1"
+      ],
+      "cross_with": []
+    }
+  ],
+  "anchor": {
+    "device": "1400x900@1"
+  }
+}

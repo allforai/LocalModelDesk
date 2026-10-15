@@ -54,8 +54,9 @@
             <textarea data-video-prompt class="video-prompt" aria-label="视频提示词" placeholder="视频提示词（含环境声描述）"></textarea>
             <button data-video-start data-icon-name="sparkles" class="btn-primary" disabled>生成视频</button>
           </div>
+          <div class="composer-tools">
           <div class="assist-row" data-video-assist></div>
-          <details class="image-advanced video-advanced" data-video-advanced><summary>高级参数</summary>
+          <details class="image-advanced video-advanced" data-video-advanced><summary>高级参数</summary><div class="advanced-body">
             <div class="image-params">
               <label>画幅 <select data-video-size></select></label>
               <span class="video-custom-size" data-video-custom hidden><input type="number" data-video-width min="256" max="1344" step="32" aria-label="自定义宽"> × <input type="number" data-video-height min="256" max="1344" step="32" aria-label="自定义高"></span>
@@ -66,7 +67,8 @@
             <p class="hint hint-busy" data-video-cost-note></p>
             <label class="video-audio" data-video-audio-row hidden><input type="checkbox" data-video-audio checked><span>使用素材的声音</span></label>
             <p class="inline-error" data-video-advanced-error role="alert"></p>
-          </details>
+          </div></details>
+          </div>
           <p class="hint" data-video-upload-status role="status"></p>
           <p class="hint hint-busy image-hint" data-video-hint role="status"><span data-video-hint-text></span><button class="btn-secondary btn-sm" data-video-return hidden>回到该会话</button></p>
           <p class="inline-error" data-video-error role="alert"></p>
@@ -89,15 +91,17 @@
             <textarea data-music-lyrics class="music-lyrics" aria-label="歌词" placeholder="歌词（必填）"></textarea>
             <button data-music-start data-icon-name="sparkles" class="btn-primary" disabled>生成歌曲</button>
           </div>
+          <div class="composer-tools">
           <div class="assist-row" data-music-assist></div>
-          <details class="image-advanced music-advanced" data-music-advanced><summary>高级参数</summary>
+          <details class="image-advanced music-advanced" data-music-advanced><summary>高级参数</summary><div class="advanced-body">
             <div class="image-params">
               <label>时长（秒） <input data-music-duration type="number" value="60" min="10" max="300" step="1" required></label>
               <label>种子（留空则每次随机） <input data-music-seed type="number" min="0" max="4294967295" step="1" placeholder="留空则每次随机"></label>
             </div>
             <p class="hint">成品时长由模型按歌词决定，常短于所填时长；素材库会标注实际时长。</p>
             <p class="inline-error" data-music-advanced-error role="alert"></p>
-          </details>
+          </div></details>
+          </div>
           <p class="hint hint-busy image-hint" data-music-hint role="status"><span data-music-hint-text></span><button class="btn-secondary btn-sm" data-music-return hidden>回到该会话</button></p>
           <p class="inline-error" data-music-error role="alert"></p>
         </div>
@@ -118,7 +122,8 @@
             <textarea data-image-prompt aria-label="图片提示词" placeholder="例如：一只橘猫坐在窗边，午后阳光，细腻的水彩插画"></textarea>
             <button data-image-start data-icon-name="sparkles" class="btn-primary" disabled>生成图片</button>
           </div>
-          <details class="image-advanced" data-image-advanced><summary>高级参数</summary>
+          <div class="composer-tools">
+          <details class="image-advanced" data-image-advanced><summary>高级参数</summary><div class="advanced-body">
             <div class="image-params">
               <label>宽度（像素） <input data-image-width type="number" value="1024" min="256" max="2048" step="16" required></label>
               <label>高度（像素） <input data-image-height type="number" value="1024" min="256" max="2048" step="16" required></label>
@@ -127,7 +132,8 @@
             </div>
             <p class="hint">建议从 1024×1024、40 步开始；更大图片需要更多时间与内存。</p>
             <p class="inline-error" data-image-advanced-error role="alert"></p>
-          </details>
+          </div></details>
+          </div>
           <p class="hint hint-busy image-hint" data-image-hint role="status"><span data-image-hint-text></span><button class="btn-secondary btn-sm" data-image-return hidden>回到该会话</button></p>
           <p class="inline-error" data-image-error role="alert"></p>
         </div>

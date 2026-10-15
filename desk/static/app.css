@@ -254,7 +254,7 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .image-advanced .image-params{margin-top:8px}
 .image-advanced label{display:grid;gap:4px}
 .image-advanced input{color:var(--text)}
-.image-advanced>p{margin:8px 0 0}
+.image-advanced .advanced-body>p{margin:8px 0 0}
 .image-hint{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .session-title-row{grid-column:1;display:flex;align-items:center;gap:6px;min-width:0}
 .session-title-row .session-title{flex:1;min-width:0}
@@ -270,7 +270,7 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .image-session:hover .session-actions,.image-session:focus-within .session-actions,.music-session:hover .session-actions,.music-session:focus-within .session-actions,.video-session:hover .session-actions,.video-session:focus-within .session-actions{display:flex}
 /* 13. music sessions（音乐会话设计 §2）：布局与图片页同构，上面的 #pane-image 规则已同时作用于 #pane-music */
 #pane-music .image-composer>input{background:var(--panel);border-radius:16px;padding:10px 16px}
-.music-lyrics { min-height: calc(4 * 1.5em + 16px); max-height: 50vh; resize: none; field-sizing: content; }
+.music-lyrics { min-height: calc(2 * 1.5em + 26px); max-height: 50vh; resize: none; field-sizing: content; }
 .attempt-audio { width: 100%; margin: 8px 0; }
 .attempt-player { width: 100%; display: flex; flex-direction: column; gap: 4px; }
 .segment-switch { display: inline-flex; gap: 4px; }
@@ -290,12 +290,9 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .compose-actions { display: flex; gap: 8px; }
 .compose-bar ol li { display: inline-flex; align-items: center; gap: 2px; }
 /* 14. video sessions（视频会话设计 §3）：布局与图片、音乐页同构，上面的 #pane-image 规则已同时作用于 #pane-video */
-.video-prompt { min-height: calc(3 * 1.5em + 16px); max-height: 40vh; resize: none; field-sizing: content; }
+.video-prompt { min-height: calc(2 * 1.5em + 26px); max-height: 40vh; resize: none; field-sizing: content; }
 .attempt-video { width: 100%; max-height: 50vh; background: #000; }
-/* 视频输入区最高半屏：放不下时只有方式与素材那一块收缩并在内部滚动，提示词、「生成视频」、
-   提示行与错误行始终可见，时间线留足空间（图片、音乐页不设此上限） */
-#pane-video .image-composer { max-height: 50vh; overflow-y: auto; }
-.video-materials { flex: 0 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.video-materials { flex: none; display: flex; flex-direction: column; gap: 8px; }
 .video-mode { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
 .video-mode select { color: var(--text); }
 /* 素材行：按钮、说明与小图预览排成一行（放不下再换行），说明文字独占一行 */
@@ -455,3 +452,33 @@ audio.video-preview-media { width: min(360px, 100%); height: 36px; }
 .video-custom-size[hidden]{display:none}
 .image-params .video-custom-size input{flex:1 1 0;min-width:0;width:auto}
 [data-video-shape-note]:empty{display:none}
+
+/* 18. 矮窗口下的媒体页（layout #5）：结果区里一张卡片的标题、媒体、操作行总能同时看到，输入区不整块滚动、
+   只有提示词框在框内滚动。提示词框的上限由 media_session.js fitComposer 按结果区留量算；这里管排布与浮层。 */
+.image-composer{position:relative}
+.image-composer>p:empty{display:none}
+/* 「挑几段合成…」并在标题行右侧；模型说明展开时换到下一行，工具条留在第一行 */
+.image-head>.session-toolbar{order:1;margin:0 0 0 auto;width:auto;max-width:none;padding:0;align-self:center}
+.image-model-note[open]{order:2}
+/* 「看手气 / 优化提示词」与「高级参数」同一行；高窗口里展开的高级参数占满下一行 */
+.composer-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+.composer-tools>.assist-row{flex:1 1 auto;min-width:0}
+.composer-tools>.image-advanced{margin-left:auto}
+.composer-tools>.image-advanced[open]{flex-basis:100%;margin-left:0}
+/* 展开后「高级参数」本身仍在右端，不从右跳到左 */
+.composer-tools>.image-advanced[open]>summary{text-align:right}
+.compact-advanced .composer-tools>.image-advanced[open]>summary{text-align:left}
+.video-slots{display:none}
+/* 浮层：贴在输入区上沿上方，临时盖住结果区下部，最高到主列顶端（--above 由 fitComposer 写）。
+   放不下时 fitComposer 逐级给输入区加 compact-advanced（高级参数改浮层）、compact-materials（视频素材收成槽位）。 */
+.advanced-body{display:contents}
+.compact-advanced .composer-tools>.image-advanced[open]{flex-basis:auto;margin-left:auto}
+.compact-advanced .image-advanced[open]>.advanced-body,
+.compact-materials .video-materials>.video-assets.is-popped{display:block;position:absolute;left:0;right:0;bottom:calc(100% + 8px);z-index:5;max-height:var(--above,60vh);overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:12px 16px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.compact-advanced .image-advanced>.advanced-body>.image-params{margin-top:0}
+.compact-materials .video-slots{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px}
+.video-slot{display:inline-flex;align-items:center;gap:6px}
+.video-slot img{height:24px;width:auto;max-width:48px;object-fit:contain;border-radius:4px;display:block}
+.video-slot[aria-expanded=true]{border-color:var(--accent)}
+.compact-materials .video-materials>.video-assets{display:none}
+.compact-materials .video-materials>.video-assets.is-popped{display:flex}

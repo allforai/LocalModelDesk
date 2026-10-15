@@ -140,8 +140,10 @@ export function renderMusicCard(doc, opts) {
 
   const detail = el(doc, "div", "attempt-detail");
   if (view.kind === "done") detail.append(player(doc, attempt, { serveOutput, onBroken: opts.onBroken }));
+  // 操作行紧跟播放器，链路说明、完整提示词、歌词与参数在它下面：矮窗口里标题、播放器、操作行能同时看到（layout #5）。
+  const info = [];
   const chain = chainLine(attempt, attempts);
-  if (chain) detail.append(el(doc, "p", "hint attempt-chain", chain));
+  if (chain) info.push(el(doc, "p", "hint attempt-chain", chain));
   const problem = joinProblem(attempt, attempts);
   if (problem) {
     const line = el(doc, "div", "attempt-join-problem");
@@ -157,20 +159,20 @@ export function renderMusicCard(doc, opts) {
       result.gated = [{ button: rejoin, ownDisabled: !problem.rejoin, ownReason: problem.reason || "" }];
       if (problem.reason) line.append(el(doc, "p", "hint", problem.reason));
     }
-    detail.append(line);
+    info.push(line);
   }
-  if (caption) detail.append(el(doc, "p", "attempt-full-prompt", caption));
+  if (caption) info.push(el(doc, "p", "attempt-full-prompt", caption));
   if (lyrics) {
     const words = el(doc, "details", "attempt-lyrics");
     words.append(el(doc, "summary", "", "歌词"), el(doc, "pre", "", lyrics));
-    detail.append(words);
+    info.push(words);
   }
   if (view.kind === "failed" && attempt.error) {
     const block = renderErrorBlock(doc, attempt.error);
     const more = [...(block.children ?? [])].find((child) => String(child.tagName).toLowerCase() === "details");
-    if (more) { more.classList?.add?.("attempt-error-details"); detail.append(more); }
+    if (more) { more.classList?.add?.("attempt-error-details"); info.push(more); }
   }
-  if (!compose) detail.append(advancedList(doc, params));
+  if (!compose) info.push(advancedList(doc, params));
 
   // 挑选模式：卡片只做勾选，三个动作按钮都不画（控制器裁定：卡片是勾选目标，不是隐藏表单的入口）。
   if (!picking) {
@@ -196,6 +198,7 @@ export function renderMusicCard(doc, opts) {
     detail.append(hint);
     if (version) result.secondary = { button: version, hint, secondaryBlockedReason: "" };
   }
+  detail.append(...info);
   card.append(detail);
   return result;
 }

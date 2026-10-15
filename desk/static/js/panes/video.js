@@ -16,8 +16,10 @@ import {
   versionParams,
 } from "../pure/video_session.js";
 
-// 提示词框默认 3 行；内容多时长高到 40vh，失焦且不超 3 行时回落（V-21）。
-const PROMPT_ROWS = 3;
+// 提示词框默认 2 行；内容多时长高到 40vh（且给结果区留够高度，见 media_session fitComposer），失焦且不超 2 行时回落（V-21）。
+const PROMPT_ROWS = 2;
+// 展开卡片的画面按结果区高度缩，好让标题、画面、操作行同时看到（layout #5）；最矮缩到这个高度为止。
+const VIDEO_FLOOR = 64;
 const MAX_UPLOAD = 32 * 1024 * 1024;
 // 回填时只知道之前上传的素材 id，不知道原文件名：不把 id 露给用户。
 const EARLIER_IMAGE = "之前上传的图片";
@@ -326,7 +328,71 @@ export function createVideoPane(root, ctx = {}) {
     els.sourceLabel.textContent = refVideo ? `已选择：${refVideo.name}` : "未选择";
     if (els.refImageLabel) els.refImageLabel.textContent = refImageText();
     if (els.songLabel) els.songLabel.textContent = songText();
+    renderSlots();
   }
+
+  // ---------- 矮窗口里的素材槽位（layout #5） ----------
+  // 输入区放不下时（media_session fitComposer 加 compact-materials）首帧、尾帧等素材块收起，换成槽位「首帧 [缩略图]」；点槽位在输入区上方
+  // 弹出原来的素材块（上传、从图片会话选、清除），再点一次或按 Esc 收起。高窗口里槽位隐藏，素材照旧展开。
+  const SLOTS = [["firstArea", "首帧"], ["lastArea", "尾帧"], ["referenceArea", "参考视频"], ["musicArea", "参考图与音乐"]];
+  const slotBox = doc.createElement("div");
+  slotBox.className = "video-slots";
+  els.orientation?.parentNode?.insertBefore(slotBox, els.orientation.nextSibling ?? null);
+  let poppedArea = null;
+  function popArea(key) {
+    poppedArea = key && els[key] && !els[key].hidden ? key : null;
+    if (poppedArea) for (const details of [els.advanced]) if (details) details.open = false;
+    for (const [name] of SLOTS) els[name]?.classList?.toggle?.("is-popped", name === poppedArea);
+    for (const slot of slotBox.children ?? []) slot.setAttribute?.("aria-expanded", slot.dataset.videoSlot === poppedArea ? "true" : "false");
+  }
+  function renderSlots() {
+    if (poppedArea && els[poppedArea]?.hidden) poppedArea = null;
+    const slots = [];
+    for (const [key, label] of SLOTS) {
+      const area = els[key];
+      if (!area || area.hidden) continue;
+      const slot = doc.createElement("button");
+      slot.type = "button";
+      slot.className = "btn-secondary btn-sm video-slot";
+      slot.dataset.videoSlot = key;
+      slot.setAttribute("aria-expanded", key === poppedArea ? "true" : "false");
+      const name = doc.createElement("span");
+      name.textContent = label;
+      slot.append(name);
+      const thumb = area.querySelector?.(".video-preview img");
+      if (thumb?.src) {
+        const img = doc.createElement("img");
+        img.src = thumb.src; img.alt = "";
+        slot.append(img);
+      } else {
+        const state = doc.createElement("span");
+        state.className = "hint";
+        state.textContent = area.querySelector?.(".file-name")?.textContent || "未选择";
+        slot.append(state);
+      }
+      const name2 = area.querySelector?.(".file-name")?.textContent || "未选择";
+      // 素材里能操作的控件全被锁住（接着往下生沿用上一段）时槽位跟着禁用、变暗，说明写在提示里。
+      const controls = [...(area.querySelectorAll?.("input, button") ?? [])];
+      const locked = controls.length > 0 && controls.every((control) => control.disabled);
+      slot.disabled = locked;
+      slot.title = locked ? `${label}：${name2}（接着往下生沿用上一段，不能更换）` : `${label}：${name2}，点开更换`;
+      slot.addEventListener("click", () => popArea(poppedArea === key ? null : key));
+      // 拖着文件经过槽位就弹出素材块，好放到上传行上（issue #15 的拖放在矮窗口里也能用）。
+      slot.addEventListener("dragenter", () => { if (poppedArea !== key) popArea(key); });
+      slots.push(slot);
+    }
+    slotBox.replaceChildren(...slots);
+  }
+  // 预览图是异步换上的（解码、读引用），跟着素材块里的变化重画槽位。
+  const View = doc.defaultView;
+  if (typeof View?.MutationObserver === "function") {
+    new View.MutationObserver((records) => {
+      if (records.some((record) => !slotBox.contains(record.target))) renderSlots();
+    }).observe(els.mode.closest?.(".video-materials") ?? slotBox, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["hidden", "src"] });
+  }
+  els.composer?.addEventListener?.("keydown", (event) => { if (event.key === "Escape" && poppedArea) { popArea(null); event.preventDefault?.(); } });
+  els.advanced?.addEventListener?.("toggle", () => { if (els.advanced.open && poppedArea) popArea(null); });
+
   function updateCost() {
     const { width, height } = currentSize();
     if (!els.costNote) return;
@@ -531,8 +597,9 @@ export function createVideoPane(root, ctx = {}) {
         onTogglePick: (a) => pane.togglePick(a.id),
       });
     },
+    fitExpanded: (video, room) => { video.style.maxHeight = `min(50vh, ${Math.max(VIDEO_FLOOR, Math.floor(room))}px)`; },
     composer: {
-      startLabel: "生成视频",
+      startLabel: "生成视频", input: els.prompt, inputCap: 0.4,
       // V-43：提示词、方式、画幅、时长、步数保留；种子清空；提示条隐藏；续写的首帧来源清空，上传与图片会话来源保留。
       afterStart: ({ fromInputs }) => {
         if (!fromInputs) return;
