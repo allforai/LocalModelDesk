@@ -77,3 +77,24 @@ def test_image_waits_when_memory_can_be_freed_and_submits_otherwise():
 
 def test_retry_codes():
     assert {"media_busy", "load_in_progress", "model_mismatch", "evicted", "no_model_loaded"} <= RETRY_CODES
+
+
+MEDIA_OPS = ["image", "video", "music"]
+
+
+@pytest.mark.parametrize("op", MEDIA_OPS)
+def test_media_ops_share_the_image_rules(op):
+    assert decide(op, None, snap(llm_status="loading")).action == "wait"
+    assert decide(op, None, snap(media_running=True)).action == "wait"
+    assert decide(op, None, snap(active_chats=1)).action == "wait"
+    assert decide(op, None, snap(precheck=EVICTS_LLM, ui_chat_recent=True, llm_status="loaded")).action == "wait"
+    assert decide(op, None, snap(precheck=WAIT_MEDIA)).action == "wait"
+    assert decide(op, None, snap(precheck=EVICTS_LLM)).action == "submit"
+    assert decide(op, None, snap()).action == "submit"
+
+
+def test_compose_waits_for_media_and_otherwise_submits_without_precheck():
+    assert decide("compose", None, snap(media_running=True, precheck=None)).action == "wait"
+    assert decide("compose", None, snap(precheck=None)).action == "submit"
+    busy = snap(precheck=WAIT_MEDIA, active_chats=2, ui_chat_recent=True, llm_status="loaded")
+    assert decide("compose", None, busy).action == "submit"

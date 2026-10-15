@@ -43,6 +43,9 @@ def _evicts_llm(precheck: dict | None) -> bool:
 
 
 def decide(op: str, want_model: str | None, snap: Snapshot) -> Decision:
+    if op == "compose":
+        # ffmpeg only, no arbiter (B-02): only a running media job makes it wait; no precheck is read.
+        return _wait("媒体任务进行中") if snap.media_running else Decision("submit", "")
     if snap.llm_status == "loading":
         return _wait("正在加载模型")
     if op == "chat":
@@ -61,11 +64,11 @@ def decide(op: str, want_model: str | None, snap: Snapshot) -> Decision:
             return Decision("fail", f"{message}。对话模型不能强制加载，请换一个更小的模型", EXIT_MEMORY)
         return Decision("swap", "")
     if snap.media_running:
-        return _wait("图片任务进行中")
+        return _wait("媒体任务进行中")
     if snap.active_chats > 0:
         return _wait("有对话正在进行")
     if _evicts_llm(snap.precheck) and snap.ui_chat_recent:
-        return _wait("生图需要卸掉对话模型，但台面里最近在用它")
+        return _wait("生成需要卸掉对话模型，但台面里最近在用它")
     if _releasable(snap.precheck):
         return _wait("内存被占用，等待释放")
     return Decision("submit", "")
