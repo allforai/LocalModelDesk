@@ -19,8 +19,8 @@ def run_cli(harness, *args, stdin: str = "", timeout: float = 60, extra_env: dic
                           capture_output=True, text=True, timeout=timeout, env=env, cwd=str(ROOT))
 
 
-def popen_cli(harness, *args):
+def popen_cli(harness, *args, stdin=subprocess.DEVNULL):
     env = {**os.environ, "LMD_SHELL_PORT": harness_port(harness), "PYTHONPATH": str(ROOT),
            "LMDESK_FAKE_VERSION": "e2e"}  # the fake bundle reports version "e2e"
-    return subprocess.Popen([sys.executable, "-m", "desk.agent_cli", *args], stdin=subprocess.DEVNULL,
+    return subprocess.Popen([sys.executable, "-m", "desk.agent_cli", *args], stdin=stdin,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env, cwd=str(ROOT))

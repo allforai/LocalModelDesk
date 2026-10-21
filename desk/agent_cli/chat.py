@@ -11,6 +11,8 @@ from .version import read_version, resources_root
 from .waiter import Waiter
 
 AGENT = {"origin": "agent"}
+# 模型已加载、要的就是它，对话却连续被拒这么多次：说明台面那边卡住了，重试改变不了什么（P2）。
+STUCK_LIMIT = 3
 
 
 def _llm(client: DeskClient) -> dict:
@@ -74,6 +76,8 @@ def _message(question: str, files: list[str], stdin_text: str) -> str:
             text = path.read_text(encoding="utf-8")
         except OSError as exc:
             raise CliError(EXIT_USAGE, "file_unreadable", f"读不了文件 {name}：{exc.strerror}") from None
+        except UnicodeDecodeError:
+            raise CliError(EXIT_USAGE, "file_not_utf8", f"文件 {name} 不是 UTF-8 文本，请先转成 UTF-8") from None
         parts.append(f"--- {path.name} ---\n{text}")
     return "\n\n".join(parts)
 
@@ -117,24 +121,31 @@ def run_ask(client: DeskClient, *, question: str, model: str | None, system: str
     content = _message(question, files, stdin_text)
     want = _pick_model(client, model)
     messages = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": content}]
+    refused = 0
     while True:
         decision = decide("chat", want, snapshot(client, "chat", want, {"op": "chat", "model": want}))
         if decision.action == "wait":
+            refused = 0
             waiter.pause(decision.reason)
             continue
         if decision.action == "fail":
             raise CliError(decision.exit_code or EXIT_MEMORY, "insufficient_budget", decision.reason)
         if decision.action == "swap":
+            refused = 0
             _swap(client, want, waiter)
             continue
         body = {"messages": messages, "model": want, **AGENT}
         if max_tokens:
             body["max_tokens"] = max_tokens
         try:
+            waiter.note("模型正在回答")
             # 非流式对话要等整段回答生成完，本地模型常常超过客户端默认的 30s；用剩余的 --timeout 兜住。
             result = client.post("/api/llm/chat", body, timeout=max(30.0, waiter.remaining()))
         except HttpError as exc:
             if exc.code in RETRY_CODES:
+                refused += 1
+                if refused >= STUCK_LIMIT:
+                    raise CliError(EXIT_ERROR, exc.code, f"台面连续 {refused} 次拒绝对话：{exc.message}") from None
                 waiter.pause("模型被换走了，重新排队")
                 continue
             raise CliError(EXIT_ERROR, exc.code, exc.message) from None

@@ -73,6 +73,8 @@ lmdesk image rename <会话> "新名字"
   - `gen`、`wait` 输出图片的绝对路径；带 `--out` 时，复制过去，并输出复制后的绝对路径。
   - `--json` 时 stdout 是单个 JSON 对象：`gen`、`wait` 包含 `session_id`、`attempt_id`、`path`、`seed`、`params`；`show` 列出每次尝试的 `id`、`prompt`、`params`、`path`、`status`。
 - [A-12] `ask` 的 stdin 不是终端时，读入 stdin 内容，接在问题后面。`--file` 可以重复，每个文件以「文件名 + 内容」的块拼进用户消息。
+  - stdin 在 5 秒内既没有数据也没有结束：按没有输入处理，stderr 提示一行（agent 执行器有时接一个不关闭的管道）。开始有数据后读到结束为止，受剩余 `--timeout` 约束，超时退出码 3。
+  - stdin 或 `--file` 不是 UTF-8：退出码 2，提示先转成 UTF-8。
 - [A-13] 退出码固定为：
   - 0 成功；
   - 1 其他错误，包括接口不兼容、生成失败、台面未能启动；
@@ -110,7 +112,7 @@ lmdesk image rename <会话> "新名字"
   - 没有 `--model` 但已加载了模型：用当前加载的那个，不换。
   - 两者都没有：退出码 5，stderr 列出可用模型的 key。
 - [A-22] swap 就是调用 `POST /api/llm/load`（带 `origin: "agent"`），再轮询直到 `loaded`。加载过程中出错时，退出码 1，并附带台面给出的原因。
-- [A-23] 轮询间隔从 2s 开始，每次 ×1.5，最长 5s。等待期间，stderr 每 15s 打一行，例如「等待中：图片任务进行中（已等 45s）」。
+- [A-23] 轮询间隔从 2s 开始，每次 ×1.5，最长 5s。命令运行期间，stderr 每 15s 打一行，例如「等待中：图片任务进行中（已等 45s）」。从命令开始计时，由独立线程打印：卡在排队、卡在一次 HTTP 请求里、等模型回答，都照样打。
 - [A-24] 以下情况都回到等待重新判断，不算失败：
   - 收到 409 `media_busy` 或 `load_in_progress`；
   - 对话时收到「模型不匹配」（`model_mismatch`）、「模型已被换掉」（`evicted`）或「没有加载模型」（`no_model_loaded`）——说明换模型和对话之间被别人插了队。

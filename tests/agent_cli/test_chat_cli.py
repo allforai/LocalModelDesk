@@ -1,8 +1,9 @@
 import json
+import subprocess
 
 from desk.testing import launch_test_harness
 from desk.testing.scripts import ChatScript, Delta, Done
-from tests.agent_cli.cli_helpers import run_cli
+from tests.agent_cli.cli_helpers import popen_cli, run_cli
 
 CHAT = "glm"      # 与 Task 4 确认过的对话模型 key 一致
 OTHER = "qwen27"  # 另一个对话模型；若目录里没有，换成目录中第二个 group=chat 的 key
@@ -123,3 +124,24 @@ def test_ask_switches_from_a_ui_loaded_model_and_both_can_chat(tmp_path):
         ui = h.llm.chat_completion({"messages": [{"role": "user", "content": "hi"}], "model": OTHER})
         assert ui["model"] == OTHER   # 界面身份的对话也不再被当成「已收回」
 
+
+def test_non_utf8_file_is_exit_2_without_a_traceback(tmp_path):
+    gbk = tmp_path / "gbk.txt"
+    gbk.write_bytes("中文内容".encode("gbk"))
+    with launch_test_harness(tmp_path) as h:
+        r = run_cli(h, "ask", "x", "--file", str(gbk))
+        assert r.returncode == 2
+        assert "Traceback" not in r.stderr and "UTF-8" in r.stderr
+
+
+def test_ask_with_an_open_silent_stdin_pipe_answers_instead_of_hanging(tmp_path):
+    with launch_test_harness(tmp_path, model_states={CHAT: "present"}) as h:
+        p = popen_cli(h, "ask", "你好", "--model", CHAT, stdin=subprocess.PIPE)   # 不写、不关
+        try:
+            assert p.wait(timeout=60) == 0
+            assert p.stdout.read().strip() == "你好，世界"
+            assert "没有数据" in p.stderr.read()
+        finally:
+            p.stdin.close()
+            if p.poll() is None:
+                p.kill()
