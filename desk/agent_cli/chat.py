@@ -76,6 +76,8 @@ def _message(question: str, files: list[str], stdin_text: str) -> str:
             text = path.read_text(encoding="utf-8")
         except OSError as exc:
             raise CliError(EXIT_USAGE, "file_unreadable", f"读不了文件 {name}：{exc.strerror}") from None
+        except UnicodeDecodeError:
+            raise CliError(EXIT_USAGE, "file_not_utf8", f"文件 {name} 不是 UTF-8 文本，请先转成 UTF-8") from None
         parts.append(f"--- {path.name} ---\n{text}")
     return "\n\n".join(parts)
 

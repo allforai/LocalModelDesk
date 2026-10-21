@@ -12,6 +12,7 @@ from . import chat
 from .client import HttpError, Unreachable
 from .discovery import SANDBOX_MESSAGE, connect
 from .errors import CliError, EXIT_ERROR, EXIT_OK, EXIT_SANDBOX, EXIT_TIMEOUT, EXIT_USAGE, Interrupted
+from .stdin_reader import read_piped
 from .waiter import Waiter
 
 
@@ -106,15 +107,6 @@ def main(argv=None, *, env=os.environ, stdin=sys.stdin, out=sys.stdout, err=sys.
         return _fail(CliError(EXIT_ERROR, exc.code, exc.message), args, out, err)
 
 
-def _read_stdin(stdin) -> str:
-    try:
-        if stdin is None or stdin.isatty():
-            return ""
-    except (AttributeError, ValueError):
-        return ""
-    return stdin.read()
-
-
 def _dispatch(args, client, waiter, stdin, err):
     if args.command == "status":
         return chat.run_status(client)
@@ -122,6 +114,6 @@ def _dispatch(args, client, waiter, stdin, err):
         return chat.run_models(client) if not args.json else {"models": chat.run_models(client)}
     if args.command == "ask":
         return chat.run_ask(client, question=args.question, model=args.model, system=args.system, files=args.file,
-                            stdin_text=_read_stdin(stdin), max_tokens=args.max_tokens, waiter=waiter)
+                            stdin_text=read_piped(stdin, deadline_s=waiter.remaining(), err=err), max_tokens=args.max_tokens, waiter=waiter)
     from . import media
     return media.dispatch(args, client, waiter, err)

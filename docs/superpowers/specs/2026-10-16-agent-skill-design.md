@@ -73,6 +73,8 @@ lmdesk image rename <会话> "新名字"
   - `gen`、`wait` 输出图片的绝对路径；带 `--out` 时，复制过去，并输出复制后的绝对路径。
   - `--json` 时 stdout 是单个 JSON 对象：`gen`、`wait` 包含 `session_id`、`attempt_id`、`path`、`seed`、`params`；`show` 列出每次尝试的 `id`、`prompt`、`params`、`path`、`status`。
 - [A-12] `ask` 的 stdin 不是终端时，读入 stdin 内容，接在问题后面。`--file` 可以重复，每个文件以「文件名 + 内容」的块拼进用户消息。
+  - stdin 在 5 秒内既没有数据也没有结束：按没有输入处理，stderr 提示一行（agent 执行器有时接一个不关闭的管道）。开始有数据后读到结束为止，受剩余 `--timeout` 约束，超时退出码 3。
+  - stdin 或 `--file` 不是 UTF-8：退出码 2，提示先转成 UTF-8。
 - [A-13] 退出码固定为：
   - 0 成功；
   - 1 其他错误，包括接口不兼容、生成失败、台面未能启动；
