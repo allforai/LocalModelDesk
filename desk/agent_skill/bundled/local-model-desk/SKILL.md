@@ -58,7 +58,9 @@ lmdesk video show "产品演示"
   2. `lmdesk video gen "产品演示" "镜头缓缓推近" --first-frame image:封面:<图片尝试id> --no-wait`。
   - `--first-frame` 也可以是本地文件路径（png、jpg、jpeg、webp，不超过 32 MB）。
 - 接着某一段往下生成：`--continue <尝试id>`（不能和 `--first-frame` 同用）。
-- 把几段合成成片：`lmdesk video join "产品演示" <尝试id> <尝试id> [...]`，至少两段。续写后 `wait` 输出的是到当前这段为止的完整成片。
+- 把几段做成一个成片：
+  - 续写的几段：`wait` 拿到的已经是从第一段到这一段的完整成片，不需要再 join 就能用。
+  - 用户说要「合成」「拼接」，或者几段是各自单独生成的：用 `lmdesk video join "产品演示" <尝试id> <尝试id> [...]`，至少两段，台面会留下一条合成记录。续写的几段 join 出来，和续写成片的内容相同。
 
 ## 音乐
 
@@ -80,14 +82,18 @@ lmdesk music join "片头曲" <尝试id> <尝试id>
 - 退出码 0：成功。
 - 退出码 1：其他错误，原因在 stderr 最后一行。
 - 退出码 2：参数错误或会话名有歧义。按提示修正。
-- 退出码 3：等待超时，台面一直在忙。告诉用户。如果是生图、视频或音乐，稍后可以用对应的 `wait` 命令（如 `lmdesk video wait`）取结果。
+- 退出码 3：没等到结果。看 stderr 最后一行：
+  - 含「仍在台面继续」或「已经完成」：用 stderr 前面那行 `lmdesk <image|video|music> wait <会话> <尝试id>` 取结果，不要重新 gen。
+  - 含「取消」或「已经结束」：这次生成没有结果（通常是用户按了 Ctrl-C）。需要的话重新 gen。
+  - 其他（`ask`，或者生成还没提交）：台面一直在忙，没排上队。告诉用户，稍后再试。
 - 退出码 4：内存不足。
   - 生图、视频、音乐：先问用户，用户同意后加 `--force` 重试。
   - 对话模型：不能强制加载。告诉用户，建议换一个更小的模型。
 - 退出码 5：模型、会话或尝试不存在。用 `lmdesk models`、`lmdesk image sessions`、`lmdesk video sessions`、`lmdesk music sessions`、`lmdesk image show` 查清楚再调用。
-- 退出码 6：被沙箱拦截，访问不了本机网络（127.0.0.1）。请求提升权限，或者告诉用户需要放行本机网络。
-  - Codex：默认的 workspace-write 沙箱关闭了网络。告诉用户在 `~/.codex/config.toml` 里加上 `[sandbox_workspace_write]` 和 `network_access = true`，或者用 `codex -s workspace-write -c sandbox_workspace_write.network_access=true` 启动。
-  - Claude Code 开启了沙箱时：请用户把 `127.0.0.1` 加进沙箱的网络白名单。
+- 退出码 6：被沙箱拦截，访问不了本机网络（127.0.0.1）。先请求提升权限；拿不到权限时，把下面对应的放行方法**原样**告诉用户，然后停下：
+  - Codex：默认的 workspace-write 沙箱关闭了网络。在 `~/.codex/config.toml` 里加上 `[sandbox_workspace_write]` 和 `network_access = true`，或者用 `codex -s workspace-write -c sandbox_workspace_write.network_access=true` 启动。
+  - Claude Code 开启了沙箱时：把 `127.0.0.1` 加进沙箱的网络白名单。
+  - 不要改用别的办法（自己翻译、自己写代码画图、联网下载）冒充本地模型的结果：用户要的就是本地模型。
 
 ## 例子
 
