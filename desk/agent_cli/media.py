@@ -329,6 +329,35 @@ def _submit(client: DeskClient, kind: str, args, waiter: Waiter, session_id: str
             raise
 
 
+def _interrupted(client: DeskClient, kind: str, session_id: str, attempt_id: str, job_id,
+                 signum: int, hint: str) -> CliError:
+    """收到信号之后如实说结果（A-25）。
+
+    SIGTERM 不取消。SIGINT 去取消，但作业可能在这之前已经做完了（合成常常不到一秒，G5），
+    这时取消会得到 job_not_running，要看会话里的记录再说话，不能一律说「已取消」。
+    措辞里的「仍在台面继续」「已经完成」「取消」「已经结束」是 SKILL.md 退出码 3 的判断依据。
+    """
+    if signum != signal.SIGINT:
+        return CliError(EXIT_TIMEOUT, "interrupted", "已中断，生成仍在台面继续", hint=hint)
+    try:
+        client.post("/api/media/cancel", {"job_id": job_id, **AGENT})
+        return CliError(EXIT_TIMEOUT, "interrupted", "已中断并取消这次生成")
+    except Unreachable:
+        return CliError(EXIT_TIMEOUT, "interrupted", "已中断，生成可能仍在台面继续", hint=hint)
+    except HttpError:
+        pass   # job_not_running：作业在中断前就结束了
+    try:
+        attempts = _session(client, kind, session_id).get("attempts") or []
+    except (HttpError, Unreachable):
+        attempts = []
+    status = next((a.get("status") for a in attempts if a.get("id") == attempt_id), None)
+    if status == "done":
+        return CliError(EXIT_TIMEOUT, "interrupted_after_done", "已中断。这次生成在中断前已经完成，没有取消", hint=hint)
+    if status in ("failed", "cancelled"):
+        return CliError(EXIT_TIMEOUT, "interrupted", "已中断。这次生成在中断前已经结束，没有成片")
+    return CliError(EXIT_TIMEOUT, "interrupted", "已中断，生成可能仍在台面继续", hint=hint)
+
+
 def _run_job(client: DeskClient, kind: str, args, waiter: Waiter, err, session_id: str, op: str,
              query: dict | None, path: str, body: dict, upload: Path | None = None) -> dict:
     label = LABELS[kind]
@@ -353,13 +382,7 @@ def _run_job(client: DeskClient, kind: str, args, waiter: Waiter, err, session_i
         _release_signals()
         return wait_attempt(client, kind, session_id, attempt_id, job_id, waiter, err, args.out)
     except Interrupted as exc:
-        if exc.signum == signal.SIGINT:
-            try:
-                client.post("/api/media/cancel", {"job_id": job_id, **AGENT})
-            except (HttpError, Unreachable):
-                pass
-            raise CliError(EXIT_TIMEOUT, "interrupted", "已中断并取消这次生成") from None
-        raise CliError(EXIT_TIMEOUT, "interrupted", "已中断，生成仍在台面继续", hint=hint) from None
+        raise _interrupted(client, kind, session_id, attempt_id, job_id, exc.signum, hint) from None
     except CliError as exc:
         if exc.exit_code == EXIT_TIMEOUT:
             raise CliError(EXIT_TIMEOUT, exc.code, exc.message + "，生成仍在台面继续", hint=hint) from None
