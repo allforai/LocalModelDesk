@@ -152,3 +152,12 @@ func logTail(_ text: String, maxLines: Int) -> String {
   let trimmed = lines.last == "" ? lines.dropLast() : lines[...]
   return trimmed.suffix(maxLines).map { $0 + "\n" }.joined()
 }
+
+/// lmdesk 在后台拉起台面时带上的参数（A-31）：这次启动不显示主窗口。
+let backgroundLaunchArgument = "--lmdesk-background"
+
+/// 启动时要不要显示主窗口。用户自己打开台面时显示；lmdesk 用 `open -gj … --args --lmdesk-background`
+/// 拉起时不显示。之后点 Dock 图标，照常由 applicationShouldHandleReopen 打开窗口。
+func showsWindowAtLaunch(arguments: [String]) -> Bool {
+  !arguments.contains(backgroundLaunchArgument)
+}

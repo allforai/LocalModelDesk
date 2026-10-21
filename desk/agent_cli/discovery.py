@@ -11,6 +11,8 @@ from .errors import CliError, EXIT_ERROR, EXIT_SANDBOX
 
 DEFAULT_PORT = 8766
 SANDBOX_MESSAGE = "被沙箱拦截，需要允许访问本机网络（127.0.0.1）"
+# 与 macos/ShellStatus.swift 的 backgroundLaunchArgument 一致：带它启动的台面不显示主窗口（A-31）。
+BACKGROUND_ARG = "--lmdesk-background"
 
 
 def port_from_env(env: Mapping[str, str]) -> int:
@@ -58,8 +60,8 @@ def connect(env: Mapping[str, str], *, here: Path, probe: Callable = _default_pr
             raise CliError(EXIT_ERROR, "unreachable", f"连不上台面：{exc.detail}") from None
     app = app_bundle_of(here)
     if app is None:
-        raise CliError(EXIT_ERROR, "desk_not_running", "台面没有运行。请先打开 LocalModelDesk。")
-    rc = launcher(["open", "-gj", str(app)])
+        raise CliError(EXIT_ERROR, "desk_not_running", "台面没有运行。请先打开 LocalModelDesk。（这个 lmdesk 不在 app 包里，不会自动启动台面）")
+    rc = launcher(["open", "-gj", str(app), "--args", BACKGROUND_ARG])
     if rc in (-13, 13, 126):
         raise _sandbox()
     if rc != 0:

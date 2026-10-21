@@ -153,3 +153,11 @@ def test_stale_flag_does_not_change_menu_title():
     proc = subprocess.run([harness_path(), "map-status"], input=json.dumps(fixture),
                           capture_output=True, text=True, timeout=30)
     assert proc.stdout.strip() == "空闲"
+
+
+def test_lmdesk_background_launch_keeps_the_main_window_hidden():
+    plain = subprocess.run([harness_path(), "window-at-launch"], capture_output=True, text=True)
+    assert plain.stdout.strip() == "show"
+    hidden = subprocess.run([harness_path(), "window-at-launch", "--lmdesk-background"],
+                            capture_output=True, text=True)
+    assert hidden.stdout.strip() == "hidden"

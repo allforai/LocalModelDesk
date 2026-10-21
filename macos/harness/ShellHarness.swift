@@ -11,6 +11,7 @@ struct ShellHarness {
     }
     switch command {
     case "map-status": runMapStatus()
+    case "window-at-launch": print(showsWindowAtLaunch(arguments: Array(args.dropFirst())) ? "show" : "hidden")
     case "agent-skill-note": print(agentSkillMenuNote(for: parseStatusFixture()) ?? "")
     case "glyph-state": print(menuGlyphState(for: parseStatusFixture()).rawValue)
     case "memory-line":
