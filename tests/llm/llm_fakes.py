@@ -195,7 +195,7 @@ class FakeArbiter:
                  acquire_results: Iterable[dict] | None = None, acquire_result: dict | None = None,
                  reap_results: Iterable[dict] | None = None, reap_result: dict | None = None,
                  release_result: dict | None = None, desk_states: Iterable[dict] | None = None,
-                 listeners: Iterable[dict] = ()) -> None:
+                 listeners: Iterable[dict] = (), retarget_result: dict | None = None) -> None:
         self.calls = calls if calls is not None else (ledger if ledger is not None else CallLedger())
         self.ledger = self.calls if isinstance(self.calls, CallLedger) else None
         self._acquire = list(acquire_results if acquire_results is not None else [acquire_result or {"ok": True, "token": "tok-1"}])
@@ -204,6 +204,9 @@ class FakeArbiter:
         self._desk_states = list(desk_states or [{"holder": {"kind": "llm", "label": "glm", "phase": "held"}, "media_busy": False}])
         self._subscribers: list[Any] = []
         self._listeners = list(listeners)
+        self.retarget_result = retarget_result
+        self.on_retarget = None   # 测试可设：retarget 返回前调用，模拟这期间送达的台面状态
+        self.last_retarget: dict | None = None
 
     def acquire_heavy(self, kind: str, label: str, display: str | None = None,
                       *, params: dict | None = None, key: str | None = None) -> dict:
@@ -212,6 +215,14 @@ class FakeArbiter:
         self.last_acquire = {"kind": kind, "label": label, "params": params, "key": key}
         _record(self.calls, "acquire", kind, label)
         return _pop(self._acquire)
+
+    def retarget_heavy(self, token: str, label: str, display: str | None = None,
+                       *, params: dict | None = None, key: str | None = None) -> dict:
+        self.last_retarget = {"token": token, "label": label, "display": display, "params": params, "key": key}
+        _record(self.calls, "retarget", token, label)
+        if self.on_retarget is not None:
+            self.on_retarget()
+        return self.retarget_result or {"ok": True, "token": token}
 
     def release_heavy(self, token: str) -> dict:
         _record(self.calls, "release", token)
