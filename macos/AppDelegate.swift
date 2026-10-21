@@ -44,7 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     poller.onMemory = { [weak self] result in self?.statusController.renderMemory(result) }
     status.server = .starting
     statusController.render(status)
-    windowController.showWindow()
+    if showsWindowAtLaunch(arguments: CommandLine.arguments) { windowController.showWindow() }
     startProbeIfRequested()
     startServer()
   }

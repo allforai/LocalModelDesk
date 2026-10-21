@@ -54,13 +54,14 @@ def test_running_desk_connects_without_launching(tmp_path):
 
 def test_refused_in_bundle_launches_hidden_then_connects(tmp_path):
     client, calls = _connect(tmp_path, FakeProbe([Unreachable("refused", "x"), Unreachable("refused", "x"), {"holder": None}]))
-    assert calls == [["open", "-gj", str(tmp_path / "LocalModelDesk.app")]]
+    assert calls == [["open", "-gj", str(tmp_path / "LocalModelDesk.app"), "--args", "--lmdesk-background"]]
 
 
 def test_refused_outside_bundle_does_not_launch(tmp_path):
     with pytest.raises(CliError) as exc:
         _connect(tmp_path, FakeProbe([Unreachable("refused", "x")]), in_bundle=False)
     assert exc.value.exit_code == EXIT_ERROR
+    assert "不在 app 包里" in exc.value.message
 
 
 def test_sandbox_is_exit_6_and_never_launches(tmp_path):
@@ -80,3 +81,10 @@ def test_never_comes_up_is_exit_1_after_60s(tmp_path):
         _connect(tmp_path, FakeProbe([Unreachable("refused", "x")] * 100))
     assert exc.value.exit_code == EXIT_ERROR
     assert "台面未能启动" in exc.value.message
+
+
+def test_background_argument_matches_the_swift_shell():
+    from pathlib import Path
+    from desk.agent_cli.discovery import BACKGROUND_ARG
+    swift = (Path(__file__).resolve().parents[2] / "macos" / "ShellStatus.swift").read_text(encoding="utf-8")
+    assert f'"{BACKGROUND_ARG}"' in swift

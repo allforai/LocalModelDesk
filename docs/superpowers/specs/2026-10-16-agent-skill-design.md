@@ -137,8 +137,9 @@ lmdesk image rename <会话> "新名字"
 
 - [A-30] 端口取 `LMD_SHELL_PORT`，不合法或没设置时用 8766，与 `desk/__main__.py:runtime_port` 规则一致。
 - [A-31] 连接被拒绝（`ECONNREFUSED`，说明台面没开）时：
-  - 如果命令行位于某个 app 包内，就执行 `open -gj <该 app>`，然后每 1s 探测一次 `/api/state`，最多 60s。超时以退出码 1 退出，提示「台面未能启动」。
-  - 从源码运行（不在 app 包内）时，不自动启动，直接以退出码 1 提示。
+  - 如果命令行位于某个 app 包内，就执行 `open -gj <该 app> --args --lmdesk-background`，然后每 1s 探测一次 `/api/state`，最多 60s。超时以退出码 1 退出，提示「台面未能启动」。
+    - app 带 `--lmdesk-background` 启动时不显示主窗口；之后用户点 Dock 图标，照常打开窗口。
+  - 从源码运行（不在 app 包内）时，不自动启动，直接以退出码 1 提示，并说明「这个 lmdesk 不在 app 包里，不会自动启动台面」。
 - [A-32] 版本号统一取自 `packaging/VERSION`，从 app 包运行时取打包写入的 `bundle_version`。命令行比对自己的版本和 `/api/state` 返回的 `version`（见 A-44）。版本不一致时，stderr 警告一行，继续执行。
 - [A-33] 连接时如果出现权限类错误（`EPERM`、`EACCES`，或者沙箱特有的拒绝），说明是被 agent 的沙箱拦了。这时不尝试拉起 app，直接以退出码 6 退出，提示「被沙箱拦截，需要允许访问本机网络（127.0.0.1）」。
   - `open -gj` 因为权限失败时，同样按退出码 6 处理。
