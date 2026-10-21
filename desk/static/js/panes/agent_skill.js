@@ -14,9 +14,10 @@ export function createAgentSkillSection(root) {
     error: root.querySelector("[data-agent-skill-error]"),
   };
   let rows = [];
+  let cli = {};
   let checked = new Set();
 
-  const refreshApply = () => { els.apply.disabled = !applyEnabled(rows, checked); };
+  const refreshApply = () => { els.apply.disabled = !applyEnabled(rows, checked, cli); };
 
   function render(payload) {
     rows = payload.targets ?? [];
@@ -52,7 +53,7 @@ export function createAgentSkillSection(root) {
       }
       return li;
     }));
-    const cli = payload.cli ?? {};
+    cli = payload.cli ?? {};
     els.cli.textContent = `命令行 lmdesk：${cli.path ?? "~/.local/bin/lmdesk"} · ${rowText(cli).status}（至少勾选一个 agent 时自动安装）`;
     refreshApply();
   }
@@ -79,6 +80,7 @@ export function createAgentSkillSection(root) {
     try {
       const result = await api.agentSkillCheck();
       els.checkResult.textContent = result.ok ? "lmdesk 能连上台面 ✓" : result.message;
+      render(await api.agentSkillStatus());   // 链接可能在台面外被改过：检查时顺手刷新各行，保留当前勾选（G9）
     } catch (error) { els.checkResult.textContent = error.message; }
   });
 

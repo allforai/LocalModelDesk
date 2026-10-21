@@ -1,4 +1,6 @@
 """A-T5: settings → 本机 agent: multi-select apply, stale row, check, copy, narrow window."""
+import os
+
 from playwright.sync_api import expect
 
 from desk.testing import launch_test_harness
@@ -77,3 +79,27 @@ def test_narrow_and_short_window_no_horizontal_scroll(page, tmp_path, monkeypatc
         page.wait_for_timeout(500)  # let the drawer finish sliding in
         overflow = page.locator("#pane-settings").evaluate("el => el.scrollWidth - el.clientWidth")
         assert overflow <= 0
+
+
+def test_stale_cli_link_enables_apply_and_apply_fixes_it(page, tmp_path, monkeypatch):
+    home = tmp_path / "home"; home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    with launch_test_harness(tmp_path) as h:
+        section = _open(page, h)
+        expect(section.locator("p.hint").first).to_contain_text("视频、音乐")
+        section.locator(".agent-skill-row[data-key=claude] input").check()
+        apply = section.locator("[data-agent-skill-apply]")
+        apply.click()
+        expect(section.locator(".agent-skill-row[data-key=claude] [data-agent-skill-status]")).to_have_text("已安装")
+        cli = home / ".local/bin/lmdesk"
+        good = os.readlink(cli)
+        cli.unlink()
+        cli.symlink_to("/gone/Old.app/Contents/Resources/bin/lmdesk")
+
+        section.locator("[data-agent-skill-check]").click()   # 检查时顺手刷新各行
+
+        expect(section.locator("[data-agent-skill-cli]")).to_contain_text("已失效，点应用更新")
+        expect(apply).to_be_enabled()
+        apply.click()
+        expect(section.locator("[data-agent-skill-cli]")).to_contain_text("已安装")
+        assert os.readlink(cli) == good

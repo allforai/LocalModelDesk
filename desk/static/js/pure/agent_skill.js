@@ -5,13 +5,18 @@ export function initialChecked(rows) {
   return new Set(rows.filter((r) => r.state === "installed" || r.state === "stale").map((r) => r.key));
 }
 
-export function applyEnabled(rows, checked) {
-  return rows.some((r) => {
+// cli 是命令行链接那一行（payload.cli）。它跟着 agent 行走：应用后只要有一行装上，它就该在；
+// 一行都不装，它就该被卸掉（installer.apply）。它失效或缺失时也要能点应用，点了才会修好（A-64，G9）。
+export function applyEnabled(rows, checked, cli = null) {
+  const rowsChange = rows.some((r) => {
     const want = checked.has(r.key);
     // 勾上被占用的行也算变化：点了应用，这一行才会报出装不上的原因（A-54/A-64）。
     if (want) return r.state !== "installed";
     return r.state === "installed" || r.state === "stale";
   });
+  if (rowsChange || !cli) return rowsChange;
+  if (rows.some((r) => checked.has(r.key))) return cli.state === "stale" || cli.state === "absent";
+  return cli.state === "installed" || cli.state === "stale";
 }
 
 export function rowText(row) {
