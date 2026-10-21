@@ -39,3 +39,19 @@ test("状态文字", () => {
 test("试用语", () => {
   assert.equal(TRY_PHRASE, "用本地模型把这句话翻成英文：今天天气很好");
 });
+
+test("命令行链接失效或缺失时，应用按钮可点（G9）", () => {
+  const rows = [row("claude", "installed"), row("pi", "absent")];
+  const checked = new Set(["claude"]);
+  assert.equal(applyEnabled(rows, checked, { state: "stale" }), true);
+  assert.equal(applyEnabled(rows, checked, { state: "absent" }), true);
+  assert.equal(applyEnabled(rows, checked, { state: "installed" }), false);
+  assert.equal(applyEnabled(rows, checked, { state: "occupied" }), false, "被占用的位置点了也修不好");
+});
+
+test("一个 agent 都不装、命令行链接还在：应用可点，点了卸掉它", () => {
+  const rows = [row("claude", "absent")];
+  assert.equal(applyEnabled(rows, new Set(), { state: "installed" }), true);
+  assert.equal(applyEnabled(rows, new Set(), { state: "stale" }), true);
+  assert.equal(applyEnabled(rows, new Set(), { state: "absent" }), false);
+});
