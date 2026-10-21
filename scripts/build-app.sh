@@ -52,9 +52,10 @@ mkdir -p "$RES/bin"
 cat > "$RES/bin/lmdesk" <<'SH'
 #!/bin/bash
 # lmdesk inside LocalModelDesk.app: the embedded Python runs desk.agent_cli (A-02).
+# -P: an agent often runs lmdesk from inside the repo; without it the cwd's desk/ shadows the bundled one.
 SELF="$0"; while [[ -L "$SELF" ]]; do t="$(readlink "$SELF")"; [[ "$t" = /* ]] && SELF="$t" || SELF="$(dirname "$SELF")/$t"; done
 RES="$(cd "$(dirname "$SELF")/.." && pwd)"
-exec env -u PYTHONHOME PYTHONPATH="$RES" PYTHONDONTWRITEBYTECODE=1 "$RES/python/bin/python3.13" -s -m desk.agent_cli "$@"
+exec env -u PYTHONHOME PYTHONPATH="$RES" PYTHONDONTWRITEBYTECODE=1 "$RES/python/bin/python3.13" -s -P -m desk.agent_cli "$@"
 SH
 chmod 755 "$RES/bin/lmdesk"
 

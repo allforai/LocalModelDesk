@@ -606,4 +606,5 @@ def test_build_ships_lmdesk_launcher_using_embedded_python():
     build = (REPO / "scripts" / "build-app.sh").read_text()
     assert '"$RES/bin/lmdesk"' in build
     assert "-m desk.agent_cli" in build
+    assert 'python3.13" -s -P -m desk.agent_cli' in build
     assert 'chmod 755 "$RES/bin/lmdesk"' in build

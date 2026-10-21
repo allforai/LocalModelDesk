@@ -46,7 +46,7 @@ agent ──执行命令──▶ lmdesk ──HTTP──▶ 台面服务 127.0.
 ```
 
 - [A-01] 命令行是 `desk/agent_cli/` 包，只用标准库，不 import `desk` 的其他模块。入口是 `python -m desk.agent_cli`。
-- [A-02] app 包里有 `Contents/Resources/bin/lmdesk`，一个 shell 小脚本，用 `Contents/Resources/python/bin/python3.13` 运行 `-m desk.agent_cli`。它通过自身的真实路径（解析软链接后）定位所在的 app 包。
+- [A-02] app 包里有 `Contents/Resources/bin/lmdesk`，一个 shell 小脚本，用 `Contents/Resources/python/bin/python3.13` 运行 `-m desk.agent_cli`；启动器给 Python 加 `-P`，当前目录因此永远不会遮蔽包内的 `desk` 包。它通过自身的真实路径（解析软链接后）定位所在的 app 包。
 - [A-03] skill 放在 `desk/agent_skill/bundled/local-model-desk/SKILL.md`。打包后位于 `Contents/Resources/desk/agent_skill/bundled/local-model-desk/`，随 `desk/` 一起 rsync。
 - [A-04] 从源码运行台面时（不是从 app 包运行），安装链接指向仓库里的 skill 目录和 `scripts/lmdesk` 开发脚本，改动立即生效。
 - [A-05] 命令行发出的会改变状态的请求（对话、加载、生图、取消），一律在请求体里带上 `"origin": "agent"`。服务端靠这个字段区分是 agent 还是界面发起的（A-40、A-43）。
