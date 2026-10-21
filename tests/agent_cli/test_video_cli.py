@@ -191,3 +191,59 @@ def test_failed_submit_discards_uploaded_first_frame(tmp_path, monkeypatch):
         media._run_job(Client(), "video", args, None, io.StringIO(), "s", "video", {}, "/api/media/video",
                        {}, upload=png)
     assert posts == ["/api/media/inputs", "/api/media/video", "/api/media/inputs/discard"]
+
+
+def _interrupt_desk(cancel, attempts):
+    class Desk:
+        posts = []
+
+        def post(self, path, body=None, **_):
+            Desk.posts.append(path)
+            if isinstance(cancel, Exception):
+                raise cancel
+            return cancel
+
+        def get(self, path, query=None):
+            if isinstance(attempts, Exception):
+                raise attempts
+            return {"attempts": attempts}
+
+    Desk.posts = []
+    return Desk()
+
+
+def _interrupt(desk, signum):
+    from desk.agent_cli.media import _interrupted
+    return _interrupted(desk, "video", "s1", "a1", 7, signum, "已提交：…（中断后可用 lmdesk video wait s1 a1 继续等待）")
+
+
+def test_sigint_cancel_succeeds():
+    error = _interrupt(_interrupt_desk({"status": "cancelled"}, []), signal.SIGINT)
+    assert error.exit_code == 3 and error.message == "已中断并取消这次生成" and error.hint is None
+
+
+def test_sigint_after_the_job_already_finished_says_so_and_keeps_the_wait_hint():
+    from desk.agent_cli.client import HttpError
+    desk = _interrupt_desk(HttpError(409, "job_not_running", "作业 7 不在运行", {}), [{"id": "a1", "status": "done"}])
+    error = _interrupt(desk, signal.SIGINT)
+    assert error.exit_code == 3 and "中断前已经完成" in error.message and "取消这次" not in error.message
+    assert "lmdesk video wait s1 a1" in error.hint
+
+
+def test_sigint_after_the_job_already_failed_has_no_result():
+    from desk.agent_cli.client import HttpError
+    desk = _interrupt_desk(HttpError(409, "job_not_running", "x", {}), [{"id": "a1", "status": "failed"}])
+    error = _interrupt(desk, signal.SIGINT)
+    assert "已经结束" in error.message and error.hint is None
+
+
+def test_sigint_with_the_desk_gone_never_claims_cancelled():
+    from desk.agent_cli.client import Unreachable
+    error = _interrupt(_interrupt_desk(Unreachable("refused", "x"), Unreachable("refused", "x")), signal.SIGINT)
+    assert "取消" not in error.message and "仍在台面继续" in error.message and error.hint
+
+
+def test_sigterm_never_cancels():
+    desk = _interrupt_desk({"status": "cancelled"}, [])
+    error = _interrupt(desk, signal.SIGTERM)
+    assert error.message == "已中断，生成仍在台面继续" and error.hint and desk.posts == []
