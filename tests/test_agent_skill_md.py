@@ -53,5 +53,5 @@ def test_exit_3_sandbox_and_join_guidance():
     """G1：退出码 3 按 stderr 最后一行分情况；G10：放行方法原样转述、不冒充；J3：续写不必再 join。"""
     _, body = _frontmatter(SKILL.read_text(encoding="utf-8"))
     for needle in ("stderr 最后一行", "仍在台面继续", "已经完成", "已经结束", "原样", "冒充本地模型",
-                   "不需要再 join", "合成记录", "network_access = true"):
+                   "第一条匹配", "不需要再 join", "合成记录", "network_access = true"):
         assert needle in body, needle

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import contextlib
+import signal
 import sys
 import threading
 import time
@@ -57,6 +58,8 @@ class Waiter:
         stop = threading.Event()
 
         def beat() -> None:
+            # 信号只许投给主线程（media._hold_signals 只挡主线程，pthread_sigmask 是按线程的）
+            signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT, signal.SIGTERM})
             while not stop.wait(self._report_every):
                 print(f"等待中：{self._reason}（已等 {int(self.elapsed())}s）", file=self._err, flush=True)
 
@@ -66,4 +69,4 @@ class Waiter:
             yield self
         finally:
             stop.set()
-            thread.join()
+            thread.join(timeout=1)
