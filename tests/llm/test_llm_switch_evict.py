@@ -3,10 +3,13 @@ from __future__ import annotations
 
 import threading
 import time
+
+import pytest
 from tests.deadlines import HANG_TIMEOUT_S
 from desk.arbiter.core import Arbiter
 from desk.arbiter.reaper import ReapResult
 from desk.llm.service import LlmService
+from desk.llm.state import LlmRejected
 from tests.llm.llm_fakes import (
     FakeBackend,
     FakeCatalog,
@@ -52,7 +55,7 @@ def test_initial_load_does_not_deadlock_real_arbiter_subscription(tmp_path):
     assert service.wait_settled()["status"] == "loaded"
 
 
-def test_switch_model_reuses_existing_llm_permit(tmp_path):
+def test_switch_model_retargets_the_same_permit(tmp_path):
     glm = make_entry(key="glm")
     qwen = make_entry(key="qwen")
     testbed = make_loaded(tmp_path, entries=[glm, qwen])
@@ -63,12 +66,42 @@ def test_switch_model_reuses_existing_llm_permit(tmp_path):
     assert state["status"] == "loading"
     assert testbed.service.wait_settled()["status"] == "loaded"
     names = [call[0] for call in testbed.calls]
-    assert "acquire" not in names
-    assert "release" not in names
-    assert names[:3] == ["terminate", "wait", "reap"]
+    assert "acquire" not in names and "release" not in names
+    assert names[:4] == ["retarget", "terminate", "wait", "reap"]   # 先问 arbiter，再停旧进程
+    assert testbed.calls[0] == ("retarget", "tok-1", "qwen")
+    assert testbed.arbiter.last_retarget["key"] == "qwen"
     assert ("spawn", str(testbed.paths.venv_python),
             str(testbed.paths.models_root / qwen.relpath), 8767,
             str(testbed.paths.logs_dir / "mlx-lm.log")) in testbed.calls
+
+
+def test_switch_refused_keeps_the_old_model_loaded(tmp_path):
+    glm = make_entry(key="glm")
+    qwen = make_entry(key="qwen")
+    refusal = {"ok": False, "reason": {"code": "insufficient_budget", "message": "装不下"}}
+    testbed = make_loaded(tmp_path, entries=[glm, qwen], arbiter_kw={"retarget_result": refusal})
+    testbed.calls.clear()
+
+    with pytest.raises(LlmRejected) as exc:
+        testbed.service.load("qwen")
+
+    assert exc.value.code == "insufficient_budget"
+    status = testbed.service.status()
+    assert status["state"]["status"] == "loaded" and status["state"]["model_key"] == "glm"
+    assert "terminate" not in [call[0] for call in testbed.calls]
+
+
+def test_state_with_the_old_label_during_a_switch_is_not_an_eviction(tmp_path):
+    glm = make_entry(key="glm")
+    qwen = make_entry(key="qwen")
+    testbed = make_loaded(tmp_path, entries=[glm, qwen])
+    old = {"kind": "llm", "label": "glm", "phase": "held"}
+    testbed.arbiter.on_retarget = lambda: testbed.arbiter.emit(
+        {"holder": old, "holders": [old], "media_busy": False})
+
+    testbed.service.load("qwen")
+
+    assert testbed.service.wait_settled()["status"] == "loaded"
 
 
 def test_eviction_while_loading_immediately_converges_to_evicted_error(tmp_path):
@@ -120,3 +153,27 @@ def test_unload_does_not_deadlock_when_releasing_llm_notifies_subscribers(tmp_pa
 
     assert not unloader.is_alive()
     assert result == [{"status": "idle", "model_key": None, "loaded_at": None, "error": None}]
+
+
+def test_chat_after_a_switch_is_answered_not_refused_as_evicted(tmp_path):
+    glm, qwen = make_entry(key="glm"), make_entry(key="qwen")
+    paths = FakePaths(tmp_path)
+    for entry in (glm, qwen):
+        (paths.models_root / entry.relpath).mkdir(parents=True)
+    port = _free_port()
+    backend = FakeBackend(chat_result={"choices": [{"message": {"content": "好"}, "finish_reason": "stop"}],
+                                       "usage": {"total_tokens": 1}})
+    service = LlmService(
+        backend=backend,
+        arbiter=Arbiter(llm_port=port, reaper=lambda port: ReapResult(ok=True, port=port, killed_pids=[])),
+        catalog=FakeCatalog([glm, qwen]), paths=paths, port=port, poll_interval_s=0.001,
+    )
+    service.load("glm")
+    assert service.wait_settled()["status"] == "loaded"
+    service.load("qwen")
+    assert service.wait_settled()["status"] == "loaded"
+
+    answer = service.chat_completion({"messages": [{"role": "user", "content": "hi"}], "model": "qwen"})
+
+    assert answer["content"] == "好" and answer["model"] == "qwen"
+    assert service.status()["state"]["status"] == "loaded"

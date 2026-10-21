@@ -100,6 +100,8 @@ class LlmService:
         self._active_chats = 0
         self._last_ui_chat: float | None = None
         self._loaded_by: str | None = None
+        # 换模型期间台面上记的还是旧模型；这段时间送达的状态不能被读成「被收回了」。
+        self._swapping_from: str | None = None
 
     def owned_pids(self) -> set[int]:
         """Pids this service spawned — the only ones the arbiter may reap (P1)."""
@@ -164,31 +166,16 @@ class LlmService:
             model_dir = Path(roots.models_root) / entry.relpath
             if not model_dir.is_dir():
                 raise LlmRejected(ERR_MODEL_DIR_MISSING, f"模型目录不存在: {model_dir}")
-            reusing_existing_token = self._state.status == STATUS_LOADED
-            if reusing_existing_token:
-                if not self._teardown_proc_locked():
-                    self._state = LlmState(
-                        status=STATUS_ERROR,
-                        model_key=self._state.model_key,
-                        error=LlmError(ERR_PORT_NOT_RELEASED, f"切换后端口 {self._port} 仍被占用"),
-                    )
-                    return self._state.to_dict()
-            else:
-                previous_state = self._state
+            previous = (self._state, self._entry, self._loaded_by)
+            swap_token = self._token if self._state.status == STATUS_LOADED else None
+            if swap_token is not None:
+                self._swapping_from = self._state.model_key
             self._entry = None
             self._state = LlmState(status=STATUS_LOADING, model_key=entry.key)
             self._load_generation += 1
             generation = self._load_generation
-            if reusing_existing_token:
-                self._loaded_by = "agent" if origin == "agent" else "ui"
-                self._load_thread = threading.Thread(
-                    target=self._load_worker,
-                    args=(entry, model_dir, Path(roots.venv_python), self._log_path(roots), generation),
-                    daemon=True,
-                    name="llm-load",
-                )
-                self._load_thread.start()
-                return self._state.to_dict()
+        if swap_token is not None:
+            return self._swap(entry, model_dir, roots, origin, generation, swap_token, previous)
 
         # 预算要靠 config 与权重才算得出这个模型的真实开销；不传的话 budget.cost
         # 会把聊天算成 0 字节，于是预算对任何组合都说「装得下」（Task 9）。
@@ -202,20 +189,55 @@ class LlmService:
             message = reason.get("message") if isinstance(reason, dict) else None
             with self._lock:
                 if generation == self._load_generation:
-                    self._state = previous_state
+                    self._state = previous[0]
             raise LlmRejected(code or ERR_MEDIA_BUSY, message or "媒体任务正在运行")
 
         with self._lock:
             self._token = acquired.get("token")
-            self._loaded_by = "agent" if origin == "agent" else "ui"
-            self._load_thread = threading.Thread(
-                target=self._load_worker,
-                args=(entry, model_dir, Path(roots.venv_python), self._log_path(roots), generation),
-                daemon=True,
-                name="llm-load",
-            )
-            self._load_thread.start()
-            return self._state.to_dict()
+            return self._start_load_locked(entry, model_dir, roots, origin, generation)
+
+    def _swap(self, entry: Any, model_dir: Path, roots: Any, origin: str, generation: int,
+              token: str, previous: tuple) -> dict[str, Any]:
+        """换模型：同一张令牌改记成新模型，再停旧进程、起新进程（cross-exam G6/G7）。
+
+        先问 arbiter 再停旧进程：新模型装不下时旧模型原样留着，不会两头落空。
+        """
+        try:
+            answer = self._arbiter.retarget_heavy(token, entry.key, getattr(entry, "name", None),
+                                                  params=self._heavy_request(entry), key=entry.key)
+        except BaseException:
+            with self._lock:
+                self._swapping_from = None
+                if generation == self._load_generation:
+                    self._state, self._entry, self._loaded_by = previous
+            raise
+        with self._lock:
+            self._swapping_from = None
+            if generation != self._load_generation:
+                return self._state.to_dict()
+            if not answer.get("ok"):
+                self._state, self._entry, self._loaded_by = previous
+                reason = answer.get("reason") or {}
+                raise LlmRejected(reason.get("code") or ERR_MEDIA_BUSY, reason.get("message") or "换模型失败")
+            if not self._teardown_proc_locked():
+                self._state = LlmState(
+                    status=STATUS_ERROR, model_key=entry.key,
+                    error=LlmError(ERR_PORT_NOT_RELEASED, f"切换后端口 {self._port} 仍被占用"),
+                )
+                return self._state.to_dict()
+            return self._start_load_locked(entry, model_dir, roots, origin, generation)
+
+    def _start_load_locked(self, entry: Any, model_dir: Path, roots: Any, origin: str,
+                           generation: int) -> dict[str, Any]:
+        self._loaded_by = "agent" if origin == "agent" else "ui"
+        self._load_thread = threading.Thread(
+            target=self._load_worker,
+            args=(entry, model_dir, Path(roots.venv_python), self._log_path(roots), generation),
+            daemon=True,
+            name="llm-load",
+        )
+        self._load_thread.start()
+        return self._state.to_dict()
 
     def _load_worker(self, entry: Any, model_dir: Path, python: Path, log_path: Path,
                      generation: int) -> None:
@@ -328,10 +350,11 @@ class LlmService:
             holders = desk_state.get("holders")
             if not isinstance(holders, list):
                 holders = [desk_state.get("holder")]
+            labels = {self._state.model_key, self._swapping_from} - {None}
             still_held = any(
                 isinstance(h, dict)
                 and h.get("kind") == "llm"
-                and h.get("label") == self._state.model_key
+                and h.get("label") in labels
                 for h in holders
             )
             if still_held:

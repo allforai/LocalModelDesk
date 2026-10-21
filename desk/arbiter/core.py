@@ -472,6 +472,40 @@ class Arbiter:
         self._dispatch(states)
         return result
 
+    def retarget_heavy(self, token: str, label: str, display: str | None = None,
+                       *, params: dict | None = None, key: str | None = None) -> dict:
+        """换聊天模型：把这张 llm 令牌改记成新模型（label、display、预算开销一起换）。
+
+        不走「先释放再申请」：中间会有一段谁都不持有的空档，媒体作业会插进来。
+        也不能只换进程不换台账：台账还记着旧模型时，对话闸 `still_holds` 认不出
+        新模型，每次对话都被当成「已被收回」拒掉（cross-exam G6/G7）。
+        预算模式下按「去掉旧模型、加上新模型」重算一次；装不下就拒绝，台账不动。
+        """
+        with self._transition_lock:
+            with self._state_lock:
+                holder = self._holders.get(token)
+                others = [w for t, w in self._workloads.items() if t != token]
+            if holder is None or holder.kind != "llm":
+                return {"ok": False, "reason": self._reason("not_holder", "这张令牌不是当前的聊天模型持有者")}
+            workload = None
+            if self._budget is not None:
+                if params is None and key is None:
+                    return {"ok": False, "reason": self._reason(
+                        "capacity_unknown", "换模型需要模型参数才算得出内存开销；这次调用没有给出，不予更换")}
+                workload = self._cost("llm", params, key)
+                verdict = fits(others + [workload], self._capacity_bytes())
+                if not verdict.ok:
+                    refused = plan_acquire((), "llm", verdict)
+                    return {"ok": False, "reason": self._reason(refused.reason_code, refused.reason_message)}
+            with self._state_lock:
+                self._holders[token] = replace(holder, label=label, display=display, since=self._clock())
+                if workload is not None:
+                    self._workloads[token] = workload
+                holders = tuple(self._holders.values())
+            state = self._state_for(holders)
+        self._dispatch([state])
+        return {"ok": True, "token": token, "state": state}
+
     def release_heavy(self, token: str) -> dict:
         """Release only the currently held matching token."""
         states: list[dict] = []

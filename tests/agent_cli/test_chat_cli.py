@@ -107,3 +107,19 @@ def test_version_mismatch_only_warns(tmp_path, monkeypatch):
         r = run_cli(h, "status", extra_env={"LMDESK_FAKE_VERSION": "0.0.0-test"})
         assert r.returncode == 0
         assert "版本不一致" in r.stderr
+
+
+def test_ask_switches_from_a_ui_loaded_model_and_both_can_chat(tmp_path):
+    turn = [Delta(content="你好，世界"), Done(usage={"total_tokens": 1})]
+    with launch_test_harness(tmp_path, model_states={CHAT: "present", OTHER: "present"},
+                             chat_script=ChatScript(turn + turn)) as h:
+        h.llm.load(CHAT); h.llm.wait_settled()
+
+        r = run_cli(h, "ask", "你好", "--model", OTHER, "--timeout", "30")
+
+        assert r.returncode == 0, r.stderr
+        assert r.stdout.strip() == "你好，世界"
+        assert h.llm.status()["state"]["model_key"] == OTHER
+        ui = h.llm.chat_completion({"messages": [{"role": "user", "content": "hi"}], "model": OTHER})
+        assert ui["model"] == OTHER   # 界面身份的对话也不再被当成「已收回」
+
