@@ -90,7 +90,8 @@ def main(argv=None, *, env=os.environ, stdin=sys.stdin, out=sys.stdout, err=sys.
         if desk_version and desk_version != cli_version:
             print(f"注意：版本不一致（lmdesk {cli_version}，台面 {desk_version}）", file=err)
         waiter = Waiter(args.timeout, err=err)
-        result = _dispatch(args, client, waiter, stdin, err)
+        with waiter.heartbeat():
+            result = _dispatch(args, client, waiter, stdin, err)
         _emit(result, args, out)
         return EXIT_OK
     except CliError as exc:

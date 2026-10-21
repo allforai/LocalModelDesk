@@ -136,6 +136,7 @@ def run_ask(client: DeskClient, *, question: str, model: str | None, system: str
         if max_tokens:
             body["max_tokens"] = max_tokens
         try:
+            waiter.note("模型正在回答")
             # 非流式对话要等整段回答生成完，本地模型常常超过客户端默认的 30s；用剩余的 --timeout 兜住。
             result = client.post("/api/llm/chat", body, timeout=max(30.0, waiter.remaining()))
         except HttpError as exc:
