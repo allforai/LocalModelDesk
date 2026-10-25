@@ -102,14 +102,13 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .sessions ul,[data-res-list]{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px}
 /* The hover-revealed actions used to sit position:absolute over the card's own
    center, so a click meant to switch sessions could land on "改名" instead
-   (F7). They now get their own grid column that never overlaps the title. */
-.session{cursor:pointer;padding:12px;display:grid;grid-template-columns:minmax(0,1fr) max-content;column-gap:8px;align-items:center}
+   (F7). 2026-10-25：动作整条移进右键菜单（聊天页与媒体页都是），那一列不存在了，
+   卡片只剩一列，标题与元信息/「生成中」吃满整张卡。 */
+.session{cursor:pointer;padding:12px;display:grid;grid-template-columns:minmax(0,1fr);column-gap:8px;align-items:center}
 .session.active{border-color:var(--accent)}
 .session-title,.session-meta{grid-column:1}
 .session-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .session-meta{font-size:13px;color:var(--muted);margin-top:4px}
-.session-actions{grid-column:2;grid-row:1/-1;display:flex;gap:6px;visibility:hidden}
-.session:hover .session-actions,.session:focus-within .session-actions{visibility:visible}
 .session:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* 6b. cards: resources + library rows — actions form their own right-hand
    column spanning the full card height, instead of a third row on the left
@@ -158,6 +157,13 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .dialog-actions{display:flex;justify-content:flex-end;gap:8px}
 /* 确认框打开时焦点由脚本放在「取消」上（D-90）；:focus-visible 对脚本聚焦不一定成立，所以用 :focus 画出焦点环。 */
 .dialog-actions button:focus{outline:2px solid var(--accent);outline-offset:2px}
+/* 右键菜单（会话卡的动作入口，2026-10-25）：贴着指针或锚点，键盘焦点用内描边，
+   「删除」用危险色而不是整块红底——它是菜单项不是按钮。 */
+.context-menu{position:fixed;z-index:35;min-width:168px;padding:4px;display:flex;flex-direction:column;gap:2px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-card);box-shadow:0 12px 32px rgba(0,0,0,.45)}
+.context-menu .menu-item{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:transparent;border:0;border-radius:var(--radius);color:var(--text);text-align:left}
+.context-menu .menu-item:hover{background:var(--bubble)}
+.context-menu .menu-item:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.context-menu .menu-item.danger{color:var(--danger)}
 /* 装 skill 的确认弹层要放得下一整篇 SKILL.md 正文，480px 太窄（R-skill-11）。 */
 .dialog-wide{max-width:640px;width:calc(100% - 48px)}
 .skill-install-body{max-height:320px;overflow-y:auto;white-space:pre-wrap;border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13px;background:var(--bg);margin:0 0 16px}
@@ -265,9 +271,8 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .sessions-state p{margin:0}
 /* 「新会话」按钮与第一项之间留出与列表项相同的间距（N-03） */
 #pane-image .sessions ul, #pane-music .sessions ul, #pane-video .sessions ul{margin-top:12px}
-/* 图片会话项：改名/删除按钮不悬停时不占宽度，标题与「生成中」标记用满整行；悬停或聚焦时按钮仍占自己的一列，不压标题（N-02） */
-.image-session .session-actions,.music-session .session-actions,.video-session .session-actions{display:none}
-.image-session:hover .session-actions,.image-session:focus-within .session-actions,.music-session:hover .session-actions,.music-session:focus-within .session-actions,.video-session:hover .session-actions,.video-session:focus-within .session-actions{display:flex}
+/* 图片/音乐/视频会话项：标题与「生成中」标记一直用满整行——N-02 那会儿要靠悬停让位给按钮列，
+   2026-10-25 动作进了右键菜单，这里不再需要任何规则（留着坐标：别再把那一列加回来）。 */
 /* 13. music sessions（音乐会话设计 §2）：布局与图片页同构，上面的 #pane-image 规则已同时作用于 #pane-music */
 #pane-music .image-composer>input{background:var(--panel);border-radius:16px;padding:10px 16px}
 .music-lyrics { min-height: calc(2 * 1.5em + 26px); max-height: 50vh; resize: none; field-sizing: content; }

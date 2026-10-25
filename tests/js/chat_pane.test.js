@@ -40,6 +40,7 @@ class Element {
   replaceChildren(...nodes) { this.children = []; this.append(...nodes); }
   addEventListener(type, listener) { this.listeners[type] = listener; }
   setAttribute(name, value) { (this.attrs ??= {})[name] = value; }
+  getAttribute(name) { return this.attrs?.[name] ?? null; }
   click() { return this.listeners.click?.({ preventDefault() {} }); }
   remove() { this.parentNode?.children.splice(this.parentNode.children.indexOf(this), 1); }
   focus() {}
@@ -84,6 +85,15 @@ function makePane() {
   };
   return { controls, doc, root: { ownerDocument: doc, querySelector } };
 }
+// 会话卡的动作入口是右键菜单（2026-10-25）：卡上派发 contextmenu，菜单挂在 doc.body 上、
+// 收在菜单自己身上。这里返回菜单里的按钮（0=改名 1=删除）和「有没有吃掉浏览器自己的菜单」。
+const popups = (doc) => doc.body.children.filter((node) => node.className === "context-menu");
+const openCardMenu = (doc, card) => {
+  let prevented = false;
+  card.listeners.contextmenu({ preventDefault() { prevented = true; }, stopPropagation() {}, clientX: 12, clientY: 12 });
+  const menu = popups(doc).at(-1);
+  return { prevented, menu, items: menu.children };
+};
 const json = (payload) => new Response(JSON.stringify(payload), { status: 200 });
 const stream = (lines) => new Response(new ReadableStream({ start(controller) {
   controller.enqueue(new TextEncoder().encode(lines.map((line) => `data: ${line}\n\n`).join(""))); controller.close();
@@ -215,7 +225,7 @@ test("消息按角色分结构：用户气泡、助手带模型名与已思考�
   assert.equal(ai.children[2].children[0].children[0].tagName, "strong");
 });
 
-test("会话卡片：标题行、元信息行、动作区，当前项 active", async () => {
+test("会话卡片：标题行、元信息行，当前项 active（动作不再占卡片里的一列）", async () => {
   const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
   const { root, controls } = makePane();
   const previous = globalThis.fetch;
@@ -234,7 +244,7 @@ test("会话卡片：标题行、元信息行、动作区，当前项 active", a
     assert.equal(li.children[0].className, "session-title");
     assert.equal(li.children[1].className, "session-meta");
     assert.equal(li.children[1].textContent, "glm · 10:05");
-    assert.equal(li.children[2].className, "session-actions");
+    assert.equal(li.children.length, 2, "卡片只剩标题与元信息两行；改名/删除在右键菜单里");
   } finally { globalThis.fetch = previous; }
 });
 
@@ -269,7 +279,9 @@ test("chat 面板的新建、改名和确认删除会写入会话 API 并重绘�
     let list = controls.get("[data-session-list]");
     assert.equal(list.children[0].children[0].textContent, "新会话");
 
-    list.children[0].children[2].children[0].click();
+    const menu = openCardMenu(doc, list.children[0]);
+    assert.equal(menu.prevented, true, "右键要吃掉浏览器自己的菜单");
+    menu.items[0].click();
     const input = list.children[0].children[0];
     input.value = "已改名";
     input.listeners.keydown({ key: "Enter" });
@@ -277,14 +289,76 @@ test("chat 面板的新建、改名和确认删除会写入会话 API 并重绘�
     assert.deepEqual(JSON.parse(calls.find(([path, method]) => path === "/api/sessions/s2" && method === "PATCH")[2]), { title: "已改名" });
 
     list = controls.get("[data-session-list]");
-    const removing = list.children[0].children[2].children[1].click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+    openCardMenu(doc, list.children[0]).items[1].click();
+    await tick();
+    // 菜单选完就收掉了，body 里只剩确认弹层的 overlay。
     const confirm = doc.body.children[0].children[0].children[2].children[1];
     confirm.click();
-    await removing;
+    await tick();
     assert.equal(calls.some(([path, method]) => path === "/api/sessions/s2" && method === "DELETE"), true);
     assert.equal(controls.get("[data-session-list]").children[0].children[0].textContent, "旧标题");
   } finally { globalThis.fetch = oldFetch; }
+});
+
+test("会话卡的动作改走右键菜单：右键与 Shift+F10 都能开，Esc 与点外面都能关", async () => {
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (path) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
+    if (path === "/api/sessions") return json([{ id: "s1", title: "第一会话", model: "glm", messages: [], updated: "2026-09-07T10:05:00" }]);
+    if (String(path).includes("catalog")) return json([]);
+    if (String(path).includes("status")) return json({ models: [] });
+    return json({ state: { status: "idle" } });
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { root, controls, doc } = makePane();
+    const pane = createChatPane(root);
+    await pane.init();
+    const li = controls.get("[data-session-list]").children[0];
+
+    const right = openCardMenu(doc, li);
+    assert.equal(right.prevented, true, "右键要吃掉浏览器自己的菜单");
+    assert.equal(right.menu.getAttribute("role"), "menu");
+    assert.equal(right.menu.getAttribute("aria-label"), "会话操作：第一会话");
+    assert.equal(right.items.length, 2, "改名、删除两项");
+    assert.equal(right.items[0].className, "menu-item");
+    assert.equal(right.items[1].className, "menu-item danger", "删除是危险项");
+    right.menu.listeners.keydown({ key: "Escape", preventDefault() {}, stopPropagation() {} });
+    assert.equal(popups(doc).length, 0, "Esc 收菜单");
+
+    li.listeners.keydown({ key: "F10", shiftKey: true, target: li, preventDefault() {}, stopPropagation() {} });
+    assert.equal(popups(doc).length, 1, "Shift+F10 开同一个菜单");
+    await doc.listeners.pointerdown({ target: new Element("div") });
+    assert.equal(popups(doc).length, 0, "点菜单外面也收");
+    assert.equal(doc.listeners.pointerdown, undefined, "收掉之后不留全局监听");
+  } finally { globalThis.fetch = previous; }
+});
+
+test("改名输入框里的右键不弹会话菜单：那里的右键要留给输入框自己的粘贴", async () => {
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (path) => {
+    if (path === "/api/skills" || path === "/api/skills/rescan") return json({ skills: [] });
+    if (path === "/api/sessions") return json([{ id: "s1", title: "第一会话", model: "glm", messages: [], updated: "2026-09-07T10:05:00" }]);
+    if (String(path).includes("catalog")) return json([]);
+    if (String(path).includes("status")) return json({ models: [] });
+    return json({ state: { status: "idle" } });
+  };
+  try {
+    const { createChatPane } = await import("../../desk/static/js/panes/chat.js");
+    const { root, controls, doc } = makePane();
+    const pane = createChatPane(root);
+    await pane.init();
+    const li = controls.get("[data-session-list]").children[0];
+
+    openCardMenu(doc, li).items[0].click(); // 走菜单进改名，卡片里就剩一个输入框
+    const input = li.children[0];
+    assert.equal(input.tagName, "input");
+    let prevented = false;
+    li.listeners.contextmenu({ target: input, preventDefault() { prevented = true; }, stopPropagation() {} });
+    assert.equal(prevented, false, "不拦截，原生的粘贴菜单才出得来");
+    assert.equal(popups(doc).length, 0, "也不许插一个会话菜单进去");
+  } finally { globalThis.fetch = previous; }
 });
 
 test("换模型：A 驻留时选 B 点加载 → 确认 → 先卸载再加载（J16）", async () => {

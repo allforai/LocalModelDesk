@@ -7,6 +7,12 @@ import { button, byData, find, findAll, flush, makeGenericPane, withBackend } fr
 const cards = (parts) => findAll(parts.timeline, (n) => "attemptId" in n.dataset);
 const items = (parts) => findAll(parts["session-list"], (n) => "sessionId" in n.dataset);
 const current = (parts) => items(parts).find((n) => n.getAttribute("aria-current") === "true")?.dataset.sessionId ?? null;
+// 会话卡的动作在右键菜单里（2026-10-25）：右键打开，菜单挂在 doc.body 上。
+const openSessionMenu = async (root, card) => {
+  await card.dispatch("contextmenu", { clientX: 12, clientY: 12 });
+  return findAll(root.ownerDocument.body, (n) => n.className === "context-menu").at(-1);
+};
+const pickMenu = (menu, label) => find(menu, (n) => n.tagName === "button" && n.textContent === label);
 const done = (id) => ({ id, job_id: 0, ts: "2026-09-24T09:00:00", status: "done", params: { prompt: id }, output: `${id}.wav`, error: null });
 const running = (id) => ({ id, job_id: 9, ts: "2026-09-24T09:00:00", status: "running", params: { prompt: id }, output: null, error: null });
 
@@ -61,17 +67,21 @@ test("删除当前会话后按 pickCurrent 重选；列表删空了自动新建"
   await withBackend("music", async (backend) => {
     const older = backend.addSession("旧的", [done("d1")]);
     const newer = backend.addSession("新的", [done("d2")]);
-    const { parts, pane } = makeGenericPane();
+    const { root, parts, pane } = makeGenericPane();
     await pane.refresh();
     assert.equal(current(parts), newer.id);
 
-    const trash = (id) => findAll(items(parts).find((n) => n.dataset.sessionId === id),
-      (n) => n.tagName === "button" && /删除会话/.test(n.attrs?.["aria-label"] ?? ""))[0];
-    await trash(newer.id).click(); await flush();
+    // 动作在右键菜单里（2026-10-25）：打开卡片的菜单，选「删除」。
+    const removeSession = async (id) => {
+      const card = items(parts).find((n) => n.dataset.sessionId === id);
+      const menu = await openSessionMenu(root, card);
+      await pickMenu(menu, "删除").click();
+    };
+    await removeSession(newer.id); await flush();
     assert.ok(backend.calls.some((c) => c.method === "DELETE" && c.url === `/api/media-sessions/music/${newer.id}`));
     assert.equal(current(parts), older.id);
 
-    await trash(older.id).click(); await flush();
+    await removeSession(older.id); await flush();
     assert.equal(backend.sessions.length, 1);
     assert.notEqual(backend.sessions[0].id, older.id);
     assert.equal(current(parts), backend.sessions[0].id);

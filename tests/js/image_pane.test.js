@@ -51,6 +51,15 @@ const byData = (node, key) => find(node, (n) => key in (n.dataset ?? {}));
 const button = (node, text) => find(node, (n) => n.tagName === "button" && n.textContent === text);
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+// 会话卡的动作在右键菜单里（2026-10-25）：右键打开，菜单挂在 doc.body 上。
+const openSessionMenu = async (root, card) => {
+  await card.dispatch("contextmenu", { clientX: 12, clientY: 12 });
+  return findAll(root.ownerDocument.body, (n) => n.className === "context-menu").at(-1);
+};
+const menuItems = (menu) => menu.children.filter((n) => n.tagName === "button").map((n) => n.textContent);
+const menuAction = (root, card, label) => openSessionMenu(root, card)
+  .then((menu) => find(menu, (n) => n.tagName === "button" && n.textContent === label));
+
 // 主流程可见文字：跳过 hidden 节点与「高级参数」折叠块（D-50 唯一允许出现「种子」的地方）。
 function mainFlowText(node) {
   if (node.hidden) return "";
@@ -392,10 +401,10 @@ test("删除会话：确认正文说明图片留在素材库；删的是当前�
   await withBackend(async (backend) => {
     backend.addSession("只有这个", [done("a1", 1, "猫")]);
     const prompts = [];
-    const { parts, pane, ready } = makePane({ confirm: async (_doc, opts) => { prompts.push(opts); return true; } }); ready();
+    const { root, parts, pane, ready } = makePane({ confirm: async (_doc, opts) => { prompts.push(opts); return true; } }); ready();
     await pane.refresh();
     const item = parts["session-list"].children[0];
-    await find(item, (n) => n.attrs?.["aria-label"] === "删除会话：只有这个").click();
+    await (await menuAction(root, item, "删除")).click();
     await flush(); await flush();
     assert.equal(prompts[0].title, "删除会话");
     assert.equal(prompts[0].message, "确定删除「只有这个」？只删除这个会话分组，其中的图片仍保留在素材库。");
@@ -419,12 +428,14 @@ test("坏文件会话：只有删除按钮，点开说明损坏，「生成图�
       return inner(url, options);
     };
     globalThis.fetch = backend.fetch;
-    const { parts, pane, ready } = makePane(); ready();
+    const { root, parts, pane, ready } = makePane(); ready();
     await pane.refresh();
     const bad = parts["session-list"].children.find((li) => li.dataset.sessionId === "deadbeef");
     assert.match(bad.textContent, /无法读取的会话.*文件已损坏/);
-    assert.equal(find(bad, (n) => n.attrs?.["aria-label"] === "改名"), null);
-    assert.ok(find(bad, (n) => n.attrs?.["aria-label"] === "删除会话：无法读取的会话"));
+    // 坏会话读不出标题，没法改名：菜单里只剩「删除」。
+    const menu = await openSessionMenu(root, bad);
+    assert.deepEqual(menuItems(menu), ["删除"]);
+    await menu.dispatch("keydown", { key: "Escape" });
     await bad.click(); await flush();
     assert.match(parts.timeline.textContent, /这个会话文件已损坏，无法显示。可以删除它，素材库里的图片不受影响。/);
     assert.equal(parts.start.disabled, true);

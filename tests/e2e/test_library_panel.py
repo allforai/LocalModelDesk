@@ -147,8 +147,9 @@ def test_image_refill_returns_to_its_session_or_stays_put(page, tmp_path):
         expect(image.locator("[data-image-refine-text]")).to_have_text("以第 1 次为底稿")
 
         # Delete that session: the image stays in the library and refill falls back to the current session.
-        current.hover()
-        current.get_by_role("button", name="删除会话：回填用的橘猫").click()
+        current.click(button="right")
+        expect(page.get_by_role("menu", name="会话操作：回填用的橘猫")).to_be_visible()
+        page.get_by_role("menuitem", name="删除").click()
         page.locator(".overlay .dialog").get_by_role("button", name="删除").click()
         expect(image.locator("[data-image-session-list] [data-session-id]")).to_have_count(1)
         remaining = image.locator("[data-image-session-list] li[aria-current='true']").get_attribute("data-session-id")

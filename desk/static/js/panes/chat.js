@@ -12,8 +12,8 @@ import { formatBytes } from "../pure/format.js";
 import { statusBadge } from "../pure/model_status.js";
 import { sortSessions, displayTitle } from "../pure/sessions.js";
 import { confirmDialog } from "../widgets/confirm.js";
+import { attachContextMenu, isContextMenuKey } from "../widgets/context_menu.js";
 import { skillInstallDialog } from "../widgets/skill_install.js";
-import { addIcon } from "../icons.js";
 import { renderMarkdown } from "../pure/markdown.js";
 import { formatTimestamp } from "../pure/format.js";
 import { shouldStickToBottom } from "../pure/scroll_follow.js";
@@ -554,6 +554,19 @@ export function createChatPane(root, ctx = {}) {
     renderSkillChips();
   }
 
+  async function removeSession(session) {
+    const go = await confirmDialog(doc, {
+      title: "删除会话",
+      message: `确定删除「${displayTitle(session)}」？该会话的全部消息将被删除。`,
+      confirmLabel: "删除",
+    });
+    if (!go) return;
+    try {
+      await api.deleteChatSession(session.id);
+      await refreshSessions();
+    } catch (error) { setError(error.message); }
+  }
+
   function beginRename(li, session) {
     const input = doc.createElement("input");
     input.value = session.title ?? "";
@@ -588,31 +601,16 @@ export function createChatPane(root, ctx = {}) {
       const meta = doc.createElement("div");
       meta.className = "session-meta";
       meta.textContent = [session.model, formatTimestamp(session.updated).slice(11)].filter(Boolean).join(" · ");
-      const actions = doc.createElement("div");
-      actions.className = "session-actions";
-      // Icon-only (F7): text labels ("改名"/"删") widened this hover-revealed
-      // column past the card's horizontal center, so a plain click meant to
-      // switch sessions could land on a button instead. The accessible name
-      // still comes through via aria-label.
-      const rename = doc.createElement("button");
-      rename.className = "btn-sm";
-      rename.setAttribute?.("aria-label", "改名");
-      addIcon(rename, "pencil", doc);
-      rename.addEventListener("click", (event) => { event.stopPropagation?.(); beginRename(li, session); });
-      const remove = doc.createElement("button");
-      remove.className = "btn-danger btn-sm";
-      remove.setAttribute?.("aria-label", `删除会话：${displayTitle(session)}`);
-      addIcon(remove, "trash", doc);
-      remove.addEventListener("click", async (event) => {
-        event.stopPropagation?.();
-        const go = await confirmDialog(doc, { title: "删除会话", message: `确定删除「${displayTitle(session)}」？该会话的全部消息将被删除。`, confirmLabel: "删除" });
-        if (!go) return;
-        try {
-          await api.deleteChatSession(session.id);
-          await refreshSessions();
-        } catch (error) { setError(error.message); }
+      // 2026-10-25：动作列（改名/删除按钮）整条去掉，改右键菜单。那列常驻在卡片右侧，
+      // 一直扣标题宽度（标题被挤成「第1行：甲组记录，…」），而按钮本身只在悬停时才看得见。
+      // 去掉后标题与元信息吃满整张卡；键盘用 Shift+F10 / 菜单键走同一个菜单。
+      const openMenu = attachContextMenu(doc, li, {
+        label: `会话操作：${displayTitle(session)}`,
+        items: [
+          { label: "改名", icon: "pencil", onSelect: () => beginRename(li, session) },
+          { label: "删除", icon: "trash", danger: true, onSelect: () => removeSession(session) },
+        ],
       });
-      actions.append(rename, remove);
       const select = async () => {
         currentId = session.id;
         renderSessionList();
@@ -626,12 +624,17 @@ export function createChatPane(root, ctx = {}) {
       (li.dataset ??= {}).sessionId = session.id;
       li.addEventListener("click", select);
       li.addEventListener("keydown", (event) => {
-        if (event.target && event.target !== li) return; // buttons and the rename input handle their own keys
+        if (event.target && event.target !== li) return; // the rename input handles its own keys
+        if (isContextMenuKey(event)) {
+          event.preventDefault?.();
+          openMenu(event);
+          return;
+        }
         if (event.key !== "Enter" && event.key !== " ") return;
         event.preventDefault();
         select();
       });
-      li.append(title, meta, actions);
+      li.append(title, meta);
       els.sessionList.append(li);
     }
   }

@@ -6,6 +6,7 @@ export class Element {
   constructor(tag = "div") {
     this.tagName = tag; this.children = []; this.listeners = {}; this.dataset = {}; this.attrs = {};
     this.value = ""; this.hidden = false; this.disabled = false; this.open = false;
+    this.style = {}; // 浮层（右键菜单）的摆位写这里；伪 DOM 里没有布局，只记最后写入的 left/top
     this.title = ""; this.className = ""; this.scrollTop = 0; this.scrollHeight = 100; this.focused = 0;
     const self = this;
     this.classList = {

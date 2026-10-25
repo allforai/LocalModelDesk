@@ -19,6 +19,7 @@ import re
 import time
 from pathlib import Path
 
+import pytest
 from playwright.sync_api import expect
 
 from desk.testing import launch_test_harness
@@ -267,8 +268,8 @@ def test_rename_stops_automatic_titles(page, tmp_path):
         pane = _open(page, harness)
         session_id = _current_id(pane)
         item = pane.locator(CURRENT_ITEM)
-        item.hover()
-        item.get_by_role("button", name="改名").click()
+        item.click(button="right")
+        page.get_by_role("menuitem", name="改名").click()
         rename = item.locator("input.session-rename")
         rename.fill("我的海报")
         rename.press("Enter")
@@ -302,8 +303,9 @@ def test_ac5_deleting_a_session_keeps_its_images_in_the_library(page, tmp_path):
         pane.locator(f"{SESSION_ITEMS}[data-session-id='{doomed}']").click()
         expect(pane.locator(CURRENT_ITEM)).to_have_attribute("data-session-id", doomed)
         item = pane.locator(CURRENT_ITEM)
-        item.hover()
-        item.get_by_role("button", name="删除会话：将被删除分组的灯塔").click()
+        item.click(button="right")
+        expect(page.get_by_role("menu", name="会话操作：将被删除分组的灯塔")).to_be_visible()
+        page.get_by_role("menuitem", name="删除").click()
         # D-90: focus starts on 「取消」, and that focus is visible, not only present in the DOM (N-01).
         focus = page.evaluate("""() => { const b = document.activeElement; const s = getComputedStyle(b);
             return {text: b.innerText, in_dialog: !!b.closest('.overlay .dialog'),
@@ -383,8 +385,9 @@ def test_deleting_a_session_while_it_generates_sends_the_image_to_the_library_on
         _generate(pane, "生成中被删的会话")
         expect(_cards(pane).first).to_have_attribute("data-attempt-status", "running")
         item = pane.locator(CURRENT_ITEM)
-        item.hover()
-        item.get_by_role("button", name="删除会话：生成中被删的会话").click()
+        item.click(button="right")
+        expect(page.get_by_role("menu", name="会话操作：生成中被删的会话")).to_be_visible()
+        page.get_by_role("menuitem", name="删除").click()
         page.locator(".overlay .dialog").get_by_role("button", name="删除").click()
         expect(pane.locator(f"{SESSION_ITEMS}[data-session-id='{doomed}']")).to_have_count(0)
         expect(pane.locator(SESSION_ITEMS)).to_have_count(1)  # D-90: an emptied list gets a fresh session
@@ -700,10 +703,10 @@ def test_selected_attempt_with_a_full_size_image_shows_header_image_and_actions_
 
 
 def test_session_list_gives_the_running_title_its_room_and_spaces_the_new_button(page, tmp_path):
-    """D-77 / AC-7 (review N-02, N-03): the 生成中 mark takes room from the title, but the hidden
-    改名/删除 buttons do not — a short title next to 生成中 is shown whole, at 1280×800 and 900×700.
-    The 新会话 button does not touch the first session item. Hovering an item still reveals both
-    buttons, and they do not cover the title."""
+    """D-77 / AC-7 (review N-02, N-03): the 生成中 mark takes room from the title, nothing else does —
+    the title row is as wide as the card's content box at 1280×800 and 900×700. The 新会话 button does
+    not touch the first session item. 2026-10-25：改名/删除不再占卡片里的一列（右键菜单），所以这条
+    只查「标题行吃满整卡」与「右键能拿到两项」，不再有悬停露按钮那一段。"""
     for name, (width, height) in VIEWPORTS.items():
         page.set_viewport_size({"width": width, "height": height})
         with _harness(tmp_path / name, [default_media_steps()]) as harness:
@@ -715,23 +718,29 @@ def test_session_list_gives_the_running_title_its_room_and_spaces_the_new_button
             page.mouse.move(width - 5, height - 5)  # not over the list
             item.evaluate("(li) => document.activeElement?.blur()")
             geo = item.evaluate("""(li) => {
-              const t = li.querySelector('.session-title'), a = li.querySelector('.session-actions');
+              const r = (n) => n.getBoundingClientRect();
+              const row = r(li.querySelector('.session-title-row'));
+              const title = li.querySelector('.session-title');
+              const box = r(li), style = getComputedStyle(li);
               const nb = document.querySelector('#pane-image [data-image-session-new]').getBoundingClientRect();
               const first = document.querySelector('#pane-image [data-image-session-list] li').getBoundingClientRect();
-              return {text: t.textContent, scroll: t.scrollWidth, client: t.clientWidth,
-                      actions_width: a.getBoundingClientRect().width, gap: first.top - nb.bottom};
+              return {text: title.textContent, scroll: title.scrollWidth, client: title.clientWidth,
+                      row_left: row.left, row_right: row.right,
+                      content_left: box.left + parseFloat(style.paddingLeft) + parseFloat(style.borderLeftWidth),
+                      content_right: box.right - parseFloat(style.paddingRight) - parseFloat(style.borderRightWidth),
+                      actions: li.querySelectorAll('.session-actions').length, gap: first.top - nb.bottom};
             }""")
-            assert geo["scroll"] <= geo["client"], (name, "title cut beside 生成中 while buttons are hidden", geo)
+            assert geo["scroll"] <= geo["client"], (name, "title cut beside 生成中", geo)
+            assert geo["actions"] == 0, (name, "会话卡里还留着动作列", geo)
+            assert geo["row_left"] == pytest.approx(geo["content_left"], abs=0.6), (name, "标题行没贴左", geo)
+            assert geo["row_right"] == pytest.approx(geo["content_right"], abs=0.6), (name, "标题行没吃满整张卡", geo)
             assert geo["gap"] >= 8, (name, "新会话 button touches the first session item", geo)
-            item.hover()
-            expect(item.get_by_role("button", name="改名")).to_be_visible()
-            expect(item.get_by_role("button", name=re.compile("^删除会话："))).to_be_visible()
-            hovered = item.evaluate("""(li) => {
-              const r = (n) => n.getBoundingClientRect();
-              const row = r(li.querySelector('.session-title-row')), acts = r(li.querySelector('.session-actions'));
-              return {row_right: row.right, actions_left: acts.left};
-            }""")
-            assert hovered["row_right"] <= hovered["actions_left"] + 0.5, (name, "buttons overlap the title", hovered)
+            # 动作在右键菜单里：两项都在，卡片自己的那一列不受影响（菜单是浮层）。
+            item.click(button="right")
+            expect(page.get_by_role("menuitem", name="改名")).to_be_visible()
+            expect(page.get_by_role("menuitem", name="删除")).to_be_visible()
+            page.keyboard.press("Escape")
+            expect(page.get_by_role("menu")).to_have_count(0)
             harness.media_script.step()
             harness.media_script.step()
             expect(pane.locator("[data-image-start]")).to_be_enabled(timeout=15_000)

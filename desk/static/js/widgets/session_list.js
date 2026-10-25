@@ -1,7 +1,8 @@
-// 会话式媒体页（图片、音乐）左栏的会话列表项（设计 D-77、§7.2、D-89、D-90），与聊天页 renderSessionList 同构：
-// card session 卡片、右侧图标按钮列、当前项 aria-current。只画 DOM，动作交回面板。
-// kindClass 是各页自己的类名（图片 image-session、音乐 music-session）。
-import { addIcon } from "../icons.js";
+// 会话式媒体页（图片、音乐、视频）左栏的会话列表项（设计 D-77、§7.2、D-89、D-90），与聊天页
+// renderSessionList 同构：card session 卡片、当前项 aria-current。只画 DOM，动作交回面板。
+// 2026-10-25：动作（改名/删除）从右侧那列按钮改成右键菜单（跟聊天页同一套）；坏会话只有「删除」。
+// kindClass 是各页自己的类名（图片 image-session、音乐 music-session、视频 video-session）。
+import { attachContextMenu, isContextMenuKey } from "./context_menu.js";
 import { sessionMeta, sessionTitle } from "../pure/media_session.js";
 
 export function renderSessionItem(doc, summary, { current, onSelect, onRename, onDelete, kindClass }) {
@@ -32,31 +33,28 @@ export function renderSessionItem(doc, summary, { current, onSelect, onRename, o
   meta.className = "session-meta";
   meta.textContent = sessionMeta(summary);
 
-  const actions = doc.createElement("div");
-  actions.className = "session-actions";
-  if (!summary.corrupt) {
-    const rename = doc.createElement("button");
-    rename.className = "btn-sm";
-    rename.setAttribute("aria-label", "改名");
-    addIcon(rename, "pencil", doc);
-    rename.addEventListener("click", (event) => { event.stopPropagation?.(); onRename(li, summary); });
-    actions.append(rename);
-  }
-  const remove = doc.createElement("button");
-  remove.className = "btn-danger btn-sm";
-  remove.setAttribute("aria-label", `删除会话：${title}`);
-  addIcon(remove, "trash", doc);
-  remove.addEventListener("click", (event) => { event.stopPropagation?.(); onDelete(summary); });
-  actions.append(remove);
+  // 动作在右键菜单里（跟聊天页同一套）：坏会话读不出标题，没法改名，只留「删除」。
+  const openMenu = attachContextMenu(doc, li, {
+    label: `会话操作：${title}`,
+    items: [
+      ...(summary.corrupt ? [] : [{ label: "改名", icon: "pencil", onSelect: () => onRename(li, summary) }]),
+      { label: "删除", icon: "trash", danger: true, onSelect: () => onDelete(summary) },
+    ],
+  });
 
   li.addEventListener("click", () => onSelect(summary));
   li.addEventListener("keydown", (event) => {
-    if (event.target && event.target !== li) return; // 按钮与改名输入框自己处理按键
+    if (event.target && event.target !== li) return; // 改名输入框自己处理按键
+    if (isContextMenuKey(event)) {
+      event.preventDefault?.();
+      openMenu(event);
+      return;
+    }
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault?.();
     onSelect(summary);
   });
-  li.append(titleRow, meta, actions);
+  li.append(titleRow, meta);
   return li;
 }
 
