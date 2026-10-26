@@ -94,3 +94,30 @@ def test_scrollbars_are_thin_in_the_session_list_and_messages(page, tmp_path):
         assert widths["sessions"]["overflows"] and widths["messages"]["overflows"], widths
         assert widths["sessions"]["bar"] <= 8, widths
         assert widths["messages"]["bar"] <= 8, widths
+
+
+@pytest.mark.parametrize("tab", ["chat", "image", "video", "music"])
+def test_session_cards_keep_clear_of_the_scrollbar(page, tmp_path, tab):
+    """用户 2026-10-26 截图：会话卡右边钻到滚动条底下，卡和滚动条之间没有间隔；聊天页「新会话」也贴着第一张卡。"""
+    page.set_viewport_size({"width": 1440, "height": 600})
+    with launch_test_harness(tmp_path) as harness:
+        for n in range(14):
+            if tab == "chat":
+                page.request.post(f"{harness.base_url}/api/sessions", data={"title": f"会话 {n}"})
+            else:
+                page.request.post(f"{harness.base_url}/api/media-sessions/{tab}", data={})
+        page.goto(harness.base_url)
+        page.click(f'#tabs [data-tab="{tab}"]')
+        page.wait_for_selector(f"#pane-{tab} li.session")
+        m = page.evaluate(
+            "(tab) => { const s = document.querySelector(`#pane-${tab} .sessions`);"
+            " const r = s.getBoundingClientRect(); const bar = s.offsetWidth - s.clientWidth;"
+            " const cards = [...s.querySelectorAll('li.session')].map(c => c.getBoundingClientRect());"
+            " const head = s.querySelector('.sessions-head').getBoundingClientRect();"
+            " return {overflows: s.scrollHeight > s.clientHeight, hScroll: s.scrollWidth - s.clientWidth,"
+            " gap: (r.right - bar) - Math.max(...cards.map(c => c.right)), headGap: cards[0].top - head.bottom}; }",
+            tab)
+        assert m["overflows"], m
+        assert m["hScroll"] == 0, m
+        assert m["gap"] >= 8, m
+        assert m["headGap"] >= 8, m

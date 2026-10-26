@@ -48,10 +48,10 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 /* 5. chat (ChatGPT-style) */
 #pane-chat{display:flex;gap:var(--margin);height:calc(100vh - 94px);min-height:0;overflow:hidden}
 .sessions{overflow:auto;min-height:0}
-.sessions{width:248px;flex:none;padding:4px;margin:-4px}/* 4px inside the scroll clip so focus rings on edge controls are not cut; the negative margin keeps the 240px column where it was */
+.sessions{width:248px;flex:none;padding:4px 8px 4px 4px;margin:-4px;scrollbar-gutter:stable}/* 4px inside the scroll clip so focus rings on edge controls are not cut; the negative margin keeps the 240px column where it was. The scrollbar lane is always reserved, 8px (--gap) off the cards */
 .chat-main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
 .model-row{display:flex;gap:var(--gap);align-items:center;flex-wrap:wrap}
-.messages{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:32px;max-width:var(--chat-col);width:calc(100% - 48px);margin:0 auto;padding:16px 4px 0}
+.messages{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:32px;max-width:var(--chat-col);width:calc(100% - 48px);margin:0 auto;padding:16px 8px 0}
 .msg-user{align-self:flex-end;max-width:70%}.msg-user .bubble{background:var(--bubble);border-radius:18px;padding:10px 16px;line-height:1.6;white-space:pre-wrap}
 .msg-assistant{align-self:flex-start;max-width:100%;line-height:1.7}
 .who{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:10px}.who .dot{width:20px;height:20px;border-radius:50%;background:var(--accent)}
@@ -270,7 +270,7 @@ body.drawer-open::before { content:""; position:fixed; inset:0; background:#0009
 .sessions-state{padding:8px 4px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .sessions-state p{margin:0}
 /* 「新会话」按钮与第一项之间留出与列表项相同的间距（N-03） */
-#pane-image .sessions ul, #pane-music .sessions ul, #pane-video .sessions ul{margin-top:12px}
+.sessions > ul{margin-top:12px}
 /* 图片/音乐/视频会话项：标题与「生成中」标记一直用满整行——N-02 那会儿要靠悬停让位给按钮列，
    2026-10-25 动作进了右键菜单，这里不再需要任何规则（留着坐标：别再把那一列加回来）。 */
 /* 13. music sessions（音乐会话设计 §2）：布局与图片页同构，上面的 #pane-image 规则已同时作用于 #pane-music */
@@ -339,7 +339,7 @@ audio.video-preview-media { width: min(360px, 100%); height: 36px; }
    两个按钮由横排改为竖排只在窄于 100px 时发生（容器查询），此时按钮已缩成图标，看不出跳动。
    减弱动效时由第 11 节的全局规则关掉所有过渡。 */
 .sessions{--sessions-ease:cubic-bezier(.2,.8,.2,1);container-type:inline-size;overflow-x:hidden;overflow-y:auto;transition:width 220ms var(--sessions-ease)}
-.sessions.is-collapsed{width:44px}
+.sessions.is-collapsed{width:44px;padding-right:4px;overflow-y:hidden;scrollbar-gutter:auto}/* the hidden list keeps its height: no scrollbar, and the lane goes back to the icon buttons */
 .sessions-head{display:flex;align-items:center;gap:8px}
 .sessions-toggle{flex:none;margin-left:auto;width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);border-radius:var(--radius);transition:color 150ms ease,background-color 150ms ease}
 .sessions-toggle:hover{color:var(--text);background:var(--panel);border-color:transparent}
@@ -347,7 +347,7 @@ audio.video-preview-media { width: min(360px, 100%); height: 36px; }
 .sessions-toggle .icon{width:18px;height:18px}
 .sessions-new{flex:none;min-width:0;white-space:nowrap;overflow:hidden;transition:padding 220ms var(--sessions-ease),gap 220ms var(--sessions-ease)}
 .sessions-new-label{display:inline-block;max-width:8em;overflow:hidden;opacity:1;transition:max-width 220ms var(--sessions-ease),opacity 160ms ease 60ms}
-.sessions > ul{min-width:240px;opacity:1;transform:none;visibility:visible;transition:opacity 180ms ease 80ms,transform 220ms var(--sessions-ease),visibility 0s linear 0s}
+.sessions > ul{min-width:228px;opacity:1;transform:none;visibility:visible;transition:opacity 180ms ease 80ms,transform 220ms var(--sessions-ease),visibility 0s linear 0s}
 .sessions.is-collapsed .sessions-new{padding:9px;gap:0}
 .sessions.is-collapsed .sessions-new-label{max-width:0;opacity:0;transition:max-width 220ms var(--sessions-ease),opacity 100ms ease}
 .sessions.is-collapsed > ul{opacity:0;transform:translateX(-8px);visibility:hidden;pointer-events:none;transition:opacity 120ms ease,transform 220ms var(--sessions-ease),visibility 0s linear 220ms}
