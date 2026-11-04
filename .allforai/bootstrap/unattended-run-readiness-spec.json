@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "forbid_mid_run_user_prompts": true,
+  "forbid_hidden_fallback_completion": true,
+  "max_repair_attempts": 3,
+  "long_task_policy": {"file_based_handoff": true, "polling": true, "timeout": true, "retry": true, "resume": true,
+    "notes": "真实模型出图与 app 构建可能耗时数分钟：后台运行 + 轮询输出文件，单步超时 30 分钟，失败按 run-policy 重试，中断后按 transition_log 续跑。"},
+  "required_repair_loops": [
+    {"scope": "image-sessions verification", "qa_node_ids": ["image-session-verify"], "repair_node_id": "image-session-repair",
+     "closure_node_ids": ["image-session-ship"], "max_attempts": 3}
+  ],
+  "required_capabilities": [
+    {"capability": "codex_cli", "required": false, "reason": "视觉评审二优先后端；缺失时由第二个全新上下文子代理替代（ADR-0003）"}
+  ],
+  "required_tools": [
+    {"name": "python3 + pytest", "check": "python3 -m pytest --version"},
+    {"name": "node", "check": "node --version"},
+    {"name": "playwright chromium", "check": "python3 -c \"import playwright\""},
+    {"name": "image model", "check": "test -d image-models/qwen-image-2.1-heretic"},
+    {"name": "codesign identity", "check": "security find-identity -v -p codesigning"}
+  ],
+  "human_decisions_required_before_run": [],
+  "visual_acceptance": {"criteria_producer": "image-session-design", "screenshot_nodes": ["image-session-verify", "image-session-ship"], "dual_review": true},
+  "forbidden_completion_downgrades": ["existence_only", "structure_only", "function_only", "mock-served runtime evidence counted as done"]
+}

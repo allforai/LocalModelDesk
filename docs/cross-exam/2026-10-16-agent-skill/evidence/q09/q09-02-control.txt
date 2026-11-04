@@ -1,0 +1,26 @@
+$ /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin/lmdesk status
+exit=0
+--stdout--
+台面：http://127.0.0.1:8766
+对话模型：idle 
+媒体任务：空闲
+版本：lmdesk 1.0.0 / 台面 1.0.0
+--stderr--
+
+$ /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin/lmdesk status --json
+exit=0
+--stdout--
+{"desk": {"reachable": true, "url": "http://127.0.0.1:8766"}, "llm": {"status": "idle", "model": null, "loaded_by": null, "active_chats": 0}, "media": {"running": false, "kind": "video"}, "version": {"cli": "1.0.0", "desk": "1.0.0"}}
+--stderr--
+
+$ /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin/lmdesk models
+exit=0
+--stdout--
+glm	GLM 4.7 Flash 越狱 8bit	29.7 GB
+superqwen	SuperQwen3.8 27B 越狱 4bit	16.1 GB
+qwen27	Qwen3.8 27B 越狱 8bit	29.5 GB
+gemma	Gemma 4 31B 越狱 8bit 视觉	33.8 GB
+qwen35	Qwen3.6 35B-A3B 越狱 8bit	36.8 GB
+llama70	Llama 3.3 70B 越狱 8bit	75.0 GB
+--stderr--
+

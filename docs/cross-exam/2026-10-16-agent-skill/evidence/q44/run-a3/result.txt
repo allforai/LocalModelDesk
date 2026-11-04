@@ -1,0 +1,2 @@
+rc=0 elapsed=10.53
+listen: python3.1 27879   aa    4u  IPv4 0x6eae0e8236465b5d      0t0  TCP 127.0.0.1:8766 (LISTEN)

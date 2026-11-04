@@ -1,0 +1,1 @@
+{"content": "\n\n你好！很高兴见到你，有什么可以帮你的吗？", "reasoning": "用户要求我用一句话打招呼。这是一个简单的问候请求，我用中文回复一句简短的问候即可。\n", "usage": {"prompt_tokens": 15, "completion_tokens": 35, "total_tokens": 50, "prompt_tokens_details": {"cached_tokens": 0}}, "finish_reason": "stop", "model": "superqwen"}

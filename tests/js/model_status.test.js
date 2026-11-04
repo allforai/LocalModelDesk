@@ -64,7 +64,7 @@ test("本项下载中：只有取消", () => {
 
 test("别项下载中：下载/续传禁用并注明原因（R-resources-09 前端侧）", () => {
   const v = rowView(entry, { ...base, state: "missing", percent: 0 },
-    { state: "running", key: "llama70" });
+    { state: "running", key: "qwen35" });
   assert.deepEqual(v.actions, ["download"]);
   assert.equal(v.downloadDisabled, true);
   assert.ok(v.downloadDisabledReason.includes("一个下载"));

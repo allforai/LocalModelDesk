@@ -1,0 +1,6 @@
+=== 19:43:32
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:43:37
+state holder= {'kind': 'llm', 'label': 'qwen27', 'display': 'Qwen3.8 27B 越狱 8bit', 'since': 1792406612.6725929, 'phase': 'held'} holders= [{'kind': 'llm', 'label': 'qwen27', 'display': 'Qwen3.8 27B 越狱 8bit', 'since': 1792406612.6725929, 'phase': 'held'}] media_busy= False
+llm {"status": "loaded", "model_key": "qwen27", "error": null, "loaded_at": 1792406614.4062002} loaded_model= {'key': 'qwen27', 'name': 'Qwen3.8 27B 越狱 8bit', 'hf_repo': 'ailexleon/Huihui-Qwen3.8-27B-abliterated-mlx-8Bit', 'served_id': 'ailexleon/Huihui-Qwen3.8-27B-abliterated-mlx-8Bit', 'vision': True, 'quant': '8bit', 'params': '27B', 'gb': 29.5} active_chats= 1 ui_recent= False loaded_by= agent

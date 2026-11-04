@@ -1,0 +1,9 @@
+# 01 apply all four
+skill_dir /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+cli_path /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin/lmdesk
+{"key": "claude", "name": "Claude Code", "path": "/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.ImUjLpOtz7/.claude/skills/local-model-desk", "detected": true, "shared_note": null, "state": "occupied", "target": null, "message": "这里已有同名文件或目录，台面不会改动", "result": "error"}
+{"key": "codex", "name": "Codex", "path": "/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.ImUjLpOtz7/.agents/skills/local-model-desk", "detected": false, "shared_note": "同时对 pi、DeepSeek Harness 生效", "state": "installed", "target": "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk", "message": null, "result": "ok"}
+{"key": "pi", "name": "pi", "path": "/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.ImUjLpOtz7/.pi/agent/skills/local-model-desk", "detected": true, "shared_note": null, "state": "occupied", "target": "/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.Bgc49rroAg", "message": "这里已有指向 /var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.Bgc49rroAg 的链接，台面不会改动", "result": "error"}
+{"key": "dsh", "name": "DeepSeek Harness", "path": "/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.ImUjLpOtz7/.dsh/skills/local-model-desk", "detected": true, "shared_note": null, "state": "installed", "target": "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk", "message": null, "result": "ok"}
+cli {"path": "/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.ImUjLpOtz7/.local/bin/lmdesk", "state": "occupied", "target": null, "message": "这里已有同名文件或目录，台面不会改动", "result": "error"}
+exit=0

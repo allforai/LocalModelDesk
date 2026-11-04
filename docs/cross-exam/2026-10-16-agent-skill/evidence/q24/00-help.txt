@@ -1,0 +1,29 @@
+usage: lmdesk [-h] {status,models,ask,image,video,music} ...
+
+本机模型台面（LocalModelDesk）的命令行
+
+positional arguments:
+  {status,models,ask,image,video,music}
+    status              台面状态
+    models              本机对话模型
+    ask                 问本地对话模型（一次性）
+    image               本地生图与图片会话
+    video               本地生成视频与视频会话
+    music               本地生成音乐与音乐会话
+
+options:
+  -h, --help            show this help message and exit
+usage: lmdesk music [-h] {sessions,new,show,gen,wait,rename,join} ...
+
+positional arguments:
+  {sessions,new,show,gen,wait,rename,join}
+    sessions            列出音乐会话
+    new                 新建音乐会话
+    show                查看会话里的尝试
+    gen                 在会话里生成音乐
+    wait                等待某次尝试的结果
+    rename              重命名会话
+    join                把几段合成成片
+
+options:
+  -h, --help            show this help message and exit

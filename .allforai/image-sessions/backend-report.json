@@ -1,0 +1,51 @@
+{
+  "node_id": "image-session-backend",
+  "status": "passed",
+  "requirement_ref": {"path": ".allforai/bootstrap/local-requirements.json", "id": "image-sessions", "revision": 1},
+  "design_doc": "docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+  "evidence": [
+    {"kind": "real-test", "path": ".allforai/image-sessions/evidence/pytest-backend.json",
+     "command": "python3 -m pytest tests --ignore=tests/e2e -q", "result": "1106 passed"},
+    {"kind": "real-api", "path": ".allforai/image-sessions/evidence/real-api-harness.json",
+     "command": "python3 .allforai/image-sessions/probe_real_api.py",
+     "result": "create -> 400 session_required without session -> generate x2 (done, same seed kept) -> cancel (cancelled) -> relaunch on same data root: list/attempts unchanged -> DELETE -> history and outputs identical, PNGs still served",
+     "served_by": {"host": "127.0.0.1 ephemeral port", "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, arbiter)",
+                   "mock_layers": ["FakeMediaExecutor (scripted, writes a gradient PNG instead of running image_cli.py)", "FakeMemoryReader", "FakeLlmBackend", "FixedClock", "stub mflux/mlx packages so the real image_runtime probe reports present"],
+                   "fixtures": ["desk/testing/seed.py (sparse qwen-image pipeline, TINY_PNG)", "desk/testing/scripts.py (fast_media_steps, cancellable_media_steps)"]}},
+    {"kind": "real-test", "path": ".allforai/image-sessions/evidence/pytest-e2e.json",
+     "command": "python3 -m pytest tests/e2e -q", "result": "67 passed (regression check: desk/testing changed)"}
+  ],
+  "consumers": [
+    {"file": "desk/runtime.py", "line": 194, "contains": "library = LibraryService(roots)", "role": "production: LibraryService builds ImageSessionStore and runs recover_running()"},
+    {"file": "desk/runtime.py", "line": 206, "contains": "image_sessions=library.image_sessions", "role": "production: store handed to MediaService"},
+    {"file": "desk/testing/harness.py", "line": 347, "contains": "image_sessions=library.image_sessions", "role": "test harness: store handed to MediaService"},
+    {"file": "desk/library/__init__.py", "line": 22, "contains": "ImageSessionStore(roots.image_sessions_dir, roots.outputs_root)", "role": "store construction"}
+  ],
+  "downstream_contract": {
+    "routes": {
+      "GET /api/image-sessions": "200 [{id,title,created,updated,attempt_count,running,cover}] sorted by updated desc; corrupt files {id,corrupt:true} last; [] when the directory is missing",
+      "POST /api/image-sessions": "body empty or {}; any key -> 400 {error:'不认识的字段：[...]'}; 200 full session {id,title:'新会话',title_auto:true,created,updated,attempts:[]}",
+      "GET /api/image-sessions/{id}": "200 full session, done attempts carry output_missing (response only); 404 {error:'会话不存在：<id>'}; corrupt -> 400 {error:'会话文件已损坏，无法读取'}",
+      "PATCH /api/image-sessions/{id}": "{title} only; other keys -> 400; title stripped 1-80 chars else 400 {error:'标题须为 1–80 个字'}; 200 full session with title_auto:false; 404",
+      "DELETE /api/image-sessions/{id}": "200 {deleted:id}; 404; allowed while an attempt is running; removes only <id>.json",
+      "POST /api/media/image": "adds session_id (required): not a string -> 400 {error:{code:'session_required',message:'请先选择或新建一个会话',detail:{}}}; unknown -> 404 {error:{code:'session_not_found',message:'这个会话已被删除，请选择或新建一个会话',detail:{}}}; seed optional (omitted/null -> secrets.randbelow(2**32)); 200 job_status snapshot plus session_id and attempt_id",
+      "GET /api/media/job": "job_status always carries session_id and attempt_id (null for video/music and for an image job whose session vanished before it attached)"
+    },
+    "attempt": "{id,job_id,ts,finished,status,params:{prompt,width,height,steps,seed},output,error}",
+    "attempt_status_enum": ["running", "done", "failed", "cancelled"],
+    "error_codes": ["exit_nonzero", "no_output", "worker_failed", "cancelled", "cancelled_on_quit", "interrupted"],
+    "history_entry": "image entries gain top-level session_id and attempt_id (null when not attached)",
+    "harness": "launch_test_harness(tmp_path, model_states={'qwen-image': 'present', ...}, image_runtime=True, media_script=MediaScript([...])) runs image jobs with the fake executor writing a 96x64 gradient PNG; relaunching on the same tmp_path keeps the data root (simulated restart). TestHarness.close() still does not call media.close()."
+  },
+  "quality_questions": {
+    "shutdown_mid_job": "MediaService.close() now joins the worker thread, so the attempt is settled cancelled_on_quit before shutdown returns (test_close_settles_attempt_cancelled_on_quit_before_returning); a killed process leaves running attempts that LibraryService startup settles failed/interrupted (test_library_startup_recovers_running_attempts, production wiring test).",
+    "concurrent_writes": "every write reads, modifies and atomically rewrites the file under one lock with no in-memory copy (test_concurrent_settle_and_rename_lose_no_writes, test_concurrent_appends_from_two_writers_all_land).",
+    "delete_isolation": "delete unlinks only <id>.json; /api/outputs, /api/history, the outputs directory listing and history.jsonl bytes are identical before and after (test_delete_removes_only_the_session_file, harness wiring test, real-api probe).",
+    "path_traversal": "ids must match ^[0-9a-f]{32}$ before any path is built; traversal ids get 404 / False and a file outside the directory is untouched (test_ids_outside_the_hex_pattern_never_reach_the_filesystem)."
+  },
+  "scope_read": ["desk/library/*", "desk/media/service.py", "desk/media/routes.py", "desk/foundation/paths.py", "desk/foundation/routes.py", "desk/runtime.py", "desk/testing/{harness,fakes,seed,scripts}.py", "desk/media/image_model.py", "desk/foundation/capabilities.py", "tests/test_production_runtime.py"],
+  "code_gaps": [],
+  "test_gaps": [],
+  "contract_gaps": [],
+  "downstream_effect_owner": "image-session-verify"
+}

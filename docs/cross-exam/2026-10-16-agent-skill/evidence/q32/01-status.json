@@ -1,0 +1,1 @@
+{"state": {"status": "error", "model_key": "superqwen", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null}, "loaded_model": null, "active_chats": 0, "ui_chat_recent": false, "loaded_by": null}

@@ -1,0 +1,67 @@
+{
+  "case_id": "real-timeline-three-rounds-top-narrow",
+  "label": "timeline-three-rounds-top (narrow, real app + real model)",
+  "build": "a45ad86+793484ea72d8",
+  "captured_at": "2026-09-24T09:43:15+09:00",
+  "capture_mode": "viewport",
+  "headless": false,
+  "scrollbars": "overlay",
+  "scroll_profile": {
+    "scroll_width": 900,
+    "client_width": 900,
+    "scroll_height": 606,
+    "client_height": 606,
+    "gutter_px": 0
+  },
+  "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+  "setup": {
+    "js": "(() => { const t = document.querySelector('#pane-image [data-image-timeline]'); t.scrollTop = 0; t.dispatchEvent(new Event('scroll')); return true; })()",
+    "result": {
+      "value": true
+    }
+  },
+  "window": {
+    "height": 700,
+    "backing_scale": 2,
+    "width": 900,
+    "window_number": 19738
+  },
+  "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 900,
+    "height": 700,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "dynamic_type": "浏览器缩放 100%",
+    "orientation": "landscape",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+      "scroll_width": 900,
+      "client_width": 900,
+      "scroll_height": 606,
+      "client_height": 606,
+      "gutter_px": 0
+    },
+    "scroll_source": "#pane-image",
+    "pane": "#pane-image",
+    "session_list_profile": {
+      "scroll_width": 248,
+      "client_width": 248,
+      "scroll_height": 566,
+      "client_height": 566,
+      "gutter_px": 0
+    },
+    "tab": "tab=image"
+  },
+  "images": [
+    "real-timeline-three-rounds-top-narrow.png"
+  ],
+  "image_digests": {
+    "real-timeline-three-rounds-top-narrow.png": "54c1f37e0cb777b8b9eacdb4ec9fed5c175b9f643f4d88511c7b6811e06d98f7"
+  }
+}

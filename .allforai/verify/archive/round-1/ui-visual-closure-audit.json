@@ -1,0 +1,41 @@
+{
+ "auditor": "reviewer-1",
+ "reconciliation": ".allforai/verify/ui-visual-reconciliation.json",
+ "checks": [
+  {
+   "check": "both independent reports exist and neither read the other before writing",
+   "result": "pass",
+   "evidence": "visual-review-1.{json,md} and visual-review-2.{json,md} exist, each merged mechanically from its two batch files (merge_note: 'no judgement was added or removed'). The reviewer prompt (visual-acceptance-batches/reviewer-prompt.txt, rule 3) forbids opening any visual-review-* file other than the reviewer's own, and any ui-visual-reconciliation*/closure-audit* file. Reviewer 2 states in both batch reports that no other reviewer's report was read. The batch files were written almost at the same time (batch A: R2 05:26, R1 05:27; batch B: both 05:44), and neither report cites the other's issue ids. Caveat: reviewer 1's reports carry no explicit non-reading statement; independence for reviewer 1 rests on the prompt rule and the timing."
+  },
+  {
+   "check": "every required state x viewport in the manifest was inspected by both reviewers",
+   "result": "pass",
+   "evidence": "Manifest: required_states=20, required_captures=40, required_missing=[], files_missing=[]. Both reviewers' inspected[] lists are the same 68 paths: all 40 required harness captures (20 states × wide/narrow), 8 supplementary verify-* captures, 16 real-app captures, and the 4 screens-recapture captures that supersede running-other-session-* and model-missing-*. Each has a per_screenshot verdict from both reviewers."
+  },
+  {
+   "check": "every issue cites screenshots that exist",
+   "result": "pass",
+   "evidence": "Every .png path cited in visual-review-1.json and visual-review-2.json was listed with ls, and all exist. Every issue in both reports has a non-empty screenshots[] array. The reconciler also opened 4 screenshots at disagreement points (timeline-three-rounds-wide, refine-prefill-narrow, real-attempt-cancelled-wide, library-after-delete-wide)."
+  },
+  {
+   "check": "every blocking issue is routed to a repair owner",
+   "result": "pass",
+   "evidence": "All 8 blocking-union items (U-01 to U-08) cover every blocker/major from both reviewers (R1: A-001/002/003, B-001..005; R2: A-001..005, B-001..005) and each carries a category and repair_owner. code_gaps → image-session-repair: U-01, U-02, U-04. contract_gaps → image-session-repair: U-06. test_gaps → image-session-verify: U-03, U-05, U-07, U-08. No major was dropped or downgraded; the two severity splits (U-04, U-06) are recorded under disagreements."
+  },
+  {
+   "check": "repairs executed and re-captured / re-reviewed",
+   "result": "pending",
+   "evidence": "2 of 8 are closed. U-07 and U-08: re-captured by tests/e2e/test_image_sessions.py (pytest-e2e-recapture.json: 2 passed), marked superseded in the manifest, and passed by both reviewers in batch B. U-01, U-02, U-03, U-04, U-05 and U-06 have had no repair, re-capture or re-review yet. U-01 is further confirmed by evidence/narrow-scroll/probe.json: at 900×700 scrollTop is 10/46 and 144/180, and the action buttons sit at y=543–578 against a timeline bottom of 558.3."
+  }
+ ],
+ "closure_status": "open",
+ "open_items": [
+  {"id": "U-01", "category": "code_gaps", "repair_owner": "image-session-repair", "item": "Timeline not scrolled to the expanded card's action row after settle/expand/resize (900×700)"},
+  {"id": "U-02", "category": "code_gaps", "repair_owner": "image-session-repair", "item": "Expanded card with real-size image taller than the timeline; header + image + both actions never visible together"},
+  {"id": "U-03", "category": "test_gaps", "repair_owner": "image-session-verify", "item": "timeline-three-rounds: no capture (or declared top/bottom pair) shows 第1→第3 plus the expanded 第3's controls"},
+  {"id": "U-04", "category": "code_gaps", "repair_owner": "image-session-repair", "item": "Cancelled card has no explanation line (stored message not rendered)"},
+  {"id": "U-05", "category": "test_gaps", "repair_owner": "image-session-verify", "item": "library-after-delete: no image-page session list capture after delete in the real-app batch"},
+  {"id": "U-06", "category": "contract_gaps", "repair_owner": "image-session-repair", "item": "种子 visible in 素材库 rows; criteria forbid it, library scope undefined, needs a decision or a fix"}
+ ],
+ "summary": "Closure is OPEN. The review process holds up: two independent reports, full coverage of the 40 required captures plus the supplementary, real-app and re-captured shots, every cited screenshot exists, and every blocking item is routed. But 6 of the 8 merged majors have not been repaired, re-captured or re-reviewed. The central AC-7 requirement, that both action buttons are fully visible on the expanded card at both widths, is not met at 900×700 in the harness or at either width in the real app. After the image-session-repair fixes (U-01, U-02, U-04, and U-06 or its criteria decision) and the image-session-verify captures (U-03, U-05), both reviewers must re-review the affected states before this audit can close."
+}

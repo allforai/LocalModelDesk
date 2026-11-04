@@ -1,0 +1,112 @@
+{
+ "report_ref": "evidence/rules/review.json",
+ "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2",
+ "agent_task": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/adabac2568633b03e.output",
+ "agent_model": "claude-opus-5-5 (session)",
+ "decisions": [
+  {
+   "finding_id": "RC1",
+   "disposition": "clarified",
+   "confirmation": "全部按推荐 (推荐)",
+   "confirmed_at": "2026-10-16T14:12:00+09:00",
+   "effective_rule": "命令行与界面同规则：界面可确认后强制加载对话模型时，命令行也必须有对应的确认路径（不新增界面没有的硬拒绝）。",
+   "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2"
+  },
+  {
+   "finding_id": "RC2",
+   "disposition": "clarified",
+   "confirmation": "全部按推荐 (推荐)",
+   "confirmed_at": "2026-10-16T14:12:00+09:00",
+   "effective_rule": "以第 182 行实测为准：codex 行用 ~/.agents/skills；接受勾选 Codex 同时对 pi、DeepSeek Harness 生效，界面注明。",
+   "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2"
+  },
+  {
+   "finding_id": "RC3",
+   "disposition": "clarified",
+   "confirmation": "全部按推荐 (推荐)",
+   "confirmed_at": "2026-10-16T14:12:00+09:00",
+   "effective_rule": "A-50 codex 链接位置以 ~/.agents/skills 为准，A-53 状态判定也按该路径。",
+   "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2"
+  },
+  {
+   "finding_id": "RC4",
+   "disposition": "clarified",
+   "confirmation": "全部按推荐 (推荐)",
+   "confirmed_at": "2026-10-16T14:12:00+09:00",
+   "effective_rule": "命令行链接 stale 也算「应用后有变化」，「应用」可点，点了即修复。",
+   "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2"
+  },
+  {
+   "finding_id": "RC5",
+   "disposition": "clarified",
+   "confirmation": "全部按推荐 (推荐)",
+   "confirmed_at": "2026-10-16T14:12:00+09:00",
+   "effective_rule": "链接目标不存在显示「已失效，点应用更新」；目标存在但非当前显示「指向旧位置，点应用更新」。",
+   "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2"
+  },
+  {
+   "finding_id": "RC6",
+   "disposition": "clarified",
+   "confirmation": "全部按推荐 (推荐)",
+   "confirmed_at": "2026-10-16T14:12:00+09:00",
+   "effective_rule": "B-11 至 B-20 的命令行校验是 B-00c 的明确例外（为早反馈）；两边不一致时以服务端为准，命令行跟随修改。",
+   "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2"
+  },
+  {
+   "finding_id": "RC7",
+   "disposition": "clarified",
+   "confirmation": "全部按推荐 (推荐)",
+   "confirmed_at": "2026-10-16T14:12:00+09:00",
+   "effective_rule": "设置页说明应补上视频、音乐（改说明文字不算改界面）；第二期跨 agent 验收以已做的真实模型冒烟代替。",
+   "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2"
+  },
+  {
+   "finding_id": "RC8",
+   "disposition": "clarified",
+   "confirmation": "全部按推荐 (推荐)",
+   "confirmed_at": "2026-10-16T14:12:00+09:00",
+   "effective_rule": "退出码 3 覆盖超时与信号中断；SKILL.md 必须区分「已取消」与「仍在跑」两种情况的处理。",
+   "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2"
+  },
+  {
+   "finding_id": "RC9",
+   "disposition": "clarified",
+   "confirmation": "全部按推荐 (推荐)",
+   "confirmed_at": "2026-10-16T14:12:00+09:00",
+   "effective_rule": "join 与 gen 相同：SIGINT 只取消自己提交的合成任务。",
+   "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2"
+  },
+  {
+   "finding_id": "RC10",
+   "disposition": "clarified",
+   "confirmation": "全部按推荐 (推荐)",
+   "confirmed_at": "2026-10-16T14:12:00+09:00",
+   "effective_rule": "open -gj 后台拉起（不弹窗口、不抢前台，菜单栏图标出现可接受）满足「调用时不需要启动界面」。",
+   "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2"
+  },
+  {
+   "finding_id": "RC11",
+   "disposition": "clarified",
+   "confirmation": "全部按推荐 (推荐)",
+   "confirmed_at": "2026-10-16T14:12:00+09:00",
+   "effective_rule": "A-20 决策表多状态同时成立时按表格自上而下取第一条匹配。",
+   "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2"
+  },
+  {
+   "finding_id": "RC12",
+   "disposition": "clarified",
+   "confirmation": "全部按推荐 (推荐)",
+   "confirmed_at": "2026-10-16T14:12:00+09:00",
+   "effective_rule": "两条相容：test_image_cli.py 只走命令行入口、不 import images，原样保留并通过。",
+   "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2"
+  },
+  {
+   "finding_id": "RC13",
+   "disposition": "clarified",
+   "confirmation": "全部按推荐 (推荐)",
+   "confirmed_at": "2026-10-16T14:12:00+09:00",
+   "effective_rule": "本期只做视频和音乐；配乐、参考视频、配乐参考、尾帧及 A-00c 其余非目标以后再做。",
+   "report_digest": "56b54a81a4bc21283df98503ad7fb1192d24e225a2c6b2ceeb5c8d9ce4e29eb2"
+  }
+ ]
+}

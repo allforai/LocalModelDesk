@@ -1,0 +1,34 @@
+{
+ "id": "426da888c94f4f8aa91e1e242a01f99d",
+ "kind": "video",
+ "title": "夜晚的城市街头，霓虹灯倒映在湿漉漉的柏油路面上，…",
+ "title_auto": true,
+ "created": "2026-10-14T16:59:01",
+ "updated": "2026-10-14T17:01:19",
+ "attempts": [
+  {
+   "id": "ba20b893e1184cd1ba55957f7c8589cb",
+   "job_id": 10,
+   "ts": "2026-10-14T16:59:32",
+   "finished": "2026-10-14T17:01:19",
+   "status": "done",
+   "op": "generate",
+   "params": {
+    "prompt": "夜晚的城市街头，霓虹灯倒映在湿漉漉的柏油路面上，一位穿红色风衣的年轻女孩撑着透明雨伞慢慢走过，镜头从低角度缓缓跟随。环境声：细雨声、远处的车流声和脚步声。",
+    "width": 288,
+    "height": 512,
+    "frames": 49,
+    "steps": 16,
+    "seed": 3464665141
+   },
+   "continues": null,
+   "refs": {},
+   "output": "h3-20261014-165932-9c86073f.mp4",
+   "joined_output": null,
+   "joined_error": null,
+   "error": null,
+   "base": null,
+   "output_missing": false
+  }
+ ]
+}

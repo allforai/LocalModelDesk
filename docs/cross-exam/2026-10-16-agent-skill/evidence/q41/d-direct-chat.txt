@@ -1,0 +1,10 @@
+# direct agent chat during ask retry/wait 19:49:26
+HTTP/1.0 200 OK
+Server: BaseHTTP/0.6 Python/3.13.15
+Date: Mon, 19 Oct 2026 10:49:27 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 315
+
+{"content": "\n\n绿", "reasoning": "用户问\"草是什么颜色\"，要求用一个词回答。草的颜色是绿色。一个词：绿。\n", "usage": {"prompt_tokens": 17, "completion_tokens": 28, "total_tokens": 45, "prompt_tokens_details": {"cached_tokens": 0}}, "finish_reason": "stop", "model": "superqwen"}
+# after
+{"state": {"status": "loaded", "model_key": "superqwen", "error": null, "loaded_at": 1792406899.388683}, "loaded_model": {"key": "superqwen", "name": "SuperQwen3.8 27B 越狱 4bit", "hf_repo": "Jiunsong/SuperQwen3.8-27b-abliterated-MLX-4bit", "served_id": "Jiunsong/SuperQwen3.8-27b-abliterated-MLX-4bit", "vision": true, "quant": "4bit", "params": "27B", "gb": 16.1}, "active_chats": 0, "ui_chat_recent": true, "loaded_by": "ui"}

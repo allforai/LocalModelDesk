@@ -120,8 +120,12 @@ class LoadedModel:
         }
 
 
-def delta_event(text: str | None, reasoning: str | None) -> dict[str, Any]:
-    return {"type": "delta", "text": text, "reasoning": reasoning}
+def delta_event(text: str | None, reasoning: str | None, tool_calls: list | None = None) -> dict[str, Any]:
+    """One streamed delta. `tool_calls` appears only when the model emits a call."""
+    event = {"type": "delta", "text": text, "reasoning": reasoning}
+    if tool_calls is not None:
+        event["tool_calls"] = tool_calls
+    return event
 
 
 def done_event(usage: dict, finish_reason: str) -> dict[str, Any]:

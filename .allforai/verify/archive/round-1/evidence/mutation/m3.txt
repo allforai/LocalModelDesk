@@ -1,0 +1,3 @@
+=========================== short test summary info ============================
+FAILED tests/e2e/test_image_sessions.py::test_ac5_deleting_a_session_keeps_its_images_in_the_library
+1 failed, 10 deselected in 2.12s

@@ -1,0 +1,96 @@
+{
+ "id": "35031b967ba24741abc9e7099d3d679a",
+ "kind": "video",
+ "title": "q21-inputs",
+ "title_auto": false,
+ "created": "2026-10-19T18:55:41",
+ "updated": "2026-10-19T19:00:34",
+ "attempts": [
+  {
+   "id": "6c5fb183524142d58fab9c569b42a273",
+   "job_id": 18,
+   "ts": "2026-10-19T18:56:25",
+   "finished": "2026-10-19T18:56:25",
+   "status": "failed",
+   "op": "generate",
+   "params": {
+    "prompt": "x",
+    "width": 768,
+    "height": 448,
+    "frames": 49,
+    "steps": 99999,
+    "seed": 931166298,
+    "mode": "image",
+    "use_audio": true,
+    "first_frame": "420413f448884809a9c3ef59238ae4eb.png"
+   },
+   "continues": null,
+   "refs": {},
+   "output": null,
+   "joined_output": null,
+   "joined_error": null,
+   "error": {
+    "code": "exit_nonzero",
+    "message": "exit 1",
+    "log_tail": "    )\n  File \"<string>\", line 14, in __init__\n  File \"/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/pylibs/h3/mlx_h3/pipeline.py\", line 148, in __post_init__\n    raise ValueError(\"steps must be in [1, 1000]\")\nValueError: steps must be in [1, 1000]"
+   },
+   "base": null
+  },
+  {
+   "id": "a6f224ae107c47e785371f750bf00cae",
+   "job_id": 19,
+   "ts": "2026-10-19T18:56:57",
+   "finished": "2026-10-19T18:59:53",
+   "status": "done",
+   "op": "generate",
+   "params": {
+    "prompt": "猫慢慢眨眼",
+    "width": 768,
+    "height": 448,
+    "frames": 49,
+    "steps": 16,
+    "seed": 4218167991,
+    "mode": "image",
+    "use_audio": true,
+    "first_frame": "318bcca8d8824e8ab5f4d216dcb2569b.png"
+   },
+   "continues": null,
+   "refs": {},
+   "output": "h3-20261019-185657-9dd47de6.mp4",
+   "joined_output": null,
+   "joined_error": null,
+   "error": null,
+   "base": null,
+   "output_missing": false
+  },
+  {
+   "id": "c731dd3baa9b4ffaa371dfcbff716393",
+   "job_id": 20,
+   "ts": "2026-10-19T19:00:04",
+   "finished": "2026-10-19T19:00:34",
+   "status": "cancelled",
+   "op": "generate",
+   "params": {
+    "prompt": "等待中断",
+    "width": 768,
+    "height": 448,
+    "frames": 49,
+    "steps": 16,
+    "seed": 4213610060,
+    "mode": "image",
+    "use_audio": true,
+    "first_frame": "7cb0381e108741c88cbdb3ab2a737121.png"
+   },
+   "continues": null,
+   "refs": {},
+   "output": null,
+   "joined_output": null,
+   "joined_error": null,
+   "error": {
+    "code": "cancelled",
+    "message": "已取消：这次生成被手动停止"
+   },
+   "base": null
+  }
+ ]
+}

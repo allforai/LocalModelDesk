@@ -1,0 +1,25 @@
+== .agents/skills
+total 0
+drwxr-xr-x@ 3 aa  staff   96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  staff   96 Oct 16 15:10 ..
+lrwxr-xr-x@ 1 aa  staff  109 Oct 16 15:10 local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+== .pi/agent/skills
+total 0
+drwxr-xr-x@ 3 aa  staff   96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  staff   96 Oct 16 15:10 ..
+lrwxr-xr-x@ 1 aa  staff  109 Oct 16 15:10 local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+== .claude/skills
+total 0
+drwxr-xr-x@ 3 aa  staff   96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  staff   96 Oct 16 15:10 ..
+lrwxr-xr-x@ 1 aa  staff  109 Oct 16 15:10 local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+== .dsh/skills
+total 0
+drwxr-xr-x@ 3 aa  staff   96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  staff   96 Oct 16 15:10 ..
+lrwxr-xr-x@ 1 aa  staff  109 Oct 16 15:10 local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+== .local/bin
+total 0
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 ..
+lrwxr-xr-x@ 1 aa  staff  78 Oct 16 15:10 lmdesk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin/lmdesk

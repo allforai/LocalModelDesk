@@ -1,0 +1,14 @@
+{
+  "schema": "capture_evidence/v1",
+  "command": [
+    "python3",
+    "-m",
+    "pytest",
+    "tests/e2e/test_image_sessions.py",
+    "-q"
+  ],
+  "exit_code": 0,
+  "stdout": ".................                                                        [100%]\n17 passed in 34.63s\n",
+  "stderr": "",
+  "stdout_sha256": "2624816b14506b256448df12a6a17fede7fcb23255c07f1f1b3bb4d6fe1716f2"
+}

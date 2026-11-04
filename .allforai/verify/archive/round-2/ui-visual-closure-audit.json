@@ -1,0 +1,56 @@
+{
+ "auditor": "reviewer-1",
+ "round": 2,
+ "reconciliation": ".allforai/verify/ui-visual-reconciliation.json",
+ "checks": [
+  {
+   "check": "both independent reports exist and neither read the other before writing",
+   "result": "pass",
+   "evidence": "visual-review-1.{json,md} (claude -p, claude-opus-5-5) and visual-review-2.{json,md} (codex exec, GPT-6) both exist; each merges its two batch reports verbatim. run_reviewer.sh runs the two on separate backends, and reviewer-prompt.txt forbids opening any visual-review-* file other than the reviewer's own, any reconciliation or audit, and archive/. File times show the batches were written concurrently: batch A has R2 at 09:34 and R1 at 09:34/09:36; batch B has R1 at 09:46/09:47 and R2 at 09:47. Neither report cites the other, and their conclusions differ materially (R1 major vs R2 note on the same screenshots). Limit: independence rests on prompt compliance plus these indicators. Reviewer 1 had Read/Glob/Grep, and I did not audit the tool-call logs."
+  },
+  {
+   "check": "every required state x viewport in the manifest was inspected by both reviewers",
+   "result": "pass",
+   "evidence": "ui-screenshot-manifest.json coverage has 38 entries, all 19 criteria states × wide/narrow, each with inspected_by_both: true; missing_required and not_inspected_by_both are both []. Each reviewer's inspected[] lists all 76 PNGs (54 in batch A, 22 in batch B) and has a per_screenshot verdict for each."
+  },
+  {
+   "check": "every issue cites screenshots that exist",
+   "result": "pass",
+   "evidence": "Glob of .allforai/verify/screens/*.png returns the 54 batch A files and ls of evidence/real/ shows the 22 real-*.png files. Every path cited in both reviewers' issues[] and in the reconciliation is in that set. The reconciler opened 8 of them directly."
+  },
+  {
+   "check": "every blocking issue is routed to a repair owner",
+   "result": "pass",
+   "evidence": "The one blocking item, B-01, is routed as visual_quality_gaps to image-session-repair, with a contract follow-up to add a minimum 大图 size to the criteria. All non-blocking items N-01…N-07 carry a category and an owner: image-session-repair for UI, image-session-verify for evidence framing and journey-probe gaps."
+  },
+  {
+   "check": "round-1 blocking items were repaired, re-captured and re-reviewed in this round",
+   "result": "pass",
+   "evidence": "All 8 round-1 items (archive/round-1/ui-visual-reconciliation.json) were re-captured in round 2 and passed by both reviewers. U-01: actions are visible on every expanded narrow card. U-02: header, image and actions show together, though the fix introduced B-01. U-03: top/bottom pairs are declared in both batches. U-04: I opened real-attempt-cancelled-wide and it shows 这次生成被手动停止. U-05: real-after-delete-{wide,narrow} were added, I opened the narrow one, and journey.json shows GET 404 and one session in the UI. U-06: the criteria now exempt 素材库 metadata (D-50a). U-07 and U-08 were re-captured and pass."
+  },
+  {
+   "check": "no blocker/major remains in the union this round",
+   "result": "fail",
+   "evidence": "B-01 (major) remains. At 900×700 the expanded 大图 renders at 96–150px: in busy-other-media-narrow it is the same size as the thumbnail, in verify-selected-full-size-narrow about 110px, and in real-attempt-selected-actions-narrow about 149 CSS px. Reviewer 1 rated it major and reviewer 2 a note. Kept at major under the union rule."
+  }
+ ],
+ "closure_status": "open",
+ "open_items": [
+  {
+   "id": "B-01",
+   "severity": "major",
+   "category": "visual_quality_gaps",
+   "repair_owner": "image-session-repair",
+   "summary": "Expanded 大图 at or near thumbnail size at 900×700 (regression from the round-1 U-02 fix)",
+   "exit_condition": "Expanded cards hide the duplicate header thumbnail and full header prompt. The large image has a floor (≈240px or ≥2× the thumbnail) at 900×700 while the actions stay reachable. An e2e assertion covers this. All listed narrow states are re-captured in both batches and re-reviewed by both reviewers."
+  },
+  {
+   "id": "B-01-contract",
+   "severity": "follow-up",
+   "category": "contract_gaps",
+   "repair_owner": "image-session-repair",
+   "summary": "Add a minimum rendered size for the expanded 大图 to attempt-selected-actions / timeline-three-rounds in visual-acceptance-criteria.md/.json, so reviewers judge against a written floor rather than disagreeing (source of this round's R1-major vs R2-note split)."
+  }
+ ],
+ "summary": "Closure is open. Reviewer independence, full state × viewport coverage by both reviewers, cited screenshots existing, owner routing and round-1 closure (all 8 items re-captured and re-reviewed) all pass. The audit fails on the last check: one major, B-01, remains. The narrow expanded 大图 is thumbnail-sized, a regression introduced by the U-02 fix. After image-session-repair fixes it, image-session-verify must re-capture the narrow states in both batches and run a round-3 double review."
+}

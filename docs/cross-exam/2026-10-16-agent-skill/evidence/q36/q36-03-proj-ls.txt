@@ -1,0 +1,10 @@
+total 0
+drwxr-xr-x@ 3 aa  staff   96 Oct 19 20:48 .
+drwxr-xr-x@ 8 aa  staff  256 Oct 19 20:50 ..
+drwxr-xr-x@ 3 aa  staff   96 Oct 19 20:50 assets
+
+/Users/aa/LocalModelDesk/docs/cross-exam/2026-10-16-agent-skill/evidence/q36/proj/assets:
+total 1200
+drwxr-xr-x@ 3 aa  staff      96 Oct 19 20:50 .
+drwxr-xr-x@ 3 aa  staff      96 Oct 19 20:48 ..
+-rw-r--r--@ 1 aa  staff  613533 Oct 19 20:50 icon.png

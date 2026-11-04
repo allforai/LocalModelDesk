@@ -1,0 +1,5 @@
+I made an app icon with the local image model and saved it as `./assets/icon.png`. It's 1024×1024, with a blue-to-purple rounded-square background and a white symbol in the middle that looks like a speech bubble. There's no text on it.
+
+The project folder was empty, with no README or code, so I couldn't tell what the app does. The design is general-purpose and isn't based on the project's actual purpose.
+
+It's saved in a new image session called 「应用图标」 (attempt `ad8ea2efd502456c915af97f05b895c7`), so it's easy to change. Tell me the app's purpose or a style you want, and I'll either rework this image or make a new one.

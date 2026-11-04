@@ -1,0 +1,4 @@
+Mon Oct 19 20:43:50 JST 2026
+--procs
+--listen
+lsof exit 1

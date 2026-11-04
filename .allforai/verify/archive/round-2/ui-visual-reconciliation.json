@@ -1,0 +1,220 @@
+{
+ "reviewer": "reviewer-1 (claude -p fresh context)",
+ "round": 2,
+ "inputs": [
+  ".allforai/verify/visual-review-1.json",
+  ".allforai/verify/visual-review-1.md",
+  ".allforai/verify/visual-review-2.json",
+  ".allforai/verify/visual-review-2.md",
+  ".allforai/verify/ui-screenshot-manifest.json",
+  ".allforai/verify/visual-acceptance-batches/batch-A-harness.md",
+  ".allforai/verify/visual-acceptance-batches/batch-B-real-app.md",
+  ".allforai/verify/visual-acceptance-batches/reviewer-prompt.txt (independence rules)",
+  ".allforai/verify/visual-acceptance-batches/run_reviewer.sh (independence rules)",
+  ".allforai/visual-qa/visual-acceptance-criteria.md",
+  ".allforai/verify/evidence/real/journey.json",
+  ".allforai/verify/archive/round-1/ui-visual-reconciliation.json (round-1 blocking items only)",
+  "screenshots opened by the reconciler: .allforai/verify/screens/busy-other-media-narrow.png, .allforai/verify/screens/verify-selected-full-size-narrow.png, .allforai/verify/screens/timeline-three-rounds-narrow.png, .allforai/verify/screens/delete-confirm-wide.png, .allforai/verify/evidence/real/real-attempt-selected-actions-narrow.png, .allforai/verify/evidence/real/real-delete-confirm-wide.png, .allforai/verify/evidence/real/real-attempt-cancelled-wide.png, .allforai/verify/evidence/real/real-after-delete-narrow.png"
+ ],
+ "status": "failed_visual_review",
+ "blocking_union": [
+  {
+   "id": "B-01",
+   "root_cause": "At 900×700 the expanded card's large image is shrunk until the whole card fits the timeline. The card also carries the 96px header thumbnail, the header prompt, a second copy of the full prompt, 高级参数 and the action row, so little height is left and the 大图 ends up at or near thumbnail size. I opened three captures. busy-other-media-narrow: the large image is 96px, the same size as the thumbnail directly above it. verify-selected-full-size-narrow: a 1024×1024 image shows at about 110px. real-attempt-selected-actions-narrow: about 149 CSS px, against the 96px thumbnail. Wide captures get about 182–247px. Nothing is clipped, and both action buttons are now fully visible, so round-1 U-01/U-02 are fixed. The way U-02 was fixed (capping the image by the space left in the timeline) caused this regression: at the narrow width the page's main output can no longer really be viewed.",
+   "severity": "major",
+   "severity_note": "Reviewer 1 rated this major (10 narrow harness screenshots fail) and rated the same root cause minor in batch B. Reviewer 2 rated it a note on the grounds that the criteria give a maximum size (≤60vh) but no minimum. Kept at major, the highest severity raised, as the union rule requires. See disagreement 1.",
+   "raised_by": [
+    "reviewer-1:R1-batch-A-harness-001 (major)",
+    "reviewer-1:R1-batch-A-harness-003 (minor, same cause: expanded card repeats the thumbnail and prompt)",
+    "reviewer-1:R1-batch-B-real-app-001 (minor, same cause in the real app)",
+    "reviewer-2:R2-batch-A-harness-001 (note)"
+   ],
+   "screenshots": [
+    ".allforai/verify/screens/busy-other-media-narrow.png",
+    ".allforai/verify/screens/running-other-session-narrow.png",
+    ".allforai/verify/screens/verify-selected-full-size-narrow.png",
+    ".allforai/verify/screens/refine-prefill-narrow.png",
+    ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+    ".allforai/verify/screens/attempt-selected-actions-narrow.png",
+    ".allforai/verify/screens/rename-narrow.png",
+    ".allforai/verify/screens/verify-switch-back-narrow.png",
+    ".allforai/verify/screens/verify-after-delete-narrow.png",
+    ".allforai/verify/screens/verify-four-attempts-narrow.png",
+    ".allforai/verify/screens/timeline-three-rounds-wide.png",
+    ".allforai/verify/screens/attempt-selected-actions-wide.png",
+    ".allforai/verify/evidence/real/real-refine-prefill-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.png"
+   ],
+   "category": "visual_quality_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Remove the duplication before growing the image. When a card is expanded, hide the header thumbnail (the large image replaces it) and shorten the header prompt to the one-line summary; the full prompt stays under the image. This frees about 130px at 900×700. Then give the large image a real floor, e.g. max-height: min(60vh, <timeline height − header − actions>) with min-height ≈ 240px, and when the floor wins, scroll the card so the actions stay reachable (keep the round-1 U-01 scroll-into-view behaviour) instead of shrinking the image further. Add an e2e assertion at 900×700 that the expanded <img> is rendered at ≥ 2× the thumbnail height and that the action buttons are inside the timeline box. Re-capture every listed narrow state in both batches. The contract needs a matching change (routed as follow-up in the closure audit): add a minimum rendered size for 大图 to attempt-selected-actions / timeline-three-rounds in visual-acceptance-criteria.md/.json, so the next round has no reason to disagree."
+  }
+ ],
+ "non_blocking": [
+  {
+   "id": "N-01",
+   "root_cause": "In the real app's delete dialog (WKWebView), 取消 shows no visible focus ring, so the must-show 「取消」获得焦点 cannot be confirmed from pixels. I opened both captures. The harness delete-confirm-wide (Chromium) shows a clear blue ring on 取消. The real-delete-confirm-wide does not, and the list item behind the dialog keeps its blue double outline. So either focus is not moved in WKWebView, or :focus-visible is not applied to programmatic focus there. journey.json does not record the focused element.",
+   "severity": "minor",
+   "raised_by": [
+    "reviewer-1:R1-batch-B-real-app-002 (minor)",
+    "reviewer-2:R2-batch-B-real-app-001 (minor)"
+   ],
+   "screenshots": [
+    ".allforai/verify/evidence/real/real-delete-confirm-wide.png",
+    ".allforai/verify/evidence/real/real-delete-confirm-narrow.png",
+    ".allforai/verify/screens/delete-confirm-wide.png"
+   ],
+   "category": "visual_quality_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Style the dialog's default button with a ring that does not depend on :focus-visible heuristics (e.g. .dialog button:focus or a data-default class). Have real_journey.py record document.activeElement's text when the dialog is open (owner image-session-verify), and recapture."
+  },
+  {
+   "id": "N-02",
+   "root_cause": "When the 生成中 badge shows, the session title in the list is cut to 3–4 characters (会失败的…, 甲会话：…, 删除时还…) although about 90px is free. Width appears to be reserved for edit/delete buttons that are not rendered. This is round-1 N-02 and is not yet fixed.",
+   "severity": "minor",
+   "raised_by": ["reviewer-1:R1-batch-A-harness-002 (minor)"],
+   "screenshots": [
+    ".allforai/verify/screens/running-wide.png",
+    ".allforai/verify/screens/running-narrow.png",
+    ".allforai/verify/screens/running-other-session-wide.png",
+    ".allforai/verify/screens/running-other-session-narrow.png",
+    ".allforai/verify/screens/running-other-session-new-empty-wide.png",
+    ".allforai/verify/screens/running-other-session-new-empty-narrow.png",
+    ".allforai/verify/screens/delete-confirm-running-wide.png",
+    ".allforai/verify/screens/delete-confirm-running-narrow.png"
+   ],
+   "category": "visual_quality_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Reserve action-button width only while the buttons are rendered, or move the 生成中 badge onto the meta line."
+  },
+  {
+   "id": "N-03",
+   "root_cause": "The bottom edge of the 新会话 button touches the first session item's border with no gap, on every image-page screenshot.",
+   "severity": "minor",
+   "raised_by": ["reviewer-1:R1-batch-A-harness-004 (minor)"],
+   "screenshots": [
+    ".allforai/verify/screens/first-entry-auto-session-wide.png",
+    ".allforai/verify/screens/empty-session-narrow.png"
+   ],
+   "category": "visual_quality_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Add 8–12px margin below 新会话."
+  },
+  {
+   "id": "N-04",
+   "root_cause": "Composer draft is global: while viewing session B, the composer holds A's prompt. This is round-1 N-06, still open.",
+   "severity": "note",
+   "raised_by": [
+    "reviewer-1:R1-batch-A-harness-009 (note)",
+    "reviewer-2 (per_screenshot notes on running-other-session-*, no issue id)"
+   ],
+   "screenshots": [
+    ".allforai/verify/screens/running-other-session-wide.png",
+    ".allforai/verify/screens/running-other-session-narrow.png"
+   ],
+   "category": "experience_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Decide against the design whether drafts are per session; not required for this gate."
+  },
+  {
+   "id": "N-05",
+   "root_cause": "Copy details. The empty state says 点「生成图片」 while the button is disabled (model-missing, runtime-unavailable). The title has a stray space after a full-width comma (清晨的港口， 渔船…). In the narrow header, status chips shrink to the vague 媒体：忙 × 忙.",
+   "severity": "note",
+   "raised_by": [
+    "reviewer-1:R1-batch-A-harness-005",
+    "reviewer-1:R1-batch-A-harness-008",
+    "reviewer-1:R1-batch-B-real-app-005"
+   ],
+   "screenshots": [
+    ".allforai/verify/screens/model-missing-wide.png",
+    ".allforai/verify/screens/runtime-unavailable-wide.png",
+    ".allforai/verify/screens/verify-four-attempts-wide.png",
+    ".allforai/verify/evidence/real/real-running-narrow.png"
+   ],
+   "category": "visual_quality_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Point the empty state at the unavailable reason, normalise whitespace in derived titles, and keep a short reason in the narrow header chip."
+  },
+  {
+   "id": "N-06",
+   "root_cause": "The selected session's trash button is solid red with a double focus ring at rest (after restart). It is loud but not a defect.",
+   "severity": "note",
+   "raised_by": ["reviewer-1:R1-batch-B-real-app-003"],
+   "screenshots": [
+    ".allforai/verify/evidence/real/real-after-restart-wide.png",
+    ".allforai/verify/evidence/real/real-after-restart-narrow.png"
+   ],
+   "category": "visual_quality_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Keep the trash button neutral at rest and red only on hover or focus."
+  },
+  {
+   "id": "N-07",
+   "root_cause": "Evidence framing limits. The library captures are scrolled so the header and tabs are off-screen, and the narrow target row is cut. Rename is captured with a single session, so 其他会话项不变 cannot be observed. timeline-three-rounds is proven only by the top/bottom pair. The failed card's 详情 and the after-restart narrow image are off-screen or collapsed. journey.json's UI readback records reason:null for the cancelled attempt, although the screenshot shows 这次生成被手动停止: the probe reads only failure reasons.",
+   "severity": "note",
+   "raised_by": [
+    "reviewer-1:R1-batch-A-harness-006",
+    "reviewer-1:R1-batch-A-harness-007",
+    "reviewer-1:R1-batch-A-harness-010",
+    "reviewer-1:R1-batch-B-real-app-004",
+    "reviewer-2:R2-batch-A-harness-002",
+    "reviewer-2:R2-batch-A-harness-003",
+    "reviewer-2:R2-batch-B-real-app-002",
+    "reconciler (journey.json readback)"
+   ],
+   "screenshots": [
+    ".allforai/verify/screens/library-after-delete-wide.png",
+    ".allforai/verify/screens/library-after-delete-narrow.png",
+    ".allforai/verify/screens/rename-wide.png",
+    ".allforai/verify/screens/rename-narrow.png",
+    ".allforai/verify/screens/timeline-three-rounds-top-wide.png",
+    ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+    ".allforai/verify/evidence/real/real-attempt-failed-wide.png",
+    ".allforai/verify/evidence/real/real-after-restart-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png"
+   ],
+   "category": "test_gaps",
+   "repair_owner": "image-session-verify",
+   "repair_suggestion": "When recapturing for B-01: frame the library capture with the tab bar and target row visible, seed a second session for rename, and make the journey probe read the cancelled explanation line too."
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "Expanded 大图 at 900×700 is at or near thumbnail size",
+   "reviewer_1": "major in batch A (R1-batch-A-harness-001; 10 narrow screenshots fail); minor in batch B (R1-batch-B-real-app-001)",
+   "reviewer_2": "note (R2-batch-A-harness-001): all narrow screenshots pass, because the criteria set a maximum (≤60vh, uncropped) but no minimum",
+   "resolution": "Blocking at major as B-01; per the union rule it is not downgraded. I opened busy-other-media-narrow (large image 96px, pixel-identical in size to the thumbnail above it), verify-selected-full-size-narrow (~110px for a 1024×1024 image) and real-attempt-selected-actions-narrow (~149 vs 96 CSS px). Reviewer 2 is right that no written minimum is violated. Reviewer 1 is right on substance: a 大图 the size of the thumbnail fails the purpose of expanding the card (D-74 allows about 500×420 here), and it regressed from the round-1 U-02 fix. Categorised as visual_quality_gaps. A criteria amendment adding a minimum size is recommended so the next round does not repeat this disagreement."
+  },
+  {
+   "topic": "Batch A overall status",
+   "reviewer_1": "failed_visual_review (one major)",
+   "reviewer_2": "passed (3 notes)",
+   "resolution": "Follows entirely from disagreement 1. Every other batch A state passes for both reviewers."
+  },
+  {
+   "topic": "real-delete-confirm per-screenshot verdict",
+   "reviewer_1": "pass, with the focus issue logged as minor (R1-batch-B-real-app-002)",
+   "reviewer_2": "fail, with the focus issue logged as minor (R2-batch-B-real-app-001)",
+   "resolution": "Both rate it minor, so it is non-blocking N-01. The verdict difference is each reviewer's convention for failing a screenshot on an unconfirmable must-show item. I opened both real captures and the harness delete-confirm-wide: the harness shows the ring, the real app does not."
+  },
+  {
+   "topic": "Expanded card duplicates thumbnail and prompt (real app)",
+   "reviewer_1": "minor (R1-batch-B-real-app-001, R1-batch-A-harness-003)",
+   "reviewer_2": "not raised in batch B (real-attempt-selected-actions pass: 大图完整且明显低于60vh)",
+   "resolution": "Same root cause as B-01; merged into it at major."
+  }
+ ],
+ "round_1_closure": [
+  {"id": "U-01", "topic": "timeline not scrolled to the expanded card's actions at 900×700", "status": "closed", "evidence": "Both reviewers see both actions fully visible on every expanded narrow card in both batches; I confirmed this in timeline-three-rounds-narrow, busy-other-media-narrow and real-attempt-selected-actions-narrow."},
+  {"id": "U-02", "topic": "expanded card with a real-size image taller than the timeline", "status": "closed_with_regression", "evidence": "Header, whole image and both actions now show together (verify-selected-full-size-*, real-attempt-selected-actions-*; both reviewers pass). The fix shrinks the image to thumbnail size at narrow width, which is B-01."},
+  {"id": "U-03", "topic": "no capture of the whole three-round timeline", "status": "closed", "evidence": "timeline-three-rounds(-top)-{wide,narrow} and real-timeline-three-rounds(-top)-{wide,narrow} are declared as pairs; both reviewers pass them."},
+  {"id": "U-04", "topic": "cancelled card missing its explanation", "status": "closed", "evidence": "I opened real-attempt-cancelled-wide: 这次生成被手动停止 is shown under 512×512 · 6 步. Both reviewers pass every cancelled capture."},
+  {"id": "U-05", "topic": "no post-delete image-page capture in the real app", "status": "closed", "evidence": "real-after-delete-{wide,narrow} added. I opened the narrow one: only 一座海边灯塔，黄… remains. journey.json after_delete_sessions_ui lists one id and delete.session_get_status is 404."},
+  {"id": "U-06", "topic": "种子 visible in 素材库", "status": "closed", "evidence": "The contract was settled: visual-acceptance-criteria.md global rule now exempts 素材库 metadata (user decision 2026-09-24, D-50a). Both reviewers apply the exemption."},
+  {"id": "U-07", "topic": "running-other-session precondition", "status": "closed", "evidence": "Re-captured this round with B holding a completed attempt; both reviewers pass."},
+  {"id": "U-08", "topic": "model-missing fixture", "status": "closed", "evidence": "Re-captured this round; the status line reads 尚未安装图片模型，请到「资源」页下载; both reviewers pass."}
+ ],
+ "summary": "Round 2 fails the visual review with one blocking item. All 8 round-1 blocking items are closed: actions are reachable, the three-round pair exists, the cancelled explanation renders, a post-delete image page is captured, and the 种子 scope is settled by D-50a. The U-02 fix introduced a new major, B-01. At 900×700 the expanded card's 大图 is shrunk to 96–150px, at or barely above the 96px thumbnail, because the card also repeats the thumbnail and the prompt. Reviewer 1 rated it major and reviewer 2 a note (the criteria give no minimum). It stays major under the union rule, and I agree after opening the screenshots. Non-blocking: the focus ring is missing on 取消 in the real app's dialog (both reviewers, minor), titles are cut too short beside 生成中, and 新会话 has no bottom margin; there are also notes. No blank or broken images, no 种子 on the image page, no horizontal scroll and no clipped buttons anywhere."
+}

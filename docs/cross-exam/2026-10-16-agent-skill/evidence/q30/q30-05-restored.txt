@@ -1,0 +1,5 @@
+lrwxr-xr-x@ 1 aa  staff  109 Oct 16 04:13 /Users/aa/.agents/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+lrwxr-xr-x@ 1 aa  staff  109 Oct 19 20:31 /Users/aa/.claude/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+lrwxr-xr-x@ 1 aa  staff   78 Oct 19 20:30 /Users/aa/.local/bin/lmdesk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin/lmdesk
+lrwxr-xr-x@ 1 aa  staff  109 Oct 16 04:13 /Users/aa/.pi/agent/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+ls: /private/tmp/q30old: No such file or directory

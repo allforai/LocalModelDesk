@@ -1,0 +1,1 @@
+没有指定模型，台面当前也没有加载。请用 --model 指定，可用：glm, superqwen, qwen27, gemma, qwen35, llama70

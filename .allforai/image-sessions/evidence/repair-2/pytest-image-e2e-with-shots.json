@@ -1,0 +1,19 @@
+{
+  "schema": "capture_evidence/v1",
+  "command": [
+    "env",
+    "LMD_IMAGE_SESSIONS_SHOTS=/Users/aa/LocalModelDesk/.allforai/image-sessions/evidence/repair-2/screens",
+    "python3",
+    "-m",
+    "pytest",
+    "tests/e2e/test_image_sessions.py",
+    "tests/e2e/test_image_flow.py",
+    "-q",
+    "-p",
+    "no:cacheprovider"
+  ],
+  "exit_code": 0,
+  "stdout": "..........................                                               [100%]\n26 passed in 80.51s (0:01:20)\n",
+  "stderr": "",
+  "stdout_sha256": "aef8c43e023c36e64690d4e7da0693208e430c9654e165e8201cac5ec85b7baa"
+}

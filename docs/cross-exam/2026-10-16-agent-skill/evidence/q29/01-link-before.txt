@@ -1,0 +1,1 @@
+lrwxr-xr-x@ 1 aa  staff  70 Oct 19 20:29 /Users/aa/.local/bin/lmdesk -> /Applications/OldCopy/LocalModelDesk.app/Contents/Resources/bin/lmdesk

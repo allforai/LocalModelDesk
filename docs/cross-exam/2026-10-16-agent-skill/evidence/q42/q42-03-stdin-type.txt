@@ -1,0 +1,4 @@
+cr--r--r--  1 root  wheel  0x3000002 Oct 19 20:00 /dev/fd/0
+notty
+COMMAND   PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+zsh     79603   aa    0r   CHR    3,2      0t0  336 /dev/null

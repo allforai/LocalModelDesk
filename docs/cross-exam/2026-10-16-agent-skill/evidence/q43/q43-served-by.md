@@ -1,0 +1,1 @@
+127.0.0.1:8766 LISTEN: pid 7817 python3.13 -s -m desk (/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13), ppid 7812 = dist/LocalModelDesk.app/Contents/MacOS/LocalModelDesk (started Mon Oct 19 20:48:26 2026). No mocks.

@@ -1,0 +1,63 @@
+ls: /Users/aa/.dsh/skills/: No such file or directory
+ls: /Users/aa/.local/bin/lmdesk: No such file or directory
+/Users/aa/.agents/skills/:
+total 0
+drwxr-xr-x@ 10 aa  staff  320 Oct 19 20:56 .
+drwxr-xr-x@  4 aa  staff  128 Jul 24 19:11 ..
+drwxr-xr-x@  4 aa  staff  128 Aug 13 07:03 code-review
+drwxr-xr-x@  3 aa  staff   96 Oct 15 14:56 computer-use
+drwxr-xr-x@  3 aa  staff   96 Jul 24 19:11 find-skills
+drwxr-xr-x@  4 aa  staff  128 Aug 13 07:03 implement
+drwxr-xr-x@  3 aa  staff   96 Oct 15 14:56 orca-cli
+drwxr-xr-x@  3 aa  staff   96 Oct 15 14:56 orchestration
+drwxr-xr-x@  6 aa  staff  192 Aug 13 07:03 tdd
+drwxr-xr-x@  4 aa  staff  128 Aug 13 07:02 to-tickets
+
+/Users/aa/.claude/skills/:
+total 0
+drwxr-xr-x@  9 aa  staff  288 Oct 19 20:56 .
+drwxr-xr-x@ 29 aa  staff  928 Oct 19 18:31 ..
+drwxr-xr-x@  6 aa  staff  192 Apr 27 05:24 collaborating-with-codex
+drwxr-xr-x@  6 aa  staff  192 Apr 27 05:24 collaborating-with-gemini
+lrwxr-xr-x@  1 aa  staff   33 Jul 24 19:13 computer-use -> ../../.agents/skills/computer-use
+lrwxr-xr-x@  1 aa  staff   32 Jul 24 19:11 find-skills -> ../../.agents/skills/find-skills
+lrwxr-xr-x@  1 aa  staff   29 Jul 24 19:17 orca-cli -> ../../.agents/skills/orca-cli
+lrwxr-xr-x@  1 aa  staff   34 Jul 24 19:11 orchestration -> ../../.agents/skills/orchestration
+drwxr-xr-x@  4 aa  staff  128 Sep 17 23:40 synced
+
+/Users/aa/.pi/agent/skills/:
+total 0
+drwxr-xr-x@ 34 aa  staff  1088 Oct 19 20:56 .
+drwx------@ 18 aa  staff   576 Oct 16 15:10 ..
+drwxr-xr-x@  5 aa  staff   160 Aug 23 02:41 ask-matt
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 claude-handoff
+drwxr-xr-x@  6 aa  staff   192 Aug 23 02:41 codebase-design
+lrwxr-xr-x@  1 aa  staff    36 Jul 24 19:13 computer-use -> ../../../.agents/skills/computer-use
+drwxr-xr-x@  5 aa  staff   160 Aug 23 02:41 diagnosing-bugs
+drwxr-xr-x@  6 aa  staff   192 Aug 23 02:41 domain-modeling
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 grill-me
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 grill-with-docs
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 grilling
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 handoff
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 implement-spec
+drwxr-xr-x@  5 aa  staff   160 Aug 23 02:41 improve-codebase-architecture
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 loop-me
+lrwxr-xr-x@  1 aa  staff    32 Jul 24 19:17 orca-cli -> ../../../.agents/skills/orca-cli
+lrwxr-xr-x@  1 aa  staff    37 Sep  4 03:57 orchestration -> ../../../.agents/skills/orchestration
+drwxr-xr-x@  6 aa  staff   192 Aug 23 02:41 prototype
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 research
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 resolving-merge-conflicts
+drwxr-xr-x@  9 aa  staff   288 Aug 23 02:41 setup-matt-pocock-skills
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 setup-pre-commit
+drwxr-xr-x@  5 aa  staff   160 Aug 23 02:41 setup-ts-deep-modules
+drwxr-xr-x@  8 aa  staff   256 Aug 23 02:41 teach
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 to-questionnaire
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 to-spec
+drwxr-xr-x@  6 aa  staff   192 Aug 23 02:41 triage
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 wait-what
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 wayfinder
+drwxr-xr-x@  5 aa  staff   160 Aug 23 02:41 wizard
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 writing-beats
+drwxr-xr-x@  5 aa  staff   160 Aug 23 02:41 writing-for-agents
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 writing-fragments
+drwxr-xr-x@  4 aa  staff   128 Aug 23 02:41 writing-shape

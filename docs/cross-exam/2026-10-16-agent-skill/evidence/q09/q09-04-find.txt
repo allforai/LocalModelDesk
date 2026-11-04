@@ -1,0 +1,20 @@
+/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources:
+total 5584
+drwxr-xr-x@ 10 aa  staff      320 Oct 16 05:02 .
+drwxr-xr-x@  6 aa  staff      192 Oct 16 05:03 ..
+-rw-r--r--@  1 aa  staff  2852686 Oct 16 05:02 AppIcon.icns
+drwxr-xr-x@  3 aa  staff       96 Oct 16 05:01 bin
+-rw-r--r--@  1 aa  staff       88 Oct 16 05:02 bundle.json
+drwxr-xr-x@ 21 aa  staff      672 Oct 16 05:02 desk
+drwxr-xr-x@  6 aa  staff      192 Oct 16 05:01 pylibs
+drwxr-xr-x@  7 aa  staff      224 Oct 16 05:01 python
+drwxr-xr-x@  7 aa  staff      224 Oct 16 05:01 requirements
+drwxr-xr-x@  3 aa  staff       96 Oct 16 05:02 zh-Hans.lproj
+
+/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin:
+total 8
+drwxr-xr-x@  3 aa  staff   96 Oct 16 05:01 .
+drwxr-xr-x@ 10 aa  staff  320 Oct 16 05:02 ..
+-rwxr-xr-x@  1 aa  staff  391 Oct 16 05:01 lmdesk
+/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bundle.json
+/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_cli/version.py

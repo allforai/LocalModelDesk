@@ -1,0 +1,1 @@
+状态：已加载 SuperQwen3.8 27B 越狱 4bit, 内存 已用 53 / 总 128 GiB（可用 75 GiB）, missing value, 打开窗口, 打开成品目录, 设置…, missing value, 退出, LocalModelDesk：已加载 SuperQwen3.8 27B 越狱 4bit

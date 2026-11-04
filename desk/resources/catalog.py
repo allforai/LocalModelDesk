@@ -63,10 +63,6 @@ CATALOG: tuple[ModelEntry, ...] = (
                "mlx-community/Huihui-Qwen3.6-35B-A3B-Claude-4.7-Opus-abliterated-mlx-8bit",
                "llms/mlx-community/Huihui-Qwen3.6-35B-A3B-Claude-4.7-Opus-abliterated-mlx-8bit",
                36.8, quant="8bit", params="35B-A3B"),
-    ModelEntry("llama70", "Llama 3.3 70B 越狱 8bit", GROUP_CHAT,
-               "divinetribe/Llama-3.3-70B-Instruct-abliterated-8bit-mlx",
-               "llms/divinetribe/Llama-3.3-70B-Instruct-abliterated-8bit-mlx",
-               75.0, quant="8bit", params="70B"),
 )
 
 

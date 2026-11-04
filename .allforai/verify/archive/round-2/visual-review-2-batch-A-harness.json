@@ -1,0 +1,489 @@
+{
+  "reviewer": {
+    "id": "reviewer-2",
+    "backend": "codex exec",
+    "model": "GPT-6"
+  },
+  "batch": "batch-A-harness",
+  "status": "passed",
+  "inspected": [
+    ".allforai/verify/screens/first-entry-auto-session-wide.png",
+    ".allforai/verify/screens/first-entry-auto-session-narrow.png",
+    ".allforai/verify/screens/empty-session-wide.png",
+    ".allforai/verify/screens/empty-session-narrow.png",
+    ".allforai/verify/screens/running-wide.png",
+    ".allforai/verify/screens/running-narrow.png",
+    ".allforai/verify/screens/running-other-session-wide.png",
+    ".allforai/verify/screens/running-other-session-narrow.png",
+    ".allforai/verify/screens/timeline-three-rounds-wide.png",
+    ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+    ".allforai/verify/screens/attempt-selected-actions-wide.png",
+    ".allforai/verify/screens/attempt-selected-actions-narrow.png",
+    ".allforai/verify/screens/refine-prefill-wide.png",
+    ".allforai/verify/screens/refine-prefill-narrow.png",
+    ".allforai/verify/screens/attempt-failed-wide.png",
+    ".allforai/verify/screens/attempt-failed-narrow.png",
+    ".allforai/verify/screens/attempt-cancelled-wide.png",
+    ".allforai/verify/screens/attempt-cancelled-narrow.png",
+    ".allforai/verify/screens/attempt-interrupted-wide.png",
+    ".allforai/verify/screens/attempt-interrupted-narrow.png",
+    ".allforai/verify/screens/attempt-file-missing-wide.png",
+    ".allforai/verify/screens/attempt-file-missing-narrow.png",
+    ".allforai/verify/screens/model-missing-wide.png",
+    ".allforai/verify/screens/model-missing-narrow.png",
+    ".allforai/verify/screens/runtime-unavailable-wide.png",
+    ".allforai/verify/screens/runtime-unavailable-narrow.png",
+    ".allforai/verify/screens/busy-other-media-wide.png",
+    ".allforai/verify/screens/busy-other-media-narrow.png",
+    ".allforai/verify/screens/rename-wide.png",
+    ".allforai/verify/screens/rename-narrow.png",
+    ".allforai/verify/screens/delete-confirm-wide.png",
+    ".allforai/verify/screens/delete-confirm-narrow.png",
+    ".allforai/verify/screens/delete-confirm-running-wide.png",
+    ".allforai/verify/screens/delete-confirm-running-narrow.png",
+    ".allforai/verify/screens/library-after-delete-wide.png",
+    ".allforai/verify/screens/library-after-delete-narrow.png",
+    ".allforai/verify/screens/session-list-load-failed-wide.png",
+    ".allforai/verify/screens/session-list-load-failed-narrow.png",
+    ".allforai/verify/screens/corrupt-session-wide.png",
+    ".allforai/verify/screens/corrupt-session-narrow.png",
+    ".allforai/verify/screens/timeline-three-rounds-top-wide.png",
+    ".allforai/verify/screens/timeline-three-rounds-top-narrow.png",
+    ".allforai/verify/screens/running-other-session-new-empty-wide.png",
+    ".allforai/verify/screens/running-other-session-new-empty-narrow.png",
+    ".allforai/verify/screens/verify-four-attempts-wide.png",
+    ".allforai/verify/screens/verify-four-attempts-narrow.png",
+    ".allforai/verify/screens/verify-switch-back-wide.png",
+    ".allforai/verify/screens/verify-switch-back-narrow.png",
+    ".allforai/verify/screens/verify-after-delete-wide.png",
+    ".allforai/verify/screens/verify-after-delete-narrow.png",
+    ".allforai/verify/screens/verify-failed-and-cancelled-wide.png",
+    ".allforai/verify/screens/verify-failed-and-cancelled-narrow.png",
+    ".allforai/verify/screens/verify-selected-full-size-wide.png",
+    ".allforai/verify/screens/verify-selected-full-size-narrow.png"
+  ],
+  "per_screenshot": [
+    {
+      "path": ".allforai/verify/screens/first-entry-auto-session-wide.png",
+      "state": "first-entry-auto-session",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "One highlighted 新会话; centered empty-state title/help, enabled-looking generation button and folded advanced parameters; no image placeholder."
+    },
+    {
+      "path": ".allforai/verify/screens/first-entry-auto-session-narrow.png",
+      "state": "first-entry-auto-session",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "One highlighted 新会话; centered empty-state title/help, enabled-looking generation button and folded advanced parameters; no image placeholder."
+    },
+    {
+      "path": ".allforai/verify/screens/empty-session-wide.png",
+      "state": "empty-session",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "New empty session is first and highlighted; no prior attempt cards; composer has visible blue focus border and retained draft."
+    },
+    {
+      "path": ".allforai/verify/screens/empty-session-narrow.png",
+      "state": "empty-session",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "New empty session is first and highlighted; no prior attempt cards; composer has visible blue focus border and retained draft."
+    },
+    {
+      "path": ".allforai/verify/screens/running-wide.png",
+      "state": "running",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Expanded attempt 2 shows elapsed-time heading, progress, Cancel and folded Log; sidebar running badge and disabled-looking Generate with matching status; no running image frame."
+    },
+    {
+      "path": ".allforai/verify/screens/running-narrow.png",
+      "state": "running",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Expanded attempt 2 shows elapsed-time heading, progress, Cancel and folded Log; sidebar running badge and disabled-looking Generate with matching status; no running image frame."
+    },
+    {
+      "path": ".allforai/verify/screens/running-other-session-wide.png",
+      "state": "running-other-session",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "B is highlighted with its completed image; A has running badge. Named A status and return button visible; refine appears enabled, variation and generation disabled. Composer still contains A text; draft ownership is not established by this static image."
+    },
+    {
+      "path": ".allforai/verify/screens/running-other-session-narrow.png",
+      "state": "running-other-session",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "B is highlighted with its completed image; A has running badge. Named A status and return button visible; refine appears enabled, variation and generation disabled. Composer still contains A text; draft ownership is not established by this static image."
+    },
+    {
+      "path": ".allforai/verify/screens/timeline-three-rounds-wide.png",
+      "state": "timeline-three-rounds",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Bottom-scrolled view shows attempt 3 expanded with complete gradient, prompt, folded parameters and both actions. Read together with same-viewport timeline-three-rounds-top for attempts 1–3 and thumbnails."
+    },
+    {
+      "path": ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+      "state": "timeline-three-rounds",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Bottom-scrolled view shows attempt 3 expanded with complete gradient, prompt, folded parameters and both actions. Read together with same-viewport timeline-three-rounds-top for attempts 1–3 and thumbnails."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-selected-actions-wide.png",
+      "state": "attempt-selected-actions",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Attempt 1 expanded with complete square gradient below thumbnail, readable prompt and both complete action buttons. Remaining cards are outside scroll viewport; no second expanded card is visible."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-selected-actions-narrow.png",
+      "state": "attempt-selected-actions",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Attempt 1 expanded with complete square gradient below thumbnail, readable prompt and both complete action buttons. Remaining cards are outside scroll viewport; no second expanded card is visible."
+    },
+    {
+      "path": ".allforai/verify/screens/refine-prefill-wide.png",
+      "state": "refine-prefill",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Attempt 2 and composer prompts visually match; 沿用第 2 次的构图 chip with ×, focused composer, folded parameters; count remains 2 and no running card."
+    },
+    {
+      "path": ".allforai/verify/screens/refine-prefill-narrow.png",
+      "state": "refine-prefill",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Attempt 2 and composer prompts visually match; 沿用第 2 次的构图 chip with ×, focused composer, folded parameters; count remains 2 and no running card."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-failed-wide.png",
+      "state": "attempt-failed",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Red icon and failure badge, human-readable abnormal-exit reason, expanded details containing exit_nonzero and log tail, both actions visible."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-failed-narrow.png",
+      "state": "attempt-failed",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Red icon and failure badge, human-readable abnormal-exit reason, expanded details containing exit_nonzero and log tail, both actions visible."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-cancelled-wide.png",
+      "state": "attempt-cancelled",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Attempt 2 has gray × block, 已取消 badge and manual-stop explanation; both actions visible; earlier failed attempt remains collapsed."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-cancelled-narrow.png",
+      "state": "attempt-cancelled",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Attempt 2 has gray × block, 已取消 badge and manual-stop explanation; both actions visible; earlier failed attempt remains collapsed."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-interrupted-wide.png",
+      "state": "attempt-interrupted",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Attempt 3 has red failure icon and 应用在生成途中关闭，这次没有完成; no running progress. Older cards may extend beyond normal scroll boundary."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-interrupted-narrow.png",
+      "state": "attempt-interrupted",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Attempt 3 has red failure icon and 应用在生成途中关闭，这次没有完成; no running progress. Older cards may extend beyond normal scroll boundary."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-file-missing-wide.png",
+      "state": "attempt-file-missing",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Selected attempt has gray picture icon, 图片文件已不在 and moved/deleted explanation; both actions visible; no browser broken-image glyph."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-file-missing-narrow.png",
+      "state": "attempt-file-missing",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Selected attempt has gray picture icon, 图片文件已不在 and moved/deleted explanation; both actions visible; no browser broken-image glyph."
+    },
+    {
+      "path": ".allforai/verify/screens/model-missing-wide.png",
+      "state": "model-missing",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Header and amber status direct user to resources for missing image model; generation appears disabled; empty state remains legible."
+    },
+    {
+      "path": ".allforai/verify/screens/model-missing-narrow.png",
+      "state": "model-missing",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Header and amber status direct user to resources for missing image model; generation appears disabled; empty state remains legible."
+    },
+    {
+      "path": ".allforai/verify/screens/runtime-unavailable-wide.png",
+      "state": "runtime-unavailable",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Amber status explains missing image MLX runtime; generation appears disabled; layout remains intact."
+    },
+    {
+      "path": ".allforai/verify/screens/runtime-unavailable-narrow.png",
+      "state": "runtime-unavailable",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Amber status explains missing image MLX runtime; generation appears disabled; layout remains intact."
+    },
+    {
+      "path": ".allforai/verify/screens/busy-other-media-wide.png",
+      "state": "busy-other-media",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Completed image and refine remain visible; variation and generation appear disabled with media-busy reason; no return-to-image-session button. Global video activity indicator is not foreign pane content."
+    },
+    {
+      "path": ".allforai/verify/screens/busy-other-media-narrow.png",
+      "state": "busy-other-media",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Completed image and refine remain visible; variation and generation appear disabled with media-busy reason; no return-to-image-session button. Global video activity indicator is not foreign pane content."
+    },
+    {
+      "path": ".allforai/verify/screens/rename-wide.png",
+      "state": "rename",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Focused title input is fully contained in left session card, showing current title; timeline and both actions remain readable."
+    },
+    {
+      "path": ".allforai/verify/screens/rename-narrow.png",
+      "state": "rename",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Focused title input is fully contained in left session card, showing current title; timeline and both actions remain readable."
+    },
+    {
+      "path": ".allforai/verify/screens/delete-confirm-wide.png",
+      "state": "delete-confirm",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Centered dialog names session and explicitly retains images in library; Cancel focus ring and red Delete button visible; copy fully readable."
+    },
+    {
+      "path": ".allforai/verify/screens/delete-confirm-narrow.png",
+      "state": "delete-confirm",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Centered dialog names session and explicitly retains images in library; Cancel focus ring and red Delete button visible; copy fully readable."
+    },
+    {
+      "path": ".allforai/verify/screens/delete-confirm-running-wide.png",
+      "state": "delete-confirm-running",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Dialog includes both retention wording and full ongoing-generation continuation/library explanation; Cancel focused and Delete red."
+    },
+    {
+      "path": ".allforai/verify/screens/delete-confirm-running-narrow.png",
+      "state": "delete-confirm-running",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Dialog includes both retention wording and full ongoing-generation continuation/library explanation; Cancel focused and Delete red."
+    },
+    {
+      "path": ".allforai/verify/screens/library-after-delete-wide.png",
+      "state": "library-after-delete",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Loaded gradient preview labelled 将被删除分组的灯塔 and retained library entry visible. Library metadata seed is explicitly exempt. Pair with verify-after-delete for absent deleted session; narrow lower row continues below viewport."
+    },
+    {
+      "path": ".allforai/verify/screens/library-after-delete-narrow.png",
+      "state": "library-after-delete",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Loaded gradient preview labelled 将被删除分组的灯塔 and retained library entry visible. Library metadata seed is explicitly exempt. Pair with verify-after-delete for absent deleted session; narrow lower row continues below viewport."
+    },
+    {
+      "path": ".allforai/verify/screens/session-list-load-failed-wide.png",
+      "state": "session-list-load-failed",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Left sidebar has readable load-failure reason and Retry; composer generation appears disabled with 会话还没加载好; no unexplained blank sidebar."
+    },
+    {
+      "path": ".allforai/verify/screens/session-list-load-failed-narrow.png",
+      "state": "session-list-load-failed",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Left sidebar has readable load-failure reason and Retry; composer generation appears disabled with 会话还没加载好; no unexplained blank sidebar."
+    },
+    {
+      "path": ".allforai/verify/screens/corrupt-session-wide.png",
+      "state": "corrupt-session",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Highlighted corrupted session has unreadable title, damaged-file subtitle and only delete action; central explanation and choose/new-session status readable; generation disabled-looking."
+    },
+    {
+      "path": ".allforai/verify/screens/corrupt-session-narrow.png",
+      "state": "corrupt-session",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Highlighted corrupted session has unreadable title, damaged-file subtitle and only delete action; central explanation and choose/new-session status readable; generation disabled-looking."
+    },
+    {
+      "path": ".allforai/verify/screens/timeline-three-rounds-top-wide.png",
+      "state": "timeline-three-rounds-top",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Attempts 1, 2, 3 appear top-to-bottom with three loaded thumbnails, prompts and dimensions/steps. Attempt 3 continues below scroll boundary; paired bottom view proves complete expanded content and actions."
+    },
+    {
+      "path": ".allforai/verify/screens/timeline-three-rounds-top-narrow.png",
+      "state": "timeline-three-rounds-top",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Attempts 1, 2, 3 appear top-to-bottom with three loaded thumbnails, prompts and dimensions/steps. Attempt 3 continues below scroll boundary; paired bottom view proves complete expanded content and actions."
+    },
+    {
+      "path": ".allforai/verify/screens/running-other-session-new-empty-wide.png",
+      "state": "running-other-session-new-empty",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "New empty session highlighted; A has running badge; empty-state help, named A status and return button visible; generation disabled-looking. Supplementary global-rules scope."
+    },
+    {
+      "path": ".allforai/verify/screens/running-other-session-new-empty-narrow.png",
+      "state": "running-other-session-new-empty",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "New empty session highlighted; A has running badge; empty-state help, named A status and return button visible; generation disabled-looking. Supplementary global-rules scope."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-four-attempts-wide.png",
+      "state": "verify-four-attempts",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Sidebar count 4 and selected attempt 4 with complete landscape gradient, 768×512 / 20-step metadata and both actions; composer draft visible. Earlier rounds outside scroll viewport."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-four-attempts-narrow.png",
+      "state": "verify-four-attempts",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Sidebar count 4 and selected attempt 4 with complete landscape gradient, 768×512 / 20-step metadata and both actions; composer draft visible. Earlier rounds outside scroll viewport."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-switch-back-wide.png",
+      "state": "verify-switch-back",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "B highlighted, A separate; B attempt 2 has matching desert/sunset prompt and loaded image; both actions and composer visible. Static image does not independently prove switching history."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-switch-back-narrow.png",
+      "state": "verify-switch-back",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "B highlighted, A separate; B attempt 2 has matching desert/sunset prompt and loaded image; both actions and composer visible. Static image does not independently prove switching history."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-after-delete-wide.png",
+      "state": "verify-after-delete",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Only 留下来的会话 remains in sidebar and is highlighted; matching attempt/image, composer and both actions visible. Complements library-after-delete."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-after-delete-narrow.png",
+      "state": "verify-after-delete",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Only 留下来的会话 remains in sidebar and is highlighted; matching attempt/image, composer and both actions visible. Complements library-after-delete."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-failed-and-cancelled-wide.png",
+      "state": "verify-failed-and-cancelled",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Two ordered attempts visible: red out-of-memory failure then selected gray cancelled card with manual-stop explanation and both actions; no blank image frame."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-failed-and-cancelled-narrow.png",
+      "state": "verify-failed-and-cancelled",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Two ordered attempts visible: red out-of-memory failure then selected gray cancelled card with manual-stop explanation and both actions; no blank image frame."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-selected-full-size-wide.png",
+      "state": "verify-selected-full-size",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Earlier attempt 1 selected; entire square gradient, header, full prompt, folded parameters and both actions visible together; refine chip and focused matching composer visible. Narrow preview is small but complete."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-selected-full-size-narrow.png",
+      "state": "verify-selected-full-size",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Earlier attempt 1 selected; entire square gradient, header, full prompt, folded parameters and both actions visible together; refine chip and focused matching composer visible. Narrow preview is small but complete."
+    }
+  ],
+  "issues": [
+    {
+      "id": "R2-batch-A-harness-001",
+      "severity": "note",
+      "failure_code": "advisory",
+      "screenshots": [
+        ".allforai/verify/screens/running-other-session-narrow.png",
+        ".allforai/verify/screens/busy-other-media-narrow.png",
+        ".allforai/verify/screens/verify-selected-full-size-narrow.png"
+      ],
+      "criteria_ref": "visual-acceptance-criteria.md § attempt-selected-actions; batch visual question 1",
+      "observation": "Narrow expanded previews are approximately 96–111 px square, close to thumbnail size. The whole image and both actions fit; the standard specifies a maximum height but no minimum, so this is an advisory observation, not a failed requirement.",
+      "repair_suggestion": "Consider a clearly discoverable larger preview for image-detail inspection while preserving action visibility; no blocking repair required for this batch."
+    },
+    {
+      "id": "R2-batch-A-harness-002",
+      "severity": "note",
+      "failure_code": "advisory",
+      "screenshots": [
+        ".allforai/verify/screens/timeline-three-rounds-wide.png",
+        ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+        ".allforai/verify/screens/timeline-three-rounds-top-wide.png",
+        ".allforai/verify/screens/timeline-three-rounds-top-narrow.png"
+      ],
+      "criteria_ref": "visual-acceptance-criteria.md § timeline-three-rounds; harness supplementary top/bottom pairing",
+      "observation": "Top screenshots show all three ordered headers/thumbnails; bottom screenshots show the complete expanded third attempt and actions. Neither frame alone proves both portions. Visible scroll-boundary cuts are ordinary viewport scrolling, not overlapping panels.",
+      "repair_suggestion": "Keep both captures together in acceptance evidence; no UI repair required."
+    },
+    {
+      "id": "R2-batch-A-harness-003",
+      "severity": "note",
+      "failure_code": "advisory",
+      "screenshots": [
+        ".allforai/verify/screens/library-after-delete-wide.png",
+        ".allforai/verify/screens/library-after-delete-narrow.png",
+        ".allforai/verify/screens/verify-after-delete-wide.png",
+        ".allforai/verify/screens/verify-after-delete-narrow.png"
+      ],
+      "criteria_ref": "visual-acceptance-criteria.md § library-after-delete; global seed-word exception D-50a",
+      "observation": "Library screenshots show the retained image preview and entry; verify-after-delete screenshots show only the remaining session. These complementary views cover the cross-tab requirement. The narrow library row extends below the viewport and library seed metadata is allowed.",
+      "repair_suggestion": "Retain the paired image-page and library evidence. Optionally add a library capture with the selected row fully in view for easier review; no blocking UI repair required."
+    }
+  ],
+  "summary": "Opened and visually inspected all 54 listed PNGs (27 states × 2 viewports). Passed: 0 blockers, 0 majors, 0 minors; 3 advisory notes. No visible broken/blank image frames, image-page seed labels, horizontal scrollbar, clipped action labels or panel occlusion. Declared gradient/mock layers accepted. This is screenshot visual acceptance, not verification of hidden DOM attributes or behavior."
+}

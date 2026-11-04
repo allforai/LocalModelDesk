@@ -1,0 +1,26 @@
+{
+ "id": "5305c5a7180c4ec18374b4677da575ca",
+ "job_id": 11,
+ "ts": "2026-10-19T18:44:35",
+ "finished": "2026-10-19T18:45:21",
+ "status": "done",
+ "op": "generate",
+ "params": {
+  "prompt": "把背景改成夜晚",
+  "width": 1024,
+  "height": 1024,
+  "steps": 40,
+  "seed": 2373257233
+ },
+ "continues": null,
+ "refs": {},
+ "output": "qwen-image-20261019-184435-76e6faa7.png",
+ "joined_output": null,
+ "joined_error": null,
+ "error": null,
+ "base": {
+  "attempt_id": "ca56e9b07a2e4b7a8f2b328d3b313f6f",
+  "strength": 0.6
+ },
+ "output_missing": false
+}

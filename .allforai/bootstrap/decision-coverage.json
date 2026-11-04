@@ -1,0 +1,12 @@
+{"captured": [
+  {"id": "session-form-like-chat", "node_id": "image-session-design"},
+  {"id": "new-session-manual", "node_id": "image-session-design"},
+  {"id": "delete-session-keeps-images", "node_id": "image-session-backend"},
+  {"id": "iterate-actions-no-seed-word", "node_id": "image-session-pane"},
+  {"id": "single-attempt-delete-out-of-scope", "node_id": "image-session-design"},
+  {"id": "auto-rebuild-dist-after-verify", "node_id": "image-session-ship"},
+  {"id": "first-entry-empty-state-behaviour", "node_id": "image-session-design"},
+  {"id": "timeline-order-and-title-truncation", "node_id": "image-session-design"}
+ ],
+ "missing": [],
+ "notes": "前 6 项为用户 2026-09-24 明确回答（记录在 local-requirements.json 与 plan-confirmation-journal.json）；后 2 项是界面细节，已在计划确认时告知用户由设计节点决定并写入设计文档。"}

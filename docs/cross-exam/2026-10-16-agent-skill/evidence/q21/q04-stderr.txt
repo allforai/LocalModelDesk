@@ -1,0 +1,3 @@
+已提交：会话 35031b967ba24741abc9e7099d3d679a 尝试 c731dd3baa9b4ffaa371dfcbff716393（中断后可用 lmdesk video wait 35031b967ba24741abc9e7099d3d679a c731dd3baa9b4ffaa371dfcbff716393 继续等待）
+等待中：视频生成中（已等 19s）
+已中断并取消这次生成

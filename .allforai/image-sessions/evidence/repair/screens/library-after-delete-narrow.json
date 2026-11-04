@@ -1,0 +1,27 @@
+{
+ "state_id": "library-after-delete",
+ "viewport": {
+  "name": "narrow",
+  "width": 900,
+  "height": 700
+ },
+ "url": "http://127.0.0.1:55689/#tab=library",
+ "dom_checks": {
+  "seed_word_in_main_flow": true,
+  "blank_images": 0,
+  "horizontal_scroll": false,
+  "clipped_buttons": [],
+  "preview_natural_width": 1024,
+  "preview_gap": 16
+ },
+ "served_by": {
+  "host": "http://127.0.0.1:55689",
+  "process": "desk.testing.launch_test_harness",
+  "mock_layers": [
+   "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+   "FakeLlmBackend",
+   "FakeMemoryReader",
+   "FixedClock"
+  ]
+ }
+}

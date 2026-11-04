@@ -1,0 +1,9 @@
+{
+  "app": "dist/LocalModelDesk.app",
+  "provider_sha256": "6423b49d663a5f6613748fc723191aec812dac81446360978783baf6a720a85c",
+  "modules_match_packaged_source": 6,
+  "model": "lmdesk/qwen35",
+  "reply": "最新版打包验证通过",
+  "active_chats_after": 0,
+  "backup": "/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/lmdesk-native-backup.kdrhoumq"
+}

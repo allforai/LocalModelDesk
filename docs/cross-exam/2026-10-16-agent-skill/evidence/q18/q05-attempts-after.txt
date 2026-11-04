@@ -1,0 +1,7 @@
+ca56e9b07a2e4b7a8f2b328d3b313f6f done 一只橘猫 None
+c8b544c8d3374b31911b933ad5747b27 cancelled 一只蓝色的鸟 None
+3fa42a6f65b14e9cbd377628a86ae25e done 一只绿色的鸟 None
+5305c5a7180c4ec18374b4677da575ca done 把背景改成夜晚 {'attempt_id': 'ca56e9b07a2e4b7a8f2b328d3b313f6f', 'strength': 0.6}
+7d9ee892f0de4298bccf36a1cf5dde0c done 一只红色的狐狸 None
+bb8ec6dcc7034426af5e68a092c512bd done 一只红色的狐狸 None
+2d26d9fa1b5444ff9f7d064c2132e6d3 done 一只红色的狐狸 None

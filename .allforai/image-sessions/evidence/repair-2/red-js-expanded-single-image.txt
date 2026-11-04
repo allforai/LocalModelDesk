@@ -1,0 +1,42 @@
+✖ 展开卡片只放一张图：大图代替标题行的缩略图；折叠卡片仍是缩略图（D-73、D-74、§7.1 草图；B-01） (3.096875ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 48.908459
+
+✖ failing tests:
+
+test at tests/js/image_pane.test.js:333:1
+✖ 展开卡片只放一张图：大图代替标题行的缩略图；折叠卡片仍是缩略图（D-73、D-74、§7.1 草图；B-01） (3.096875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      {
+  +     big: false,
+  +     inThumb: true,
+  +     src: '/api/outputs/a2.png'
+  +   },
+  +   {
+        big: true,
+        inThumb: false,
+        src: '/api/outputs/a2.png'
+      }
+    ]
+  
+      at file:///Users/aa/LocalModelDesk/tests/js/image_pane.test.js:342:12
+      at async withBackend (file:///Users/aa/LocalModelDesk/tests/js/image_pane.test.js:136:9)
+      at async TestContext.<anonymous> (file:///Users/aa/LocalModelDesk/tests/js/image_pane.test.js:334:3)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { big: false, inThumb: true, src: '/api/outputs/a2.png' }, { big: true, inThumb: false, src: '/api/outputs/a2.png' } ],
+    expected: [ { big: true, inThumb: false, src: '/api/outputs/a2.png' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

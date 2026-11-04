@@ -1,0 +1,42 @@
+{
+ "id": "a828414d9b5741c28fc23a33535384e0",
+ "kind": "video",
+ "title": "竹林",
+ "title_auto": true,
+ "created": "2026-09-28T18:45:00",
+ "updated": "2026-09-29T18:57:09",
+ "attempts": [
+  {
+   "id": "69704200d2f64ed290fa61b741ad8410",
+   "job_id": 5,
+   "ts": "2026-09-29T18:53:36",
+   "finished": "2026-09-29T18:57:09",
+   "status": "done",
+   "op": "generate",
+   "params": {
+    "prompt": "竹林",
+    "width": 512,
+    "height": 288,
+    "frames": 124,
+    "steps": 16,
+    "seed": 1755966600,
+    "mode": "image",
+    "use_audio": true
+   },
+   "continues": null,
+   "refs": {
+    "first_frame": {
+     "kind": "image",
+     "session_id": "b5d86d6f58f34b47861dcb7d2c8bb1d4",
+     "attempt_id": "e372f73264ce4369a7d7aac4512759b9"
+    }
+   },
+   "output": "h3-20260929-185336-abacd483.mp4",
+   "joined_output": null,
+   "joined_error": null,
+   "error": null,
+   "base": null,
+   "output_missing": false
+  }
+ ]
+}

@@ -92,7 +92,7 @@ def test_get_status_bundles_models_and_disk(tmp_path):
     routes, *_ = make_routes(tmp_path)
     status, payload = call(routes, "GET", "/api/resources/status")
     assert status == 200
-    assert len(payload["models"]) == 9
+    assert len(payload["models"]) == 8
     assert payload["disk"]["free_bytes"] > 0
     json.dumps(payload)
 

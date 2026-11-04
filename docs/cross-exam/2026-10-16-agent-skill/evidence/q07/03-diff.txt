@@ -1,0 +1,3 @@
+same state
+same llm_status
+same media_job

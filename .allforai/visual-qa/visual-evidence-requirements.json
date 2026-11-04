@@ -1,0 +1,443 @@
+{
+  "node_id": "image-session-design",
+  "criteria": ".allforai/visual-qa/visual-acceptance-criteria.json",
+  "capture": {
+    "tool": "Playwright（tests/e2e，desk.testing.launch_test_harness 启动的真实外壳 + 真实浏览器）",
+    "directory": ".allforai/visual-qa/evidence/",
+    "naming": "<state_id>-<viewport_id>.png，例如 timeline-three-rounds-wide.png",
+    "full_page": false,
+    "also_record": "每张截图旁写同名 .json：{state_id, viewport, url, session_ids, dom_checks:{seed_word_in_main_flow:false, blank_images:0, horizontal_scroll:false, clipped_buttons:[]}}",
+    "mock_layers_to_declare": [
+      "脚本化媒体执行器（desk/testing/scripts.py）代替 image_cli 子进程",
+      "测试外壳的 fake LLM / arbiter"
+    ]
+  },
+  "items": [
+    {
+      "state_id": "first-entry-auto-session",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/first-entry-auto-session-wide.png",
+        ".allforai/visual-qa/evidence/first-entry-auto-session-narrow.png"
+      ],
+      "data_precondition": "空数据目录（image-sessions/ 不存在）；图片模型与运行环境可用",
+      "steps": [
+        "打开 #tab=image"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "empty-session",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/empty-session-wide.png",
+        ".allforai/visual-qa/evidence/empty-session-narrow.png"
+      ],
+      "data_precondition": "已有一个含 1 次完成尝试的会话；点「新会话」",
+      "steps": [
+        "点「新会话」"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "running",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/running-wide.png",
+        ".allforai/visual-qa/evidence/running-narrow.png"
+      ],
+      "data_precondition": "测试外壳的脚本化媒体执行器让作业停在运行中并输出步数进度",
+      "steps": [
+        "输入提示词，点「生成图片」"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "running-other-session",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/running-other-session-wide.png",
+        ".allforai/visual-qa/evidence/running-other-session-narrow.png"
+      ],
+      "data_precondition": "会话 A 有运行中作业；会话 B 至少 1 次完成尝试",
+      "steps": [
+        "点会话 B"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "timeline-three-rounds",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/timeline-three-rounds-wide.png",
+        ".allforai/visual-qa/evidence/timeline-three-rounds-narrow.png"
+      ],
+      "data_precondition": "同一会话里按验收步骤连续完成三次生成（脚本化执行器每次产出一张真实 PNG）",
+      "steps": [
+        "生成",
+        "在第 1 次上点「在这张基础上改」，改提示词，生成",
+        "在第 2 次上点「在这张基础上改」，改提示词，生成"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "attempt-selected-actions",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/attempt-selected-actions-wide.png",
+        ".allforai/visual-qa/evidence/attempt-selected-actions-narrow.png"
+      ],
+      "data_precondition": "会话里有 ≥2 次完成尝试",
+      "steps": [
+        "点第 1 次的卡片"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "refine-prefill",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/refine-prefill-wide.png",
+        ".allforai/visual-qa/evidence/refine-prefill-narrow.png"
+      ],
+      "data_precondition": "会话里有 ≥2 次完成尝试；「高级参数」折叠",
+      "steps": [
+        "在第 2 次上点「在这张基础上改」"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "attempt-failed",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/attempt-failed-wide.png",
+        ".allforai/visual-qa/evidence/attempt-failed-narrow.png"
+      ],
+      "data_precondition": "脚本化执行器让作业非零退出（exit_nonzero，带日志尾部）",
+      "steps": [
+        "生成并等待作业结束"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "attempt-cancelled",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/attempt-cancelled-wide.png",
+        ".allforai/visual-qa/evidence/attempt-cancelled-narrow.png"
+      ],
+      "data_precondition": "脚本化执行器保持运行，用户点 running 卡片上的「取消」",
+      "steps": [
+        "生成",
+        "点「取消」",
+        "等待落定"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "attempt-interrupted",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/attempt-interrupted-wide.png",
+        ".allforai/visual-qa/evidence/attempt-interrupted-narrow.png"
+      ],
+      "data_precondition": "会话文件里预置一个 status=running 的尝试，然后启动外壳（触发 recover_running）",
+      "steps": [
+        "打开 #tab=image"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "attempt-file-missing",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/attempt-file-missing-wide.png",
+        ".allforai/visual-qa/evidence/attempt-file-missing-narrow.png"
+      ],
+      "data_precondition": "一次完成尝试后，从 outputs_root 删除其 PNG 文件",
+      "steps": [
+        "刷新图片页"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "model-missing",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/model-missing-wide.png",
+        ".allforai/visual-qa/evidence/model-missing-narrow.png"
+      ],
+      "data_precondition": "资源目录里没有 qwen-image 模型",
+      "steps": [
+        "打开 #tab=image"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "runtime-unavailable",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/runtime-unavailable-wide.png",
+        ".allforai/visual-qa/evidence/runtime-unavailable-narrow.png"
+      ],
+      "data_precondition": "capabilities.image_runtime.present=false",
+      "steps": [
+        "打开 #tab=image"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "busy-other-media",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/busy-other-media-wide.png",
+        ".allforai/visual-qa/evidence/busy-other-media-narrow.png"
+      ],
+      "data_precondition": "图片页当前会话有 ≥1 次完成尝试（已展开）；脚本化执行器让一个视频作业运行中",
+      "steps": [
+        "切到图片页"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "rename",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/rename-wide.png",
+        ".allforai/visual-qa/evidence/rename-narrow.png"
+      ],
+      "data_precondition": "至少 1 个会话",
+      "steps": [
+        "点会话项的铅笔图标"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "delete-confirm",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/delete-confirm-wide.png",
+        ".allforai/visual-qa/evidence/delete-confirm-narrow.png"
+      ],
+      "data_precondition": "一个含完成尝试的会话",
+      "steps": [
+        "点会话项的垃圾桶图标"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "delete-confirm-running",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/delete-confirm-running-wide.png",
+        ".allforai/visual-qa/evidence/delete-confirm-running-narrow.png"
+      ],
+      "data_precondition": "会话有运行中作业",
+      "steps": [
+        "点该会话的垃圾桶图标"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "library-after-delete",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/library-after-delete-wide.png",
+        ".allforai/visual-qa/evidence/library-after-delete-narrow.png"
+      ],
+      "data_precondition": "删除一个含完成尝试的会话",
+      "steps": [
+        "确认删除",
+        "切到素材库",
+        "预览该图片"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "session-list-load-failed",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/session-list-load-failed-wide.png",
+        ".allforai/visual-qa/evidence/session-list-load-failed-narrow.png"
+      ],
+      "data_precondition": "Playwright page.route 让 GET /api/image-sessions 返回 500（需在证据里声明为 mock layer）",
+      "steps": [
+        "打开 #tab=image"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    },
+    {
+      "state_id": "corrupt-session",
+      "viewports": [
+        "wide",
+        "narrow"
+      ],
+      "files": [
+        ".allforai/visual-qa/evidence/corrupt-session-wide.png",
+        ".allforai/visual-qa/evidence/corrupt-session-narrow.png"
+      ],
+      "data_precondition": "image-sessions/ 下预置一个内容不是 JSON 的 <32hex>.json，另有一个正常会话",
+      "steps": [
+        "点「无法读取的会话」项"
+      ],
+      "dom_assertions": [
+        "图片页可见文本（排除展开的「高级参数」details）不含「种子」",
+        "所有可见 img.naturalWidth > 0",
+        "document.scrollingElement.scrollWidth <= clientWidth",
+        "所有可见 button 的 scrollWidth <= clientWidth"
+      ]
+    }
+  ]
+}

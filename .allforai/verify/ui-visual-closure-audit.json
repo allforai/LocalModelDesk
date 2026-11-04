@@ -1,0 +1,89 @@
+{
+  "auditor": "reviewer-1",
+  "round": 3,
+  "checks": [
+    {
+      "check": "both independent reports exist and neither read the other before writing",
+      "result": "pass",
+      "evidence": "visual-review-1.json/.md and visual-review-2.json/.md exist, each merged from its two batch reports. Reviewer 1 (this agent) wrote batch-A with no access to reviewer-2 files, as the task forbade it. Reviewer 2's batch-B summary states that no other reviewers' reports were read. Issue sets differ in wording and content (R2 notes only; R1 minors plus notes), which fits independent work."
+    },
+    {
+      "check": "every required state x viewport in the manifest was inspected by both reviewers",
+      "result": "pass",
+      "evidence": "ui-screenshot-manifest.json: 40 coverage entries, missing_required=[], not_inspected_by_both=[]. All 76 screenshots exist, and each appears in both reviewers' inspected[] with a pass verdict."
+    },
+    {
+      "check": "every issue cites screenshots that exist",
+      "result": "pass",
+      "evidence": "Every path cited by R1-* and R2-* issues and in the reconciliation was checked on disk; none is missing."
+    },
+    {
+      "check": "every blocking issue is routed to a repair owner",
+      "result": "pass",
+      "evidence": "The blocking union is empty. All non-blocking items are still routed (image-session-repair, or image-session-verify for evidence framing)."
+    },
+    {
+      "check": "round-2 blocking items (B-01) were repaired, re-captured and re-reviewed in this round",
+      "result": "pass",
+      "evidence": "repair-report.json (round 2) fixes B-01 (header thumbnail dropped, 192px floor). This round re-captured it in the harness (running-other-session/busy-other-media/attempt-selected-actions/verify-selected-full-size narrow) and in the real app (real-timeline-three-rounds-narrow, journey big_img_h 236, header_thumb absent on 第 3 次). Both reviewers passed these captures."
+    },
+    {
+      "check": "no blocker/major remains in the union this round",
+      "result": "pass",
+      "evidence": "Reviewer 1: 3 minor + 7 notes. Reviewer 2: 4 notes. No blocker or major from either."
+    }
+  ],
+  "closure_status": "closed",
+  "open_items": [],
+  "non_blocking_follow_ups": [
+    {
+      "id": "N-01",
+      "severity": "minor",
+      "owner": "image-session-repair",
+      "summary": "Real app (WKWebView) delete dialog: 取消 does not receive focus. The journey DOM readback delete_dialog_focus has activeElement = the session LI, in_dialog:false;"
+    },
+    {
+      "id": "N-08",
+      "severity": "minor",
+      "owner": "image-session-repair",
+      "summary": "Expanded cards with no image (failed, cancelled, interrupted, file-missing) keep the prompt summary in the header and repeat the full prompt below, so the same "
+    },
+    {
+      "id": "N-09",
+      "severity": "minor",
+      "owner": "image-session-repair",
+      "summary": "Harness only: right after an image job is submitted (已用 0秒), the top bar still reads 媒体：空闲 · 可开下一件重活. In the real app, real-running-wide at 已用 3秒 correctly show"
+    },
+    {
+      "id": "N-10",
+      "severity": "note",
+      "owner": "image-session-repair",
+      "summary": "Disabled-reason line shown both inside the expanded card and under the composer."
+    },
+    {
+      "id": "N-05",
+      "severity": "note",
+      "owner": "image-session-repair",
+      "summary": "Copy details: the runtime-unavailable header still says 可离线生成; the empty state says 点「生成图片」 while the button is disabled (model-missing, runtime-unavailable). C"
+    },
+    {
+      "id": "N-11",
+      "severity": "note",
+      "owner": "image-session-repair",
+      "summary": "session-list-load-failed leaves the timeline area empty. It meets the criteria because the list shows the reason and 重试, and the status line says 会话还没加载好."
+    },
+    {
+      "id": "N-06",
+      "severity": "note",
+      "owner": "image-session-repair",
+      "summary": "After restart, the current session item shows a double outline and a solid red trash button. Carried over from round-2 N-06."
+    },
+    {
+      "id": "N-07",
+      "severity": "note",
+      "owner": "image-session-verify",
+      "summary": "Evidence framing. Library captures are scrolled past the tabs, and the image-page half of library-after-delete comes from verify-after-delete / real-after-delet"
+    }
+  ],
+  "summary": "All six closure checks pass. The blocking union is empty, and round-2 B-01, N-02 and N-03 are closed, so visual acceptance for image-sessions is closed. Non-blocking follow-ups remain; the most notable is N-01: the real-app delete dialog does not move focus to 取消 (DOM-confirmed, cause unknown)."
+}

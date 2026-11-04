@@ -1,0 +1,238 @@
+{
+  "reviewer": "reviewer-1 (Claude Code fresh-context sub-agent)",
+  "round": 3,
+  "inputs": [
+    ".allforai/verify/visual-review-1.json",
+    ".allforai/verify/visual-review-1.md",
+    ".allforai/verify/visual-review-2.json",
+    ".allforai/verify/visual-review-2.md",
+    ".allforai/verify/ui-screenshot-manifest.json",
+    ".allforai/verify/visual-acceptance-batches/batch-A-harness.md",
+    ".allforai/verify/visual-acceptance-batches/batch-B-real-app.md",
+    ".allforai/visual-qa/visual-acceptance-criteria.md",
+    ".allforai/verify/evidence/real/journey.json",
+    ".allforai/verify/archive/round-2/ui-visual-reconciliation.json",
+    ".allforai/image-sessions/repair-report.json"
+  ],
+  "status": "passed_with_warnings",
+  "blocking_union": [],
+  "non_blocking": [
+    {
+      "id": "N-01",
+      "root_cause": "Real app (WKWebView) delete dialog: 取消 does not receive focus. The journey DOM readback delete_dialog_focus has activeElement = the session LI, in_dialog:false; the capture shows no ring on 取消 while the list item keeps its double outline. The harness (Chromium) delete-confirm shows the ring on 取消, so the dialog's focus() call works in Chromium. Cause not yet known: WKWebView may ignore focus() while the window is not key during the probe's eval. Carried over from round-2 N-01, now confirmed by DOM readback.",
+      "severity": "minor",
+      "raised_by": [
+        "reviewer-1:R1-batch-B-real-app-003",
+        "reviewer-2:R2-batch-B-real-app-001"
+      ],
+      "screenshots": [
+        ".allforai/verify/evidence/real/real-delete-confirm-wide.png",
+        ".allforai/verify/evidence/real/real-delete-confirm-narrow.png",
+        ".allforai/verify/screens/delete-confirm-wide.png"
+      ],
+      "category": "code_gaps",
+      "repair_owner": "image-session-repair",
+      "repair_suggestion": "Reproduce with the app window key (activate it before opening the dialog). If focus still stays on the LI, move focus to 取消 after the dialog is shown (for example in requestAnimationFrame or after showModal) and add a WKWebView-side readback to the journey."
+    },
+    {
+      "id": "N-08",
+      "root_cause": "Expanded cards with no image (failed, cancelled, interrupted, file-missing) keep the prompt summary in the header and repeat the full prompt below, so the same prompt appears twice. Expanded done cards show it once. The round-2 repair report kept these cards unchanged on purpose (D-73, D-84), so this may be intended; it reads as duplication.",
+      "severity": "minor",
+      "raised_by": [
+        "reviewer-1:R1-batch-A-harness-001",
+        "reviewer-1:R1-batch-B-real-app-001"
+      ],
+      "screenshots": [
+        ".allforai/verify/screens/attempt-failed-wide.png",
+        ".allforai/verify/screens/attempt-failed-narrow.png",
+        ".allforai/verify/screens/attempt-cancelled-wide.png",
+        ".allforai/verify/screens/attempt-cancelled-narrow.png",
+        ".allforai/verify/screens/attempt-interrupted-wide.png",
+        ".allforai/verify/screens/attempt-interrupted-narrow.png",
+        ".allforai/verify/screens/attempt-file-missing-wide.png",
+        ".allforai/verify/screens/attempt-file-missing-narrow.png",
+        ".allforai/verify/screens/verify-failed-and-cancelled-wide.png",
+        ".allforai/verify/screens/verify-failed-and-cancelled-narrow.png",
+        ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png",
+        ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png",
+        ".allforai/verify/evidence/real/real-attempt-failed-wide.png",
+        ".allforai/verify/evidence/real/real-attempt-failed-narrow.png"
+      ],
+      "category": "visual_quality_gaps",
+      "repair_owner": "image-session-repair",
+      "repair_suggestion": "Hide the header summary on expanded non-image cards, or skip the full-prompt line when it equals the summary, so every expanded card shows the prompt once."
+    },
+    {
+      "id": "N-09",
+      "root_cause": "Harness only: right after an image job is submitted (已用 0秒), the top bar still reads 媒体：空闲 · 可开下一件重活. In the real app, real-running-wide at 已用 3秒 correctly shows 图片生成中 / 媒体：生成中, and harness running-other-session-new-empty shows it too, so this is header polling lag at the capture instant, not wrong logic.",
+      "severity": "minor",
+      "raised_by": [
+        "reviewer-1:R1-batch-A-harness-002"
+      ],
+      "screenshots": [
+        ".allforai/verify/screens/running-wide.png",
+        ".allforai/verify/screens/running-narrow.png",
+        ".allforai/verify/screens/running-other-session-wide.png",
+        ".allforai/verify/screens/running-other-session-narrow.png",
+        ".allforai/verify/screens/delete-confirm-running-wide.png",
+        ".allforai/verify/screens/delete-confirm-running-narrow.png",
+        ".allforai/verify/evidence/real/real-running-wide.png"
+      ],
+      "category": "visual_quality_gaps",
+      "repair_owner": "image-session-repair",
+      "repair_suggestion": "Optional: refresh the top-bar status as soon as an image job is accepted instead of waiting for the next poll."
+    },
+    {
+      "id": "N-10",
+      "root_cause": "Disabled-reason line shown both inside the expanded card and under the composer.",
+      "severity": "note",
+      "raised_by": [
+        "reviewer-1:R1-batch-A-harness-003"
+      ],
+      "screenshots": [
+        ".allforai/verify/screens/running-other-session-wide.png",
+        ".allforai/verify/screens/running-other-session-narrow.png",
+        ".allforai/verify/screens/busy-other-media-wide.png",
+        ".allforai/verify/screens/busy-other-media-narrow.png"
+      ],
+      "category": "visual_quality_gaps",
+      "repair_owner": "image-session-repair",
+      "repair_suggestion": "Optional: keep one of the two lines."
+    },
+    {
+      "id": "N-05",
+      "root_cause": "Copy details: the runtime-unavailable header still says 可离线生成; the empty state says 点「生成图片」 while the button is disabled (model-missing, runtime-unavailable). Carried over from round-2 N-05.",
+      "severity": "note",
+      "raised_by": [
+        "reviewer-1:R1-batch-A-harness-004"
+      ],
+      "screenshots": [
+        ".allforai/verify/screens/runtime-unavailable-wide.png",
+        ".allforai/verify/screens/runtime-unavailable-narrow.png",
+        ".allforai/verify/screens/model-missing-wide.png",
+        ".allforai/verify/screens/model-missing-narrow.png"
+      ],
+      "category": "visual_quality_gaps",
+      "repair_owner": "image-session-repair",
+      "repair_suggestion": "Optional copy tweaks."
+    },
+    {
+      "id": "N-11",
+      "root_cause": "session-list-load-failed leaves the timeline area empty. It meets the criteria because the list shows the reason and 重试, and the status line says 会话还没加载好.",
+      "severity": "note",
+      "raised_by": [
+        "reviewer-1:R1-batch-A-harness-005"
+      ],
+      "screenshots": [
+        ".allforai/verify/screens/session-list-load-failed-wide.png",
+        ".allforai/verify/screens/session-list-load-failed-narrow.png"
+      ],
+      "category": "visual_quality_gaps",
+      "repair_owner": "image-session-repair",
+      "repair_suggestion": "Optional centred hint in the timeline."
+    },
+    {
+      "id": "N-06",
+      "root_cause": "After restart, the current session item shows a double outline and a solid red trash button. Carried over from round-2 N-06.",
+      "severity": "note",
+      "raised_by": [
+        "reviewer-1:R1-batch-B-real-app-002"
+      ],
+      "screenshots": [
+        ".allforai/verify/evidence/real/real-after-restart-wide.png",
+        ".allforai/verify/evidence/real/real-after-restart-narrow.png"
+      ],
+      "category": "visual_quality_gaps",
+      "repair_owner": "image-session-repair",
+      "repair_suggestion": "Optional: check the resting style of the selected item."
+    },
+    {
+      "id": "N-07",
+      "root_cause": "Evidence framing. Library captures are scrolled past the tabs, and the image-page half of library-after-delete comes from verify-after-delete / real-after-delete. timeline-three-rounds is shown by the bottom/top pair. The real failed card's 详情 is collapsed; its content is visible in the harness attempt-failed capture.",
+      "severity": "note",
+      "raised_by": [
+        "reviewer-1:R1-batch-A-harness-006",
+        "reviewer-1:R1-batch-B-real-app-004",
+        "reviewer-2:R2-batch-A-harness-001",
+        "reviewer-2:R2-batch-A-harness-002",
+        "reviewer-2:R2-batch-B-real-app-002"
+      ],
+      "screenshots": [
+        ".allforai/verify/screens/library-after-delete-wide.png",
+        ".allforai/verify/screens/library-after-delete-narrow.png",
+        ".allforai/verify/screens/verify-after-delete-wide.png",
+        ".allforai/verify/screens/verify-after-delete-narrow.png",
+        ".allforai/verify/screens/timeline-three-rounds-wide.png",
+        ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+        ".allforai/verify/screens/timeline-three-rounds-top-wide.png",
+        ".allforai/verify/screens/timeline-three-rounds-top-narrow.png",
+        ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+        ".allforai/verify/evidence/real/real-library-after-delete-narrow.png",
+        ".allforai/verify/evidence/real/real-attempt-failed-wide.png",
+        ".allforai/verify/evidence/real/real-attempt-failed-narrow.png"
+      ],
+      "category": "test_gaps",
+      "repair_owner": "image-session-verify",
+      "repair_suggestion": "Optional: in future runs also capture the library top with its tab bar, and an expanded 详情 in the real app."
+    }
+  ],
+  "disagreements": [
+    {
+      "topic": "Expanded non-image cards repeat the prompt (N-08)",
+      "reviewer_1": "minor (R1-batch-A-harness-001, R1-batch-B-real-app-001)",
+      "reviewer_2": "not raised; all failed/cancelled captures passed",
+      "resolution": "I opened real-attempt-failed-wide: 第 6 次 shows 会失败的一张：进程中途被杀掉 in the header and again below. The duplication is real, but no criteria item forbids it and the repair report kept these cards unchanged on purpose (D-73/D-84). Kept as a non-blocking minor."
+    },
+    {
+      "topic": "Top bar shows 媒体：空闲 while an image job runs (N-09)",
+      "reviewer_1": "minor (R1-batch-A-harness-002)",
+      "reviewer_2": "not raised",
+      "resolution": "I opened real-running-wide: at 已用 3秒 the real app shows 内存里：图片生成中 / 媒体：生成中. The stale header shows only in harness shots taken at 已用 0秒. Kept as a non-blocking minor; it is not an image-session criteria item."
+    },
+    {
+      "topic": "delete-confirm focus on 取消 in the real app (N-01)",
+      "reviewer_1": "note (R1-batch-B-real-app-003): focus not visibly on 取消",
+      "reviewer_2": "note (R2-batch-B-real-app-001): pixels cannot establish focus",
+      "resolution": "I opened real-delete-confirm-wide: there is no ring on 取消, and the LI keeps its outline. journey.json delete_dialog_focus confirms activeElement = LI, in_dialog:false. Raised to minor as the round-2 N-01 carry-over. Not blocking: the dialog, copy and danger styling are correct, the Chromium harness gets focus right, and the cause may be the probe's non-key window."
+    },
+    {
+      "topic": "Overall status",
+      "reviewer_1": "passed_with_warnings",
+      "reviewer_2": "passed",
+      "resolution": "passed_with_warnings. Neither reviewer raised a blocker or major, and the only difference is the minors above."
+    }
+  ],
+  "round_2_items": [
+    {
+      "id": "B-01",
+      "round_2_severity": "major",
+      "status": "closed",
+      "evidence": "At 900×700 the expanded 大图 now has no header thumbnail and renders well above the 192px floor: harness running-other-session-narrow and busy-other-media-narrow about 192px, attempt-selected-actions-narrow about 234px, verify-selected-full-size-narrow about 198px. Real app: journey ui_after_three_rounds gives 第 3 次 big image 236px with no header thumbnail, and real-timeline-three-rounds-narrow shows one large lighthouse image, the full prompt, 高级参数 and both actions in one frame. Both reviewers passed all of these."
+    },
+    {
+      "id": "N-02",
+      "round_2_severity": "minor",
+      "status": "closed",
+      "evidence": "With the 生成中 badge, list titles now use the freed width: 会失败的一张 and 甲会话：正在生成 appear in full (running-wide, running-other-session-wide), and the real app shows 一座海边灯塔，黄昏，… next to the badge (real-running-wide)."
+    },
+    {
+      "id": "N-03",
+      "round_2_severity": "minor",
+      "status": "closed",
+      "evidence": "Every image-page capture shows a clear gap of about 12px between the 新会话 button and the first session item."
+    },
+    {
+      "id": "N-01",
+      "round_2_severity": "minor",
+      "status": "open (non-blocking)",
+      "evidence": "Confirmed by DOM readback in journey.json delete_dialog_focus; see non_blocking N-01."
+    },
+    {
+      "id": "N-04",
+      "round_2_severity": "note",
+      "status": "accepted by user decision (per-session drafts out of scope)",
+      "evidence": "n/a"
+    }
+  ],
+  "summary": "Round 3 reconciliation: both reviewers inspected all 76 screenshots (54 harness, 22 real app). Neither raised a blocker or major, so the blocking union is empty. Round-2 major B-01 and minors N-02 and N-03 are closed. Non-blocking items remain: N-01 (real-app delete dialog focus stays on the list item, DOM-confirmed), N-08 (expanded non-image cards repeat the prompt), N-09 (harness top-bar lag at 0s), plus notes. Status: passed_with_warnings."
+}

@@ -1,0 +1,55 @@
+{
+ "targets": [
+  {
+   "key": "claude",
+   "name": "Claude Code",
+   "path": "/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.8OakMkfmFt/.claude/skills/local-model-desk",
+   "detected": true,
+   "shared_note": null,
+   "state": "installed",
+   "target": "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk",
+   "message": null,
+   "result": "ok"
+  },
+  {
+   "key": "codex",
+   "name": "Codex",
+   "path": "/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.8OakMkfmFt/.agents/skills/local-model-desk",
+   "detected": false,
+   "shared_note": "同时对 pi、DeepSeek Harness 生效",
+   "state": "installed",
+   "target": "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk",
+   "message": null,
+   "result": "ok"
+  },
+  {
+   "key": "pi",
+   "name": "pi",
+   "path": "/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.8OakMkfmFt/.pi/agent/skills/local-model-desk",
+   "detected": true,
+   "shared_note": null,
+   "state": "installed",
+   "target": "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk",
+   "message": null,
+   "result": "ok"
+  },
+  {
+   "key": "dsh",
+   "name": "DeepSeek Harness",
+   "path": "/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.8OakMkfmFt/.dsh/skills/local-model-desk",
+   "detected": true,
+   "shared_note": null,
+   "state": "installed",
+   "target": "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk",
+   "message": null,
+   "result": "ok"
+  }
+ ],
+ "cli": {
+  "path": "/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.8OakMkfmFt/.local/bin/lmdesk",
+  "state": "installed",
+  "target": "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin/lmdesk",
+  "message": null,
+  "result": "ok"
+ }
+}

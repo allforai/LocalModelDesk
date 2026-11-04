@@ -1,0 +1,216 @@
+{
+  "reviewer": {
+    "id": "reviewer-2",
+    "backend": "codex exec",
+    "model": "GPT-6"
+  },
+  "batch": "batch-B-real-app",
+  "status": "passed",
+  "inspected": [
+    ".allforai/verify/evidence/real/real-running-wide.png",
+    ".allforai/verify/evidence/real/real-running-narrow.png",
+    ".allforai/verify/evidence/real/real-refine-prefill-wide.png",
+    ".allforai/verify/evidence/real/real-refine-prefill-narrow.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-wide.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-top-wide.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-top-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.png",
+    ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png",
+    ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-failed-wide.png",
+    ".allforai/verify/evidence/real/real-attempt-failed-narrow.png",
+    ".allforai/verify/evidence/real/real-after-restart-wide.png",
+    ".allforai/verify/evidence/real/real-after-restart-narrow.png",
+    ".allforai/verify/evidence/real/real-delete-confirm-wide.png",
+    ".allforai/verify/evidence/real/real-delete-confirm-narrow.png",
+    ".allforai/verify/evidence/real/real-after-delete-wide.png",
+    ".allforai/verify/evidence/real/real-after-delete-narrow.png",
+    ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+    ".allforai/verify/evidence/real/real-library-after-delete-narrow.png"
+  ],
+  "per_screenshot": [
+    {
+      "path": ".allforai/verify/evidence/real/real-running-wide.png",
+      "state": "real-running",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Expanded attempt 1 shows generating status, elapsed time, progress bar, Cancel and collapsed Logs. Session has generating badge; Generate is visibly disabled with the session-specific status line. No image placeholder or refinement actions."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-running-narrow.png",
+      "state": "real-running",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Expanded attempt 1 shows generating status, elapsed time, progress bar, Cancel and collapsed Logs. Session has generating badge; Generate is visibly disabled with the session-specific status line. No image placeholder or refinement actions."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-refine-prefill-wide.png",
+      "state": "real-refine-prefill",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Attempt 2 displays a complete lighthouse image and both actions. Composer matches its bird-inclusive prompt, has a visible caret/blue focus border and the reuse-attempt-2 chip with ×. Advanced parameters remain collapsed; session count remains 2."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-refine-prefill-narrow.png",
+      "state": "real-refine-prefill",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Attempt 2 displays a complete lighthouse image and both actions. Composer matches its bird-inclusive prompt, has a visible caret/blue focus border and the reuse-attempt-2 chip with ×. Advanced parameters remain collapsed; session count remains 2."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-wide.png",
+      "state": "real-timeline-three-rounds",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Bottom-pinned timeline shows expanded attempt 3 with a complete lighthouse image, full bird-and-sailboat prompt, collapsed advanced parameters and both complete action labels. Image is visibly above the 192 CSS-pixel minimum and below 60vh. Earlier rounds are above the scroll viewport and visible in the companion top capture."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.png",
+      "state": "real-timeline-three-rounds",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Bottom-pinned timeline shows expanded attempt 3 with a complete lighthouse image, full bird-and-sailboat prompt, collapsed advanced parameters and both complete action labels. Image is visibly above the 192 CSS-pixel minimum and below 60vh. Earlier rounds are above the scroll viewport and visible in the companion top capture."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-top-wide.png",
+      "state": "real-timeline-three-rounds-top",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Top view shows attempts 1, 2, 3 in order; first two have real lighthouse thumbnails, prompts and 512×512 / 6-step metadata. Attempt 3 extends below the timeline viewport; its full image and actions are visible in the companion bottom capture. Composer is separated from the scroll region."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-top-narrow.png",
+      "state": "real-timeline-three-rounds-top",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Top view shows attempts 1, 2, 3 in order; first two have real lighthouse thumbnails, prompts and 512×512 / 6-step metadata. Attempt 3 extends below the timeline viewport; its full image and actions are visible in the companion bottom capture. Composer is separated from the scroll region."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.png",
+      "state": "real-attempt-selected-actions",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Attempt 1 is expanded with a complete square lighthouse image below 60vh, full prompt and both side-by-side action buttons fully visible. No second expanded card is visible; subsequent content is below the scroll viewport."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.png",
+      "state": "real-attempt-selected-actions",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Attempt 1 is expanded with a complete square lighthouse image below 60vh, full prompt and both side-by-side action buttons fully visible. No second expanded card is visible; subsequent content is below the scroll viewport."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png",
+      "state": "real-attempt-cancelled",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Attempt 5 shows 已取消, a gray × icon block and manual-stop explanation. Both actions are complete and visible; no running indicator or empty image placeholder."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png",
+      "state": "real-attempt-cancelled",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Attempt 5 shows 已取消, a gray × icon block and manual-stop explanation. Both actions are complete and visible; no running indicator or empty image placeholder."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-attempt-failed-wide.png",
+      "state": "real-attempt-failed",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Attempt 6 shows red failure badge/icon block and 生成程序异常退出, collapsed Details and advanced parameters, plus both complete actions. No broken image. Hidden diagnostic contents cannot be judged from this capture."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-attempt-failed-narrow.png",
+      "state": "real-attempt-failed",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Attempt 6 shows red failure badge/icon block and 生成程序异常退出, collapsed Details and advanced parameters, plus both complete actions. No broken image. Hidden diagnostic contents cannot be judged from this capture."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-after-restart-wide.png",
+      "state": "real-after-restart",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Two sessions remain listed; lighthouse session is highlighted with 6 attempts. Cancelled attempt 5 and expanded failed attempt 6 remain visible. Wide view shows the retained attempt-4 lighthouse thumbnail; narrow view contains only its bottom sliver at the scroll boundary. No blank-state regression."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-after-restart-narrow.png",
+      "state": "real-after-restart",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Two sessions remain listed; lighthouse session is highlighted with 6 attempts. Cancelled attempt 5 and expanded failed attempt 6 remain visible. Wide view shows the retained attempt-4 lighthouse thumbnail; narrow view contains only its bottom sliver at the scroll boundary. No blank-state regression."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-delete-confirm-wide.png",
+      "state": "real-delete-confirm",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Centered dialog shows 删除会话, names the bamboo session and clearly says images remain in the library. Cancel and danger-styled Delete fit fully. Cancel keyboard focus is not visually established by this screenshot."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-delete-confirm-narrow.png",
+      "state": "real-delete-confirm",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Centered dialog shows 删除会话, names the bamboo session and clearly says images remain in the library. Cancel and danger-styled Delete fit fully. Cancel keyboard focus is not visually established by this screenshot."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-after-delete-wide.png",
+      "state": "real-after-delete",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Only the lighthouse session remains, highlighted with 6 attempts; the bamboo session is absent. Existing timeline and composer remain correctly laid out."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-after-delete-narrow.png",
+      "state": "real-after-delete",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Only the lighthouse session remains, highlighted with 6 attempts; the bamboo session is absent. Existing timeline and composer remain correctly laid out."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+      "state": "real-library-after-delete",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Library lists and previews the deleted bamboo-session image; the real bamboo-path picture and matching title are visible. Preview, Finder and parameter-fill buttons fit. Library seed metadata is allowed by D-50a; narrow metadata wraps without overlap."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-library-after-delete-narrow.png",
+      "state": "real-library-after-delete",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Library lists and previews the deleted bamboo-session image; the real bamboo-path picture and matching title are visible. Preview, Finder and parameter-fill buttons fit. Library seed metadata is allowed by D-50a; narrow metadata wraps without overlap."
+    }
+  ],
+  "issues": [
+    {
+      "id": "R2-batch-B-real-app-001",
+      "severity": "note",
+      "failure_code": "evidence_scope",
+      "screenshots": [
+        ".allforai/verify/evidence/real/real-delete-confirm-wide.png",
+        ".allforai/verify/evidence/real/real-delete-confirm-narrow.png"
+      ],
+      "criteria_ref": "delete-confirm: Cancel receives focus; global rules: aria-current",
+      "observation": "Dialog text and danger styling pass visually. The screenshots do not establish Cancel keyboard focus or DOM accessibility attributes; no missing-focus behavior is asserted.",
+      "repair_suggestion": "No visual repair requested. Verify activeElement and accessibility attributes through interaction or a separate functional check."
+    },
+    {
+      "id": "R2-batch-B-real-app-002",
+      "severity": "note",
+      "failure_code": "evidence_scope",
+      "screenshots": [
+        ".allforai/verify/evidence/real/real-attempt-failed-wide.png",
+        ".allforai/verify/evidence/real/real-attempt-failed-narrow.png"
+      ],
+      "criteria_ref": "attempt-failed: Details contains code: message and log tail",
+      "observation": "The human-readable failure reason, red icon, collapsed Details disclosure and both actions are visible. Diagnostic content inside the collapsed disclosure is not visible and was not inferred from JSON.",
+      "repair_suggestion": "No visual repair requested. Expand Details in a supplemental functional check to verify its code/message and log tail."
+    }
+  ],
+  "summary": "Opened and visually inspected all 22 listed screenshots (11 states/views × 2 widths). No blocker, major or minor visual issues found. Two informational notes delimit hidden behavior/content that screenshots cannot verify. No probe JSON or other reviewers’ reports were read."
+}

@@ -1,0 +1,42 @@
+{
+    "id": "049d92df7aca4611a1848181d48113b6",
+    "kind": "video",
+    "title": "\u76d8\u95ee-\u9996\u5e27",
+    "title_auto": false,
+    "created": "2026-10-19T18:50:46",
+    "updated": "2026-10-19T18:53:42",
+    "attempts": [
+        {
+            "id": "703a6bbbdb8b4622829a25aa75abcbcc",
+            "job_id": 17,
+            "ts": "2026-10-19T18:50:49",
+            "finished": "2026-10-19T18:53:42",
+            "status": "done",
+            "op": "generate",
+            "params": {
+                "prompt": "\u732b\u6162\u6162\u7728\u773c",
+                "width": 768,
+                "height": 448,
+                "frames": 49,
+                "steps": 16,
+                "seed": 1624655210,
+                "mode": "image",
+                "use_audio": true
+            },
+            "continues": null,
+            "refs": {
+                "first_frame": {
+                    "kind": "image",
+                    "session_id": "00fbaa0b4e4741828d9fd8ca9dd73e1e",
+                    "attempt_id": "f2addce43af94edc9c0df71092a1ca46"
+                }
+            },
+            "output": "h3-20261019-185049-cd931bf9.mp4",
+            "joined_output": null,
+            "joined_error": null,
+            "error": null,
+            "base": null,
+            "output_missing": false
+        }
+    ]
+}

@@ -1,0 +1,2865 @@
+{
+  "schema_version": 1,
+  "reviewer": {
+    "session_id": "rules-reviewer subagent (fresh context) spawned from session fa6582dc-b056-49e3-a1d5-3b44596f2ffe; own session id not exposed to the subagent",
+    "independent": true
+  },
+  "source_ids": [
+    "SRC1",
+    "SRC2",
+    "SRC3",
+    "SRC4"
+  ],
+  "source_digests": {
+    "SRC1": "bbaf797c93989f27b731761b6c69e2c8b945a180883b7a4ef8c3b4bc44ca0b31",
+    "SRC2": "ccb68af7ad614d3310771561cec050be54080544512263714a50bdaf207a41b0",
+    "SRC3": "826679040059052b71948a2c979bab89533614033e27da442423f4a4a1e647ed",
+    "SRC4": "a218142ab0ef1f4fabd7e0be4f89d70ae72027b23310840096c941983931651c"
+  },
+  "requirements_digest": "15cc9fc5112e03cd9bf0bbbe09942f0fe63366cccd369571ee4e1fb4692b0819",
+  "rules": [
+    {
+      "id": "RULE-S1-UP",
+      "source_id": "SRC1",
+      "start_line": 5,
+      "end_line": 5,
+      "quote": "**上游** gateway 设计 `2026-08-31-gateway-design.md`（gateway 不加载、不卸载、不排队——本设计不改它）；arbiter 设计 `2026-08-31-arbiter-design.md`；图片会话 `2026-09-24-image-sessions-design.md`；硬件软限制（内存只提醒+确认，不拦）。",
+      "subject": "上游约束（gateway、arbiter、硬件软限制）",
+      "effect": "声明 gateway 不加载/卸载/排队且本设计不改；硬件软限制为内存只提醒+确认、不拦",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-S1-META",
+      "source_id": "SRC1",
+      "start_line": 7,
+      "end_line": 7,
+      "quote": "每条 **[A-xx]** 可写成测试断言。",
+      "subject": "A-xx 条目形式",
+      "effect": "每条 A-xx 可写成测试断言",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-S1-SCOPE",
+      "source_id": "SRC1",
+      "start_line": 13,
+      "end_line": 27,
+      "quote": "- 范围：\n  - `lmdesk` 命令行，包含 `status`、`models`、`ask`、`image sessions|new|show|gen|wait|rename`；\n  - 一份 SKILL.md；\n  - 设置页「本机 agent」区域，可多选安装到 Claude Code、Codex、pi、DeepSeek Harness；\n  - 服务端小改（§5）：\n    - 对话进行中计数和界面最近一次对话的时间；\n    - 记录模型是被谁换上的；\n    - 媒体取消接口带任务 id；\n    - `/api/agent-skill` 接口；\n    - 只读预检接口 `/api/agent/precheck`；\n    - `/api/state` 返回版本号；\n  - 聊天页显示「模型已被 agent 切换」的提示；\n  - 启动时检查已装链接是否失效，失效时在菜单栏显示提示点（含 Swift 侧改动）；\n  - 卸载脚本清理链接；\n  - 打包进 app。",
+      "subject": "第一期范围",
+      "effect": "列出第一期交付：lmdesk status/models/ask/image 子命令、SKILL.md、设置页多选安装、服务端小改、聊天页提示、启动失效检查与菜单栏提示点、卸载脚本清理、打包",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-A-00a",
+      "source_id": "SRC1",
+      "start_line": 28,
+      "end_line": 28,
+      "quote": "- [A-00a] 不改 gateway（`desk/gateway/`），它仍不加载、不排队。命令行只走台面内部 `/api`。",
+      "subject": "gateway",
+      "effect": "不改 gateway；命令行只走台面内部 /api",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-00a"
+      ]
+    },
+    {
+      "id": "RULE-A-00b",
+      "source_id": "SRC1",
+      "start_line": 29,
+      "end_line": 29,
+      "quote": "- [A-00b] 服务端不加任务队列。排队等待全部在命令行进程内完成（§3）。",
+      "subject": "任务排队",
+      "effect": "服务端不加任务队列；排队等待全部在命令行进程内",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-00b"
+      ]
+    },
+    {
+      "id": "RULE-A-00c",
+      "source_id": "SRC1",
+      "start_line": 30,
+      "end_line": 36,
+      "quote": "- [A-00c] 第一版不做以下这些：\n  - 视频、音乐；\n  - 删除会话；\n  - `ask` 写入台面聊天会话；\n  - MCP 外壳；\n  - 用完后自动卸载 agent 加载的模型（见 A-28）；\n  - 对话模型加载的「内存只提醒、不阻止」——现在这个软限制本来就没实现，另立题目处理。",
+      "subject": "第一版非目标",
+      "effect": "第一版不做视频/音乐、删除会话、ask 写入聊天会话、MCP 外壳、自动卸载 agent 模型、对话模型加载的内存软限制",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-00c"
+      ]
+    },
+    {
+      "id": "RULE-A-00d",
+      "source_id": "SRC1",
+      "start_line": 37,
+      "end_line": 37,
+      "quote": "- [A-00d] 不改 arbiter 的批准、拒绝规则。现有界面的生成和对话交互不改，只在聊天页加一条切换提示（A-66）。",
+      "subject": "arbiter 与现有界面交互",
+      "effect": "不改 arbiter 批准/拒绝规则；现有界面生成和对话交互不改，仅聊天页加切换提示",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [
+        "A-66 聊天页切换提示"
+      ],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-00d"
+      ]
+    },
+    {
+      "id": "RULE-S1-NOCOMPAT",
+      "source_id": "SRC1",
+      "start_line": 38,
+      "end_line": 38,
+      "quote": "- 台面未发布，不谈兼容。",
+      "subject": "兼容性",
+      "effect": "台面未发布，不谈兼容",
+      "scope": {
+        "release": "第一期（未发布）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-A-01",
+      "source_id": "SRC1",
+      "start_line": 48,
+      "end_line": 48,
+      "quote": "- [A-01] 命令行是 `desk/agent_cli/` 包，只用标准库，不 import `desk` 的其他模块。入口是 `python -m desk.agent_cli`。",
+      "subject": "命令行包结构",
+      "effect": "desk/agent_cli/ 只用标准库、不 import desk 其他模块；入口 python -m desk.agent_cli",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-01"
+      ]
+    },
+    {
+      "id": "RULE-A-02",
+      "source_id": "SRC1",
+      "start_line": 49,
+      "end_line": 49,
+      "quote": "- [A-02] app 包里有 `Contents/Resources/bin/lmdesk`，一个 shell 小脚本，用 `Contents/Resources/python/bin/python3.13` 运行 `-m desk.agent_cli`。它通过自身的真实路径（解析软链接后）定位所在的 app 包。",
+      "subject": "app 内 lmdesk 脚本",
+      "effect": "Contents/Resources/bin/lmdesk shell 脚本用内置 python3.13 运行，按解析软链接后的真实路径定位 app 包",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "从 app 包运行"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-02"
+      ]
+    },
+    {
+      "id": "RULE-A-03",
+      "source_id": "SRC1",
+      "start_line": 50,
+      "end_line": 50,
+      "quote": "- [A-03] skill 放在 `desk/agent_skill/bundled/local-model-desk/SKILL.md`。打包后位于 `Contents/Resources/desk/agent_skill/bundled/local-model-desk/`，随 `desk/` 一起 rsync。",
+      "subject": "skill 文件位置",
+      "effect": "skill 位于 desk/agent_skill/bundled/local-model-desk/SKILL.md，随 desk/ rsync 进 app",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-03"
+      ]
+    },
+    {
+      "id": "RULE-A-04",
+      "source_id": "SRC1",
+      "start_line": 51,
+      "end_line": 51,
+      "quote": "- [A-04] 从源码运行台面时（不是从 app 包运行），安装链接指向仓库里的 skill 目录和 `scripts/lmdesk` 开发脚本，改动立即生效。",
+      "subject": "源码运行时的安装链接",
+      "effect": "源码运行时链接指向仓库 skill 目录和 scripts/lmdesk",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "从源码运行台面"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-04"
+      ]
+    },
+    {
+      "id": "RULE-A-05",
+      "source_id": "SRC1",
+      "start_line": 52,
+      "end_line": 52,
+      "quote": "- [A-05] 命令行发出的会改变状态的请求（对话、加载、生图、取消），一律在请求体里带上 `\"origin\": \"agent\"`。服务端靠这个字段区分是 agent 还是界面发起的（A-40、A-43）。",
+      "subject": "origin 字段",
+      "effect": "命令行所有改变状态的请求（对话、加载、生图、取消）带 origin: agent",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-05"
+      ]
+    },
+    {
+      "id": "RULE-S1-CMDS",
+      "source_id": "SRC1",
+      "start_line": 56,
+      "end_line": 68,
+      "quote": "```\nlmdesk status\nlmdesk models\nlmdesk ask \"问题\" [--model KEY] [--system \"…\"] [--file PATH …] [--max-tokens N]\nlmdesk image sessions\nlmdesk image new \"名字\"\nlmdesk image show <会话>\nlmdesk image gen <会话> \"提示词\" [--size WxH] [--steps N] [--seed N]\n                 [--from <尝试id> --strength 0–1] [--out PATH] [--force] [--no-wait]\nlmdesk image wait <会话> <尝试id> [--out PATH]\nlmdesk image rename <会话> \"新名字\"\n通用参数：--json  --timeout 秒（默认 1800）\n```",
+      "subject": "第一期命令语法",
+      "effect": "定义 status/models/ask/image 子命令参数；通用参数 --json、--timeout（默认 1800 秒）",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-A-10",
+      "source_id": "SRC1",
+      "start_line": 70,
+      "end_line": 70,
+      "quote": "- [A-10] `<会话>` 可以填 id，也可以填名字。名字匹配到多个时，退出码 2，并列出这些候选。",
+      "subject": "会话参数解析",
+      "effect": "<会话> 可填 id 或名字；名字多重匹配退出码 2 并列出候选",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-10"
+      ]
+    },
+    {
+      "id": "RULE-A-11",
+      "source_id": "SRC1",
+      "start_line": 71,
+      "end_line": 74,
+      "quote": "- [A-11] stdout 只放最终结果，进度和等待提示都走 stderr。\n  - `ask` 输出回答正文。\n  - `gen`、`wait` 输出图片的绝对路径；带 `--out` 时，复制过去，并输出复制后的绝对路径。\n  - `--json` 时 stdout 是单个 JSON 对象：`gen`、`wait` 包含 `session_id`、`attempt_id`、`path`、`seed`、`params`；`show` 列出每次尝试的 `id`、`prompt`、`params`、`path`、`status`。",
+      "subject": "stdout/stderr 分工",
+      "effect": "stdout 只放最终结果，进度/等待走 stderr；gen/wait 输出路径；--json 输出单个对象",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [
+        "A-15 --no-wait 时 stdout 为尝试 id"
+      ],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-11"
+      ]
+    },
+    {
+      "id": "RULE-A-12",
+      "source_id": "SRC1",
+      "start_line": 75,
+      "end_line": 75,
+      "quote": "- [A-12] `ask` 的 stdin 不是终端时，读入 stdin 内容，接在问题后面。`--file` 可以重复，每个文件以「文件名 + 内容」的块拼进用户消息。",
+      "subject": "ask 输入拼接",
+      "effect": "stdin 非终端时读入拼接；--file 可重复按文件名+内容块拼接",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-12"
+      ]
+    },
+    {
+      "id": "RULE-A-13",
+      "source_id": "SRC1",
+      "start_line": 76,
+      "end_line": 84,
+      "quote": "- [A-13] 退出码固定为：\n  - 0 成功；\n  - 1 其他错误，包括接口不兼容、生成失败、台面未能启动；\n  - 2 参数错误或会话名有歧义；\n  - 3 等待超时；\n  - 4 内存不足，见 A-26；\n  - 5 模型、会话或尝试不存在，或者没有指定模型而当前也没有加载；\n  - 6 被沙箱拦截，无法访问本机网络，见 A-33。\n  - 出错时，stderr 最后一行是一句人能读懂的原因；`--json` 时，stdout 是 `{\"error\": {\"code\", \"message\"}}`。",
+      "subject": "退出码",
+      "effect": "0 成功/1 其他错误/2 参数或歧义/3 等待超时/4 内存不足/5 不存在或未加载/6 沙箱；出错时 stderr 末行为原因，--json 时为 error 对象",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-13"
+      ]
+    },
+    {
+      "id": "RULE-A-14",
+      "source_id": "SRC1",
+      "start_line": 85,
+      "end_line": 85,
+      "quote": "- [A-14] 不提供删除命令。",
+      "subject": "删除命令",
+      "effect": "不提供删除命令",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-14"
+      ]
+    },
+    {
+      "id": "RULE-A-15",
+      "source_id": "SRC1",
+      "start_line": 86,
+      "end_line": 86,
+      "quote": "- [A-15] `gen` 的任务一旦提交，stderr 立刻打印一行 `已提交：会话 <id> 尝试 <attempt_id>（中断后可用 lmdesk image wait <id> <attempt_id> 继续等待）`。带 `--no-wait` 时，提交后立即以 0 退出，stdout 输出这个尝试 id（`--json` 时是 `{\"session_id\", \"attempt_id\"}`）。",
+      "subject": "gen 提交提示与 --no-wait",
+      "effect": "提交后 stderr 立刻打印续等提示行；--no-wait 提交后以 0 退出并输出尝试 id",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-15"
+      ]
+    },
+    {
+      "id": "RULE-A-16",
+      "source_id": "SRC1",
+      "start_line": 87,
+      "end_line": 91,
+      "quote": "- [A-16] `wait` 只等结果，不提交任何东西：\n  - 尝试还在进行：继续等。\n  - 尝试已完成：立即输出结果。\n  - 尝试失败或被取消：退出码 1，附带原因。\n  - 尝试不存在：退出码 5。",
+      "subject": "wait 行为",
+      "effect": "只等不提交；进行中继续等、完成即输出、失败/取消退出 1、不存在退出 5",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-16"
+      ]
+    },
+    {
+      "id": "RULE-A-20",
+      "source_id": "SRC1",
+      "start_line": 95,
+      "end_line": 106,
+      "quote": "- [A-20] 决策写成纯函数 `decide(op, want_model, state) -> wait|swap|submit|fail`，其中 state 来自 `/api/llm/status` 和 `/api/media/job`。规则如下：\n\n| 台面状态 | `ask` | `image gen` |\n|---|---|---|\n| 正在加载模型 | wait | wait |\n| 媒体任务在跑 | 要的就是当前模型：submit；否则 wait | wait |\n| 有对话在进行（`active_chats > 0`） | 要的就是当前模型：submit；否则 wait | wait |\n| 界面最近 5 分钟内有过对话（`ui_chat_recent`，A-40） | 要的就是当前模型：submit；否则 wait | submit（由 arbiter 决定，见下方说明） |\n| 空闲 | 不是要的模型：swap；然后 submit | submit（由 arbiter 决定，必要时它自己卸掉对话模型） |\n\n  - 说明：生图的 arbiter 若需要卸掉对话模型，而界面最近 5 分钟内有过对话，命令行在提交前改为 wait。理由与换模型相同：不在你聊天的间隙抢走模型。\n  - 这个判断由 `decide()` 根据预检接口（A-45）返回的 `release` 里有没有 `kind: \"llm\"` 来做。`/api/state` 的 `can_start` 只回答「谁占着」，不带 `release`，所以不能用它判断。",
+      "subject": "decide() 决策表",
+      "effect": "按台面状态对 ask/image gen 给出 wait/swap/submit；生图需卸对话模型且 ui_chat_recent 时改 wait，依据预检 release 中是否有 kind llm",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-20"
+      ]
+    },
+    {
+      "id": "RULE-A-21",
+      "source_id": "SRC1",
+      "start_line": 108,
+      "end_line": 111,
+      "quote": "- [A-21] 选模型：\n  - 有 `--model`：用它。\n  - 没有 `--model` 但已加载了模型：用当前加载的那个，不换。\n  - 两者都没有：退出码 5，stderr 列出可用模型的 key。",
+      "subject": "选模型",
+      "effect": "有 --model 用它；否则用已加载的；都没有退出 5 并列出可用 key",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "ask"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-21"
+      ]
+    },
+    {
+      "id": "RULE-A-22",
+      "source_id": "SRC1",
+      "start_line": 112,
+      "end_line": 112,
+      "quote": "- [A-22] swap 就是调用 `POST /api/llm/load`（带 `origin: \"agent\"`），再轮询直到 `loaded`。加载过程中出错时，退出码 1，并附带台面给出的原因。",
+      "subject": "swap",
+      "effect": "调用 POST /api/llm/load（origin agent）轮询到 loaded；加载出错退出 1",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-22"
+      ]
+    },
+    {
+      "id": "RULE-A-23",
+      "source_id": "SRC1",
+      "start_line": 113,
+      "end_line": 113,
+      "quote": "- [A-23] 轮询间隔从 2s 开始，每次 ×1.5，最长 5s。等待期间，stderr 每 15s 打一行，例如「等待中：图片任务进行中（已等 45s）」。",
+      "subject": "轮询节奏",
+      "effect": "2s 起每次 ×1.5 至多 5s；等待期间 stderr 每 15s 打一行",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-23"
+      ]
+    },
+    {
+      "id": "RULE-A-24",
+      "source_id": "SRC1",
+      "start_line": 114,
+      "end_line": 116,
+      "quote": "- [A-24] 以下情况都回到等待重新判断，不算失败：\n  - 收到 409 `media_busy` 或 `load_in_progress`；\n  - 对话时收到「模型不匹配」（`model_mismatch`）、「模型已被换掉」（`evicted`）或「没有加载模型」（`no_model_loaded`）——说明换模型和对话之间被别人插了队。",
+      "subject": "可重试情况",
+      "effect": "409 media_busy/load_in_progress、对话时 model_mismatch/evicted/no_model_loaded 回到等待，不算失败",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-24"
+      ]
+    },
+    {
+      "id": "RULE-A-25",
+      "source_id": "SRC1",
+      "start_line": 117,
+      "end_line": 122,
+      "quote": "- [A-25] 中断和超时：\n  - 任务还没提交：超时以退出码 3 退出；收到 SIGINT 或 SIGTERM 时，以退出码 3 退出。\n  - 任务已经提交：\n    - **SIGTERM 或超时：不取消任务**。stderr 重复 A-15 那行续等提示，以退出码 3 退出。任务继续在台面跑，结果落在会话里，之后可以用 `wait` 取回。\n    - **SIGINT（用户在终端按 Ctrl-C）：取消任务**。调用 `POST /api/media/cancel`，带上自己的 `job_id`（A-42），然后以退出码 3 退出。\n  - SIGKILL 无法捕获，等同于 SIGTERM：任务继续跑，结果在会话里。",
+      "subject": "中断和超时",
+      "effect": "未提交：超时或 SIGINT/SIGTERM 退出 3；已提交：SIGTERM/超时不取消、重复续等提示、退出 3；SIGINT 用 job_id 取消自己的任务并退出 3；SIGKILL 同 SIGTERM",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-25"
+      ]
+    },
+    {
+      "id": "RULE-A-26",
+      "source_id": "SRC1",
+      "start_line": 123,
+      "end_line": 128,
+      "quote": "- [A-26] 内存不足分两种情况：\n  - **生图**：台面要求确认时，退出码 4，stderr 原样转述台面的内存估算文案。带 `--force` 时，把 `force: true` 透传给接口。\n  - **加载对话模型**：arbiter 返回 `insufficient_budget`，而且对话模型不能加 force。\n    - 加载接口的拒绝里不带 `release`（`LlmRejected` 只有 code 和 message），所以换模型前先调用预检接口（A-45）。\n    - 预检拒绝时带有可以释放的项（`release` 不为空，比如正在跑的媒体任务）：等待。\n    - 没有可以释放的项（说明这个模型对这台机器太大）：立即以退出码 4 退出，原样转述台面的说明，并注明「对话模型不能强制加载，请换一个更小的模型」。",
+      "subject": "内存不足",
+      "effect": "生图需确认时退出 4，--force 透传 force；加载对话模型 insufficient_budget 不能 force：先预检，有可释放项则等待，无可释放项立即退出 4 并提示换更小模型",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-26"
+      ]
+    },
+    {
+      "id": "RULE-A-27",
+      "source_id": "SRC1",
+      "start_line": 129,
+      "end_line": 133,
+      "quote": "- [A-27] 图片的结果以**会话里的尝试记录**为准，不依赖媒体任务槽位：\n  - 提交后，命令行记下 `session_id` 和 `attempt_id`。\n  - 轮询时，`/api/media/job` 仍是这个任务：用它显示进度。\n  - 槽位已经换成别的任务，或者已经空了：改为查询 `/api/media-sessions/image/{id}` 里这个尝试的状态，取得最终结果。\n  - 会话、尝试、`--from` 都走现有的 `/api/media-sessions/image` 和 `POST /api/media/image`（字段 `session_id`、`base: {attempt_id, strength}`），参数校验由服务端负责。命令行只做格式解析，比如把 `--size` 拆成宽和高。",
+      "subject": "图片结果来源",
+      "effect": "以会话尝试记录为准；槽位仍是该任务时显示进度，否则查会话；参数校验由服务端负责，命令行只做格式解析",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-27"
+      ]
+    },
+    {
+      "id": "RULE-A-28",
+      "source_id": "SRC1",
+      "start_line": 134,
+      "end_line": 134,
+      "quote": "- [A-28] agent 加载的对话模型，用完后不自动卸载。这和你在界面手动加载模型的行为一致，下次调用也省掉了加载时间。这个模型会一直留着，直到被换掉，或者被媒体任务按现有规则挤掉。这是有意的决定。",
+      "subject": "agent 加载的对话模型",
+      "effect": "用完不自动卸载，保留至被换掉或被媒体任务挤掉（有意）",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-28"
+      ]
+    },
+    {
+      "id": "RULE-A-30",
+      "source_id": "SRC1",
+      "start_line": 138,
+      "end_line": 138,
+      "quote": "- [A-30] 端口取 `LMD_SHELL_PORT`，不合法或没设置时用 8766，与 `desk/__main__.py:runtime_port` 规则一致。",
+      "subject": "端口",
+      "effect": "取 LMD_SHELL_PORT，不合法或未设时 8766",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-30"
+      ]
+    },
+    {
+      "id": "RULE-A-31",
+      "source_id": "SRC1",
+      "start_line": 139,
+      "end_line": 141,
+      "quote": "- [A-31] 连接被拒绝（`ECONNREFUSED`，说明台面没开）时：\n  - 如果命令行位于某个 app 包内，就执行 `open -gj <该 app>`，然后每 1s 探测一次 `/api/state`，最多 60s。超时以退出码 1 退出，提示「台面未能启动」。\n  - 从源码运行（不在 app 包内）时，不自动启动，直接以退出码 1 提示。",
+      "subject": "台面未运行（ECONNREFUSED）",
+      "effect": "在 app 包内：open -gj 后台拉起并每 1s 探测至多 60s，超时退出 1；源码运行不自动启动，退出 1",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-31"
+      ]
+    },
+    {
+      "id": "RULE-A-32",
+      "source_id": "SRC1",
+      "start_line": 142,
+      "end_line": 142,
+      "quote": "- [A-32] 版本号统一取自 `packaging/VERSION`，从 app 包运行时取打包写入的 `bundle_version`。命令行比对自己的版本和 `/api/state` 返回的 `version`（见 A-44）。版本不一致时，stderr 警告一行，继续执行。",
+      "subject": "版本比对",
+      "effect": "版本取 packaging/VERSION 或 bundle_version；与 /api/state version 不一致时 stderr 警告并继续",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-32"
+      ]
+    },
+    {
+      "id": "RULE-A-33",
+      "source_id": "SRC1",
+      "start_line": 143,
+      "end_line": 144,
+      "quote": "- [A-33] 连接时如果出现权限类错误（`EPERM`、`EACCES`，或者沙箱特有的拒绝），说明是被 agent 的沙箱拦了。这时不尝试拉起 app，直接以退出码 6 退出，提示「被沙箱拦截，需要允许访问本机网络（127.0.0.1）」。\n  - `open -gj` 因为权限失败时，同样按退出码 6 处理。",
+      "subject": "沙箱拦截",
+      "effect": "EPERM/EACCES/沙箱拒绝时不拉起 app，退出 6 并提示；open -gj 因权限失败同样退出 6",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-33"
+      ]
+    },
+    {
+      "id": "RULE-A-40",
+      "source_id": "SRC1",
+      "start_line": 148,
+      "end_line": 152,
+      "quote": "- [A-40] `LlmService` 增加两项状态，在 `/api/llm/status` 中返回：\n  - `active_chats`：正在进行的对话数。\n    - `chat` 和 `chat/stream` 开始时加一。\n    - 正常结束、出错、客户端断开、生成器被关闭，任何一种情况下都要减一，且只减一次。\n  - `ui_chat_recent`：布尔值。表示最近 5 分钟内，有没有不是来自 agent（不带 `origin: \"agent\"`）的对话请求开始或结束。5 分钟先写死为常量。",
+      "subject": "LlmService 对话计数",
+      "effect": "/api/llm/status 返回 active_chats（开始加一、任何结束恰减一）与 ui_chat_recent（5 分钟内非 agent 对话）",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-40"
+      ]
+    },
+    {
+      "id": "RULE-A-41",
+      "source_id": "SRC1",
+      "start_line": 153,
+      "end_line": 156,
+      "quote": "- [A-41] 新增 `desk/agent_skill/` 模块，路由如下：\n  - `GET /api/agent-skill`：返回每个安装目标的状态，以及命令行链接的状态。\n  - `POST /api/agent-skill`，请求体为 `{\"targets\": [...]}`：表示「最终要装上哪几个」，没列出的就卸载。返回应用后的状态，每一行带各自的结果或错误。\n  - `POST /api/agent-skill/check`：运行一次已安装的 `lmdesk status --json`，返回它能否连上台面，以及输出内容（A-67）。",
+      "subject": "agent_skill 路由",
+      "effect": "GET/POST /api/agent-skill（targets 为最终集合，未列出即卸载）与 POST /api/agent-skill/check",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-41"
+      ]
+    },
+    {
+      "id": "RULE-A-42",
+      "source_id": "SRC1",
+      "start_line": 157,
+      "end_line": 159,
+      "quote": "- [A-42] `POST /api/media/cancel` 接受可选的 `job_id`。\n  - 带了 `job_id`，但它不是当前正在跑的任务：返回 409 `job_not_running`，不取消任何任务。\n  - 不带：保持现在的行为，界面用的就是这种。",
+      "subject": "媒体取消接口",
+      "effect": "可选 job_id；非当前任务返回 409 job_not_running 不取消；不带时保持现有行为",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-42"
+      ]
+    },
+    {
+      "id": "RULE-A-43",
+      "source_id": "SRC1",
+      "start_line": 160,
+      "end_line": 160,
+      "quote": "- [A-43] `LlmService` 记录当前模型的来源 `loaded_by`，取值为 `\"agent\"` 或 `\"ui\"`，依据 `/api/llm/load` 请求里的 `origin` 字段。在 `/api/llm/status` 中返回。",
+      "subject": "loaded_by",
+      "effect": "记录当前模型来源 agent/ui，依据 load 请求 origin，在 status 返回",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-43"
+      ]
+    },
+    {
+      "id": "RULE-A-45",
+      "source_id": "SRC1",
+      "start_line": 161,
+      "end_line": 164,
+      "quote": "- [A-45] 新增只读预检接口 `GET /api/agent/precheck`，不改变任何状态：\n  - `?op=chat&model=KEY`：按 `/api/llm/load` 相同的参数（模型 config、权重大小）调用 `arbiter.can_start_heavy(\"llm\", …)`；\n  - `?op=image&width=W&height=H&steps=N`：按 `start_image_job` 相同的参数调用 `arbiter.can_start_heavy(\"image\", …, key=\"qwen-image\")`；\n  - 原样返回 `{ok, reason, release, memory_warning}`。模型不存在时返回 404 `model_not_found`。",
+      "subject": "预检接口",
+      "effect": "GET /api/agent/precheck 只读；op=chat/op=image 调用 arbiter.can_start_heavy，原样返回 {ok,reason,release,memory_warning}；模型不存在 404",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-45"
+      ]
+    },
+    {
+      "id": "RULE-A-44",
+      "source_id": "SRC1",
+      "start_line": 165,
+      "end_line": 165,
+      "quote": "- [A-44] `/api/state` 增加 `version` 字段，取值规则同 A-32。现在 `/api/state` 只有 `holder`、`holders`、`media_busy`、`can_start` 这几个字段，没有版本信息。",
+      "subject": "/api/state version",
+      "effect": "增加 version 字段，规则同 A-32",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-44"
+      ]
+    },
+    {
+      "id": "RULE-A-50",
+      "source_id": "SRC1",
+      "start_line": 169,
+      "end_line": 176,
+      "quote": "- [A-50] 安装目标（全部是软链接，指向当前 app 包或仓库里的 skill 目录）：\n\n| key | 名称 | 链接位置 | 检测「已检测到」的依据 |\n|---|---|---|---|\n| `claude` | Claude Code | `~/.claude/skills/local-model-desk` | PATH 或 `~/.local/bin` 里有 `claude`，或者存在 `~/.claude/` |\n| `codex` | Codex | `~/.codex/skills/local-model-desk`（见 A-51） | 有 `codex` 命令，或者存在 `~/.codex/` |\n| `pi` | pi | `~/.pi/agent/skills/local-model-desk` | 有 `pi` 命令，或者存在 `~/.pi/` |\n| `dsh` | DeepSeek Harness | `~/.dsh/skills/local-model-desk` | 存在 `/Applications/DeepSeek Harness.app` 或 `~/Applications/…`，或者存在 `~/.dsh/` |",
+      "subject": "安装目标",
+      "effect": "四个目标全部为软链接；codex 行链接位置写 ~/.codex/skills/local-model-desk（见 A-51）；列出检测依据",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-50"
+      ]
+    },
+    {
+      "id": "RULE-A-51",
+      "source_id": "SRC1",
+      "start_line": 178,
+      "end_line": 181,
+      "quote": "- [A-51] Codex 的目录要在实现的第一步实测：把一个最小 skill 放进 `~/.codex/skills/`，看 Codex 0.160.1 能不能识别（实测完清理掉）。\n  - 能识别：用 `~/.codex/skills`。\n  - 不能识别：改用 `~/.agents/skills`，界面上这一行注明「同时对 pi、DeepSeek Harness 生效」。\n  - 实测结论写回本节。",
+      "subject": "Codex 目录实测（条件规则）",
+      "effect": "实现第一步实测；能识别用 ~/.codex/skills；不能识别改用 ~/.agents/skills 并注明同时对 pi、DeepSeek Harness 生效；结论写回本节",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-51"
+      ]
+    },
+    {
+      "id": "RULE-A-51-RESULT",
+      "source_id": "SRC1",
+      "start_line": 182,
+      "end_line": 182,
+      "quote": "- **实测（2026-10-16，codex-cli 0.160.1）**：不读 ~/.codex/skills（本机 Orca 把 CODEX_HOME 指向别处，探针放在 ~/.codex/skills 没被列出；放到 ~/.agents/skills 对照则被列出），codex 行用 ~/.agents/skills，并显示「同时对 pi、DeepSeek Harness 生效」。~/.codex/skills 只有 CODEX_HOME 恰好是 ~/.codex 时才会被读，不可靠。",
+      "subject": "Codex 目录实测结论",
+      "effect": "codex-cli 0.160.1 不读 ~/.codex/skills；codex 行用 ~/.agents/skills 并显示同时对 pi、dsh 生效",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "实测于 2026-10-16，本机 CODEX_HOME 指向别处"
+      },
+      "exceptions": [],
+      "supersedes": [
+        "RULE-A-50"
+      ],
+      "requirement_refs": [
+        "A-51"
+      ]
+    },
+    {
+      "id": "RULE-A-51-BASIS",
+      "source_id": "SRC1",
+      "start_line": 183,
+      "end_line": 183,
+      "quote": "  - 依据：`~/.agents/skills` 会同时被 Codex、pi、DeepSeek Harness 读取（Codex 官方文档、pi 1.2.0 源码、dsh `dsh-skill-filesystem` 源码），所以默认不用它，以保证每个 agent 能单独勾选。",
+      "subject": "~/.agents/skills 的默认使用",
+      "effect": "~/.agents/skills 被 Codex、pi、dsh 同时读取，所以默认不用它，以保证每个 agent 能单独勾选",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-51"
+      ]
+    },
+    {
+      "id": "RULE-A-52",
+      "source_id": "SRC1",
+      "start_line": 184,
+      "end_line": 186,
+      "quote": "- [A-52] 命令行链接 `~/.local/bin/lmdesk` 不单独设勾选框。至少装了一个 agent 时自动建立；全部卸载时自动移除。\n  - 它的状态同样按 A-53 判定。\n  - 被占用（`occupied`）时，只在这一行提示，不影响 skill 的安装。skill 里本来就写了找不到命令时的后备路径。",
+      "subject": "命令行链接 ~/.local/bin/lmdesk",
+      "effect": "不单独设勾选框；至少装一个 agent 自动建立，全部卸载自动移除；状态按 A-53；occupied 只在该行提示不影响 skill 安装",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-52"
+      ]
+    },
+    {
+      "id": "RULE-A-53",
+      "source_id": "SRC1",
+      "start_line": 187,
+      "end_line": 192,
+      "quote": "- [A-53] 每个位置的状态只有以下几种：\n  - `installed`：指向当前 app 或仓库的 skill（命令行链接则是指向当前的 `lmdesk`）。\n  - `absent`：没有安装。\n  - `stale`：是一个软链接，目标是某个 LocalModelDesk 的 skill 路径（以 `agent_skill/bundled/local-model-desk` 结尾；命令行链接以 `Contents/Resources/bin/lmdesk` 或 `scripts/lmdesk` 结尾），但不是当前这个，或者目标已经不存在。\n  - `occupied`：那个位置存在，但不是指向台面的链接。\n  - `error`：没有写权限等，附带原因。",
+      "subject": "位置状态枚举",
+      "effect": "installed/absent/stale（指向某 LocalModelDesk 路径但非当前或目标不存在）/occupied/error",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-53"
+      ]
+    },
+    {
+      "id": "RULE-A-54",
+      "source_id": "SRC1",
+      "start_line": 193,
+      "end_line": 195,
+      "quote": "- [A-54] 安装：\n  - `absent` 或 `stale` 的位置，创建或替换为指向当前的链接，必要时先创建上级目录。\n  - `occupied` 的位置不碰，这一行报错。其余行照常进行。",
+      "subject": "安装动作",
+      "effect": "absent/stale 创建或替换为当前链接；occupied 不碰并报错，其余行照常",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-54"
+      ]
+    },
+    {
+      "id": "RULE-A-55",
+      "source_id": "SRC1",
+      "start_line": 196,
+      "end_line": 196,
+      "quote": "- [A-55] 卸载只删除 `installed` 或 `stale` 的链接，绝不删除真实的文件或目录，也不删除指向别处的链接。",
+      "subject": "卸载动作",
+      "effect": "只删 installed/stale 链接，不删真实文件目录或指向别处的链接",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-55"
+      ]
+    },
+    {
+      "id": "RULE-A-56",
+      "source_id": "SRC1",
+      "start_line": 197,
+      "end_line": 197,
+      "quote": "- [A-56] 台面不会自己安装任何一项。只有用户在设置页点「应用」才会写入。",
+      "subject": "安装触发",
+      "effect": "台面不自己安装；只有用户在设置页点「应用」才写入",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-56"
+      ]
+    },
+    {
+      "id": "RULE-A-57",
+      "source_id": "SRC1",
+      "start_line": 198,
+      "end_line": 199,
+      "quote": "- [A-57] `scripts/uninstall-app.sh` 卸载 app 时，同时清理 A-50、A-52 中 `installed` 或 `stale` 的链接，规则同 A-55，并且支持 `--dry-run`。\n  - 直接把 app 拖进废纸篓的情况，链接会留下并失效。失效的 skill 链接会被 agent 跳过（pi 已从源码确认），不会报错。这种情况可以接受。",
+      "subject": "卸载脚本清理链接",
+      "effect": "uninstall-app.sh 清理 installed/stale 链接、支持 --dry-run；拖进废纸篓留下失效链接可接受",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-57"
+      ]
+    },
+    {
+      "id": "RULE-A-60",
+      "source_id": "SRC1",
+      "start_line": 203,
+      "end_line": 203,
+      "quote": "- [A-60] 位于设置页「对外 API」之后。按钮层级、卡片列表样式沿用现有视觉基线。",
+      "subject": "设置页区域位置与样式",
+      "effect": "位于「对外 API」之后，沿用视觉基线",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-60"
+      ]
+    },
+    {
+      "id": "RULE-A-61",
+      "source_id": "SRC1",
+      "start_line": 204,
+      "end_line": 209,
+      "quote": "- [A-61] 结构：\n  - 标题，加一句说明：「让选中的 agent 通过 lmdesk 命令使用本机模型（对话、生图、图片会话）」。\n  - 四行勾选项：名称、检测提示（已检测到 / 未检测到）、状态文字。\n  - 一个主按钮「应用」。\n  - 一行命令行链接状态。\n  - 一个次级按钮「检查」，以及一句可复制的试用语（A-67）。",
+      "subject": "设置页区域结构",
+      "effect": "标题与说明「让选中的 agent 通过 lmdesk 命令使用本机模型（对话、生图、图片会话）」；四行勾选；主按钮应用；命令行链接状态行；检查按钮与试用语",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-61"
+      ]
+    },
+    {
+      "id": "RULE-A-62",
+      "source_id": "SRC1",
+      "start_line": 210,
+      "end_line": 210,
+      "quote": "- [A-62] 打开页面时，勾选状态是：`installed` 或 `stale` 的行勾选，其余不勾选。`stale` 行的状态文字是「指向旧位置，点应用更新」。",
+      "subject": "初始勾选与 stale 文案",
+      "effect": "installed/stale 行勾选；stale 状态文字为「指向旧位置，点应用更新」",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-62"
+      ]
+    },
+    {
+      "id": "RULE-A-63",
+      "source_id": "SRC1",
+      "start_line": 211,
+      "end_line": 211,
+      "quote": "- [A-63] 「未检测到」的行也可以勾选。检测结果只是提示。",
+      "subject": "未检测到行",
+      "effect": "未检测到也可勾选，检测只是提示",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-63"
+      ]
+    },
+    {
+      "id": "RULE-A-64",
+      "source_id": "SRC1",
+      "start_line": 212,
+      "end_line": 215,
+      "quote": "- [A-64] 「应用」按钮是否可点，按「应用后会不会有变化」判断：\n  - 有勾选的行不是 `installed`（包括 `stale`），或者有不勾选的行是 `installed` 或 `stale`：可以点。\n  - 否则不可点。\n  - 应用后，用接口返回的结果刷新各行；失败的行显示原因。",
+      "subject": "应用按钮可点条件",
+      "effect": "有勾选行非 installed，或有未勾选行为 installed/stale 时可点，否则不可点；应用后按返回刷新",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-64"
+      ]
+    },
+    {
+      "id": "RULE-A-65",
+      "source_id": "SRC1",
+      "start_line": 216,
+      "end_line": 216,
+      "quote": "- [A-65] 矮窗口和窄窗口下，没有横向滚动，内容不溢出。",
+      "subject": "布局",
+      "effect": "矮/窄窗口无横向滚动不溢出",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-65"
+      ]
+    },
+    {
+      "id": "RULE-A-66",
+      "source_id": "SRC1",
+      "start_line": 217,
+      "end_line": 217,
+      "quote": "- [A-66] 聊天页：`/api/llm/status` 的 `loaded_by` 变成 `\"agent\"`，而且模型和页面上次看到的不一样时，在聊天区域上方显示一条可关闭的提示「模型已被 agent 切换为 X」。",
+      "subject": "聊天页切换提示",
+      "effect": "loaded_by 变 agent 且模型与上次不同时，聊天区上方显示可关闭提示",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-66"
+      ]
+    },
+    {
+      "id": "RULE-A-67",
+      "source_id": "SRC1",
+      "start_line": 218,
+      "end_line": 220,
+      "quote": "- [A-67] 闭环验证：\n  - 「检查」按钮调用 A-41 的 check 接口，显示「lmdesk 能连上台面 ✓」或者失败原因。\n  - 区域底部有一句「在 agent 里试试：用本地模型把这句话翻成英文」，附一个复制按钮。",
+      "subject": "闭环验证",
+      "effect": "检查按钮调用 check 接口显示结果；底部试用语和复制按钮",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-67"
+      ]
+    },
+    {
+      "id": "RULE-A-70",
+      "source_id": "SRC1",
+      "start_line": 224,
+      "end_line": 224,
+      "quote": "- [A-70] 因为装的是软链接，app 被覆盖更新后，skill 和命令行自动就是新内容，两者版本始终一致。SKILL.md 里不写版本号。",
+      "subject": "更新",
+      "effect": "软链接使覆盖更新后 skill 与命令行自动同版本；SKILL.md 不写版本号",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-70"
+      ]
+    },
+    {
+      "id": "RULE-A-71",
+      "source_id": "SRC1",
+      "start_line": 225,
+      "end_line": 227,
+      "quote": "- [A-71] 台面启动时计算一次 A-53 的状态，结果放进 `/api/agent-skill`。\n  - 只要有一行是 `stale`，菜单栏图标就显示提示点：Swift 侧 `StatusPoller` 读取这个状态，`StatusItemController` 负责显示。\n  - 设置页对应行显示「指向旧位置」或「已失效」。",
+      "subject": "启动时失效检查",
+      "effect": "启动时计算一次 A-53 状态放进 /api/agent-skill；任一行 stale 菜单栏显示提示点；设置页显示「指向旧位置」或「已失效」",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-71"
+      ]
+    },
+    {
+      "id": "RULE-A-72",
+      "source_id": "SRC1",
+      "start_line": 228,
+      "end_line": 228,
+      "quote": "- [A-72] 不自动改链接。本机可能有好几份 app，自动改会让链接来回跳。",
+      "subject": "自动改链接",
+      "effect": "不自动改链接",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-72"
+      ]
+    },
+    {
+      "id": "RULE-A-80",
+      "source_id": "SRC1",
+      "start_line": 232,
+      "end_line": 235,
+      "quote": "- [A-80] frontmatter：\n  - `name: local-model-desk`，和目录名一致，用小写字母加连字符，不超过 64 字符。\n  - `description` 不超过 1024 字符。\n  - 文件第一行就是 `---`。",
+      "subject": "SKILL frontmatter",
+      "effect": "name local-model-desk ≤64 字符；description ≤1024 字符；首行 ---",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-80"
+      ]
+    },
+    {
+      "id": "RULE-A-81",
+      "source_id": "SRC1",
+      "start_line": 236,
+      "end_line": 239,
+      "quote": "- [A-81] description 要写清楚三件事：\n  - 这是本机的本地模型台面；\n  - 适用场景：用本地大模型做翻译、总结、改写、批量处理文本等离线或隐私敏感的任务；用本地图片模型生成和迭代图片素材，并按会话管理；\n  - 触发词：「本地模型」「台面」「本地生图」。",
+      "subject": "SKILL description 内容",
+      "effect": "写明本地模型台面、适用场景（文本任务、图片素材与会话）、触发词「本地模型」「台面」「本地生图」",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-81"
+      ]
+    },
+    {
+      "id": "RULE-A-82",
+      "source_id": "SRC1",
+      "start_line": 240,
+      "end_line": 257,
+      "quote": "- [A-82] 正文必须包含：\n  - **调用方式**：命令是 `lmdesk`，找不到时用 `~/.local/bin/lmdesk`。\n  - **耗时和中断**：\n    - 命令会自行排队等待，可能要几分钟，工具超时尽量设长（至少 10 分钟），中途不要自己重试。\n    - 生图如果被工具超时打断，用 stderr 里给出的 `lmdesk image wait <会话> <尝试id>` 接着等，**不要重新 gen**。\n    - 能后台运行命令的 agent，也可以先 `gen --no-wait` 提交，再用 `wait` 取结果。\n  - **各退出码的处理**：\n    - 3：告知用户台面一直忙；如果是生图，可以稍后用 `wait` 取结果。\n    - 4：生图的话，先问用户，同意后加 `--force`；对话模型的话，告知用户内存不够，建议换小一点的模型。\n    - 5：先用 `models` 或 `image sessions`、`image show` 查清楚。\n    - 6：被沙箱拦截了，请求提升权限，或者告诉用户需要放行本机网络。具体放行方法按 A-T9 实测结果写进 skill。\n  - **素材管理**：\n    - 生图前先 `image sessions`，有合适的会话就接着用，没有就按用途新建并起有意义的名字；\n    - 在满意的那张上改用 `--from`；\n    - 用 `--out` 放进项目；\n    - 不能删除会话，需要删就请用户在台面里删。\n  - **对话**：`ask` 是一次性调用，上下文用 `--file` 或 stdin 传入。\n  - 两到三个典型示例。",
+      "subject": "SKILL 正文内容",
+      "effect": "调用方式、耗时与中断（工具超时≥10 分钟、被打断用 wait 不重新 gen、可 --no-wait）、退出码 3/4/5/6 处理、素材管理、ask 一次性、示例",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-82"
+      ]
+    },
+    {
+      "id": "RULE-A-90",
+      "source_id": "SRC1",
+      "start_line": 261,
+      "end_line": 261,
+      "quote": "- [A-90] `scripts/build-app.sh` 要生成 `Contents/Resources/bin/lmdesk`（可执行），skill 随 `desk/` 进入 app 包。",
+      "subject": "打包生成 lmdesk",
+      "effect": "build-app.sh 生成可执行 bin/lmdesk，skill 随 desk/ 进 app",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-90"
+      ]
+    },
+    {
+      "id": "RULE-A-91",
+      "source_id": "SRC1",
+      "start_line": 262,
+      "end_line": 262,
+      "quote": "- [A-91] 在 dist 版本的 app 中，`Contents/Resources/bin/lmdesk status --json` 能在台面运行时返回成功。",
+      "subject": "dist 验收",
+      "effect": "dist app 中 lmdesk status --json 在台面运行时成功",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "dist 版本 app 且台面运行中"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-91"
+      ]
+    },
+    {
+      "id": "RULE-A-T1",
+      "source_id": "SRC1",
+      "start_line": 266,
+      "end_line": 266,
+      "quote": "- [A-T1] 测 `decide()` 的单元测试，按 A-20 表格逐格覆盖，包括 `ui_chat_recent` 和生图需要卸掉对话模型的情况，还有 A-24 的回到等待、A-26 的两种内存不足。退避节奏和超时用假时钟测试。",
+      "subject": "decide 单元测试",
+      "effect": "按 A-20 逐格覆盖含 ui_chat_recent、A-24、A-26，假时钟",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-A-T2",
+      "source_id": "SRC1",
+      "start_line": 267,
+      "end_line": 280,
+      "quote": "- [A-T2] 命令行集成测试：用 `desk/testing/harness.py` 启动带假模型的台面，再在子进程里运行命令行。要覆盖：\n  - `ask` 的三种情况：未加载、已加载、需要换模型；\n  - 换模型后被别人插队，回到等待；\n  - `image new/gen/wait/show/rename`，以及 `--from`、`--out`、`--json`、`--no-wait`；\n  - 409 后重试成功；\n  - 生图内存不足返回 4，加 `--force` 后成功；\n  - 对话模型内存不足、没有可以释放的项时，立即返回 4；\n  - SIGTERM 时不取消任务，之后 `wait` 能拿到结果；\n  - SIGINT 时只取消自己的任务；\n  - 轮询期间槽位被别的任务占用，仍然能从会话里拿到结果；\n  - 版本不一致只警告；\n  - 会话名有歧义时返回 2；\n  - 模拟权限错误时返回 6。\n  - 测试环境（`launch_test_harness`）已经按正式环境装配了按内存预算调度的 arbiter，并存规则可以直接在其中测试。新增的路由要同时挂进 `desk/testing/harness.py`，`tests/test_e2e_harness_assembly.py` 会核对两边的路由表一致。",
+      "subject": "命令行集成测试",
+      "effect": "harness 子进程覆盖 ask、image、409、内存不足 4、对话模型无可释放项立即 4、SIGTERM/SIGINT、槽位被占、版本警告、歧义 2、权限 6；新路由同时挂进 harness",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-A-T3",
+      "source_id": "SRC1",
+      "start_line": 281,
+      "end_line": 285,
+      "quote": "- [A-T3] 服务端单元测试：\n  - `active_chats` 在正常结束、出错、流被中途关闭这几种情况下都只减一次；\n  - `ui_chat_recent` 不受 agent 对话影响，5 分钟后变回 false（用假时钟）；\n  - `loaded_by` 跟随 load 请求的 `origin`；\n  - 带 `job_id` 的取消：id 不是当前任务时返回 409，且不影响当前任务。",
+      "subject": "服务端单元测试",
+      "effect": "active_chats 只减一次、ui_chat_recent 不受 agent 影响 5 分钟后变 false、loaded_by、job_id 取消 409",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-A-T4",
+      "source_id": "SRC1",
+      "start_line": 286,
+      "end_line": 286,
+      "quote": "- [A-T4] 安装模块的单元测试：在临时 HOME 下覆盖 A-50 至 A-57 的全部状态和动作，包括命令行链接被占用的情况、卸载脚本的 `--dry-run`，确认不会删除真实文件或目录。",
+      "subject": "安装模块单元测试",
+      "effect": "临时 HOME 覆盖 A-50 至 A-57 全部状态与动作，含命令行链接被占用、--dry-run",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-A-T5",
+      "source_id": "SRC1",
+      "start_line": 287,
+      "end_line": 292,
+      "quote": "- [A-T5] 设置页的真实浏览器 e2e（`tests/e2e`）：\n  - 勾选、应用、状态刷新；\n  - `stale` 行勾选、应用按钮能否点（A-64）；\n  - 异常行提示、检查按钮、复制试用语；\n  - 聊天页的切换提示（A-66）；\n  - 矮窗口和窄窗口布局。",
+      "subject": "设置页 e2e",
+      "effect": "真实浏览器测勾选应用、stale、应用按钮、检查、复制、聊天页提示、矮窄窗口",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-A-T6",
+      "source_id": "SRC1",
+      "start_line": 293,
+      "end_line": 293,
+      "quote": "- [A-T6] SKILL.md 格式检查（A-80）。",
+      "subject": "SKILL 格式检查",
+      "effect": "检查 A-80",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-A-T7",
+      "source_id": "SRC1",
+      "start_line": 294,
+      "end_line": 294,
+      "quote": "- [A-T7] 打包检查（A-90、A-91）。",
+      "subject": "打包检查",
+      "effect": "检查 A-90、A-91",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-A-T8",
+      "source_id": "SRC1",
+      "start_line": 295,
+      "end_line": 295,
+      "quote": "- [A-T8] Swift 侧：`stale` 状态能让菜单栏显示提示点（沿用 `macos/harness` 的现有测法）。",
+      "subject": "Swift 菜单栏提示点测试",
+      "effect": "stale 能让菜单栏显示提示点",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-A-T9",
+      "source_id": "SRC1",
+      "start_line": 296,
+      "end_line": 300,
+      "quote": "- [A-T9] 手动验收：\n  - 在 Claude Code、Codex、pi、DeepSeek Harness 中，各说一句「用本地模型把这段翻成英文」和「本地生成一张图放进 ./tmp」，四者都会自己调用 `lmdesk`。\n  - Codex 和 DeepSeek Harness 要在默认沙箱设置下实测：能否连上 127.0.0.1，被拦时是否得到退出码 6，以及具体的放行方法。放行方法写回 SKILL.md。\n  - 在 Claude Code 中用一个超过工具超时的生图，验证「被打断 → `wait` 取回」这条链路。\n  - 结果记入验收记录。",
+      "subject": "手动验收",
+      "effect": "四个 agent 中翻译与生图都会自调 lmdesk；Codex/dsh 默认沙箱实测 127.0.0.1 与退出码 6 及放行方法写回 SKILL；Claude Code 超时→wait 链路；记入验收记录",
+      "scope": {
+        "release": "第一期（agent 能力第一版）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "A-T9"
+      ]
+    },
+    {
+      "id": "RULE-S2-INHERIT",
+      "source_id": "SRC2",
+      "start_line": 7,
+      "end_line": 7,
+      "quote": "每条 **[B-xx]** 可写成测试断言。第一期的 A-xx 规则全部继续适用，包括退出码、排队等待、续等、`origin: agent`。",
+      "subject": "第二期对第一期规则的继承",
+      "effect": "每条 B-xx 可写成测试断言；A-xx 规则全部继续适用（退出码、排队等待、续等、origin: agent）",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-S2-PROV",
+      "source_id": "SRC2",
+      "start_line": 4,
+      "end_line": 4,
+      "quote": "**来源** 用户 2026-10-16：「做完这个任务，再把视频和音乐等其他的补上，并且执行一下 cross-exam」。用户已离开；按既定做法「全部按推荐来」推进，以下各项都是推荐选项。",
+      "subject": "第二期决策来源",
+      "effect": "用户已离开，按「全部按推荐来」推进，B 各项都是推荐选项（非用户逐条确认）",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-S2-SCOPE",
+      "source_id": "SRC2",
+      "start_line": 13,
+      "end_line": 18,
+      "quote": "- 范围：\n  - `lmdesk video` 和 `lmdesk music`：`sessions|new|show|gen|wait|rename`，与图片完全同构；\n  - `lmdesk video join` 和 `lmdesk music join`：把同一会话里的几段合成成片；\n  - 视频首帧可以来自本地文件，也可以来自图片会话里的某次尝试；\n  - 预检接口支持视频和音乐；\n  - SKILL.md 补上视频、音乐的用法。",
+      "subject": "第二期范围",
+      "effect": "video/music 的 sessions|new|show|gen|wait|rename 与图片完全同构；join；首帧来自本地文件或图片尝试；预检支持视频音乐；SKILL 补用法",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-B-00a",
+      "source_id": "SRC2",
+      "start_line": 19,
+      "end_line": 19,
+      "quote": "- [B-00a] 不做配乐（soundtrack）、参考视频（reference）、配乐参考（music_ref）、尾帧。这几项素材组合复杂，agent 用得少，以后再加。",
+      "subject": "第二期非目标（素材组合）",
+      "effect": "不做配乐、参考视频、配乐参考、尾帧",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-00a"
+      ]
+    },
+    {
+      "id": "RULE-B-00b",
+      "source_id": "SRC2",
+      "start_line": 20,
+      "end_line": 20,
+      "quote": "- [B-00b] 不改界面、不改安装。设置页和 skill 链接都不变。",
+      "subject": "第二期非目标（界面、安装）",
+      "effect": "不改界面、不改安装；设置页和 skill 链接不变",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-00b"
+      ]
+    },
+    {
+      "id": "RULE-B-00c",
+      "source_id": "SRC2",
+      "start_line": 21,
+      "end_line": 21,
+      "quote": "- [B-00c] 不改媒体服务的生成规则。参数校验仍由服务端负责，命令行只做格式解析。",
+      "subject": "第二期非目标（媒体生成规则）",
+      "effect": "不改媒体服务生成规则；参数校验由服务端负责，命令行只做格式解析",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-00c"
+      ]
+    },
+    {
+      "id": "RULE-B-01",
+      "source_id": "SRC2",
+      "start_line": 25,
+      "end_line": 27,
+      "quote": "- [B-01] 把 `desk/agent_cli/images.py` 泛化为 `desk/agent_cli/media.py`：由一张按 kind 区分的配置表驱动 image、video、music 三种媒体。会话解析、`show`、`wait`、`--out`、提交时挂起信号、SIGINT 取消、SIGTERM 续等提示，三种媒体共用同一份代码。\n  - 不保留 `images.py` 作为兼容层（台面未发布）。\n  - 测试 `tests/agent_cli/test_image_cli.py` 原样保留，并继续通过。",
+      "subject": "media.py 泛化",
+      "effect": "images.py 泛化为按 kind 配置表驱动的 media.py；会话解析/show/wait/--out/挂起信号/SIGINT 取消/SIGTERM 续等共用；不保留 images.py 兼容层；test_image_cli.py 原样保留并继续通过",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-01"
+      ]
+    },
+    {
+      "id": "RULE-B-02",
+      "source_id": "SRC2",
+      "start_line": 28,
+      "end_line": 32,
+      "quote": "- [B-02] `decide()` 的 `op` 取值扩展为 `chat`、`image`、`video`、`music`、`compose`。\n  - `image`、`video`、`music` 走同一套媒体规则（A-20 表格的「图片」那一列）。\n  - `compose` 只用 ffmpeg，不经过 arbiter（见现有 `start_compose_job`），所以它的规则是：\n    - 媒体任务在跑：等待；\n    - 其余情况：直接提交，不需要预检。",
+      "subject": "decide() op 扩展",
+      "effect": "op 增加 video/music/compose；video/music 同图片列；compose 只用 ffmpeg 不经 arbiter：媒体任务在跑等待，其余直接提交不预检",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-02"
+      ]
+    },
+    {
+      "id": "RULE-S2-VCMD",
+      "source_id": "SRC2",
+      "start_line": 36,
+      "end_line": 41,
+      "quote": "```\nlmdesk video gen <会话> \"提示词\" [--size WxH] [--frames N] [--steps N] [--seed N]\n                 [--continue <尝试id>] [--first-frame PATH | --first-frame image:<图片会话>:<尝试id>]\n                 [--out PATH] [--force] [--no-wait]\nlmdesk video join <会话> <尝试id> <尝试id> [...] [--out PATH] [--no-wait]\n```",
+      "subject": "视频命令语法",
+      "effect": "video gen（--size/--frames/--steps/--seed/--continue/--first-frame/--out/--force/--no-wait）与 video join 语法",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-B-10",
+      "source_id": "SRC2",
+      "start_line": 43,
+      "end_line": 46,
+      "quote": "- [B-10] 默认值与界面一致：\n  - `--size` 默认 768x448，即标准横屏档；\n  - `--frames` 默认 124，约 5 秒，取值来自 `desk/static/js/pure/video_session.js` 的 `DURATIONS`；\n  - `--steps` 用界面的默认步数，实现时从 `desk/static/index.html` 里视频页步数输入框的 `value` 读出，写成常量。",
+      "subject": "视频默认值",
+      "effect": "--size 768x448、--frames 124、--steps 取自界面输入框 value 写成常量",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-10"
+      ]
+    },
+    {
+      "id": "RULE-B-11",
+      "source_id": "SRC2",
+      "start_line": 47,
+      "end_line": 47,
+      "quote": "- [B-11] `--frames` 只接受 `DURATIONS` 里的帧数：49、73、124、192、243、362。其他值以退出码 2 拒绝，并列出可选值和对应的秒数。",
+      "subject": "--frames 取值",
+      "effect": "只接受 49/73/124/192/243/362，其他值退出码 2 并列出可选值与秒数",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-11"
+      ]
+    },
+    {
+      "id": "RULE-B-12",
+      "source_id": "SRC2",
+      "start_line": 48,
+      "end_line": 48,
+      "quote": "- [B-12] `--continue <尝试id>`：接着这一段往下生成。对应接口字段 `continues`。与 `--first-frame` 同时使用时，以退出码 2 拒绝。",
+      "subject": "视频 --continue",
+      "effect": "对应 continues；与 --first-frame 同用时退出码 2",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-12"
+      ]
+    },
+    {
+      "id": "RULE-B-13",
+      "source_id": "SRC2",
+      "start_line": 49,
+      "end_line": 51,
+      "quote": "- [B-13] `--first-frame` 两种写法：\n  - 本地文件路径：先 `POST /api/media/inputs`，请求体为 `{name, data: base64}`，拿到素材 id，再以 `mode: \"image\", first_frame: <id>` 提交。文件不存在、扩展名不是 png、jpg、jpeg、webp，或超过 32 MB 时，以退出码 2 拒绝。\n  - `image:<图片会话>:<尝试id>`：引用图片会话里的某次尝试，`<图片会话>` 可以填名字或 id（规则同 A-10）。以 `mode: \"image\", refs: {\"first_frame\": {\"kind\": \"image\", \"session_id\", \"attempt_id\"}}` 提交。",
+      "subject": "视频 --first-frame",
+      "effect": "本地文件先上传 /api/media/inputs 再以 first_frame 提交，文件不存在/扩展名不符/超 32MB 退出 2；image:<会话>:<尝试> 用 refs 提交",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-13"
+      ]
+    },
+    {
+      "id": "RULE-B-14",
+      "source_id": "SRC2",
+      "start_line": 52,
+      "end_line": 52,
+      "quote": "- [B-14] `video join`：调用 `POST /api/media/compose`，请求体为 `{kind: \"video\", session_id, parts: [尝试id…]}`，至少两段，不足两段以退出码 2 拒绝。合成会在会话里产生一条 `op: \"compose\"` 的尝试，然后按 A-27 的规则等待这条尝试并输出成片路径。",
+      "subject": "video join",
+      "effect": "POST /api/media/compose，至少两段否则退出 2；产生 op compose 尝试并按 A-27 等待输出成片",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-14"
+      ]
+    },
+    {
+      "id": "RULE-B-15",
+      "source_id": "SRC2",
+      "start_line": 53,
+      "end_line": 53,
+      "quote": "- [B-15] 视频生成往往要几分钟到几十分钟。SKILL.md 推荐视频一律用 `gen --no-wait` 提交，再用 `video wait` 取回结果。",
+      "subject": "视频推荐用法",
+      "effect": "SKILL 推荐视频一律 gen --no-wait 再 video wait",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-15"
+      ]
+    },
+    {
+      "id": "RULE-S2-MCMD",
+      "source_id": "SRC2",
+      "start_line": 57,
+      "end_line": 61,
+      "quote": "```\nlmdesk music gen <会话> \"风格描述\" (--lyrics \"…\" | --lyrics-file PATH) [--duration 秒] [--seed N]\n                 [--continue <尝试id>] [--out PATH] [--force] [--no-wait]\nlmdesk music join <会话> <尝试id> <尝试id> [...] [--out PATH] [--no-wait]\n```",
+      "subject": "音乐命令语法",
+      "effect": "music gen（--lyrics|--lyrics-file 必选其一、--duration、--seed、--continue、--out、--force、--no-wait）与 music join 语法",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-B-20",
+      "source_id": "SRC2",
+      "start_line": 63,
+      "end_line": 63,
+      "quote": "- [B-20] Music 3 必须有歌词。`--lyrics` 和 `--lyrics-file` 必须给一个，两个都没给、或者两个都给了，以退出码 2 拒绝。纯音乐的写法在 SKILL.md 里说明，按 Music 3 的歌词标记约定写，例如只写 `[instrumental]`；具体写法以 `desk/static/js/panes/music.js` 和音乐会话设计里的约定为准。",
+      "subject": "音乐歌词",
+      "effect": "必须恰好给 --lyrics 或 --lyrics-file 之一，否则退出 2；纯音乐写法按 Music 3 约定在 SKILL 说明",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-20"
+      ]
+    },
+    {
+      "id": "RULE-B-21",
+      "source_id": "SRC2",
+      "start_line": 64,
+      "end_line": 64,
+      "quote": "- [B-21] `--duration` 的默认值与界面一致，从 `desk/static/index.html` 音乐页时长输入框的 `value` 读出。",
+      "subject": "音乐时长默认值",
+      "effect": "从界面音乐页时长输入框 value 读出",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-21"
+      ]
+    },
+    {
+      "id": "RULE-B-22",
+      "source_id": "SRC2",
+      "start_line": 65,
+      "end_line": 65,
+      "quote": "- [B-22] `--continue`：对应接口字段 `continues`。`music join` 与 B-14 同理，`kind` 为 `\"music\"`。",
+      "subject": "音乐续写与合成",
+      "effect": "--continue 对应 continues；music join 同 B-14，kind music",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-22"
+      ]
+    },
+    {
+      "id": "RULE-B-30",
+      "source_id": "SRC2",
+      "start_line": 69,
+      "end_line": 73,
+      "quote": "- [B-30] 预检接口 `/api/agent/precheck` 增加两种 op：\n  - `op=video&width=&height=&frames=&steps=`\n  - `op=music&duration=`\n  - 由 `MediaService.precheck_media(kind, params)` 调用 `arbiter.can_start_heavy(kind, params=…, key=…)`，key 分别是 `h3` 和 `music3`，与 `_admit_heavy` 用的 catalog key 一致。\n  - 原来的 `precheck_image` 改为调用它，避免两份逻辑。",
+      "subject": "预检扩展",
+      "effect": "precheck 增加 op=video/op=music；MediaService.precheck_media 调 arbiter.can_start_heavy（h3、music3）；precheck_image 改为调用它",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-30"
+      ]
+    },
+    {
+      "id": "RULE-B-31",
+      "source_id": "SRC2",
+      "start_line": 74,
+      "end_line": 74,
+      "quote": "- [B-31] `wait` 和 `gen` 的输出路径：有 `joined_output` 时用它（续写后，这就是到当前这一段为止的完整成片），否则用 `output`。这条规则已经存在于 `_attempt_view`，三种媒体统一沿用。",
+      "subject": "输出路径",
+      "effect": "有 joined_output 用它，否则 output；沿用 _attempt_view",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-31"
+      ]
+    },
+    {
+      "id": "RULE-B-32",
+      "source_id": "SRC2",
+      "start_line": 75,
+      "end_line": 75,
+      "quote": "- [B-32] `show` 的 `prompt` 字段：视频取 `params.prompt`，音乐取 `params.caption`，合成尝试取 `\"合成：\" + 各段 id`。",
+      "subject": "show 的 prompt 字段",
+      "effect": "视频 params.prompt、音乐 params.caption、合成 「合成：」+各段 id",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-32"
+      ]
+    },
+    {
+      "id": "RULE-B-40",
+      "source_id": "SRC2",
+      "start_line": 79,
+      "end_line": 79,
+      "quote": "- [B-40] description 加上视频、音乐，并补充触发词「本地生成视频」「本地生成音乐」。总长仍然不超过 1024 字符（A-80）。",
+      "subject": "SKILL description 扩展",
+      "effect": "加视频、音乐与触发词「本地生成视频」「本地生成音乐」；仍 ≤1024 字符",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [
+        "RULE-A-81"
+      ],
+      "requirement_refs": [
+        "B-40"
+      ]
+    },
+    {
+      "id": "RULE-B-41",
+      "source_id": "SRC2",
+      "start_line": 80,
+      "end_line": 85,
+      "quote": "- [B-41] 正文增加视频、音乐两节，必须包含：\n  - 视频一律用 `--no-wait` 加 `wait`；\n  - 先生图、再用 `--first-frame image:<会话>:<尝试>` 生成视频的串联示例；\n  - 用 `--continue` 续写，再用 `join` 合成成片；\n  - 音乐必须有歌词，以及纯音乐的写法；\n  - 退出码 5 那条补上 `lmdesk video sessions` 和 `lmdesk music sessions`。",
+      "subject": "SKILL 正文扩展",
+      "effect": "增加视频音乐两节：--no-wait+wait、首帧串联示例、--continue+join、歌词与纯音乐、退出码 5 补 video/music sessions",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": [
+        "B-41"
+      ]
+    },
+    {
+      "id": "RULE-B-T1",
+      "source_id": "SRC2",
+      "start_line": 89,
+      "end_line": 89,
+      "quote": "- [B-T1] `decide()`：`video`、`music` 与 `image` 的规则相同（参数化同一组用例）；`compose` 在媒体任务进行中时等待、空闲时提交，并且不读取预检结果。",
+      "subject": "decide 测试扩展",
+      "effect": "video/music 与 image 参数化同组；compose 媒体进行中等待、空闲提交、不读预检",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-B-T2",
+      "source_id": "SRC2",
+      "start_line": 90,
+      "end_line": 98,
+      "quote": "- [B-T2] 命令行集成测试（`launch_test_harness`，`model_states` 中让 `h3`、`music3` 为 present，并打开对应的 runtime 开关；具体写法参照现有的 `tests/e2e/test_video_sessions.py`、`test_music_sessions.py` 是如何让 harness 跑视频、音乐的），覆盖：\n  - `video new/gen/show/wait/rename`；\n  - `--continue` 之后 `wait` 输出 `joined_output`；\n  - `--first-frame` 的本地文件和 `image:` 引用两种写法各一例，断言服务端收到的 `mode`、`first_frame` 或 `refs`；\n  - `--frames 50` 返回退出码 2；\n  - `video join` 少于两段返回 2，两段时得到成片；\n  - `music gen` 不带歌词返回 2，带 `--lyrics-file` 成功；\n  - `music join`；\n  - 视频生成时收到 SIGTERM 不取消任务，之后 `wait` 能取回结果。",
+      "subject": "第二期集成测试",
+      "effect": "harness 中 h3、music3 present；覆盖 video 子命令、continue、first-frame 两种、--frames 50 退出 2、join、music 歌词、SIGTERM 不取消",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-B-T3",
+      "source_id": "SRC2",
+      "start_line": 99,
+      "end_line": 99,
+      "quote": "- [B-T3] 预检路由：`op=video`、`op=music` 返回 200，结构为 `{ok, reason, release, memory_warning}`；参数不是整数时返回 400。",
+      "subject": "预检路由测试",
+      "effect": "op=video/music 返回 200 结构 {ok,reason,release,memory_warning}；参数非整数 400",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-B-T4",
+      "source_id": "SRC2",
+      "start_line": 100,
+      "end_line": 100,
+      "quote": "- [B-T4] SKILL.md 格式检查扩展：包含 `lmdesk video wait`、`--first-frame image:`、`lmdesk music gen`、`--lyrics-file`、`join`。",
+      "subject": "SKILL 格式检查扩展",
+      "effect": "包含 lmdesk video wait、--first-frame image:、lmdesk music gen、--lyrics-file、join",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-S2-TASKS",
+      "source_id": "SRC2",
+      "start_line": 102,
+      "end_line": 108,
+      "quote": "## 7. 任务\n\n1. 服务端：`precheck_media` 与路由的 op 扩展（B-30、B-T3）。\n2. 命令行：`decide()` 扩展（B-02、B-T1）。\n3. 命令行：`images.py` 泛化为 `media.py`；增加视频、音乐、join 命令；`cli.py` 注册三个子命令（B-01、B-10 至 B-22、B-31、B-32、B-T2）。\n4. SKILL.md 与格式检查（B-40、B-41、B-T4）。\n5. 全量回归：Python 单元测试、node 测试、e2e。",
+      "subject": "第二期任务顺序与回归",
+      "effect": "服务端预检 → decide 扩展 → media.py 与命令 → SKILL → 全量回归（Python、node、e2e）",
+      "scope": {
+        "release": "第二期（视频与音乐）",
+        "platform": "macOS 本机",
+        "role": "all",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U1",
+      "source_id": "SRC3",
+      "start_line": 3,
+      "end_line": 3,
+      "quote": "1. 「a，肯定是不行的，这个只是作为一个能力提供给codex/claudecode/pi等，并不是取代，b的话，使用mcp这样就要求必须安装是吗？」",
+      "subject": "产品定位",
+      "effect": "作为能力提供给 codex/claudecode/pi 等，不取代它们；询问 MCP 是否要求安装",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U2",
+      "source_id": "SRC3",
+      "start_line": 4,
+      "end_line": 4,
+      "quote": "2. 「那如果这样应该是命令行最好吧？」",
+      "subject": "接入形态",
+      "effect": "倾向命令行",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U3",
+      "source_id": "SRC3",
+      "start_line": 5,
+      "end_line": 5,
+      "quote": "3. 「那如果这样写一下skill，然后，在设置页增加一个安装到本机的agent的skill？」",
+      "subject": "skill 与设置页安装",
+      "effect": "写 skill，并在设置页增加安装到本机 agent 的入口",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U4",
+      "source_id": "SRC3",
+      "start_line": 6,
+      "end_line": 6,
+      "quote": "4. 「调用的时候不需要启动界面吧？」",
+      "subject": "调用时是否启动界面",
+      "effect": "问句：调用时不需要启动界面吧？（期望不需要启动界面，确认语气）",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U5",
+      "source_id": "SRC3",
+      "start_line": 7,
+      "end_line": 7,
+      "quote": "5. 「按需加载，但是有任务要队列化，关于队列化，现在已经有了吧？」",
+      "subject": "模型加载与排队",
+      "effect": "按需加载，但任务要队列化；问现在是否已有队列",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U6",
+      "source_id": "SRC3",
+      "start_line": 8,
+      "end_line": 8,
+      "quote": "6. 「那如果不做队列，就应该让skill通知agent要等待，等于自行队列？」",
+      "subject": "无服务端队列时的等待",
+      "effect": "不做队列则 skill 通知 agent 等待，即自行排队",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U7",
+      "source_id": "SRC3",
+      "start_line": 9,
+      "end_line": 9,
+      "quote": "7. 「同意，第一版做对话加图片」",
+      "subject": "第一版范围",
+      "effect": "同意第一版做对话加图片",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U8",
+      "source_id": "SRC3",
+      "start_line": 10,
+      "end_line": 10,
+      "quote": "8. 「我觉得把这个本地模型的会话管理概念也给到llm agent，让他们在生图的时候一起管理，这样也可以便于claude code管理生成的素材」",
+      "subject": "会话管理",
+      "effect": "把会话管理概念给 agent，生图时一起管理素材",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U9",
+      "source_id": "SRC3",
+      "start_line": 11,
+      "end_line": 11,
+      "quote": "9. 「同意，两点都按推荐来」",
+      "subject": "两点推荐（不给删除、对话不进会话）",
+      "effect": "两点都按推荐来",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U10",
+      "source_id": "SRC3",
+      "start_line": 12,
+      "end_line": 12,
+      "quote": "10. 「deepseak harness也需要 支持」",
+      "subject": "DeepSeek Harness",
+      "effect": "DeepSeek Harness 也需要支持",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U11",
+      "source_id": "SRC3",
+      "start_line": 13,
+      "end_line": 13,
+      "quote": "11. 「注意，安装的时候要让用户可以多选，而不是全部自动安装上」",
+      "subject": "安装多选",
+      "effect": "安装时让用户可以多选，不全部自动安装",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U12",
+      "source_id": "SRC3",
+      "start_line": 14,
+      "end_line": 14,
+      "quote": "12. 「skill的更新呢？」",
+      "subject": "skill 更新",
+      "effect": "问句：skill 的更新呢？（要求有更新方案）",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U13",
+      "source_id": "SRC3",
+      "start_line": 15,
+      "end_line": 15,
+      "quote": "13. 「闭环思维自审」 / 「全部按推荐改」",
+      "subject": "闭环自审",
+      "effect": "闭环自审结论全部按推荐改",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-U14",
+      "source_id": "SRC3",
+      "start_line": 16,
+      "end_line": 16,
+      "quote": "14. 「我去睡觉了，做完这个任务，再把视频和音乐等其他的补上，并且执行一下cross-exam」",
+      "subject": "后续范围与审查",
+      "effect": "做完后把视频和音乐等其他的补上，并执行 cross-exam",
+      "scope": {
+        "release": "unknown",
+        "platform": "unknown",
+        "role": "用户确认",
+        "condition": "all"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-HW1",
+      "source_id": "SRC4",
+      "start_line": 11,
+      "end_line": 11,
+      "quote": "New features must work across different hardware (36 GB → 512 GB Macs), but memory checks must stay lenient: estimate → \"内存可能不足 / 仍要生成\" confirm with force, never a new hard rejection, never hide features by hardware.",
+      "subject": "内存检查",
+      "effect": "新功能须适配不同硬件；内存检查只做可确认的软警告（force），不新增硬拒绝，不按硬件隐藏功能",
+      "scope": {
+        "release": "all（新功能）",
+        "platform": "macOS，36GB–512GB 内存",
+        "role": "all",
+        "condition": "内存检查"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    },
+    {
+      "id": "RULE-HW2",
+      "source_id": "SRC4",
+      "start_line": 15,
+      "end_line": 15,
+      "quote": "**How to apply:** new job kinds plug into `memory_estimate.estimate_bytes` soft-warning path; ffmpeg-only jobs skip memory checks; don't cap chain lengths for memory reasons. Related: [[project-visual-baseline-direction]]",
+      "subject": "内存检查落地方式",
+      "effect": "新任务种类接入 memory_estimate 软警告路径；仅 ffmpeg 任务跳过内存检查；不因内存限制链长度",
+      "scope": {
+        "release": "all（新功能）",
+        "platform": "macOS，36GB–512GB 内存",
+        "role": "all",
+        "condition": "内存检查"
+      },
+      "exceptions": [],
+      "supersedes": [],
+      "requirement_refs": []
+    }
+  ],
+  "comparison_groups": [
+    {
+      "rule_refs": [
+        "RULE-HW1",
+        "RULE-HW2",
+        "RULE-S1-UP",
+        "RULE-A-00c",
+        "RULE-A-26",
+        "RULE-A-82",
+        "RULE-A-T2",
+        "RULE-A-T1"
+      ],
+      "result": "findings",
+      "basis": "内存不足处理：用户软限制规则与第一期对话模型加载硬拒绝、SKILL 指引、测试（RC1）"
+    },
+    {
+      "rule_refs": [
+        "RULE-HW1",
+        "RULE-HW2",
+        "RULE-B-02",
+        "RULE-B-30",
+        "RULE-B-T1",
+        "RULE-B-T3",
+        "RULE-S2-MCMD",
+        "RULE-S2-VCMD"
+      ],
+      "result": "compatible",
+      "basis": "第二期媒体内存：video/music 走预检与 --force 软确认路径，compose 只用 ffmpeg 不做内存检查，与 SRC4「ffmpeg 任务跳过内存检查」「新任务种类接入软警告」一致；join 没有段数上限，与「不因内存限制链长度」一致"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-50",
+        "RULE-A-51",
+        "RULE-A-51-RESULT",
+        "RULE-A-51-BASIS",
+        "RULE-U11",
+        "RULE-A-63",
+        "RULE-A-61",
+        "RULE-A-55",
+        "RULE-A-T4"
+      ],
+      "result": "findings",
+      "basis": "Codex 安装目录与多选独立性（RC2、RC3）"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-52",
+        "RULE-A-53",
+        "RULE-A-54",
+        "RULE-A-55",
+        "RULE-A-56",
+        "RULE-A-57",
+        "RULE-A-64",
+        "RULE-A-71",
+        "RULE-A-72",
+        "RULE-A-61",
+        "RULE-A-T8"
+      ],
+      "result": "findings",
+      "basis": "链接状态、应用按钮可点条件与失效提示点的可修复性（RC4）。另：A-52 自动建立命令行链接发生在用户点应用之后，与 A-56「只有点应用才写入」不冲突；A-57 卸载脚本是用户主动执行的删除，A-72 不自动改链接与 A-71 只读计算也一致"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-62",
+        "RULE-A-71",
+        "RULE-A-53",
+        "RULE-A-T5"
+      ],
+      "result": "findings",
+      "basis": "stale 行文案（RC5）"
+    },
+    {
+      "rule_refs": [
+        "RULE-B-00c",
+        "RULE-A-27",
+        "RULE-B-11",
+        "RULE-B-12",
+        "RULE-B-13",
+        "RULE-B-14",
+        "RULE-B-20",
+        "RULE-B-T2"
+      ],
+      "result": "findings",
+      "basis": "命令行只做格式解析 vs 命令行语义校验（RC6）"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-61",
+        "RULE-A-81",
+        "RULE-B-40",
+        "RULE-B-00b",
+        "RULE-S2-SCOPE",
+        "RULE-A-T9",
+        "RULE-A-67",
+        "RULE-A-60",
+        "RULE-A-65"
+      ],
+      "result": "findings",
+      "basis": "第二期能力扩展与「不改界面」下的设置页说明及手动验收范围（RC7）。B-40 扩展了 A-81 的 description，属于明确跨期的补充，本身不冲突"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-13",
+        "RULE-A-25",
+        "RULE-A-82",
+        "RULE-A-15",
+        "RULE-A-16"
+      ],
+      "result": "findings",
+      "basis": "退出码 3 的语义与 SKILL 指引（RC8）。A-15、A-16 与 A-25 的续等链路一致：SIGTERM/超时不取消，wait 可取回"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-25",
+        "RULE-A-42",
+        "RULE-B-01",
+        "RULE-B-02",
+        "RULE-B-14",
+        "RULE-B-22",
+        "RULE-A-00d"
+      ],
+      "result": "findings",
+      "basis": "SIGINT 取消在 compose/join 上是否适用（RC9）。A-42 不带 job_id 时保持原行为，与 A-00d「现有界面交互不改」一致"
+    },
+    {
+      "rule_refs": [
+        "RULE-U4",
+        "RULE-A-31",
+        "RULE-A-33",
+        "RULE-A-30",
+        "RULE-A-02",
+        "RULE-A-04"
+      ],
+      "result": "findings",
+      "basis": "台面未运行时自动拉起 vs 用户「不需要启动界面」（RC10）。A-33 的沙箱错误（6）与 A-31 的 ECONNREFUSED（1）触发条件互斥；A-31 源码运行不自动启动，与 A-04 源码运行的链接规则同属源码场景，互不矛盾"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-20",
+        "RULE-A-T1",
+        "RULE-B-02",
+        "RULE-B-T1",
+        "RULE-A-21",
+        "RULE-A-22",
+        "RULE-A-23",
+        "RULE-A-24",
+        "RULE-A-45"
+      ],
+      "result": "findings",
+      "basis": "decide() 决策表的状态优先级（RC11）。A-20 说明中「依据预检 release 是否含 kind llm」与 A-45 预检返回 release 一致；A-21/A-22/A-24 与表中 swap/wait 一致"
+    },
+    {
+      "rule_refs": [
+        "RULE-B-01",
+        "RULE-S1-NOCOMPAT",
+        "RULE-S2-TASKS"
+      ],
+      "result": "findings",
+      "basis": "images.py 删除与旧测试保留（RC12）"
+    },
+    {
+      "rule_refs": [
+        "RULE-U14",
+        "RULE-S2-PROV",
+        "RULE-S2-SCOPE",
+        "RULE-B-00a",
+        "RULE-A-00c",
+        "RULE-U9",
+        "RULE-S1-SCOPE"
+      ],
+      "result": "findings",
+      "basis": "用户要求的后续范围与第二期范围（RC13）。A-00c「第一版不做视频、音乐」与第二期视频音乐范围分属不同版本，不是同一条件下的矛盾"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-00a",
+        "RULE-A-00b",
+        "RULE-U5",
+        "RULE-U6",
+        "RULE-A-82",
+        "RULE-A-20",
+        "RULE-S1-UP",
+        "RULE-U1",
+        "RULE-U2"
+      ],
+      "result": "compatible",
+      "basis": "排队：用户 U5 要求任务队列化，U6 认可不做服务端队列时由 skill 让 agent 自行等待；A-00b 不加服务端队列、排队在命令行进程内，A-82 写明命令会自行排队等待，三者一致。A-00a 不改 gateway，与上游声明一致；命令行形态与 U2、U1「能力而非取代」一致"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-00c",
+        "RULE-A-14",
+        "RULE-A-82",
+        "RULE-U9",
+        "RULE-U8",
+        "RULE-S2-SCOPE",
+        "RULE-A-12"
+      ],
+      "result": "compatible",
+      "basis": "删除与会话：U9 确认按推荐「不给删除、对话不进会话」，与 A-00c、A-14、A-82「不能删除会话」及 A-12「ask 一次性」一致；第二期 video/music 与图片同构，也没有删除命令。U8 会话管理通过 image/video/music sessions 落地"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-28",
+        "RULE-A-00c",
+        "RULE-A-66",
+        "RULE-A-43",
+        "RULE-A-05",
+        "RULE-A-00d",
+        "RULE-A-40",
+        "RULE-A-T3"
+      ],
+      "result": "compatible",
+      "basis": "agent 加载模型的留存与提示：A-28 不自动卸载，与 A-00c 非目标一致；A-66 依赖 A-43 的 loaded_by，loaded_by 又依赖 A-05 的 origin；A-00d 明确把 A-66 列为例外；A-40 改的是服务端状态计数，不是界面交互"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-11",
+        "RULE-A-15",
+        "RULE-A-16",
+        "RULE-B-31",
+        "RULE-B-32",
+        "RULE-B-15",
+        "RULE-B-41",
+        "RULE-S1-CMDS",
+        "RULE-A-82"
+      ],
+      "result": "compatible",
+      "basis": "输出与续等：A-15 的 --no-wait 是 A-11 stdout 规则的显式例外；B-31、B-32 是对 show/wait 输出字段按 kind 的补充；B-15/B-41「视频一律 --no-wait + wait」是对 A-82「可以 --no-wait」的视频专用收紧，属于不同对象。wait 默认 --timeout 1800 秒，视频「几十分钟」可能超时，超时退出 3 后可再次 wait（A-16），不构成矛盾"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-70",
+        "RULE-A-32",
+        "RULE-A-44",
+        "RULE-A-72",
+        "RULE-U12"
+      ],
+      "result": "compatible",
+      "basis": "更新与版本：A-70 保证 skill 与命令行同源同版本；A-32 比对的是命令行和正在运行的台面（本机可能有多份 app，见 A-72），版本不一致只警告，与 A-70 不同对象。U12 关于 skill 更新的追问由 A-70 至 A-72 回应"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-80",
+        "RULE-A-81",
+        "RULE-B-40",
+        "RULE-A-T6",
+        "RULE-B-T4",
+        "RULE-A-03",
+        "RULE-A-90",
+        "RULE-A-91",
+        "RULE-A-T7"
+      ],
+      "result": "compatible",
+      "basis": "SKILL 与打包：B-40 在 A-80 的 1024 字符上限内扩展 A-81（标为 supersedes 的增量）；B-T4 扩展 A-T6；A-03 的位置与 A-90 的打包方式一致；A-91 依赖 A-90"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-T9",
+        "RULE-A-33",
+        "RULE-A-82",
+        "RULE-U10",
+        "RULE-A-50"
+      ],
+      "result": "compatible",
+      "basis": "沙箱与 dsh：A-82 退出码 6 的放行方法依赖 A-T9 实测，是依赖关系而非冲突；U10 要求支持 dsh，由 A-50 的 dsh 行与 A-T9 实现"
+    },
+    {
+      "rule_refs": [
+        "RULE-U3",
+        "RULE-A-56",
+        "RULE-A-60",
+        "RULE-A-41",
+        "RULE-A-63",
+        "RULE-U11"
+      ],
+      "result": "compatible",
+      "basis": "U3 要求设置页安装入口，由 A-41、A-56、A-60 落地；U11 多选由 A-56（只在应用时写入）、A-63（未检测到也可勾选）满足（Codex 共享目录的例外见 RC2）"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-01",
+        "RULE-A-02",
+        "RULE-A-04",
+        "RULE-S1-META",
+        "RULE-S2-INHERIT",
+        "RULE-U13"
+      ],
+      "result": "compatible",
+      "basis": "结构与元规则：A-01 只用标准库，与 A-02 用内置 python 运行一致；S1-META 与 S2-INHERIT 是条目形式和继承声明；S2-INHERIT 让 A 规则在第二期继续适用，没有与任何 B 规则形成同一条件下的直接对立（B-02 的 compose 是新 op，A-20 没有覆盖）。U13 是用户要求的工作方式（闭环自审），没有可比对的产品行为，单独成组"
+    },
+    {
+      "rule_refs": [
+        "RULE-A-10",
+        "RULE-B-13",
+        "RULE-B-12",
+        "RULE-S2-VCMD"
+      ],
+      "result": "compatible",
+      "basis": "会话解析：B-13 的 image:<图片会话> 沿用 A-10 的 id/名字规则与歧义退出 2；B-12 的互斥与 B-13 的两种首帧写法都在 S2-VCMD 语法的 [A | B] 结构中"
+    },
+    {
+      "rule_refs": [
+        "RULE-U7",
+        "RULE-A-00c",
+        "RULE-S1-SCOPE"
+      ],
+      "result": "compatible",
+      "basis": "U7「第一版做对话加图片」与 A-00c「第一版不做视频、音乐」及第一期范围一致"
+    },
+    {
+      "rule_refs": [
+        "RULE-B-00a",
+        "RULE-B-13",
+        "RULE-B-00b",
+        "RULE-B-10",
+        "RULE-B-21"
+      ],
+      "result": "compatible",
+      "basis": "B-00a 排除尾帧和参考，B-13 只做首帧，不重叠；B-10、B-21 只读取界面默认值写成常量，不改界面，与 B-00b 一致"
+    },
+    {
+      "rule_refs": [
+        "RULE-B-00c",
+        "RULE-B-30"
+      ],
+      "result": "compatible",
+      "basis": "B-30 新增只读预检并把 precheck_image 合并进 precheck_media，属于预检路径，不是生成规则，与 B-00c「不改媒体服务的生成规则」不冲突（前提是 precheck_media 不改变 can_start_heavy 参数）"
+    }
+  ],
+  "findings": [
+    {
+      "id": "RC1",
+      "kind": "scope_dependency",
+      "rule_refs": [
+        "RULE-HW1",
+        "RULE-HW2",
+        "RULE-S1-UP",
+        "RULE-A-00c",
+        "RULE-A-26",
+        "RULE-A-82",
+        "RULE-A-T2"
+      ],
+      "scope_overlap": "第一期 lmdesk ask 在加载对话模型时，arbiter 返回 insufficient_budget 且预检无可释放项的情况",
+      "reason": "SRC4 用户规则要求新功能的内存检查只做可确认的软警告、不新增硬拒绝；SRC1 上游也写了「内存只提醒+确认，不拦」。但 A-00c 把对话模型加载的软限制列为第一版非目标，A-26 让 lmdesk 立即以退出码 4 结束并写明「对话模型不能强制加载」，A-82 和 A-T2 也照此落地。A-00c 的理由是现有加载路径本来就没实现软限制，所以这是有意推迟的范围依赖，不一定是矛盾；可是 lmdesk 本身是新功能，它对用户呈现的是一条不能 force 的硬拒绝路径。",
+      "question": "第一期 lmdesk 把对话模型加载做成无法 force 的硬拒绝（退出 4），用户是否认可这是 A-00c 的有意推迟，而不算违反「新功能不新增硬拒绝」？还是希望 lmdesk 至少给出「仍要加载」的确认路径？"
+    },
+    {
+      "id": "RC2",
+      "kind": "behavior_conflict",
+      "rule_refs": [
+        "RULE-A-51-RESULT",
+        "RULE-A-51-BASIS",
+        "RULE-A-51",
+        "RULE-U11",
+        "RULE-A-63",
+        "RULE-A-61",
+        "RULE-A-55"
+      ],
+      "scope_overlap": "第一期设置页安装 Codex 行，且本机 Codex 不读 ~/.codex/skills（实测条件成立）",
+      "reason": "A-51 实测结论（第 182 行）规定 codex 行用 ~/.agents/skills，并注明同时对 pi、DeepSeek Harness 生效；紧接着第 183 行说 ~/.agents/skills 会被三者同时读取，「所以默认不用它，以保证每个 agent 能单独勾选」。在同一条件下，一条规定用这个目录，另一条以多选独立性为由规定不用。用户原话 U11 要求多选；只勾 Codex 时 pi 和 dsh 也会读到 skill，取消 pi 也拦不住它读到；两边都勾时 pi 可能看到两份同名 skill；在 Codex 行取消勾选，会按 A-55 删掉一个 pi/dsh 也在读的目录。",
+      "question": "第 183 行是 A-51 的条件分支写入实测结论之前留下的旧依据，应以第 182 行为准吗？如果是，用户能否接受「勾选 Codex 等于对 pi、dsh 也生效」，以及 pi/dsh 同时勾选时的重复 skill？"
+    },
+    {
+      "id": "RC3",
+      "kind": "exception_ambiguity",
+      "rule_refs": [
+        "RULE-A-50",
+        "RULE-A-51-RESULT",
+        "RULE-A-T4"
+      ],
+      "scope_overlap": "第一期 codex 安装目标的链接位置",
+      "reason": "A-50 表格的 codex 链接位置仍写 ~/.codex/skills/local-model-desk（见 A-51），实测结论第 182 行改为 ~/.agents/skills。A-51 要求「实测结论写回本节」，但表格没有改，A-T4 也是按 A-50 覆盖状态。覆盖关系只能推断，没有明确写出。",
+      "question": "A-50 表格里 codex 的链接位置是否以第 182 行的 ~/.agents/skills 为准？如果是，A-53 判定 codex 行 stale/installed 时也应以这个路径为准吗？"
+    },
+    {
+      "id": "RC4",
+      "kind": "unreachable_condition",
+      "rule_refs": [
+        "RULE-A-52",
+        "RULE-A-53",
+        "RULE-A-64",
+        "RULE-A-71",
+        "RULE-A-72",
+        "RULE-A-56",
+        "RULE-A-61"
+      ],
+      "scope_overlap": "第一期：四个 agent 的勾选状态都与链接状态一致（勾选的都是 installed，未勾选的都不是 installed/stale），而命令行链接 ~/.local/bin/lmdesk 是 stale 或 absent",
+      "reason": "A-52 规定命令行链接按 A-53 判状态，在应用时随 agent 自动建立或移除，并且「不单独设勾选框」。A-64 判断「应用」能否点时只看勾选行，没有提到命令行链接。在上述条件下应用按钮不可点，A-72 又禁止自动修链接，所以失效的命令行链接没有任何修复入口；如果 A-71 说的「有一行是 stale」包括命令行链接行，菜单栏提示点会一直亮着。",
+      "question": "命令行链接是 stale 或 absent 而 agent 行都已 installed 时，「应用」按钮应该可点吗？A-71 的「只要有一行是 stale」是否包括命令行链接这一行？"
+    },
+    {
+      "id": "RC5",
+      "kind": "needs_clarification",
+      "rule_refs": [
+        "RULE-A-62",
+        "RULE-A-71",
+        "RULE-A-53"
+      ],
+      "scope_overlap": "第一期设置页，某行状态为 stale",
+      "reason": "A-62 规定 stale 行的状态文字固定为「指向旧位置，点应用更新」；A-71 说设置页对应行显示「指向旧位置」或「已失效」。A-53 的 stale 同时涵盖「不是当前这个」和「目标已经不存在」两种情况，没有说明两种文案怎么对应。",
+      "question": "stale 行是否按「目标仍存在 / 已不存在」分别显示「指向旧位置…」和「已失效」？「已失效」那一行是否也要带「点应用更新」？"
+    },
+    {
+      "id": "RC6",
+      "kind": "exception_ambiguity",
+      "rule_refs": [
+        "RULE-B-00c",
+        "RULE-A-27",
+        "RULE-B-11",
+        "RULE-B-12",
+        "RULE-B-13",
+        "RULE-B-14",
+        "RULE-B-20"
+      ],
+      "scope_overlap": "第二期 lmdesk video/music gen 与 join 的参数处理",
+      "reason": "B-00c 和 A-27 都写「参数校验由服务端负责，命令行只做格式解析」。B-11（帧数白名单）、B-12（--continue 与 --first-frame 互斥）、B-13（扩展名与 32MB 上限）、B-14（至少两段）、B-20（歌词必须恰好一项）却要求命令行先做语义校验，并以退出码 2 拒绝。这些规则没有写成 B-00c 的显式例外，也不清楚服务端是否有同样的校验（规则可能不一致或重复）。",
+      "question": "B-11 至 B-20 里由命令行做的校验，是否作为 B-00c「命令行只做格式解析」的明确例外？如果服务端的允许范围变了（例如新增帧数），以哪一边为准？"
+    },
+    {
+      "id": "RC7",
+      "kind": "scope_dependency",
+      "rule_refs": [
+        "RULE-A-61",
+        "RULE-A-81",
+        "RULE-B-40",
+        "RULE-B-00b",
+        "RULE-S2-SCOPE",
+        "RULE-A-T9",
+        "RULE-A-67"
+      ],
+      "scope_overlap": "第二期上线后的设置页「本机 agent」区域说明文字与手动验收范围",
+      "reason": "A-61 的设置页说明文字列出能力为「对话、生图、图片会话」。B-40 已把 SKILL description 扩展到视频和音乐，但 B-00b 规定「不改界面」，所以第二期后设置页说明会少写视频和音乐。A-T9 的手动验收只覆盖翻译和生图，第二期没有对应的跨 agent 手动验收。",
+      "question": "B-00b 的「不改界面」是否连 A-61 说明里的能力列表也不改，即设置页继续只写「对话、生图、图片会话」？第二期是否需要把视频、音乐加进 A-T9 那样的跨 agent 手动验收？"
+    },
+    {
+      "id": "RC8",
+      "kind": "needs_clarification",
+      "rule_refs": [
+        "RULE-A-13",
+        "RULE-A-25",
+        "RULE-A-82"
+      ],
+      "scope_overlap": "第一期，lmdesk 收到 SIGINT 或 SIGTERM（提交前，或提交后按 Ctrl-C 取消）时以退出码 3 退出",
+      "reason": "A-13 把退出码 3 定义为「等待超时」，A-25 把信号中断也映射到 3（含 SIGINT 取消任务的情况）。A-82 让 agent 在退出码 3 时「告知用户台面一直忙；如果是生图，可以稍后用 wait 取结果」。用户按 Ctrl-C 取消了任务时，这段说明不成立：任务已被取消，wait 会返回 1。",
+      "question": "退出码 3 是否有意同时覆盖超时和信号中断？SKILL 对退出码 3 的处理说明是否需要区分「已取消」和「仍在跑」？"
+    },
+    {
+      "id": "RC9",
+      "kind": "exception_ambiguity",
+      "rule_refs": [
+        "RULE-A-25",
+        "RULE-A-42",
+        "RULE-B-01",
+        "RULE-B-02",
+        "RULE-B-14",
+        "RULE-B-22"
+      ],
+      "scope_overlap": "第二期 lmdesk video/music join（compose）已提交后收到 SIGINT",
+      "reason": "B-01 规定三种媒体共用「SIGINT 取消」，A-25 的取消方式是带自己的 job_id 调用 /api/media/cancel（A-42）。B-02 说 compose 只用 ffmpeg、不经过 arbiter，B-14 也没有说 compose 任务会不会占用 /api/media/job 槽位、能不能用 job_id 取消。",
+      "question": "join 提交后按 Ctrl-C 是否也应取消合成任务？如果 compose 任务不在可取消的媒体任务槽位里，SIGINT 应如何处理（只退出 3，任务继续）？"
+    },
+    {
+      "id": "RC10",
+      "kind": "needs_clarification",
+      "rule_refs": [
+        "RULE-U4",
+        "RULE-A-31",
+        "RULE-A-33"
+      ],
+      "scope_overlap": "第一期，agent 调用 lmdesk 时台面未运行，lmdesk 位于 app 包内",
+      "reason": "用户问「调用的时候不需要启动界面吧？」，期望调用时不必启动界面。A-31 在 ECONNREFUSED 时执行 open -gj 在后台拉起整个 app，规则没有说明后台拉起会不会显示窗口或菜单栏图标，也不清楚这是否就是用户说的「不需要启动界面」。",
+      "question": "用 open -gj 在后台拉起 app（不抢前台，但 app 进程和菜单栏会出现），是否满足用户说的「调用时不需要启动界面」？"
+    },
+    {
+      "id": "RC11",
+      "kind": "exception_ambiguity",
+      "rule_refs": [
+        "RULE-A-20",
+        "RULE-A-T1",
+        "RULE-B-02"
+      ],
+      "scope_overlap": "第一期 image gen（以及第二期 video/music），台面同时满足多个状态行，例如 active_chats > 0 且 ui_chat_recent 为真",
+      "reason": "A-20 表格按单一状态逐行给出动作，图片列中「有对话在进行」是 wait，「界面最近 5 分钟内有过对话」是 submit（交给 arbiter）。多个状态同时成立时没有写优先级（是否按表格自上而下）。B-02 让 video/music 沿用这一列，所以问题同样存在。",
+      "question": "A-20 表格多个状态同时成立时，是否按行顺序自上而下取第一条匹配的动作？"
+    },
+    {
+      "id": "RC12",
+      "kind": "needs_clarification",
+      "rule_refs": [
+        "RULE-B-01",
+        "RULE-S1-NOCOMPAT"
+      ],
+      "scope_overlap": "第二期命令行重构 images.py → media.py",
+      "reason": "B-01 同时要求「不保留 images.py 作为兼容层」和「tests/agent_cli/test_image_cli.py 原样保留，并继续通过」。如果这个测试直接 import images.py 中的符号，两条要求不能同时满足；规则文本里看不出测试是否只通过子进程调用命令行。",
+      "question": "test_image_cli.py 的「原样保留」是否以它只经命令行入口、不 import images 模块为前提？如果它 import 了 images，以哪一条为准？"
+    },
+    {
+      "id": "RC13",
+      "kind": "scope_dependency",
+      "rule_refs": [
+        "RULE-U14",
+        "RULE-S2-PROV",
+        "RULE-S2-SCOPE",
+        "RULE-B-00a",
+        "RULE-A-00c"
+      ],
+      "scope_overlap": "第二期范围：用户原话「把视频和音乐等其他的补上」",
+      "reason": "用户要求补上「视频和音乐等其他的」。第二期只做了视频和音乐，并按 B-00a 排除了配乐、参考视频、配乐参考、尾帧；A-00c 中其余的第一版非目标（删除会话除外，那条已由 U9 确认按推荐不做；ask 写入聊天会话、MCP 外壳、对话模型软限制）是否属于「其他的」也没有说明。SRC2 第 4 行写明这些取舍都是用户离开后按推荐做的，用户没有逐条确认。",
+      "question": "「等其他的」是否只指视频和音乐？B-00a 排除配乐、参考视频、配乐参考和尾帧，以及 A-00c 剩下的非目标继续不做，用户是否认可？"
+    }
+  ],
+  "could_not": []
+}

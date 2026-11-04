@@ -1,0 +1,25 @@
+{
+  "status": "ready",
+  "checked_at": "2026-09-24T00:18:43.323623+00:00",
+  "blockers": [],
+  "warnings": [],
+  "required_capabilities": [
+    {
+      "capability": "codex_cli",
+      "path": "/opt/homebrew/bin/codex",
+      "reviewer_two_backend": "codex-cli"
+    }
+  ],
+  "approval_gate_findings": [],
+  "non_interactive_findings": [],
+  "external_tool_findings": [
+    {
+      "capability": "codex_cli",
+      "path": "/opt/homebrew/bin/codex",
+      "reviewer_two_backend": "codex-cli"
+    }
+  ],
+  "fallback_findings": [],
+  "long_task_findings": [],
+  "recommended_pre_run_actions": []
+}

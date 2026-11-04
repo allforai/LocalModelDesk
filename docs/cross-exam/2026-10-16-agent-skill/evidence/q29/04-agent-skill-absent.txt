@@ -1,0 +1,1 @@
+{'path': '/Users/aa/.local/bin/lmdesk', 'state': 'absent', 'target': None, 'message': None}

@@ -1,0 +1,45 @@
+exit=0
+STDOUT
+uninstall-app: skip: 自定义 LaunchAgents 目录，不对当前用户域执行 launchctl bootout
+[dry-run] rm '/private/tmp/claude-502/q05.AGuT/home/.claude/skills/local-model-desk'
+[dry-run] rm '/private/tmp/claude-502/q05.AGuT/home/.codex/skills/local-model-desk'
+[dry-run] rm '/private/tmp/claude-502/q05.AGuT/home/.local/bin/lmdesk'
+uninstall-app: skip: 应用包不存在，无需删除：/private/tmp/claude-502/q05.AGuT/Applications/LocalModelDesk.app
+uninstall-app: complete
+STDERR
+READBACK
+--- ls -la ~/.claude/skills
+total 0
+drwxr-xr-x@ 3 aa  wheel   96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  wheel   96 Oct 16 15:10 ..
+lrwxr-xr-x@ 1 aa  wheel  120 Oct 16 15:10 local-model-desk -> /private/tmp/claude-502/q05.AGuT/Applications/LocalModelDesk.app/Contents/Resources/agent_skill/bundled/local-model-desk
+--- ls -la ~/.agents/skills
+total 0
+drwxr-xr-x@ 3 aa  wheel  96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  wheel  96 Oct 16 15:10 ..
+drwxr-xr-x@ 3 aa  wheel  96 Oct 16 15:10 local-model-desk
+--- ls -la ~/.pi/agent/skills
+total 0
+drwxr-xr-x@ 3 aa  wheel  96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  wheel  96 Oct 16 15:10 ..
+lrwxr-xr-x@ 1 aa  wheel  23 Oct 16 15:10 local-model-desk -> /usr/share/nothing-here
+--- ls -la ~/.codex/skills
+total 0
+drwxr-xr-x@ 3 aa  wheel   96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  wheel   96 Oct 16 15:10 ..
+lrwxr-xr-x@ 1 aa  wheel  120 Oct 16 15:10 local-model-desk -> /private/tmp/claude-502/q05.AGuT/Applications/LocalModelDesk.app/Contents/Resources/agent_skill/bundled/local-model-desk
+--- ls -la ~/.dsh/skills
+total 0
+drwxr-xr-x@ 2 aa  wheel  64 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  wheel  96 Oct 16 15:10 ..
+--- ls -la ~/.local/bin
+total 0
+drwxr-xr-x@ 3 aa  wheel  96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  wheel  96 Oct 16 15:10 ..
+lrwxr-xr-x@ 1 aa  wheel  94 Oct 16 15:10 lmdesk -> /private/tmp/claude-502/q05.AGuT/Applications/LocalModelDesk.app/Contents/Resources/bin/lmdesk
+--- real dir file
+total 8
+drwxr-xr-x@ 3 aa  wheel  96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  wheel  96 Oct 16 15:10 ..
+-rw-r--r--@ 1 aa  wheel   3 Oct 16 15:10 SKILL.md
+hi

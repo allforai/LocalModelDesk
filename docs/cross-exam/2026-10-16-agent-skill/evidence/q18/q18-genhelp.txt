@@ -1,0 +1,21 @@
+usage: lmdesk image gen [-h] [--json] [--timeout TIMEOUT] [--seed SEED]
+                        [--out OUT] [--force] [--no-wait] [--size SIZE]
+                        [--steps STEPS] [--from BASE] [--strength STRENGTH]
+                        session prompt
+
+positional arguments:
+  session
+  prompt
+
+options:
+  -h, --help           show this help message and exit
+  --json               stdout 输出单个 JSON 对象
+  --timeout TIMEOUT    总等待秒数，默认 1800
+  --seed SEED
+  --out OUT
+  --force
+  --no-wait
+  --size SIZE
+  --steps STEPS
+  --from BASE
+  --strength STRENGTH

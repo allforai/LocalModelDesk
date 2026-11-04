@@ -1,0 +1,639 @@
+{
+ "node_id": "image-session-verify",
+ "requirement_ref": {
+  "path": ".allforai/bootstrap/local-requirements.json",
+  "id": "image-sessions",
+  "revision": 1
+ },
+ "status": "failed",
+ "status_reason": "AC-6 not verified and AC-7 failed dual visual review (8 blocking items in the union, 0 blockers, 8 majors). AC-1..AC-5 are verified in the real packaged app with the real model.",
+ "failure_codes": [
+  "failed_visual_review",
+  "unverified_acceptance"
+ ],
+ "acceptance": [
+  {
+   "id": "AC-1",
+   "statement": "连续三轮「生成 → 在这张基础上改 → 再生成」后，三张图及各自参数都在同一个会话里按顺序显示",
+   "method": "real-run",
+   "evidence_path": ".allforai/verify/evidence/real/journey.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (visual probe)",
+    "process": "isolated packaged app /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/verify-bundle/LocalModelDesk.app (Contents/MacOS/LocalModelDesk shell + embedded python3.13 -s -m desk), data root /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/real-data, model /Users/aa/LocalModelDesk/image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "observed": {
+    "session": "c3ca789f4827403eb88b4e9ebfdbf77e",
+    "attempts": [
+     {
+      "prompt": "一座海边灯塔，黄昏，水彩画风",
+      "seed": 3467844084,
+      "size": "512x512",
+      "steps": 6,
+      "status": "done",
+      "output": "qwen-image-20260924-053807-487d0106.png"
+     },
+     {
+      "prompt": "一座海边灯塔，黄昏，水彩画风，天空有飞鸟",
+      "seed": 3467844084,
+      "size": "512x512",
+      "steps": 6,
+      "status": "done",
+      "output": "qwen-image-20260924-053834-764f7c10.png"
+     },
+     {
+      "prompt": "一座海边灯塔，黄昏，水彩画风，天空有飞鸟，远处有帆船",
+      "seed": 3467844084,
+      "size": "512x512",
+      "steps": 6,
+      "status": "done",
+      "output": "qwen-image-20260924-053912-ad277bd2.png"
+     }
+    ],
+    "ui_timeline": [
+     {
+      "reason": null,
+      "status": "done",
+      "badge": null,
+      "expanded": "false",
+      "prompt": "一座海边灯塔，黄昏，水彩画风",
+      "id": "3004811a27d44dff8b1f509e422a20f5",
+      "imgs": 1,
+      "label": "第 1 次 · 05:38",
+      "spec": "512×512 · 6 步",
+      "thumb_ok": true
+     },
+     {
+      "prompt": "一座海边灯塔，黄昏，水彩画风，天空有飞鸟",
+      "status": "done",
+      "reason": null,
+      "expanded": "false",
+      "badge": null,
+      "id": "439bbe71f25945118d7adbc1f1478107",
+      "imgs": 1,
+      "spec": "512×512 · 6 步",
+      "label": "第 2 次 · 05:38",
+      "thumb_ok": true
+     },
+     {
+      "reason": null,
+      "status": "done",
+      "prompt": "一座海边灯塔，黄昏，水彩画风，天空有飞鸟，远处有帆船",
+      "expanded": "true",
+      "id": "1994f0a0e7684d6485c606e2905bcd85",
+      "badge": null,
+      "imgs": 2,
+      "label": "第 3 次 · 05:39",
+      "spec": "512×512 · 6 步",
+      "thumb_ok": true
+     }
+    ]
+   },
+   "supporting": [
+    {
+     "method": "real-test",
+     "evidence_path": ".allforai/verify/evidence/pytest-image-sessions.json",
+     "test": "test_ac1_ac2_three_refine_rounds_stay_ordered_with_their_params_and_seeds (passed; mutation-checked, .allforai/verify/evidence/mutation/m1.txt)",
+     "served_by": {
+      "host": "127.0.0.1 ephemeral port per test",
+      "process": "desk.testing.launch_test_harness + headless Chromium (Playwright 1.62)",
+      "mock_layers": [
+       "FakeMediaExecutor + MediaScript (gradient PNG instead of image_cli.py)",
+       "FakeLlmBackend",
+       "FakeMemoryReader",
+       "FixedClock",
+       "stub mflux/mlx packages"
+      ],
+      "fixtures": [
+       "desk/testing/seed.py",
+       "desk/testing/scripts.py"
+      ]
+     }
+    }
+   ],
+   "verdict": "verified",
+   "note": "Order, parameters and images are in one session and shown in order; how much of the expanded card is visible is judged under AC-7."
+  },
+  {
+   "id": "AC-2",
+   "statement": "「在这张基础上改」生成的新图与原图种子相同；「换个构图」生成的新图提示词相同而种子不同",
+   "method": "real-run",
+   "evidence_path": ".allforai/verify/evidence/real/journey.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (visual probe)",
+    "process": "isolated packaged app /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/verify-bundle/LocalModelDesk.app (Contents/MacOS/LocalModelDesk shell + embedded python3.13 -s -m desk), data root /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/real-data, model /Users/aa/LocalModelDesk/image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "observed": {
+    "refine_seeds": [
+     3467844084,
+     3467844084,
+     3467844084
+    ],
+    "recompose_of_attempt_2": {
+     "prompt_equal": true,
+     "seed": 2777305017,
+     "source_seed": 3467844084
+    },
+    "source": "GET /api/image-sessions/{id} (backend-settled attempt params)"
+   },
+   "supporting": [
+    {
+     "method": "real-test",
+     "evidence_path": ".allforai/verify/evidence/pytest-image-sessions.json",
+     "test": "test_ac1_ac2_* and test_new_sessions_first_image_uses_a_fresh_random_seed (passed; recompose mutation caught, mutation/m2.txt)",
+     "served_by": {
+      "host": "127.0.0.1 ephemeral port per test",
+      "process": "desk.testing.launch_test_harness + headless Chromium (Playwright 1.62)",
+      "mock_layers": [
+       "FakeMediaExecutor + MediaScript (gradient PNG instead of image_cli.py)",
+       "FakeLlmBackend",
+       "FakeMemoryReader",
+       "FixedClock",
+       "stub mflux/mlx packages"
+      ],
+      "fixtures": [
+       "desk/testing/seed.py",
+       "desk/testing/scripts.py"
+      ]
+     }
+    }
+   ],
+   "verdict": "verified"
+  },
+  {
+   "id": "AC-3",
+   "statement": "重启 app 后会话列表、每个会话的尝试和图片都还在",
+   "method": "real-run",
+   "evidence_path": ".allforai/verify/evidence/real/journey.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (visual probe)",
+    "process": "isolated packaged app /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/verify-bundle/LocalModelDesk.app (Contents/MacOS/LocalModelDesk shell + embedded python3.13 -s -m desk), data root /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/real-data, model /Users/aa/LocalModelDesk/image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "observed": {
+    "pids_before": {
+     "shell": 18402,
+     "server": [
+      18418
+     ]
+    },
+    "pids_after": {
+     "shell": 25458,
+     "server": [
+      25476
+     ]
+    },
+    "same_data_root": true,
+    "listing_equal": true,
+    "sessions_equal": true,
+    "images_after": {
+     "qwen-image-20260924-054043-29c09dcd.png": {
+      "status": 200,
+      "bytes": 503438,
+      "png": true
+     },
+     "qwen-image-20260924-053807-487d0106.png": {
+      "status": 200,
+      "bytes": 369482,
+      "png": true
+     },
+     "qwen-image-20260924-053834-764f7c10.png": {
+      "status": 200,
+      "bytes": 365754,
+      "png": true
+     },
+     "qwen-image-20260924-053912-ad277bd2.png": {
+      "status": 200,
+      "bytes": 357012,
+      "png": true
+     },
+     "qwen-image-20260924-053951-6a63eee6.png": {
+      "status": 200,
+      "bytes": 365057,
+      "png": true
+     }
+    },
+    "screenshots": [
+     ".allforai/verify/evidence/real/real-after-restart-wide.png",
+     ".allforai/verify/evidence/real/real-after-restart-narrow.png"
+    ]
+   },
+   "supporting": [
+    {
+     "method": "real-test",
+     "evidence_path": ".allforai/verify/evidence/pytest-image-sessions.json",
+     "test": "test_ac3_restart_on_the_same_data_root_keeps_sessions_attempts_and_images (passed)",
+     "served_by": {
+      "host": "127.0.0.1 ephemeral port per test",
+      "process": "desk.testing.launch_test_harness + headless Chromium (Playwright 1.62)",
+      "mock_layers": [
+       "FakeMediaExecutor + MediaScript (gradient PNG instead of image_cli.py)",
+       "FakeLlmBackend",
+       "FakeMemoryReader",
+       "FixedClock",
+       "stub mflux/mlx packages"
+      ],
+      "fixtures": [
+       "desk/testing/seed.py",
+       "desk/testing/scripts.py"
+      ]
+     }
+    }
+   ],
+   "verdict": "verified",
+   "note": "Process stop and start, not a page reload: shell and server pids both changed; stopping was by the recorded pid only."
+  },
+  {
+   "id": "AC-4",
+   "statement": "切到另一个会话再切回，内容不变；新建会话后生成的图只进新会话",
+   "method": "real-run",
+   "evidence_path": ".allforai/verify/evidence/real/journey.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (visual probe)",
+    "process": "isolated packaged app /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/verify-bundle/LocalModelDesk.app (Contents/MacOS/LocalModelDesk shell + embedded python3.13 -s -m desk), data root /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/real-data, model /Users/aa/LocalModelDesk/image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "observed": {
+    "file_equal_after_switch_back": true,
+    "timeline_equal_ignoring_selection": true,
+    "new_session_attempts": [
+     "另一个想法：竹林小径，晨雾"
+    ]
+   },
+   "supporting": [
+    {
+     "method": "real-test",
+     "evidence_path": ".allforai/verify/evidence/pytest-image-sessions.json",
+     "test": "test_ac4_switching_away_and_back_changes_nothing_and_new_session_takes_only_new_images (passed)",
+     "served_by": {
+      "host": "127.0.0.1 ephemeral port per test",
+      "process": "desk.testing.launch_test_harness + headless Chromium (Playwright 1.62)",
+      "mock_layers": [
+       "FakeMediaExecutor + MediaScript (gradient PNG instead of image_cli.py)",
+       "FakeLlmBackend",
+       "FakeMemoryReader",
+       "FixedClock",
+       "stub mflux/mlx packages"
+      ],
+      "fixtures": [
+       "desk/testing/seed.py",
+       "desk/testing/scripts.py"
+      ]
+     }
+    }
+   ],
+   "verdict": "verified"
+  },
+  {
+   "id": "AC-5",
+   "statement": "删除会话后会话从列表消失，其中的图片仍能在素材库打开",
+   "method": "real-run",
+   "evidence_path": ".allforai/verify/evidence/real/journey.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (visual probe)",
+    "process": "isolated packaged app /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/verify-bundle/LocalModelDesk.app (Contents/MacOS/LocalModelDesk shell + embedded python3.13 -s -m desk), data root /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/real-data, model /Users/aa/LocalModelDesk/image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "observed": {
+    "deleted_session_get": 404,
+    "listing_after": [
+     "c3ca789f4827403eb88b4e9ebfdbf77e"
+    ],
+    "outputs_unchanged": true,
+    "library_preview": {
+     "src": "/api/outputs/qwen-image-20260924-054043-29c09dcd.png",
+     "h": 512,
+     "w": 512
+    }
+   },
+   "supporting": [
+    {
+     "method": "real-test",
+     "evidence_path": ".allforai/verify/evidence/pytest-image-sessions.json",
+     "test": "test_ac5_deleting_a_session_keeps_its_images_in_the_library + test_deleting_a_session_while_it_generates_* (passed; delete-removes-outputs mutation caught, mutation/m3.txt)",
+     "served_by": {
+      "host": "127.0.0.1 ephemeral port per test",
+      "process": "desk.testing.launch_test_harness + headless Chromium (Playwright 1.62)",
+      "mock_layers": [
+       "FakeMediaExecutor + MediaScript (gradient PNG instead of image_cli.py)",
+       "FakeLlmBackend",
+       "FakeMemoryReader",
+       "FixedClock",
+       "stub mflux/mlx packages"
+      ],
+      "fixtures": [
+       "desk/testing/seed.py",
+       "desk/testing/scripts.py"
+      ]
+     }
+    }
+   ],
+   "verdict": "verified",
+   "note": "Functionally verified; the real-app batch lacks a screenshot of the image-page list after the delete (U-05, evidence gap owned by this node for the next verify round; harness verify-after-delete-* shows it)."
+  },
+  {
+   "id": "AC-6",
+   "statement": "失败或取消的尝试在会话里可见并显示原因，不会留下一张空白图",
+   "method": "real-run",
+   "evidence_path": ".allforai/verify/evidence/real/journey.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (visual probe)",
+    "process": "isolated packaged app /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/verify-bundle/LocalModelDesk.app (Contents/MacOS/LocalModelDesk shell + embedded python3.13 -s -m desk), data root /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/real-data, model /Users/aa/LocalModelDesk/image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "observed": {
+    "real_cancel": {
+     "status": "cancelled",
+     "error": {
+      "code": "cancelled",
+      "message": "已取消：这次生成被手动停止"
+     },
+     "output": null
+    },
+    "ui_after_restart_cancelled_card": [
+     {
+      "status": "cancelled",
+      "prompt": "会被取消的一张：雪山日出",
+      "reason": null,
+      "expanded": "true",
+      "badge": "已取消",
+      "id": "1d4e629c44424e7cb5e415a5626e51b4",
+      "imgs": 0,
+      "label": "第 5 次 · 05:40",
+      "spec": "512×512 · 6 步",
+      "thumb_ok": true
+     }
+    ]
+   },
+   "supporting": [
+    {
+     "method": "real-test",
+     "evidence_path": ".allforai/verify/evidence/pytest-image-sessions.json",
+     "test": "test_ac6_failed_and_cancelled_attempts_keep_their_reason_and_no_blank_image (passed, mock executor)",
+     "served_by": {
+      "host": "127.0.0.1 ephemeral port per test",
+      "process": "desk.testing.launch_test_harness + headless Chromium (Playwright 1.62)",
+      "mock_layers": [
+       "FakeMediaExecutor + MediaScript (gradient PNG instead of image_cli.py)",
+       "FakeLlmBackend",
+       "FakeMemoryReader",
+       "FixedClock",
+       "stub mflux/mlx packages"
+      ],
+      "fixtures": [
+       "desk/testing/seed.py",
+       "desk/testing/scripts.py"
+      ]
+     }
+    }
+   ],
+   "verdict": "not_verified",
+   "reason": "Both reviewers: the cancelled card shows only the 「已取消」 badge and no explanation line (union → major U-04; design D-85 says cancelled displays 「已取消」, criteria ask 标记与说明). The failure half was only exercised with the scripted executor (mock layer), not the real model."
+  },
+  {
+   "id": "AC-7",
+   "statement": "在真实浏览器中截图检查图片页的会话列表、尝试列表和两个动作按钮，无遮挡、截断或空白态错误",
+   "method": "screenshot",
+   "evidence_path": ".allforai/verify/ui-visual-reconciliation.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (visual probe)",
+    "process": "isolated packaged app /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/verify-bundle/LocalModelDesk.app (Contents/MacOS/LocalModelDesk shell + embedded python3.13 -s -m desk), data root /private/tmp/claude-502/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/scratchpad/real-data, model /Users/aa/LocalModelDesk/image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "supporting": [
+    {
+     "method": "screenshot",
+     "evidence_path": ".allforai/verify/ui-screenshot-manifest.json",
+     "served_by": {
+      "host": "127.0.0.1 ephemeral port per test",
+      "process": "desk.testing.launch_test_harness + headless Chromium (Playwright 1.62)",
+      "mock_layers": [
+       "FakeMediaExecutor + MediaScript (gradient PNG instead of image_cli.py)",
+       "FakeLlmBackend",
+       "FakeMemoryReader",
+       "FixedClock",
+       "stub mflux/mlx packages"
+      ],
+      "fixtures": [
+       "desk/testing/seed.py",
+       "desk/testing/scripts.py"
+      ]
+     }
+    },
+    {
+     "method": "real-test",
+     "evidence_path": ".allforai/verify/evidence/narrow-scroll/probe.json",
+     "test": "geometry probe at 900×700: action buttons bottom 578 > timeline bottom 558 after settle"
+    },
+    {
+     "method": "real-test",
+     "evidence_path": ".allforai/verify/evidence/pytest-image-sessions.json",
+     "test": "test_action_buttons_of_the_settled_attempt_are_in_view_at_900x700 FAILS (red on purpose until repaired)"
+    }
+   ],
+   "verdict": "failed_visual_review",
+   "reason": "Two independent reviews (claude -p, codex exec) both fail: the expanded attempt's two action buttons fall outside the timeline viewport (U-01, U-02), plus U-03..U-06; see ui-visual-reconciliation.json."
+  }
+ ],
+ "gaps": {
+  "code_gaps": [
+   {
+    "id": "U-01",
+    "detail": "After an attempt settles the timeline is not scrolled to the end of the expanded card (the image loads after the scroll); at 900×700 the action row is below the timeline viewport. Also no re-pin on window resize.",
+    "evidence": [
+     ".allforai/verify/evidence/narrow-scroll/probe.json",
+     "tests/e2e/test_image_sessions.py::test_action_buttons_of_the_settled_attempt_are_in_view_at_900x700",
+     ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png"
+    ],
+    "design_ref": "D-71, D-78",
+    "repair_owner": "image-session-repair"
+   },
+   {
+    "id": "U-02",
+    "detail": "With real 512×512 outputs the expanded card (header + image up to 60vh + prompt + 高级参数 + actions) is taller than the timeline viewport at 1280×800 and 900×700, so selecting an earlier attempt never shows its actions together with it.",
+    "evidence": [
+     ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.png",
+     ".allforai/verify/evidence/real/real-timeline-three-rounds-wide.png"
+    ],
+    "design_ref": "D-72, D-74",
+    "repair_owner": "image-session-repair"
+   },
+   {
+    "id": "U-04",
+    "detail": "Cancelled card has no explanation line (title equals badge and is de-duplicated); the stored message 已取消：这次生成被手动停止 is not shown.",
+    "evidence": [
+     ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png",
+     "desk/static/js/widgets/image_session_card.js:68",
+     "desk/static/js/pure/image_session.js:58-60"
+    ],
+    "design_ref": "D-85 vs criteria attempt-cancelled 「标记与说明」",
+    "repair_owner": "image-session-repair"
+   }
+  ],
+  "test_gaps": [
+   {
+    "id": "U-03",
+    "detail": "No timeline-three-rounds capture shows 第1次→第3次 plus the expanded card's actions in one frame (depends on U-01/U-02).",
+    "repair_owner": "image-session-repair"
+   },
+   {
+    "id": "U-05",
+    "detail": "Real-app batch has no image-page screenshot after the delete; add it to .allforai/verify/real_journey.py in the next verify round.",
+    "repair_owner": "image-session-verify"
+   },
+   {
+    "id": "U-07/U-08",
+    "detail": "tests/e2e/test_image_flow.py captures running-other-session (B empty) and model-missing (runtime also missing) without the criteria's data preconditions. Re-captured correctly by tests/e2e/test_image_sessions.py (screens-recapture, reviewed in batch B); test_image_flow.py's own captures still mismatch.",
+    "repair_owner": "image-session-repair"
+   },
+   {
+    "id": "T-real-failure",
+    "detail": "The failure half of AC-6 has only mock-executor evidence; no safe way was found to make the real model fail without altering the product.",
+    "repair_owner": "image-session-verify"
+   }
+  ],
+  "contract_gaps": [
+   {
+    "id": "U-06",
+    "detail": "素材库 rows show 「种子 <n>」 as plain text. BR-7 forbids 种子 in the interface main flow; design D-50 scopes the rule to the image page and does not mention the library. Repair: hide seed in library image rows behind 高级参数 (or the owner confirms the library is outside the main flow through a recorded decision).",
+    "evidence": [
+     ".allforai/verify/evidence/real/real-library-after-delete-wide.png"
+    ],
+    "repair_owner": "image-session-repair"
+   }
+  ],
+  "visual_quality_gaps": [
+   {
+    "id": "N-01",
+    "severity": "minor",
+    "detail": "Dialog 取消 button has no visible focus indicator, so the required 「取消」获得焦点 cannot be confirmed from pixels.",
+    "repair_owner": "image-session-repair"
+   },
+   {
+    "id": "N-02",
+    "severity": "minor",
+    "detail": "Session titles in the list are truncated far earlier than the available width (e.g. 会失败的… beside the 生成中 badge); stray gap after full-width comma.",
+    "repair_owner": "image-session-repair"
+   },
+   {
+    "id": "N-03",
+    "severity": "minor",
+    "detail": "Header shows 媒体：空闲 · 可开下一件重活 while an image job is running (harness running, delete-confirm-running, running-other-session recapture). The real-app running shot showed 生成中, so this may be a harness artifact or a refresh-timing gap.",
+    "repair_owner": "image-session-repair"
+   },
+   {
+    "id": "N-04",
+    "severity": "minor",
+    "detail": "In the harness the expanded 大图 renders at thumbnail size (~96×64) because the scripted PNG is small; the harness cannot prove large-image layout (which is why U-02 only surfaced in batch B).",
+    "repair_owner": "image-session-verify"
+   },
+   {
+    "id": "N-05",
+    "severity": "minor",
+    "detail": "After 在这张基础上改 the timeline stays at the top; the source card's large image runs to the timeline edge and the clicked button is out of view. All refine-prefill must-show items are present.",
+    "repair_owner": "image-session-repair"
+   },
+   {
+    "id": "N-06",
+    "severity": "minor",
+    "detail": "Composer draft is shared across sessions: viewing B shows A's prompt.",
+    "repair_owner": "image-session-repair"
+   },
+   {
+    "id": "N-07",
+    "severity": "minor",
+    "detail": "Empty-state hint breaks inside the quoted action name 「在这张基础上 / 改」; header shows green 可开工 while no image model is installed.",
+    "repair_owner": "image-session-repair"
+   },
+   {
+    "id": "N-08",
+    "severity": "minor",
+    "detail": "Library preview image sits directly under 刷新 with no spacing.",
+    "repair_owner": "image-session-repair"
+   },
+   {
+    "id": "N-09",
+    "severity": "note",
+    "detail": "Evidence scope notes: rename captured with a single session (其他会话项不变 unverifiable); fixed-clock times differ (15:00 vs 05:19); pixels cannot prove ARIA/focus/persistence causality.",
+    "repair_owner": "image-session-verify"
+   }
+  ],
+  "experience_gaps": [],
+  "environment_blockers": []
+ },
+ "regression": {
+  "backend": {
+   "command": "python3 -m pytest tests --ignore=tests/e2e -q",
+   "evidence_path": ".allforai/verify/evidence/pytest-backend.json",
+   "result": "1106 passed"
+  },
+  "frontend": {
+   "command": "node --test tests/js/*.test.js",
+   "evidence_path": ".allforai/verify/evidence/node-test.json",
+   "result": "321 passed"
+  },
+  "e2e_before_new_file": {
+   "command": "python3 -m pytest tests/e2e -q",
+   "evidence_path": ".allforai/verify/evidence/pytest-e2e-full.json",
+   "result": "76 passed"
+  },
+  "image_sessions_e2e": {
+   "command": "python3 -m pytest tests/e2e/test_image_sessions.py -q",
+   "evidence_path": ".allforai/verify/evidence/pytest-image-sessions.json",
+   "result": "13 passed, 1 failed (test_action_buttons_of_the_settled_attempt_are_in_view_at_900x700: the U-01 defect)"
+  }
+ },
+ "test_quality": {
+  "mutations": [
+   {
+    "mutation": "「在这张基础上改」 no longer fills the seed box",
+    "result": "2 tests fail",
+    "evidence": ".allforai/verify/evidence/mutation/m1.txt"
+   },
+   {
+    "mutation": "「换个构图」 reuses the original seed",
+    "result": "test_ac1_ac2 fails (assert seed != seed)",
+    "evidence": ".allforai/verify/evidence/mutation/m2.txt"
+   },
+   {
+    "mutation": "deleting a session also unlinks its outputs",
+    "result": "test_ac5 fails (/api/outputs differs)",
+    "evidence": ".allforai/verify/evidence/mutation/m3.txt"
+   }
+  ],
+  "note": "Mutations were applied to a copy-restored working file and reverted byte-for-byte (cmp verified); product code is unchanged."
+ },
+ "real_run": {
+  "driver": ".allforai/verify/real_journey.py",
+  "capture": ".allforai/verify/evidence/real-journey-run.json",
+  "record": ".allforai/verify/evidence/real/journey.json",
+  "build": "scripts/build-app.sh --output <scratchpad>/verify-bundle (Developer ID signed; --adhoc build cannot load MLX: 'mapping process and mapped file have different Team IDs')",
+  "model": "/Users/aa/LocalModelDesk/image-models/qwen-image-2.1-heretic",
+  "params": {
+   "width": 512,
+   "height": 512,
+   "steps": 6
+  },
+  "user_instance": "dist/LocalModelDesk.app (pids 11404/11409) untouched and still running after the run"
+ },
+ "visual_review": {
+  "reviewer_one": ".allforai/verify/visual-review-1.json",
+  "reviewer_two": ".allforai/verify/visual-review-2.json",
+  "reconciliation": ".allforai/verify/ui-visual-reconciliation.json",
+  "closure_audit": ".allforai/verify/ui-visual-closure-audit.json",
+  "reviewer_two_backend": "codex exec (codex-cli 0.156.1)",
+  "reviewer_one_backend": "claude -p (fresh context)"
+ },
+ "downstream": {
+  "repair_owner": "image-session-repair",
+  "reads": "gaps.* and the evidence paths above"
+ }
+}

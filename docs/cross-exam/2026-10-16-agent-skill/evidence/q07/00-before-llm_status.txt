@@ -1,0 +1,2 @@
+{"state": {"status": "idle", "model_key": null, "error": null, "loaded_at": null}, "loaded_model": null, "active_chats": 0, "ui_chat_recent": false, "loaded_by": null}
+HTTP 200

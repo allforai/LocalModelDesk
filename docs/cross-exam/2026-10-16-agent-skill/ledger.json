@@ -1,0 +1,4209 @@
+{
+ "ledger_version": 3,
+ "rule_consistency": {
+  "status": "reviewed",
+  "sources": [
+   {
+    "id": "SRC1",
+    "ref": "evidence/rules/sources/agent-skill-design.md",
+    "sha256": "bbaf797c93989f27b731761b6c69e2c8b945a180883b7a4ef8c3b4bc44ca0b31",
+    "origin": "docs/superpowers/specs/2026-10-16-agent-skill-design.md:1-300 @ 3dd22ad"
+   },
+   {
+    "id": "SRC2",
+    "ref": "evidence/rules/sources/agent-media-design.md",
+    "sha256": "ccb68af7ad614d3310771561cec050be54080544512263714a50bdaf207a41b0",
+    "origin": "docs/superpowers/specs/2026-10-16-agent-media-design.md:1-108 @ 3dd22ad"
+   },
+   {
+    "id": "SRC3",
+    "ref": "evidence/rules/sources/user-confirmations.md",
+    "sha256": "826679040059052b71948a2c979bab89533614033e27da442423f4a4a1e647ed",
+    "origin": "会话 fa6582dc 用户原话逐字摘录"
+   },
+   {
+    "id": "SRC4",
+    "ref": "evidence/rules/sources/user-hardware-soft-limits.md",
+    "sha256": "a218142ab0ef1f4fabd7e0be4f89d70ae72027b23310840096c941983931651c",
+    "origin": "~/.claude/projects/-Users-aa-LocalModelDesk/memory/feedback-hardware-soft-limits.md（用户 2026-09-25 原话）"
+   },
+   {
+    "id": "SRC5",
+    "ref": "evidence/rules/sources/journey-oracles.md",
+    "sha256": "6f8bd6bc93654213fcf9b99be2658228aa1830bf3dbfea97633f963393e3ee86",
+    "origin": "§1b 旅程改写读回，用户 2026-10-16 确认"
+   },
+   {
+    "id": "SRC6",
+    "ref": "evidence/rules/sources/user-clarifications-rev1.md",
+    "sha256": "d7c34f75f10bd60096766bcec81760eac54ec3995d0b20fb231ff00f95d45fe8",
+    "origin": "第 1 轮规则审查（evidence/rules/rev1/review.json）后用户逐条确认"
+   }
+  ],
+  "decisions": [
+   {
+    "finding_id": "RC1",
+    "disposition": "clarified",
+    "confirmation": "全部按推荐 (推荐)",
+    "confirmed_at": "2026-10-19T18:28:48+09:00",
+    "effective_rule": "命令行链接 stale 也点亮菜单栏提示点；命令行链接 absent 而有 agent 已安装时也算有变化，「应用」可点并补建链接。",
+    "report_digest": "1fac1f5f9aa1b6e8923f03635897ca44037312d4a355d2707ea3d609efa6a820"
+   },
+   {
+    "finding_id": "RC2",
+    "disposition": "clarified",
+    "confirmation": "全部按推荐 (推荐)",
+    "confirmed_at": "2026-10-19T18:28:48+09:00",
+    "effective_rule": "设置页（GET /api/agent-skill）与「应用」判断每次读实时状态；点「应用」后菜单栏提示点随之更新。",
+    "report_digest": "1fac1f5f9aa1b6e8923f03635897ca44037312d4a355d2707ea3d609efa6a820"
+   },
+   {
+    "finding_id": "RC3",
+    "disposition": "clarified",
+    "confirmation": "全部按推荐 (推荐)",
+    "confirmed_at": "2026-10-19T18:28:48+09:00",
+    "effective_rule": "允许为 join 的 SIGINT 取消改动服务端取消接口；B-00c 只约束生成规则，不约束取消。",
+    "report_digest": "1fac1f5f9aa1b6e8923f03635897ca44037312d4a355d2707ea3d609efa6a820"
+   },
+   {
+    "finding_id": "RC4",
+    "disposition": "clarified",
+    "confirmation": "全部按推荐 (推荐)",
+    "confirmed_at": "2026-10-19T18:28:48+09:00",
+    "effective_rule": "join 用于按指定顺序合成任意几段；续写链直接用 wait 的 joined_output 即可。J3 维持用户确认的 oracle（须有合成记录）。",
+    "report_digest": "1fac1f5f9aa1b6e8923f03635897ca44037312d4a355d2707ea3d609efa6a820"
+   },
+   {
+    "finding_id": "RC5",
+    "disposition": "clarified",
+    "confirmation": "全部按推荐 (推荐)",
+    "confirmed_at": "2026-10-19T18:28:48+09:00",
+    "effective_rule": "J4 的 ≥8 秒只是旅程验收线，不要求 SKILL.md 专门指导 --duration。",
+    "report_digest": "1fac1f5f9aa1b6e8923f03635897ca44037312d4a355d2707ea3d609efa6a820"
+   },
+   {
+    "finding_id": "RC6",
+    "disposition": "clarified",
+    "confirmation": "全部按推荐 (推荐)",
+    "confirmed_at": "2026-10-19T18:28:48+09:00",
+    "effective_rule": "A-05 覆盖命令行发出的全部会改变状态的请求（含新建/改名会话、上传首帧、join）；服务端只在需要区分来源处读 origin。",
+    "report_digest": "1fac1f5f9aa1b6e8923f03635897ca44037312d4a355d2707ea3d609efa6a820"
+   }
+  ],
+  "report_ref": "evidence/rules/review.json",
+  "report_digest": "1fac1f5f9aa1b6e8923f03635897ca44037312d4a355d2707ea3d609efa6a820",
+  "agent_task": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/afbfdac5a606dfaad.output",
+  "agent_model": "claude-opus-5-5 (session)"
+ },
+ "target": "LocalModelDesk feat/agent-skill：lmdesk 命令行（对话/图片/视频/音乐/join）、本机 agent skill 安装、服务端新接口",
+ "target_backend": {
+  "kind": "real",
+  "how_known": "intake 时用户选择「只用 dist 真实例」（2026-10-16）：dist/LocalModelDesk.app + 真实模型；普查官 mock_layers 待补；普查官 mock_layers 只列出测试注入缝与 harness，dist 运行时无拦截层"
+ },
+ "baseline": "spec",
+ "started": "2026-10-16",
+ "judged_build": {
+  "build": "3dd22ad98b1892f59c3ed5d40d7baecacf9eb83c-e3b0c44298fc1c14",
+  "recorded_at": "2026-10-16T13:54:05+09:00",
+  "excludes": [
+   ".allforai",
+   ".claude",
+   "docs/cross-exam/2026-10-16-agent-skill"
+  ]
+ },
+ "examiner_is_author": true,
+ "model_policy": {
+  "observation": "sonnet",
+  "judgment": "session",
+  "confirmed_by_user": "B 成本优先 (推荐)",
+  "confirmed_at": "2026-10-16T13:52:00+09:00",
+  "recommended": {
+   "option": "B",
+   "why": "靶子主要是命令行和接口，用户此前要求子 agent 用 sonnet 控成本；走浏览器的只有设置页"
+  }
+ },
+ "requirements": [
+  {
+   "id": "A-00a",
+   "text": "不改 gateway（`desk/gateway/`），它仍不加载、不排队。命令行只走台面内部 `/api`。"
+  },
+  {
+   "id": "A-00b",
+   "text": "服务端不加任务队列。排队等待全部在命令行进程内完成（§3）。"
+  },
+  {
+   "id": "A-00c",
+   "text": "第一版不做以下这些："
+  },
+  {
+   "id": "A-00d",
+   "text": "不改 arbiter 的批准、拒绝规则。现有界面的生成和对话交互不改，只在聊天页加一条切换提示（A-66）。"
+  },
+  {
+   "id": "A-01",
+   "text": "命令行是 `desk/agent_cli/` 包，只用标准库，不 import `desk` 的其他模块。入口是 `python -m desk.agent_cli`。"
+  },
+  {
+   "id": "A-02",
+   "text": "app 包里有 `Contents/Resources/bin/lmdesk`，一个 shell 小脚本，用 `Contents/Resources/python/bin/python3.13` 运行 `-m desk.agent_cli`。它通过自身的真实路径（解析软链接后）定位所在的 app 包。"
+  },
+  {
+   "id": "A-03",
+   "text": "skill 放在 `desk/agent_skill/bundled/local-model-desk/SKILL.md`。打包后位于 `Contents/Resources/desk/agent_skill/bundled/local-model-desk/`，随 `desk/` 一起 rsync。"
+  },
+  {
+   "id": "A-04",
+   "text": "从源码运行台面时（不是从 app 包运行），安装链接指向仓库里的 skill 目录和 `scripts/lmdesk` 开发脚本，改动立即生效。"
+  },
+  {
+   "id": "A-05",
+   "text": "命令行发出的会改变状态的请求（对话、加载、生图、取消），一律在请求体里带上 `\"origin\": \"agent\"`。服务端靠这个字段区分是 agent 还是界面发起的（A-40、A-43）。"
+  },
+  {
+   "id": "A-10",
+   "text": "`<会话>` 可以填 id，也可以填名字。名字匹配到多个时，退出码 2，并列出这些候选。"
+  },
+  {
+   "id": "A-11",
+   "text": "stdout 只放最终结果，进度和等待提示都走 stderr。"
+  },
+  {
+   "id": "A-12",
+   "text": "`ask` 的 stdin 不是终端时，读入 stdin 内容，接在问题后面。`--file` 可以重复，每个文件以「文件名 + 内容」的块拼进用户消息。"
+  },
+  {
+   "id": "A-13",
+   "text": "退出码固定为："
+  },
+  {
+   "id": "A-14",
+   "text": "不提供删除命令。"
+  },
+  {
+   "id": "A-15",
+   "text": "`gen` 的任务一旦提交，stderr 立刻打印一行 `已提交：会话 <id> 尝试 <attempt_id>（中断后可用 lmdesk image wait <id> <attempt_id> 继续等待）`。带 `--no-wait` 时，提交后立即以 0 退出，stdout 输出这个尝试 id（`--json` 时是 `{\"session_id\", \"attempt_id\"}`）。"
+  },
+  {
+   "id": "A-16",
+   "text": "`wait` 只等结果，不提交任何东西："
+  },
+  {
+   "id": "A-20",
+   "text": "决策写成纯函数 `decide(op, want_model, state) -> wait|swap|submit|fail`，其中 state 来自 `/api/llm/status` 和 `/api/media/job`。规则如下："
+  },
+  {
+   "id": "A-21",
+   "text": "选模型："
+  },
+  {
+   "id": "A-22",
+   "text": "swap 就是调用 `POST /api/llm/load`（带 `origin: \"agent\"`），再轮询直到 `loaded`。加载过程中出错时，退出码 1，并附带台面给出的原因。"
+  },
+  {
+   "id": "A-23",
+   "text": "轮询间隔从 2s 开始，每次 ×1.5，最长 5s。等待期间，stderr 每 15s 打一行，例如「等待中：图片任务进行中（已等 45s）」。"
+  },
+  {
+   "id": "A-24",
+   "text": "以下情况都回到等待重新判断，不算失败："
+  },
+  {
+   "id": "A-25",
+   "text": "中断和超时："
+  },
+  {
+   "id": "A-26",
+   "text": "内存不足分两种情况："
+  },
+  {
+   "id": "A-27",
+   "text": "图片的结果以**会话里的尝试记录**为准，不依赖媒体任务槽位："
+  },
+  {
+   "id": "A-28",
+   "text": "agent 加载的对话模型，用完后不自动卸载。这和你在界面手动加载模型的行为一致，下次调用也省掉了加载时间。这个模型会一直留着，直到被换掉，或者被媒体任务按现有规则挤掉。这是有意的决定。"
+  },
+  {
+   "id": "A-30",
+   "text": "端口取 `LMD_SHELL_PORT`，不合法或没设置时用 8766，与 `desk/__main__.py:runtime_port` 规则一致。"
+  },
+  {
+   "id": "A-31",
+   "text": "连接被拒绝（`ECONNREFUSED`，说明台面没开）时："
+  },
+  {
+   "id": "A-32",
+   "text": "版本号统一取自 `packaging/VERSION`，从 app 包运行时取打包写入的 `bundle_version`。命令行比对自己的版本和 `/api/state` 返回的 `version`（见 A-44）。版本不一致时，stderr 警告一行，继续执行。"
+  },
+  {
+   "id": "A-33",
+   "text": "连接时如果出现权限类错误（`EPERM`、`EACCES`，或者沙箱特有的拒绝），说明是被 agent 的沙箱拦了。这时不尝试拉起 app，直接以退出码 6 退出，提示「被沙箱拦截，需要允许访问本机网络（127.0.0.1）」。"
+  },
+  {
+   "id": "A-40",
+   "text": "`LlmService` 增加两项状态，在 `/api/llm/status` 中返回："
+  },
+  {
+   "id": "A-41",
+   "text": "新增 `desk/agent_skill/` 模块，路由如下："
+  },
+  {
+   "id": "A-42",
+   "text": "`POST /api/media/cancel` 接受可选的 `job_id`。"
+  },
+  {
+   "id": "A-43",
+   "text": "`LlmService` 记录当前模型的来源 `loaded_by`，取值为 `\"agent\"` 或 `\"ui\"`，依据 `/api/llm/load` 请求里的 `origin` 字段。在 `/api/llm/status` 中返回。"
+  },
+  {
+   "id": "A-45",
+   "text": "新增只读预检接口 `GET /api/agent/precheck`，不改变任何状态："
+  },
+  {
+   "id": "A-44",
+   "text": "`/api/state` 增加 `version` 字段，取值规则同 A-32。现在 `/api/state` 只有 `holder`、`holders`、`media_busy`、`can_start` 这几个字段，没有版本信息。"
+  },
+  {
+   "id": "A-50",
+   "text": "安装目标（全部是软链接，指向当前 app 包或仓库里的 skill 目录）："
+  },
+  {
+   "id": "A-51",
+   "text": "Codex 的目录要在实现的第一步实测：把一个最小 skill 放进 `~/.codex/skills/`，看 Codex 0.160.1 能不能识别（实测完清理掉）。"
+  },
+  {
+   "id": "A-52",
+   "text": "命令行链接 `~/.local/bin/lmdesk` 不单独设勾选框。至少装了一个 agent 时自动建立；全部卸载时自动移除。"
+  },
+  {
+   "id": "A-53",
+   "text": "每个位置的状态只有以下几种："
+  },
+  {
+   "id": "A-54",
+   "text": "安装："
+  },
+  {
+   "id": "A-55",
+   "text": "卸载只删除 `installed` 或 `stale` 的链接，绝不删除真实的文件或目录，也不删除指向别处的链接。"
+  },
+  {
+   "id": "A-56",
+   "text": "台面不会自己安装任何一项。只有用户在设置页点「应用」才会写入。"
+  },
+  {
+   "id": "A-57",
+   "text": "`scripts/uninstall-app.sh` 卸载 app 时，同时清理 A-50、A-52 中 `installed` 或 `stale` 的链接，规则同 A-55，并且支持 `--dry-run`。"
+  },
+  {
+   "id": "A-60",
+   "text": "位于设置页「对外 API」之后。按钮层级、卡片列表样式沿用现有视觉基线。"
+  },
+  {
+   "id": "A-61",
+   "text": "结构："
+  },
+  {
+   "id": "A-62",
+   "text": "打开页面时，勾选状态是：`installed` 或 `stale` 的行勾选，其余不勾选。`stale` 行的状态文字是「指向旧位置，点应用更新」。"
+  },
+  {
+   "id": "A-63",
+   "text": "「未检测到」的行也可以勾选。检测结果只是提示。"
+  },
+  {
+   "id": "A-64",
+   "text": "「应用」按钮是否可点，按「应用后会不会有变化」判断："
+  },
+  {
+   "id": "A-65",
+   "text": "矮窗口和窄窗口下，没有横向滚动，内容不溢出。"
+  },
+  {
+   "id": "A-66",
+   "text": "聊天页：`/api/llm/status` 的 `loaded_by` 变成 `\"agent\"`，而且模型和页面上次看到的不一样时，在聊天区域上方显示一条可关闭的提示「模型已被 agent 切换为 X」。"
+  },
+  {
+   "id": "A-67",
+   "text": "闭环验证："
+  },
+  {
+   "id": "A-70",
+   "text": "因为装的是软链接，app 被覆盖更新后，skill 和命令行自动就是新内容，两者版本始终一致。SKILL.md 里不写版本号。"
+  },
+  {
+   "id": "A-71",
+   "text": "台面启动时计算一次 A-53 的状态，结果放进 `/api/agent-skill`。"
+  },
+  {
+   "id": "A-72",
+   "text": "不自动改链接。本机可能有好几份 app，自动改会让链接来回跳。"
+  },
+  {
+   "id": "A-80",
+   "text": "frontmatter："
+  },
+  {
+   "id": "A-81",
+   "text": "description 要写清楚三件事："
+  },
+  {
+   "id": "A-82",
+   "text": "正文必须包含："
+  },
+  {
+   "id": "A-90",
+   "text": "`scripts/build-app.sh` 要生成 `Contents/Resources/bin/lmdesk`（可执行），skill 随 `desk/` 进入 app 包。"
+  },
+  {
+   "id": "A-91",
+   "text": "在 dist 版本的 app 中，`Contents/Resources/bin/lmdesk status --json` 能在台面运行时返回成功。"
+  },
+  {
+   "id": "A-T9",
+   "text": "手动验收："
+  },
+  {
+   "id": "B-00a",
+   "text": "不做配乐（soundtrack）、参考视频（reference）、配乐参考（music_ref）、尾帧。这几项素材组合复杂，agent 用得少，以后再加。"
+  },
+  {
+   "id": "B-00b",
+   "text": "不改界面、不改安装。设置页和 skill 链接都不变。"
+  },
+  {
+   "id": "B-00c",
+   "text": "不改媒体服务的生成规则。参数校验仍由服务端负责，命令行只做格式解析。"
+  },
+  {
+   "id": "B-01",
+   "text": "把 `desk/agent_cli/images.py` 泛化为 `desk/agent_cli/media.py`：由一张按 kind 区分的配置表驱动 image、video、music 三种媒体。会话解析、`show`、`wait`、`--out`、提交时挂起信号、SIGINT 取消、SIGTERM 续等提示，三种媒体共用同一份代码。"
+  },
+  {
+   "id": "B-02",
+   "text": "`decide()` 的 `op` 取值扩展为 `chat`、`image`、`video`、`music`、`compose`。"
+  },
+  {
+   "id": "B-10",
+   "text": "默认值与界面一致："
+  },
+  {
+   "id": "B-11",
+   "text": "`--frames` 只接受 `DURATIONS` 里的帧数：49、73、124、192、243、362。其他值以退出码 2 拒绝，并列出可选值和对应的秒数。"
+  },
+  {
+   "id": "B-12",
+   "text": "`--continue <尝试id>`：接着这一段往下生成。对应接口字段 `continues`。与 `--first-frame` 同时使用时，以退出码 2 拒绝。"
+  },
+  {
+   "id": "B-13",
+   "text": "`--first-frame` 两种写法："
+  },
+  {
+   "id": "B-14",
+   "text": "`video join`：调用 `POST /api/media/compose`，请求体为 `{kind: \"video\", session_id, parts: [尝试id…]}`，至少两段，不足两段以退出码 2 拒绝。合成会在会话里产生一条 `op: \"compose\"` 的尝试，然后按 A-27 的规则等待这条尝试并输出成片路径。"
+  },
+  {
+   "id": "B-15",
+   "text": "视频生成往往要几分钟到几十分钟。SKILL.md 推荐视频一律用 `gen --no-wait` 提交，再用 `video wait` 取回结果。"
+  },
+  {
+   "id": "B-20",
+   "text": "Music 3 必须有歌词。`--lyrics` 和 `--lyrics-file` 必须给一个，两个都没给、或者两个都给了，以退出码 2 拒绝。纯音乐的写法在 SKILL.md 里说明，按 Music 3 的歌词标记约定写，例如只写 `[instrumental]`；具体写法以 `desk/static/js/panes/music.js` 和音乐会话设计里的约定为准。"
+  },
+  {
+   "id": "B-21",
+   "text": "`--duration` 的默认值与界面一致，从 `desk/static/index.html` 音乐页时长输入框的 `value` 读出。"
+  },
+  {
+   "id": "B-22",
+   "text": "`--continue`：对应接口字段 `continues`。`music join` 与 B-14 同理，`kind` 为 `\"music\"`。"
+  },
+  {
+   "id": "B-30",
+   "text": "预检接口 `/api/agent/precheck` 增加两种 op："
+  },
+  {
+   "id": "B-31",
+   "text": "`wait` 和 `gen` 的输出路径：有 `joined_output` 时用它（续写后，这就是到当前这一段为止的完整成片），否则用 `output`。这条规则已经存在于 `_attempt_view`，三种媒体统一沿用。"
+  },
+  {
+   "id": "B-32",
+   "text": "`show` 的 `prompt` 字段：视频取 `params.prompt`，音乐取 `params.caption`，合成尝试取 `\"合成：\" + 各段 id`。"
+  },
+  {
+   "id": "B-40",
+   "text": "description 加上视频、音乐，并补充触发词「本地生成视频」「本地生成音乐」。总长仍然不超过 1024 字符（A-80）。"
+  },
+  {
+   "id": "B-41",
+   "text": "正文增加视频、音乐两节，必须包含："
+  }
+ ],
+ "surfaces": [
+  {
+   "id": "S1",
+   "name": "lmdesk entry point and global parsing (prog=lmdesk; exit codes 0/1/2/3/4/5/6; SIGINT/SIGTERM become Interrupted; with --json a usage error prints {\"error\":{\"code\":\"usage\"}} to stdout; when CLI and desk versions differ, a warning goes to stderr)",
+   "entry": "desk/agent_cli/cli.py:main / _parser; desk/agent_cli/__main__.py; desk/agent_cli/errors.py:3"
+  },
+  {
+   "id": "S2",
+   "name": "Options shared by every leaf subcommand: --json, --timeout (default 1800s)",
+   "entry": "desk/agent_cli/cli.py:_parser common"
+  },
+  {
+   "id": "S3",
+   "name": "lmdesk status",
+   "entry": "desk/agent_cli/cli.py:_dispatch → chat.run_status (GET /api/llm/status, /api/media/job, /api/state)"
+  },
+  {
+   "id": "S4",
+   "name": "lmdesk models (text output is tab-separated; --json wraps it as {models:[...]})",
+   "entry": "desk/agent_cli/chat.py:run_models (GET /api/resources/catalog group=chat)"
+  },
+  {
+   "id": "S5",
+   "name": "lmdesk ask <question> [--model] [--system] [--file ... repeatable] [--max-tokens]; also reads stdin when it is not a TTY",
+   "entry": "desk/agent_cli/chat.py:run_ask (GET /api/agent/precheck op=chat; POST /api/llm/load origin=agent; POST /api/llm/chat)"
+  },
+  {
+   "id": "S6",
+   "name": "Decision logic: wait / swap / submit / fail, plus RETRY_CODES",
+   "entry": "desk/agent_cli/decide.py:decide, RETRY_CODES"
+  },
+  {
+   "id": "S7",
+   "name": "Desk discovery: LMD_SHELL_PORT (default 8766); when the connection is refused, starts the enclosing .app hidden with open -gj (waits up to 60s); classifies sandbox errors (EPERM/EACCES → exit 6)",
+   "entry": "desk/agent_cli/discovery.py:connect, port_from_env, app_bundle_of"
+  },
+  {
+   "id": "S8",
+   "name": "HTTP client (GET/POST/PATCH; maps errors to refused / sandbox / other and HttpError)",
+   "entry": "desk/agent_cli/client.py:DeskClient"
+  },
+  {
+   "id": "S9",
+   "name": "Waiter: backoff 2→5s, a progress line on stderr every 15s, overall deadline",
+   "entry": "desk/agent_cli/waiter.py:Waiter"
+  },
+  {
+   "id": "S10",
+   "name": "Version source: bundle.json bundle_version → packaging/VERSION → unknown; environment override LMDESK_FAKE_VERSION",
+   "entry": "desk/agent_cli/version.py:read_version; desk/agent_cli/chat.py:57"
+  },
+  {
+   "id": "S11",
+   "name": "lmdesk image sessions",
+   "entry": "desk/agent_cli/media.py:dispatch sessions (GET /api/media-sessions/image)"
+  },
+  {
+   "id": "S12",
+   "name": "lmdesk image new <name>",
+   "entry": "desk/agent_cli/media.py:dispatch new (POST then PATCH /api/media-sessions/image/{id})"
+  },
+  {
+   "id": "S13",
+   "name": "lmdesk image show <session>",
+   "entry": "desk/agent_cli/media.py:dispatch show"
+  },
+  {
+   "id": "S14",
+   "name": "lmdesk image gen <session> <prompt> [--seed --out --force --no-wait --size(1024x1024) --steps(40) --from --strength(0.6)]",
+   "entry": "desk/agent_cli/media.py:run_gen/_check_image/_build_image (POST /api/media/image)"
+  },
+  {
+   "id": "S15",
+   "name": "lmdesk image wait <session> <attempt> [--out]",
+   "entry": "desk/agent_cli/media.py:dispatch wait → wait_attempt"
+  },
+  {
+   "id": "S16",
+   "name": "lmdesk image rename <session> <name>",
+   "entry": "desk/agent_cli/media.py:dispatch rename"
+  },
+  {
+   "id": "S17",
+   "name": "lmdesk video sessions/new/show/wait/rename",
+   "entry": "desk/agent_cli/media.py:add_parsers kind=video"
+  },
+  {
+   "id": "S18",
+   "name": "lmdesk video gen <session> <prompt> [--seed --out --force --no-wait --size(768x448) --frames(49|73|124|192|243|362, default 124) --steps(16) --continue | --first-frame <file|image:session:attempt>]",
+   "entry": "desk/agent_cli/media.py:_check_video/_build_video/_upload_first_frame (POST /api/media/inputs, /api/media/video, /api/media/inputs/discard on failure)"
+  },
+  {
+   "id": "S19",
+   "name": "lmdesk video join <session> <parts...> [--out --no-wait] (at least 2 parts)",
+   "entry": "desk/agent_cli/media.py:run_join (POST /api/media/compose)"
+  },
+  {
+   "id": "S20",
+   "name": "lmdesk music sessions/new/show/wait/rename",
+   "entry": "desk/agent_cli/media.py:add_parsers kind=music"
+  },
+  {
+   "id": "S21",
+   "name": "lmdesk music gen <session> <prompt> [--seed --out --force --no-wait --lyrics | --lyrics-file (exactly one required) --duration(60) --continue]",
+   "entry": "desk/agent_cli/media.py:_check_music/_build_music (POST /api/media/music)"
+  },
+  {
+   "id": "S22",
+   "name": "lmdesk music join <session> <parts...> [--out --no-wait]",
+   "entry": "desk/agent_cli/media.py:run_join"
+  },
+  {
+   "id": "S23",
+   "name": "Interrupt and resume during generation: SIGINT cancels the job (POST /api/media/cancel {job_id}); SIGTERM, timeout, or desk exit print a resume hint for lmdesk <kind> wait; signals are blocked while the submit request is in flight",
+   "entry": "desk/agent_cli/media.py:_run_job, _hold_signals, _resume_hint"
+  },
+  {
+   "id": "S24",
+   "name": "Copying output with --out (directory or file; prints '已覆盖' when overwriting)",
+   "entry": "desk/agent_cli/media.py:_copy_out"
+  },
+  {
+   "id": "S25",
+   "name": "GET /api/agent/precheck?op=chat|image|video|music (plus model / width,height,steps / frames / duration)",
+   "entry": "desk/agent_skill/routes.py:build_precheck_routes; mounted at desk/runtime.py:158"
+  },
+  {
+   "id": "S26",
+   "name": "GET /api/agent-skill (targets[] + cli link status)",
+   "entry": "desk/agent_skill/routes.py:build_routes get_status"
+  },
+  {
+   "id": "S27",
+   "name": "POST /api/agent-skill {targets:[claude|codex|pi|dsh]} (install selected, uninstall the rest; ~/.local/bin/lmdesk is linked when at least one target is installed)",
+   "entry": "desk/agent_skill/routes.py:post_apply → service.apply → installer.apply"
+  },
+  {
+   "id": "S28",
+   "name": "POST /api/agent-skill/check (runs <cli> status --json --timeout 10)",
+   "entry": "desk/agent_skill/routes.py:post_check → service.check"
+  },
+  {
+   "id": "S29",
+   "name": "Agent skill link states: installed / stale / occupied / absent / error; recognizing our own scripts/lmdesk requires a desk/agent_cli directory beside it",
+   "entry": "desk/agent_skill/installer.py:link_state, _ours"
+  },
+  {
+   "id": "S30",
+   "name": "Agent targets: claude(~/.claude/skills), codex(~/.agents/skills, shared_note), pi(~/.pi/agent/skills), dsh(~/.dsh/skills); detected by command on PATH or by path",
+   "entry": "desk/agent_skill/targets.py:TARGETS"
+  },
+  {
+   "id": "S31",
+   "name": "Bundled SKILL.md (local-model-desk): call conventions, chat, image, video, music, exit codes, examples",
+   "entry": "desk/agent_skill/bundled/local-model-desk/SKILL.md"
+  },
+  {
+   "id": "S32",
+   "name": "user_home() as the single place HOME is read",
+   "entry": "desk/foundation/paths.py:user_home"
+  },
+  {
+   "id": "S33",
+   "name": "GET /api/state adds the fields version and agent_skill_stale",
+   "entry": "desk/runtime.py:162-164; desk/testing/harness.py:251-253"
+  },
+  {
+   "id": "S34",
+   "name": "POST /api/llm/load accepts origin (agent|ui, default ui)",
+   "entry": "desk/llm/routes.py:65 → LlmService.load(origin)"
+  },
+  {
+   "id": "S35",
+   "name": "GET /api/llm/status adds fields active_chats, ui_chat_recent (UI chat within 300s), loaded_by (agent|ui|null)",
+   "entry": "desk/llm/service.py:status, UI_CHAT_RECENT_S"
+  },
+  {
+   "id": "S36",
+   "name": "Chat counting: /api/llm/chat and /api/llm/chat/stream increment and decrement active_chats; requests whose origin is not agent update last_ui_chat",
+   "entry": "desk/llm/service.py:_chat_begin/_chat_end/_counted_stream"
+  },
+  {
+   "id": "S37",
+   "name": "LlmService.precheck_load(key) (dry run of the arbiter, no acquire)",
+   "entry": "desk/llm/service.py:precheck_load"
+  },
+  {
+   "id": "S38",
+   "name": "POST /api/media/inputs/discard {id} (deletes .inputs/<32hex>.<ext>; malformed or unknown ids are a no-op)",
+   "entry": "desk/media/routes.py:93 → MediaService.discard_input → desk/media/inputs.py:discard_input"
+  },
+  {
+   "id": "S39",
+   "name": "POST /api/media/cancel accepts optional job_id (must be an int, else 400 invalid_params; returns 409 job_not_running if the id does not match the running job)",
+   "entry": "desk/media/routes.py:cancel → MediaService._cancel"
+  },
+  {
+   "id": "S40",
+   "name": "MediaService.precheck_image / precheck_media(video|music|image)",
+   "entry": "desk/media/service.py:precheck_image, precheck_media"
+  },
+  {
+   "id": "S41",
+   "name": "Settings page section '本机 agent' (local agents): checkbox per target, Apply (disabled until something changes), Check, cli line, try-it phrase with Copy, error line",
+   "entry": "desk/static/index.html:148 [data-agent-skill]; desk/static/js/panes/agent_skill.js:createAgentSkillSection; desk/static/js/pure/agent_skill.js"
+  },
+  {
+   "id": "S42",
+   "name": "Chat page notice when an agent switches the model (dismissible)",
+   "entry": "desk/static/index.html:13 [data-agent-switch]; desk/static/js/panes/chat.js:renderLlm; desk/static/js/pure/agent_switch.js:agentSwitchNotice"
+  },
+  {
+   "id": "S43",
+   "name": "Frontend API functions agentSkillStatus / agentSkillApply / agentSkillCheck",
+   "entry": "desk/static/js/api.js:86-88"
+  },
+  {
+   "id": "S44",
+   "name": "Styles .agent-skill-* / .agent-switch-notice",
+   "entry": "desk/static/app.css:508-515"
+  },
+  {
+   "id": "S45",
+   "name": "Menu bar: agentSkillStale parsing, a menu item 'agent 链接指向旧位置，打开设置更新' (agent links point at an old location, open Settings to update; clicking opens Settings), and a dot on the status icon",
+   "entry": "macos/ShellStatus.swift:DeskStateSnapshot.parse, agentSkillMenuNote; macos/StatusItemController.swift:agentSkillItem, render, configureStatusButton(dot:)"
+  },
+  {
+   "id": "S46",
+   "name": "Swift harness subcommand agent-skill-note",
+   "entry": "macos/harness/ShellHarness.swift:14"
+  },
+  {
+   "id": "S47",
+   "name": "Packaging: generates Contents/Resources/bin/lmdesk (embedded python3.13 -s -m desk.agent_cli, follows symlinks)",
+   "entry": "scripts/build-app.sh:51-59"
+  },
+  {
+   "id": "S48",
+   "name": "Development entry scripts/lmdesk (LMDESK_PYTHON overrides the interpreter)",
+   "entry": "scripts/lmdesk"
+  },
+  {
+   "id": "S49",
+   "name": "Uninstall removes agent links (~/.claude/skills, ~/.codex/skills, ~/.agents/skills, ~/.pi/agent/skills, ~/.dsh/skills /local-model-desk, ~/.local/bin/lmdesk); only symlinks pointing at our targets; honors --dry-run",
+   "entry": "scripts/uninstall-app.sh:remove_agent_links (called at line ~167)"
+  },
+  {
+   "id": "D1",
+   "name": "[dead_contract] The 'origin':'agent' field the CLI sends in media start, compose and cancel bodies; the media route handlers do not read origin",
+   "entry": "desk/agent_cli/media.py:378,386,358 (sender); desk/media/routes.py:35-90 (no reader)"
+  },
+  {
+   "id": "D2",
+   "name": "[dead_contract] Waiter.expired / Waiter.elapsed (no callers in desk/)",
+   "entry": "desk/agent_cli/waiter.py:21,27"
+  },
+  {
+   "id": "D3",
+   "name": "[dead_contract] The memory_warning field in the precheck response (agent_cli does not read it)",
+   "entry": "desk/llm/service.py:precheck_load; desk/media/service.py:precheck_media"
+  },
+  {
+   "id": "D4",
+   "name": "[dead_contract] The link path ~/.codex/skills/local-model-desk is in the uninstall script's list but has no matching entry in TARGETS",
+   "entry": "scripts/uninstall-app.sh:51; desk/agent_skill/targets.py:23-31"
+  }
+ ],
+ "facets": [
+  {
+   "id": "F1",
+   "name": "对话：ask/models/status、加载与内存不足、llm 状态字段",
+   "status": "examined",
+   "surface_ids": [
+    "S3",
+    "S4",
+    "S5",
+    "S34",
+    "S35",
+    "S36",
+    "S37"
+   ],
+   "requirement_refs": [
+    "A-12",
+    "A-21",
+    "A-22",
+    "A-26",
+    "A-28",
+    "A-40",
+    "A-43"
+   ]
+  },
+  {
+   "id": "F2",
+   "name": "排队等待与决策",
+   "status": "examined",
+   "surface_ids": [
+    "S2",
+    "S6",
+    "S9",
+    "D2"
+   ],
+   "requirement_refs": [
+    "A-00b",
+    "A-11",
+    "A-20",
+    "A-23",
+    "A-24"
+   ]
+  },
+  {
+   "id": "F6",
+   "name": "中断与续等（SIGINT/SIGTERM/超时）",
+   "status": "examined",
+   "surface_ids": [
+    "S23",
+    "S39"
+   ],
+   "requirement_refs": [
+    "A-25",
+    "A-42",
+    "A-15",
+    "A-16"
+   ]
+  },
+  {
+   "id": "F7",
+   "name": "预检接口",
+   "status": "examined",
+   "surface_ids": [
+    "S25",
+    "S37",
+    "S40",
+    "D3"
+   ],
+   "requirement_refs": [
+    "A-45",
+    "B-30"
+   ]
+  },
+  {
+   "id": "F8",
+   "name": "发现、拉起、沙箱、版本、gateway 不变",
+   "status": "examined",
+   "surface_ids": [
+    "S1",
+    "S7",
+    "S8",
+    "S10",
+    "S33"
+   ],
+   "requirement_refs": [
+    "A-00a",
+    "A-01",
+    "A-05",
+    "A-13",
+    "A-30",
+    "A-31",
+    "A-32",
+    "A-33",
+    "A-44"
+   ]
+  },
+  {
+   "id": "F3",
+   "name": "图片会话命令",
+   "status": "examined",
+   "surface_ids": [
+    "S11",
+    "S12",
+    "S13",
+    "S14",
+    "S15",
+    "S16",
+    "S24"
+   ],
+   "requirement_refs": [
+    "A-10",
+    "A-14",
+    "A-15",
+    "A-16",
+    "A-27"
+   ]
+  },
+  {
+   "id": "F4",
+   "name": "视频命令与 join",
+   "status": "examined",
+   "surface_ids": [
+    "S17",
+    "S18",
+    "S19",
+    "S38"
+   ],
+   "requirement_refs": [
+    "B-01",
+    "B-02",
+    "B-10",
+    "B-11",
+    "B-12",
+    "B-13",
+    "B-14",
+    "B-15",
+    "B-31",
+    "B-32"
+   ]
+  },
+  {
+   "id": "F5",
+   "name": "音乐命令与 join",
+   "status": "examined",
+   "surface_ids": [
+    "S20",
+    "S21",
+    "S22"
+   ],
+   "requirement_refs": [
+    "B-20",
+    "B-21",
+    "B-22"
+   ]
+  },
+  {
+   "id": "F14",
+   "name": "横切：agent 与界面/多 agent 并发",
+   "status": "examined",
+   "surface_ids": [
+    "S5",
+    "S6",
+    "S14",
+    "S35",
+    "S36",
+    "D1"
+   ],
+   "requirement_refs": [
+    "A-00d",
+    "A-20",
+    "A-28"
+   ]
+  },
+  {
+   "id": "F9",
+   "name": "skill 安装、链接状态与卸载脚本",
+   "status": "examined",
+   "surface_ids": [
+    "S26",
+    "S27",
+    "S28",
+    "S29",
+    "S30",
+    "S32",
+    "S49",
+    "D4"
+   ],
+   "requirement_refs": [
+    "A-50",
+    "A-51",
+    "A-52",
+    "A-53",
+    "A-54",
+    "A-55",
+    "A-56",
+    "A-57",
+    "A-71",
+    "A-72",
+    "A-41"
+   ]
+  },
+  {
+   "id": "F10",
+   "name": "设置页「本机 agent」区块",
+   "status": "examined",
+   "surface_ids": [
+    "S41",
+    "S43",
+    "S44"
+   ],
+   "requirement_refs": [
+    "A-60",
+    "A-61",
+    "A-62",
+    "A-63",
+    "A-64",
+    "A-65",
+    "A-67"
+   ]
+  },
+  {
+   "id": "F13",
+   "name": "聊天页 agent 切换提示",
+   "status": "examined",
+   "surface_ids": [
+    "S42"
+   ],
+   "requirement_refs": [
+    "A-66"
+   ]
+  },
+  {
+   "id": "F12",
+   "name": "打包、开发入口与菜单栏",
+   "status": "examined",
+   "surface_ids": [
+    "S45",
+    "S46",
+    "S47",
+    "S48"
+   ],
+   "requirement_refs": [
+    "A-02",
+    "A-03",
+    "A-04",
+    "A-70",
+    "A-90",
+    "A-91"
+   ]
+  },
+  {
+   "id": "F11",
+   "name": "SKILL.md 与 agent 发现",
+   "status": "examined",
+   "surface_ids": [
+    "S31"
+   ],
+   "requirement_refs": [
+    "A-00c",
+    "A-80",
+    "A-81",
+    "A-82",
+    "A-T9",
+    "B-00a",
+    "B-00b",
+    "B-00c",
+    "B-40",
+    "B-41"
+   ]
+  }
+ ],
+ "entries": [
+  {
+   "q": "打包进 app 的 SKILL.md 实际包含什么，与 A-80/A-81/A-82/B-40/B-41 逐条对账？",
+   "facet": "F11",
+   "leak_point": "SKILL.md 为第二期补写，description 长度与必含项未经独立核对",
+   "medium": "code",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/ac2817f99a0e19155.output"
+   },
+   "probed_at": "2026-10-19T21:27:07+09:00",
+   "states_to_capture": [
+    "01-frontmatter 与 description 字符数",
+    "02-正文逐节摘录",
+    "03-设计条目逐条对账表"
+   ],
+   "served_by": {
+    "host": "不适用：只读代码",
+    "process": "不适用：只读代码",
+    "mock_layers": [],
+    "checked_absent": []
+   },
+   "evidence": {
+    "dir": "evidence/q01/",
+    "files": [
+     "q01-01-frontmatter.md",
+     "q01-02-body-excerpt.md",
+     "q01-03-reconcile.md",
+     "q01-served-by.md"
+    ],
+    "key_observation": "dist 与仓库 SKILL.md 字节相同；description 156 字符；A-80/81/82、B-40/41 各子项都找到对应 SKILL.md:行号 原文，无缺项"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S31"
+   ],
+   "requirement_refs": [
+    "A-80",
+    "A-81",
+    "A-82",
+    "B-40",
+    "B-41"
+   ],
+   "redispatched": 1
+  },
+  {
+   "q": "SKILL.md 对退出码 3 怎么说？超时、SIGINT、SIGTERM、ask 排不上队四种退出码 3 时 stderr 实际打印什么、任务是否继续？",
+   "facet": "F11",
+   "leak_point": "RC8 澄清：SKILL 须区分已取消与仍在跑；SKILL.md:83 只写「台面一直在忙」",
+   "medium": "code",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a70dc305006abf9c0.output"
+   },
+   "probed_at": "2026-10-16T15:09:00+09:00",
+   "states_to_capture": [
+    "01-SKILL.md 退出码 3 原文",
+    "02-四种情况代码路径与 stderr 文本摘录"
+   ],
+   "served_by": {
+    "host": "不适用：只读代码",
+    "process": "不适用：只读代码",
+    "mock_layers": [],
+    "checked_absent": []
+   },
+   "evidence": {
+    "dir": "evidence/q02/",
+    "files": [
+     "q02-01-skill-exit3.md",
+     "q02-02-code-paths.md",
+     "q02-served-by.md"
+    ],
+    "key_observation": "SKILL.md:83 对退出码 3 只写「等待超时，台面一直在忙…稍后可以用 wait 取结果」；SIGINT 路径（media.py:361）已取消任务且无续等提示，SKILL 未区分"
+   },
+   "verdict": "gap",
+   "surfaces": [
+    "S31",
+    "S23"
+   ],
+   "requirement_refs": [
+    "A-82",
+    "A-13",
+    "A-25"
+   ],
+   "severity": "medium"
+  },
+  {
+   "q": "卸载脚本对 agent 链接实际做了什么（dry-run 与真实运行），真实目录与外来链接是否保留？",
+   "facet": "F9",
+   "leak_point": "uninstall-app.sh 清理列表含 ~/.codex/skills（零调用契约 D4）；A-57 要求 --dry-run",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/abce7266e13487d06.output"
+   },
+   "probed_at": "2026-10-16T15:09:00+09:00",
+   "states_to_capture": [
+    "00-临时 HOME 初始布置",
+    "01-dry-run 输出与之后读回",
+    "02-真实运行输出与之后读回"
+   ],
+   "served_by": {
+    "host": "local macOS, no network",
+    "process": "bash scripts/uninstall-app.sh with HOME=<mktemp>, fake app/data/LaunchAgents paths",
+    "mock_layers": [],
+    "checked_absent": [
+     "launchctl not called",
+     "real /Applications and data root never referenced",
+     "dist app not touched"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q05/",
+    "files": [
+     "q05-00-initial.txt",
+     "q05-01-dry-run.txt",
+     "q05-02-real.txt",
+     "q05-served-by.md"
+    ],
+    "key_observation": "dry-run 列出并真实删除 .claude、.codex、.local/bin 三条指向 LocalModelDesk 的链接；.agents 真实目录与 .pi 外来链接保留；真实运行不打印删了哪些链接"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S49",
+    "D4"
+   ],
+   "requirement_refs": [
+    "A-57",
+    "A-55"
+   ]
+  },
+  {
+   "q": "预检对最大对话模型、362 帧视频、240 秒音乐、2048 图片返回什么？命令行读预检的哪些字段，memory_warning 用没用？",
+   "facet": "F7",
+   "leak_point": "零调用契约 D3：memory_warning 命令行不读",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a40cb47dd8b98a0d0.output"
+   },
+   "probed_at": "2026-10-16T15:09:00+09:00",
+   "states_to_capture": [
+    "01-四个预检请求的原始响应",
+    "02-命令行源码读取预检字段的摘录"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no proxy or mock layer; direct curl"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q06/",
+    "files": [
+     "catalog.json",
+     "chat-list.txt",
+     "chat-max-key.txt",
+     "q06-01a-chat.txt",
+     "q06-01b-video.txt",
+     "q06-01c-music.txt",
+     "q06-01d-image.txt",
+     "q06-02-cli-source-excerpts.md",
+     "q06-served-by.md"
+    ],
+    "key_observation": "四个预检均 200 {ok:true, reason:null, release:[], memory_warning:null}；命令行读 ok/release/reason.message，不读 memory_warning"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S25",
+    "S40",
+    "D3"
+   ],
+   "requirement_refs": [
+    "A-45",
+    "B-30"
+   ]
+  },
+  {
+   "q": "预检在未知 op、缺参数、参数非整数、模型不存在时各返回什么？调用前后台面状态有没有变化？",
+   "facet": "F7",
+   "leak_point": "A-45 要求只读；B-T3 要求参数非整数返回 400",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a0243028e14be9888.output"
+   },
+   "probed_at": "2026-10-16T15:09:00+09:00",
+   "states_to_capture": [
+    "00-调用前三个状态接口读回",
+    "01-各变体的原始响应",
+    "02-调用后三个状态接口读回"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "python3.13 pid 31005 listening on 127.0.0.1:8766",
+    "mock_layers": [],
+    "checked_absent": [
+     "no proxy or mock layer; direct curl"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q07/",
+    "files": [
+     "00-before-llm_status.txt",
+     "00-before-media_job.txt",
+     "00-before-state.txt",
+     "01-v01.txt",
+     "01-v02.txt",
+     "01-v03.txt",
+     "01-v04.txt",
+     "01-v05.txt",
+     "01-v06.txt",
+     "01-v07.txt",
+     "01-v08.txt",
+     "01-v09.txt",
+     "02-after-llm_status.txt",
+     "02-after-media_job.txt",
+     "02-after-state.txt",
+     "03-diff.txt",
+     "q07-served-by.md"
+    ],
+    "key_observation": "未知/缺 op 与 compose 返回 400 invalid_params；非整数返回 400；模型不存在 404 model_not_found；三个状态接口前后字节相同"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S25",
+    "S40"
+   ],
+   "requirement_refs": [
+    "A-45",
+    "B-30"
+   ]
+  },
+  {
+   "q": "安装位置已有真实目录、外来链接、真实 lmdesk 文件时，全选安装与全不选卸载后每个位置是什么、真实文件是否保留？",
+   "facet": "F9",
+   "leak_point": "A-54/A-55 occupied 不碰、不删真实文件；installer._install/_uninstall 分支",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/ab317226c0b9f4aa5.output"
+   },
+   "probed_at": "2026-10-16T15:09:00+09:00",
+   "states_to_capture": [
+    "00-临时 HOME 初始布置",
+    "01-全选安装后的模块返回与各位置读回",
+    "02-全不选卸载后的模块返回与各位置读回"
+   ],
+   "served_by": {
+    "host": "local filesystem only, temp HOME (deleted after); no network",
+    "process": "dist python3.13 driver calling AgentSkillService (mode=bundle) and installer.apply",
+    "mock_layers": [],
+    "checked_absent": [
+     "real ~ not touched",
+     "running dist app not touched",
+     "no stub or mock server"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q03/",
+    "files": [
+     "q03-00-initial-layout.txt",
+     "q03-01-install-readback.txt",
+     "q03-01-install-return.txt",
+     "q03-02-uninstall-readback.txt",
+     "q03-02-uninstall-return.txt",
+     "q03-driver.py",
+     "q03-run-info.txt",
+     "q03-served-by.md"
+    ],
+    "key_observation": "occupied 行（真实目录、外来链接、真实 lmdesk 文件）安装报 error 且不改动，卸载 result=ok 仍 occupied；内容 sha1 前后一致；其余行正常装上和卸掉"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S27",
+    "S29",
+    "S30",
+    "S32"
+   ],
+   "requirement_refs": [
+    "A-53",
+    "A-54",
+    "A-55"
+   ]
+  },
+  {
+   "q": "lmdesk 在禁止网络的 macOS 沙箱里运行 status 与 status --json 时退出码与输出是什么，是否拉起新进程？",
+   "facet": "F8",
+   "leak_point": "A-33 沙箱拒绝 → 退出 6、不拉起 app；discovery 的 EPERM/EACCES 分类",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a4bccee109b1f5f5e.output"
+   },
+   "probed_at": "2026-10-16T15:09:00+09:00",
+   "states_to_capture": [
+    "00-对照组输出",
+    "01-沙箱下 status",
+    "02-沙箱下 status --json",
+    "03-运行前后进程列表"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "PID 31005 python3.13 -m desk (app PID 30967)",
+    "mock_layers": [],
+    "checked_absent": [
+     "no MSW, json-server, stub switch",
+     "sandbox only denies network for lmdesk (test condition)",
+     "no new LocalModelDesk process"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q08/",
+    "files": [
+     "00-ctrl-json.err",
+     "00-ctrl-json.exit",
+     "00-ctrl-json.out",
+     "00-ctrl-status.err",
+     "00-ctrl-status.exit",
+     "00-ctrl-status.out",
+     "01-sb-status.err",
+     "01-sb-status.exit",
+     "01-sb-status.out",
+     "02-sb-json.err",
+     "02-sb-json.exit",
+     "02-sb-json.out",
+     "03-pgrep-after.txt",
+     "03-pgrep-before.txt",
+     "q08-lsof.txt",
+     "q08-served-by.md",
+     "q08.sb"
+    ],
+    "key_observation": "沙箱下 status 退出 6、stderr「被沙箱拦截，需要允许访问本机网络（127.0.0.1）」；--json stdout {error:{code:sandboxed}}；无新进程"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S7",
+    "S8",
+    "S1"
+   ],
+   "requirement_refs": [
+    "A-33",
+    "A-13"
+   ]
+  },
+  {
+   "q": "命令行与台面版本不一致时有没有警告、命令是否继续？LMDESK_FAKE_VERSION 在 dist 是否生效？",
+   "facet": "F8",
+   "leak_point": "A-32 版本不一致 stderr 警告并继续；生产代码里的 LMDESK_FAKE_VERSION（普查 S10）",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a73bb7a19fdc770f7.output"
+   },
+   "probed_at": "2026-10-16T15:09:00+09:00",
+   "states_to_capture": [
+    "01-FAKE 下三条命令输出",
+    "02-对照组三条命令输出",
+    "03-scripts/lmdesk status --json 输出",
+    "04-包内版本来源文件内容"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no proxy, MSW, stub server",
+     "LMDESK_FAKE_VERSION overrides CLI-side version only (test condition)"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q09/",
+    "files": [
+     "q09-01-fake-version.txt",
+     "q09-02-control.txt",
+     "q09-03-dev-entry.txt",
+     "q09-04-find.txt",
+     "q09-04-version-sources.txt",
+     "q09-served-by.md"
+    ],
+    "key_observation": "版本不一致时 stderr「注意：版本不一致（lmdesk 9.9.9，台面 1.0.0）」，退出 0 且命令照常输出；对照组无警告；dist 下 LMDESK_FAKE_VERSION 生效；版本取自 bundle.json 1.0.0"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S10",
+    "S33",
+    "S3",
+    "S4"
+   ],
+   "requirement_refs": [
+    "A-32",
+    "A-44"
+   ]
+  },
+  {
+   "q": "先全选安装再只选 pi 时，共享目录 ~/.agents/skills 与 pi 自己的目录各是什么？pi 能发现几份 skill、来自哪里？",
+   "facet": "F9",
+   "leak_point": "codex 行用 ~/.agents/skills 且 pi 也读（RC2/RC3 澄清）",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/ad26504fa62947dd4.output"
+   },
+   "probed_at": "2026-10-16T15:09:00+09:00",
+   "states_to_capture": [
+    "01-全选安装后各位置读回与 pi 列 skill",
+    "02-只选 pi 后模块返回",
+    "03-只选 pi 后各位置读回与 pi 列 skill"
+   ],
+   "served_by": {
+    "host": "local macOS, temp HOME and temp cwd",
+    "process": "dist python3.13 installer.apply; pi 1.2.0 --offline in pty",
+    "mock_layers": [],
+    "checked_absent": [
+     "real ~ not modified",
+     "no model calls",
+     "MSW/json-server/stub switches"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q04/",
+    "files": [
+     "01-apply-all.json",
+     "01-pi-ctrlo-cwdout.txt",
+     "01-pi-ctrlo.txt",
+     "01-pi-list.txt",
+     "01-pi-slash-skill.txt",
+     "01-readback.txt",
+     "02-apply-pi-only.json",
+     "03-pi-ctrlo.txt",
+     "03-readback.txt",
+     "cwd.txt",
+     "home.txt",
+     "pipi.py",
+     "q04-served-by.md",
+     "run.py"
+    ],
+    "key_observation": "只选 pi 后 ~/.agents/skills 链接被删、~/.pi/agent/skills 保留；pi 从 ~/.pi/agent/skills 发现 local-model-desk 一次；codex 行带 shared_note「同时对 pi、DeepSeek Harness 生效」"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S27",
+    "S30"
+   ],
+   "requirement_refs": [
+    "A-50",
+    "A-51",
+    "A-54",
+    "A-55"
+   ]
+  },
+  {
+   "q": "没加载模型时不带 --model 的 ask 输出什么？带 --model 加载后 status 的 loaded_by 是什么？",
+   "facet": "F1",
+   "leak_point": "chat.py:_pick_model 退出 5 分支；A-43 loaded_by",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a70c536957b3a1a25.output"
+   },
+   "probed_at": "2026-10-19T18:29:10+09:00",
+   "states_to_capture": [
+    "01-不带 --model 的 ask 输出与退出码",
+    "02-带 --model 的 ask 等待过程与结果",
+    "03-之后的 status 与 /api/llm/status 读回"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub layer"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q12/",
+    "files": [
+     "00-pre-status.json",
+     "01-exit.txt",
+     "01-stderr.txt",
+     "01-stdout.txt",
+     "02-elapsed.txt",
+     "02-exit.txt",
+     "02-stderr-timed.txt",
+     "02-stdout.txt",
+     "03-api.json",
+     "03-status-json.txt",
+     "03-status.txt",
+     "models.txt",
+     "q12-served-by.md"
+    ],
+    "key_observation": "不带 --model：退出 5，stderr 列出可用模型；--model superqwen：6.0s 内加载并回答，退出 0；之后 loaded_by=agent、model=superqwen"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S5",
+    "S4",
+    "S3",
+    "S34",
+    "S35"
+   ],
+   "requirement_refs": [
+    "A-21",
+    "A-22",
+    "A-40",
+    "A-43",
+    "A-13"
+   ]
+  },
+  {
+   "q": "image new 已存在的名字会怎样？同名会话有两个时 show/rename 的退出码与候选列表？用 id 时呢？",
+   "facet": "F3",
+   "leak_point": "media.py dispatch new 不查重名；A-10 同名歧义退出 2",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a7bbb2b2d80957f4e.output"
+   },
+   "probed_at": "2026-10-19T18:29:10+09:00",
+   "states_to_capture": [
+    "01-初始 sessions",
+    "02-两次 new 的输出",
+    "03-同名下 show/rename 的输出",
+    "04-用 id 时 show/rename 的输出",
+    "05-最终 sessions"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub layer observed"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q17/",
+    "files": [
+     "q01-sessions.exit",
+     "q01-sessions.stderr",
+     "q01-sessions.stdout",
+     "q02a-new1.exit",
+     "q02a-new1.stderr",
+     "q02a-new1.stdout",
+     "q02b-new2.exit",
+     "q02b-new2.stderr",
+     "q02b-new2.stdout",
+     "q03-sessions.exit",
+     "q03-sessions.stderr",
+     "q03-sessions.stdout",
+     "q04a-show.exit",
+     "q04a-show.stderr",
+     "q04a-show.stdout",
+     "q04b-rename.exit",
+     "q04b-rename.stderr",
+     "q04b-rename.stdout",
+     "q04c-show-json.exit",
+     "q04c-show-json.stderr",
+     "q04c-show-json.stdout",
+     "q04d-rename-json.exit",
+     "q04d-rename-json.stderr",
+     "q04d-rename-json.stdout",
+     "q05a-show-id.exit",
+     "q05a-show-id.stderr",
+     "q05a-show-id.stdout",
+     "q05b-rename-id.exit",
+     "q05b-rename-id.stderr",
+     "q05b-rename-id.stdout",
+     "q05c-show-json-id.exit",
+     "q05c-show-json-id.stderr",
+     "q05c-show-json-id.stdout",
+     "q05d-rename-json-id.exit",
+     "q05d-rename-json-id.stderr",
+     "q05d-rename-json-id.stdout",
+     "q06-sessions.exit",
+     "q06-sessions.stderr",
+     "q06-sessions.stdout",
+     "q17-lsof.txt",
+     "q17-ps.txt",
+     "qNN-served-by.md"
+    ],
+    "key_observation": "new 同名两次都成功、无提示，产生两个同名会话；按名 show/rename 退出 2 并列出两个候选（--json 时 stdout 为 session_ambiguous 错误）；按 id 正常"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S11",
+    "S12",
+    "S13",
+    "S16"
+   ],
+   "requirement_refs": [
+    "A-10",
+    "A-13"
+   ]
+  },
+  {
+   "q": "music gen 在缺歌词、两个歌词参数都给、歌词文件不存在、非 UTF-8、空文件时各发生什么？",
+   "facet": "F5",
+   "leak_point": "B-20 歌词二选一；_check_music 以路径字符串真值判断",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a46b765cf7a28b02b.output"
+   },
+   "probed_at": "2026-10-19T18:29:10+09:00",
+   "states_to_capture": [
+    "00-运行前音乐会话与 /api/media/job",
+    "01-各组合的输出与退出码",
+    "02-运行后音乐会话与 /api/media/job"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "python3.13 pid 31005 (dist)",
+    "mock_layers": [],
+    "checked_absent": [
+     "no proxy or stub observed"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q23/",
+    "files": [
+     "00a-new.err",
+     "00a-new.exit",
+     "00a-new.out",
+     "00b-sessions-before.json",
+     "00c-job-before.json",
+     "01a-json.exit",
+     "01a-json.stderr",
+     "01a-json.stdout",
+     "01a.exit",
+     "01a.stderr",
+     "01a.stdout",
+     "01b-json.exit",
+     "01b-json.stderr",
+     "01b-json.stdout",
+     "01b.exit",
+     "01b.stderr",
+     "01b.stdout",
+     "01c-json.exit",
+     "01c-json.stderr",
+     "01c-json.stdout",
+     "01c.exit",
+     "01c.stderr",
+     "01c.stdout",
+     "01d-json.exit",
+     "01d-json.stderr",
+     "01d-json.stdout",
+     "01d.exit",
+     "01d.stderr",
+     "01d.stdout",
+     "01e-NOT-RUN.md",
+     "02b-sessions-after.json",
+     "02c-job-after.json",
+     "empty.txt",
+     "gbk-file.txt",
+     "gbk.txt",
+     "q23-served-by.md"
+    ],
+    "key_observation": "缺歌词、两者都给退出 2 lyrics_required；文件不存在、非 UTF-8 退出 2 invalid_lyrics_file；--json 时 stdout 为错误 JSON；会话尝试数与 media job 前后不变；空文件未运行（客户端会放行并以空歌词提交）"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S21"
+   ],
+   "requirement_refs": [
+    "B-20",
+    "A-13"
+   ]
+  },
+  {
+   "q": "ask 同时读管道并带多个 --file 时模型实际收到什么？--file 非 UTF-8 或不存在时怎样？",
+   "facet": "F1",
+   "leak_point": "chat.py:_message 拼接；只捕获 OSError",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/ada34980711264dd2.output"
+   },
+   "probed_at": "2026-10-19T18:30:33+09:00",
+   "states_to_capture": [
+    "01-管道加两个 --file 的输出",
+    "02-台面实际收到的消息（或取不到的原因）",
+    "03-非 UTF-8 文件与不存在文件的输出"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766 → mlx-lm 127.0.0.1:8767",
+    "process": "pid 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub layer in lmdesk → desk → mlx-lm path"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q13/",
+    "files": [
+     "01-exit.txt",
+     "01-stderr.txt",
+     "01-stdout-od.txt",
+     "01-stdout.txt",
+     "02-chat-py-message-src.txt",
+     "02-desk-log-tail.txt",
+     "02-note.md",
+     "03-gbk-exit.txt",
+     "03-gbk-stderr.txt",
+     "03-gbk-stdout.txt",
+     "03-nope-exit.txt",
+     "03-nope-stderr.txt",
+     "03-nope-stdout.txt",
+     "a.txt",
+     "b.txt",
+     "gbk-file.txt",
+     "gbk.txt",
+     "q13-served-by-lsof.txt",
+     "q13-served-by-ps.txt",
+     "q13-served-by.md"
+    ],
+    "key_observation": "管道与两个文件按「问题、stdin、--- 文件名 --- 内容」拼进一条用户消息，模型复述一致；--file 指向 GBK 文件时退出 1 并打印 Python traceback（UnicodeDecodeError），不存在的文件退出 2 带中文提示"
+   },
+   "verdict": "gap",
+   "severity": "medium",
+   "surfaces": [
+    "S5"
+   ],
+   "requirement_refs": [
+    "A-12",
+    "A-13"
+   ]
+  },
+  {
+   "q": "设置页「本机 agent」区块的说明文字写了什么？1280x800、800x600、640x480 下有没有横向滚动或溢出？",
+   "facet": "F10",
+   "leak_point": "RC7 澄清：说明应补视频、音乐；B-00b 不改界面；A-65 矮窄窗口",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a9440525e47943b33.output"
+   },
+   "probed_at": "2026-10-19T18:29:10+09:00",
+   "states_to_capture": [
+    "01-1280x800 区块截图与文字",
+    "02-800x600 区块截图与宽度测量",
+    "03-640x480 区块截图与宽度测量"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist python3.13 -s -m desk (app pid 30967)",
+    "mock_layers": [],
+    "checked_absent": [
+     "no MOCK switch or service worker seen in page"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q31/",
+    "files": [
+     "01-1280x800-section.png",
+     "01-1280x800-viewport.png",
+     "02-800x600-section.png",
+     "02-800x600-viewport.png",
+     "03-640x480-section.png",
+     "03-640x480-viewport.png",
+     "q31-measure.md",
+     "q31-section-text.md",
+     "q31-served-by.md"
+    ],
+    "key_observation": "说明文字为「让选中的 agent 通过 lmdesk 命令使用本机模型（对话、生图、图片会话）。」，未提视频、音乐；三个尺寸下 scrollWidth=clientWidth，无横向滚动，区块子元素无溢出"
+   },
+   "verdict": "gap",
+   "severity": "medium",
+   "surfaces": [
+    "S41",
+    "S44"
+   ],
+   "requirement_refs": [
+    "A-61",
+    "A-65",
+    "B-00b"
+   ]
+  },
+  {
+   "q": "图片生成进行中时发 lmdesk ask：等待期间 stderr 出现什么、间隔多久？生图完成后会不会自动提交？",
+   "facet": "F2",
+   "leak_point": "A-23 退避与每 15s 进度行；decide 媒体任务进行中时 chat 等待",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a0f6e93f65c672044.output"
+   },
+   "probed_at": "2026-10-19T18:31:50+09:00",
+   "states_to_capture": [
+    "01-图片任务开始后的状态采样",
+    "02-ask 等待期间 stderr（带时间戳）",
+    "03-两个命令的最终输出与退出码",
+    "04-全程状态采样时间线"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "PID 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub layer"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q14/",
+    "files": [
+     "q14-ask.exit",
+     "q14-ask.stderr",
+     "q14-ask.stdout",
+     "q14-driver.log",
+     "q14-imggen.exit",
+     "q14-imggen.stderr",
+     "q14-imggen.stdout",
+     "q14-new.exit",
+     "q14-new.stderr",
+     "q14-new.stdout",
+     "q14-samples.txt",
+     "q14-served-by.md",
+     "q14-timeline.md",
+     "t-ask-end",
+     "t-ask-start",
+     "t-img-end",
+     "t-start",
+     "t-stop"
+    ],
+    "key_observation": "ask 在生图完成后 3.4s 得到回答，退出 0；但 ask 启动后 60.5s 内 stderr 无任何输出，第一行进度在 60s，之后约 15–17s 一行；期间 /api/llm/status 显示 error"
+   },
+   "verdict": "gap",
+   "severity": "medium",
+   "surfaces": [
+    "S5",
+    "S6",
+    "S9"
+   ],
+   "requirement_refs": [
+    "A-23",
+    "A-20",
+    "A-24"
+   ]
+  },
+  {
+   "q": "image gen 等待中分别收到 SIGINT 和 SIGTERM：台面任务是否被取消、退出码？提示的 wait 命令能否取回结果？",
+   "facet": "F6",
+   "leak_point": "media.py:_run_job Interrupted 两个分支；A-25/A-42",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/ac3920e38c104a75c.output"
+   },
+   "probed_at": "2026-10-19T18:35:44+09:00",
+   "states_to_capture": [
+    "01-SIGINT 轮：命令输出与退出码",
+    "02-SIGINT 后台面任务与尝试状态",
+    "03-SIGTERM 轮：命令输出与退出码",
+    "04-SIGTERM 后按提示续等的输出与文件"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub layer; real qwen-image jobs"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q15/",
+    "files": [
+     "q15-served-by.md",
+     "resume-exitcode.txt",
+     "resume-file-ls.txt",
+     "resume-show.txt",
+     "resume-stderr.txt",
+     "resume-stdout.txt",
+     "resume-timing.txt",
+     "run.sh",
+     "sigint-exitcode.txt",
+     "sigint-jobpoll-post.txt",
+     "sigint-jobpoll-pre.txt",
+     "sigint-pid.txt",
+     "sigint-show.txt",
+     "sigint-stderr.txt",
+     "sigint-stdout.txt",
+     "sigterm-exitcode.txt",
+     "sigterm-jobpoll-post.txt",
+     "sigterm-jobpoll-pre.txt",
+     "sigterm-pid.txt",
+     "sigterm-show.txt",
+     "sigterm-stderr.txt",
+     "sigterm-stdout.txt"
+    ],
+    "key_observation": "SIGINT：退出 3「已中断并取消这次生成」，台面任务立即 cancelled；SIGTERM：退出 3「已中断，生成仍在台面继续」并重复打印续等提示，任务继续，按提示 wait 退出 0 拿到存在的 png"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S23",
+    "S39",
+    "S15",
+    "S14"
+   ],
+   "requirement_refs": [
+    "A-25",
+    "A-42",
+    "A-15",
+    "A-16"
+   ]
+  },
+  {
+   "q": "video join 等待中按 Ctrl-C，合成任务有没有被取消？",
+   "facet": "F6",
+   "leak_point": "RC9 澄清：join 与 gen 相同，SIGINT 只取消自己的合成任务；compose 不经 arbiter",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a4baa28889454288c.output"
+   },
+   "probed_at": "2026-10-19T18:39:13+09:00",
+   "states_to_capture": [
+    "01-提交 join 时的命令输出与台面任务状态",
+    "02-发送 SIGINT 后命令输出与退出码",
+    "03-信号后台面合成任务与尝试状态"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "python3.13 pid 31005 dist",
+    "mock_layers": [],
+    "checked_absent": [
+     "no stub or mock layer in lmdesk → desk path"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q16/",
+    "files": [
+     "01-02-03-summary.md",
+     "q16-served-by.md",
+     "q3-placeholder-gen.txt",
+     "q3-placeholder-new.txt",
+     "run.py",
+     "t1-stderr.txt",
+     "t1-stdout.txt",
+     "t1-timeline.txt",
+     "t2-job9-log.txt",
+     "t2-show-after.txt",
+     "t2-stderr.txt",
+     "t2-stdout.txt",
+     "t2-timeline.txt",
+     "t3-show-after.txt",
+     "t3-stderr.txt",
+     "t3-stdout.txt",
+     "t3-timeline.txt"
+    ],
+    "key_observation": "合成运行中 SIGINT：任务变 cancelled、无成片，退出 3；排队中 SIGINT：不产生合成任务，「已中断」退出 3；但合成已在 0.16s 内完成后才收到 SIGINT 时，命令仍打印「已中断并取消这次生成」并退出 3，而尝试实际是 done、文件存在"
+   },
+   "verdict": "gap",
+   "severity": "medium",
+   "surfaces": [
+    "S19",
+    "S23",
+    "S39"
+   ],
+   "requirement_refs": [
+    "A-25",
+    "A-42",
+    "B-14"
+   ]
+  },
+  {
+   "q": "--from 加 --strength 时服务端收到什么参数、新图与原图关系？--out 指向已有文件、已有目录（带或不带斜杠）各发生什么？",
+   "facet": "F3",
+   "leak_point": "_build_image --from/--strength；_copy_out 目录判断（第一期修过结尾斜杠）",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/ac33a84c34e13ccca.output"
+   },
+   "probed_at": "2026-10-19T18:44:03+09:00",
+   "states_to_capture": [
+    "01---from 迭代的输出与服务端参数读回",
+    "02-原图与新图对比",
+    "03---out 覆盖已存在文件",
+    "04---out 指向目录两种写法",
+    "05---from 不存在 id"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no stub or mock layer; real model generated"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q18/",
+    "files": [
+     "newdir",
+     "out1.png",
+     "outdir",
+     "q01-after.json",
+     "q01-before.json",
+     "q01-exit.txt",
+     "q01-newattempt.json",
+     "q01-stderr.txt",
+     "q01-stdout.txt",
+     "q02-new-small.png",
+     "q02-orig-small.png",
+     "q03-after-stat.txt",
+     "q03-before-stat.txt",
+     "q03-exit.txt",
+     "q03-stderr.txt",
+     "q03-stdout.txt",
+     "q04-ls.txt",
+     "q04a-exit.txt",
+     "q04a-stderr.txt",
+     "q04a-stdout.txt",
+     "q04b-exit.txt",
+     "q04b-stderr.txt",
+     "q04b-stdout.txt",
+     "q05-attempts-after.txt",
+     "q05-exit.txt",
+     "q05-stderr.txt",
+     "q05-stdout.txt",
+     "q18-genhelp.txt",
+     "q18-lsof.txt",
+     "q18-served-by.md",
+     "q18-show.txt"
+    ],
+    "key_observation": "--from 记录为 base={attempt_id, strength 0.6}，新图保持原构图；--out 覆盖已有文件并提示「已覆盖」；已有目录与带斜杠的新目录都把文件写进目录内；--from 不存在 id 退出 5「找不到作为底稿的那一次生成」"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S14",
+    "S24"
+   ],
+   "requirement_refs": [
+    "A-27",
+    "A-13"
+   ]
+  },
+  {
+   "q": "会话里有进行中、已取消、失败的尝试时，image show 与 image wait 各输出什么？",
+   "facet": "F3",
+   "leak_point": "A-27 以会话尝试记录为准；wait_attempt 的取消/失败分支",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a575f095dba02257f.output"
+   },
+   "probed_at": "2026-10-19T18:46:46+09:00",
+   "states_to_capture": [
+    "01-wait 已取消尝试",
+    "02-进行中时 show 输出",
+    "03-wait 进行中尝试直到结束",
+    "04-失败尝试的 show 与 wait",
+    "05-wait 不存在的 id"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub layer"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q19/",
+    "files": [
+     "00-show.err",
+     "00-show.out",
+     "01-wait-cancelled-json.err",
+     "01-wait-cancelled-json.exit",
+     "01-wait-cancelled-json.out",
+     "01-wait-cancelled-json2.err",
+     "01-wait-cancelled-json2.exit",
+     "01-wait-cancelled-json2.out",
+     "01-wait-cancelled.err",
+     "01-wait-cancelled.exit",
+     "01-wait-cancelled.out",
+     "02-gen.err",
+     "02-gen.exit",
+     "02-gen.out",
+     "02-show-inprogress-json.out",
+     "02-show-inprogress.out",
+     "03-show-after.out",
+     "03-wait.err",
+     "03-wait.exit",
+     "03-wait.out",
+     "04-try.log",
+     "04-try2.log",
+     "04-try3.log",
+     "04-try4.log",
+     "04-try5.log",
+     "04-wait-big.err",
+     "04-wait-big.exit",
+     "04-wait-big.out",
+     "05-wait-nosession.err",
+     "05-wait-nosession.exit",
+     "05-wait-nosession.out",
+     "05-wait-nx-json.err",
+     "05-wait-nx-json.exit",
+     "05-wait-nx-json.out",
+     "05-wait-nx.err",
+     "05-wait-nx.exit",
+     "05-wait-nx.out",
+     "q19-served-by.md"
+    ],
+    "key_observation": "wait 已取消尝试退出 1「生成已取消：已取消：…」（--json 为 attempt_cancelled）；进行中 show 显示 running、路径空；wait 进行中尝试每 15s 进度、完成后输出路径退出 0；不存在 id 退出 5；失败状态的尝试造不出来（无效参数都在提交前被拒）"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S13",
+    "S15"
+   ],
+   "requirement_refs": [
+    "A-16",
+    "A-27",
+    "A-13"
+   ]
+  },
+  {
+   "q": "--first-frame image:猫:<id> 生成的视频首帧是不是那张图？引用无效、缺段、与 --continue 同用时各怎样？",
+   "facet": "F4",
+   "leak_point": "B-13 refs.first_frame 提交；B-12 互斥",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a7d704d9edab12e99.output"
+   },
+   "probed_at": "2026-10-19T18:50:17+09:00",
+   "states_to_capture": [
+    "01-引用首帧生成的命令输出与耗时",
+    "02-视频第一帧与被引用图片对比",
+    "03-服务端记录的 mode/refs",
+    "04-各无效引用的输出与是否产生尝试"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub; real video generated"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q20/",
+    "files": [
+     "00-help.txt",
+     "00-image-show.txt",
+     "c2.code",
+     "c2.err",
+     "c2.out",
+     "c3.code",
+     "c3.err",
+     "c3.out",
+     "c4.code",
+     "c4.err",
+     "c4.out",
+     "c5.code",
+     "c5.err",
+     "c5.out",
+     "cases-counts.txt",
+     "first.png",
+     "first_s.png",
+     "g1.code",
+     "g1.err",
+     "g1.out",
+     "n.err",
+     "n.out",
+     "probe.txt",
+     "q20-served-by.md",
+     "ref_s.png",
+     "session-after.json",
+     "session.json",
+     "side.png",
+     "time-gen.txt",
+     "time-wait.txt",
+     "v1.mp4",
+     "w1.code",
+     "w1.err",
+     "w1.out"
+    ],
+    "key_observation": "引用猫图生成的视频第一帧与原图同一只猫同一姿态（按 768x448 裁切放大）；服务端记录 mode=image、refs.first_frame 指向猫会话该尝试；尝试 id 不存在/会话不存在退出 5，缺段与 --continue 同用退出 2，均未产生新尝试"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S17",
+    "S18"
+   ],
+   "requirement_refs": [
+    "B-12",
+    "B-13",
+    "B-15"
+   ]
+  },
+  {
+   "q": "用本地文件做首帧时，成功、服务端拒绝、排队中 SIGINT、等待中 SIGINT、文件不合法各情形下 .inputs 里是否留下上传文件？",
+   "facet": "F4",
+   "leak_point": "bf99baa 修复：首帧提交前才上传、失败时 discard；新增 /api/media/inputs/discard",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a235c67c2343e5d1c.output"
+   },
+   "probed_at": "2026-10-19T18:54:39+09:00",
+   "states_to_capture": [
+    "01-成功情形前后 .inputs 列表",
+    "02-服务端拒绝情形前后 .inputs 列表与输出",
+    "03-排队中 SIGINT 前后 .inputs 列表与输出",
+    "04-等待结果中 SIGINT 前后 .inputs 列表与输出",
+    "05-本地文件不合法三种情形输出与 .inputs"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "python3.13 pid 31005 dist",
+    "mock_layers": [],
+    "checked_absent": [
+     "no MSW or stub; requests in real desk.log"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q21/",
+    "files": [
+     "q01-after-inputs.txt",
+     "q01-before-inputs.txt",
+     "q01-end.txt",
+     "q01-exit.txt",
+     "q01-start.txt",
+     "q01-stderr.txt",
+     "q01-stdout.txt",
+     "q02-after-steps-run-inputs.txt",
+     "q02-before-inputs.txt",
+     "q02-desk-log-excerpt.txt",
+     "q02a-after-inputs.txt",
+     "q02a-exit.txt",
+     "q02a-stderr.txt",
+     "q02a-stdout.txt",
+     "q02b-after-inputs.txt",
+     "q02b-exit.txt",
+     "q02b-stderr.txt",
+     "q02b-stdout.txt",
+     "q02c-after-inputs.txt",
+     "q02c-exit.txt",
+     "q02c-stderr.txt",
+     "q02c-stdout.txt",
+     "q02d-after-inputs.txt",
+     "q02d-exit.txt",
+     "q02d-stderr.txt",
+     "q02d-stdout.txt",
+     "q02e-after-inputs.txt",
+     "q02e-before-inputs.txt",
+     "q02e-exit.txt",
+     "q02e-stderr.txt",
+     "q02e-stdout.txt",
+     "q02f-after-inputs.txt",
+     "q02f-exit.txt",
+     "q02f-stderr.txt",
+     "q02f-stdout.txt",
+     "q02g-after-inputs.txt",
+     "q02g-exit.txt",
+     "q02g-stderr.txt",
+     "q02g-stdout.txt",
+     "q03-after-inputs.txt",
+     "q03-before-inputs.txt",
+     "q03-exit.txt",
+     "q03-run1-stderr.txt",
+     "q03-stderr.txt",
+     "q03-stdout.txt",
+     "q04-after-inputs.txt",
+     "q04-before-inputs.txt",
+     "q04-exit.txt",
+     "q04-stderr.txt",
+     "q04-stdout.txt",
+     "q05-before-inputs.txt",
+     "q05a-missing-after-inputs.txt",
+     "q05a-missing-exit.txt",
+     "q05a-missing-stderr.txt",
+     "q05a-missing-stdout.txt",
+     "q05b-gif-after-inputs.txt",
+     "q05b-gif-exit.txt",
+     "q05b-gif-stderr.txt",
+     "q05b-gif-stdout.txt",
+     "q05c-big-after-inputs.txt",
+     "q05c-big-exit.txt",
+     "q05c-big-stderr.txt",
+     "q05c-big-stdout.txt",
+     "q21-served-by.md"
+    ],
+    "key_observation": "提交被服务端 400 拒绝时日志为 upload→400→discard，.inputs 不变；排队中 SIGINT 未上传；文件不存在/.gif/超 32MB 退出 2 且未上传；成功、运行失败、等待中取消的尝试各留下一张被尝试引用的上传图"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S18",
+    "S38"
+   ],
+   "requirement_refs": [
+    "B-13"
+   ]
+  },
+  {
+   "q": "视频 --continue 后 wait 输出哪个文件、时长多少？video join 成片时长多少？show 怎么显示合成尝试？",
+   "facet": "F4",
+   "leak_point": "B-31 joined_output 优先；B-14 join；B-32 合成 prompt",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a2912d3011916eaf4.output"
+   },
+   "probed_at": "2026-10-19T19:01:23+09:00",
+   "states_to_capture": [
+    "01-续写后 wait 输出与各文件时长",
+    "02-join 输出与成片时长",
+    "03-show 中合成尝试的显示",
+    "04-join 参数错误情形"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "python3.13 pid 31005 dist",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub; real generation"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q22/",
+    "files": [
+     "00-show-before.json",
+     "00-show-before.txt",
+     "01-gen.err",
+     "01-gen.exit",
+     "01-gen.out",
+     "02-wait.err",
+     "02-wait.exit",
+     "02-wait.out",
+     "03-api-session.json",
+     "04-ffprobe.txt",
+     "05-show-after-gen.txt",
+     "06-join.err",
+     "06-join.exit",
+     "06-join.out",
+     "07-show-after-join.json",
+     "07-show-after-join.txt",
+     "08-join-one.err",
+     "08-join-one.exit",
+     "08-join-one.out",
+     "09-join-bad.err",
+     "09-join-bad.exit",
+     "09-join-bad.out",
+     "10-ffprobe-compose.txt",
+     "q22-served-by.md"
+    ],
+    "key_observation": "续写后 wait 输出 h3-joined 文件 4.63s（两段各 2.33s）；join 输出 compose 文件 4.63s；show 合成尝试 prompt 为「合成：<id> <id>」；join 一段退出 2、坏 id 退出 5"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S17",
+    "S19"
+   ],
+   "requirement_refs": [
+    "B-14",
+    "B-31",
+    "B-32",
+    "B-22"
+   ]
+  },
+  {
+   "q": "合成与续写成片文件的内容与它们声称的段是什么关系？不同会话的合成文件是否相同？",
+   "facet": "F4",
+   "leak_point": "q22 实测官顺带观察：三次合成成片字节数相同（纵向追问）",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a9157473c08a3ec53.output"
+   },
+   "probed_at": "2026-10-19T19:06:00+09:00",
+   "states_to_capture": [
+    "01-合成文件清单（大小、md5、时长、帧数）",
+    "02-每个合成文件对应的会话尝试与段",
+    "03-首末帧与源段对比",
+    "04-跨会话 md5 比较"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no proxy or mock layer"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q40/",
+    "files": [
+     "q40-01-files.txt",
+     "q40-02-sources.txt",
+     "q40-03-frames.txt",
+     "q40-03-h3-20261016-050552-877f99ab-first.png",
+     "q40-03-h3-20261016-050552-877f99ab-last.png",
+     "q40-03-h3-20261016-050738-f9ef2518-first.png",
+     "q40-03-h3-20261016-050738-f9ef2518-last.png",
+     "q40-03-h3-20261019-185049-cd931bf9-first.png",
+     "q40-03-h3-20261019-185049-cd931bf9-last.png",
+     "q40-03-h3-20261019-190152-7d5e09ff-first.png",
+     "q40-03-h3-20261019-190152-7d5e09ff-last.png",
+     "q40-03-h3-compose-20261016-050938-c7eb20d5-first.png",
+     "q40-03-h3-compose-20261016-050938-c7eb20d5-last.png",
+     "q40-03-h3-compose-20261019-184007-1e42e415-first.png",
+     "q40-03-h3-compose-20261019-184007-1e42e415-last.png",
+     "q40-03-h3-compose-20261019-190520-72173845-first.png",
+     "q40-03-h3-compose-20261019-190520-72173845-last.png",
+     "q40-03-h3-joined-20261008-191801-c39728df-first.png",
+     "q40-03-h3-joined-20261008-191801-c39728df-last.png",
+     "q40-03-h3-joined-20261008-220244-f1747b8c-first.png",
+     "q40-03-h3-joined-20261008-220244-f1747b8c-last.png",
+     "q40-03-h3-joined-20261008-220358-d12da778-first.png",
+     "q40-03-h3-joined-20261008-220358-d12da778-last.png",
+     "q40-03-h3-joined-20261016-050936-93324baa-first.png",
+     "q40-03-h3-joined-20261016-050936-93324baa-last.png",
+     "q40-03-h3-joined-20261019-190502-c51fee9b-first.png",
+     "q40-03-h3-joined-20261019-190502-c51fee9b-last.png",
+     "q40-03-match220.txt",
+     "q40-03-psnr.txt",
+     "q40-04-md5-cross.md",
+     "q40-list.json",
+     "q40-served-by.md",
+     "q40-sess-049d92df.json",
+     "q40-sess-35031b96.json",
+     "q40-sess-426da888.json",
+     "q40-sess-5fbacf7a.json",
+     "q40-sess-6486a46c.json",
+     "q40-sess-8f98fc59.json",
+     "q40-sess-a828414d.json",
+     "q40-sess-ab533c87.json",
+     "q40-sess-c250396a.json",
+     "q40-sess-cb936180.json"
+    ],
+    "key_observation": "同 md5 只出现在同一会话同一组段的重复合成（以及与同组续写成片）；不同会话的合成文件 md5、分辨率都不同；合成首帧/末帧与源段首/末帧 PSNR 42–47，帧数 111=56+56-1。q22 所说「三次同为 305579 字节」与本次清单不符（190520 为 740017 字节）"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S19"
+   ],
+   "requirement_refs": [
+    "B-14",
+    "B-31"
+   ]
+  },
+  {
+   "q": "用 [instrumental] 生成的音乐有没有人声？时长与 --duration 差多少？",
+   "facet": "F5",
+   "leak_point": "SKILL.md 纯音乐写法未在 Music 3 文档中找到约定（作者自述）",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/abd957bb5959241a3.output"
+   },
+   "probed_at": "2026-10-19T19:06:00+09:00",
+   "states_to_capture": [
+    "01-生成命令输出与耗时",
+    "02-音频时长与人声判断记录",
+    "03-服务端记录的参数"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "PID 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub; real wav produced"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q24/",
+    "files": [
+     "00-help.txt",
+     "01-gen.err",
+     "01-gen.exit",
+     "01-gen.out",
+     "01-gen.time",
+     "01-new.err",
+     "01-new.exit",
+     "01-new.out",
+     "02-ffprobe.txt",
+     "02-spectral.txt",
+     "02-tools-check.txt",
+     "03-session.json",
+     "03-session.pretty.json",
+     "music3-20261019-190645-c2c3561a.wav",
+     "q24-served-by.md",
+     "qq-served-by-raw.txt"
+    ],
+    "key_observation": "生成退出 0、约 60s，wav 时长 17.5s（--duration 20）；服务端记录 lyrics=[instrumental]；本机无语音识别/人声分离工具，只有频谱参考，有无人声需人耳判断"
+   },
+   "verdict": "unprovable",
+   "surfaces": [
+    "S21"
+   ],
+   "requirement_refs": [
+    "B-20",
+    "B-21"
+   ]
+  },
+  {
+   "q": "音乐 --continue 后输出哪个文件、时长多少？music join 时长是否等于各段之和？",
+   "facet": "F5",
+   "leak_point": "B-22 音乐续写与 join 同视频；B-31 joined_output",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a9b2db72332cf2942.output"
+   },
+   "probed_at": "2026-10-19T19:08:32+09:00",
+   "states_to_capture": [
+    "01-续写输出与各文件时长",
+    "02-join 输出与时长",
+    "03-show 中合成尝试显示",
+    "04-join 坏 id"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist python3.13 -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub; real generation"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q25/",
+    "files": [
+     "01-gen.err",
+     "01-gen.exit",
+     "01-gen.out",
+     "01-probe.txt",
+     "01-session.json",
+     "01-show-before-join.txt",
+     "02-join-duration.txt",
+     "02-join.err",
+     "02-join.exit",
+     "02-join.out",
+     "03-session-after.json",
+     "03-show-after-join.txt",
+     "04-bad.err",
+     "04-bad.exit",
+     "04-bad.out",
+     "q25-served-by.md"
+    ],
+    "key_observation": "续写 gen 输出 music3-joined 36.0s（两段 17.5s+20.0s，和为 37.5s，短 1.5s）；music join 输出 compose 36.0s；show 合成行标「合成：<id> <id>」；坏 id 退出 5"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S21",
+    "S22",
+    "S20"
+   ],
+   "requirement_refs": [
+    "B-22",
+    "B-31",
+    "B-32"
+   ]
+  },
+  {
+   "q": "界面 1 分钟内刚用模型 A 对话，agent 用模型 B 问答：agent 等多久？界面对话有没有被打断？",
+   "facet": "F14",
+   "leak_point": "decide.py ui_chat_recent 时 chat 等待；UI_CHAT_RECENT_S=300",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a7bf6e45746d23744.output"
+   },
+   "probed_at": "2026-10-19T19:10:31+09:00",
+   "states_to_capture": [
+    "01-界面对话后 /api/llm/status",
+    "02-ask 等待期间 stderr 与状态采样",
+    "03-等待中界面再次对话的结果",
+    "04-ask 最终输出与退出码、换模型时刻"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub layer"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q26/",
+    "files": [
+     "00-load-poll.txt",
+     "00-load-resp.json",
+     "01-status-after-ui-chat.json",
+     "01-ui-chat1.json",
+     "02-ask-start.txt",
+     "02-ask-stderr-ts.txt",
+     "02-status-samples.txt",
+     "03-ui-chat2.txt",
+     "04-ask-end.txt",
+     "04-ask-exitcode.txt",
+     "04-ask-stderr-raw.txt",
+     "04-ask-stdout.txt",
+     "05-final-status.json",
+     "05-probe-agent-chat.txt",
+     "q26-served-by.md",
+     "t0.txt"
+    ],
+    "key_observation": "界面对话未被打断（等待中界面再问 200）；ask 等约 5 分 20 秒后把模型换成 qwen27（loaded_by agent），但之后 /api/llm/chat 一直返回 409 evicted「模型已被台面收回」，ask 打印「模型被换走了，重新排队」直到 600s 超时退出 3，始终没有得到回答"
+   },
+   "verdict": "gap",
+   "severity": "high",
+   "surfaces": [
+    "S5",
+    "S6",
+    "S34",
+    "S35",
+    "S36"
+   ],
+   "requirement_refs": [
+    "A-20",
+    "A-22",
+    "A-24",
+    "A-00d"
+   ]
+  },
+  {
+   "q": "两个、三个 lmdesk image gen 同时提交：是否都成功、按什么顺序、有没有重复生成？",
+   "facet": "F14",
+   "leak_point": "服务端无队列（A-00b），排队全在命令行；_submit 与 decide 之间的竞态",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a81fcffa1970284c8.output"
+   },
+   "probed_at": "2026-10-19T19:22:26+09:00",
+   "states_to_capture": [
+    "01-两路并发的 stderr 与退出码",
+    "02-台面任务时间线采样",
+    "03-两个会话的尝试读回",
+    "04-三路并发的结果与会话读回"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "python3.13 pid 31005 dist",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub; real png outputs"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q27/",
+    "files": [
+     "job-samples-01.txt",
+     "job-samples-04.txt",
+     "new-A.json",
+     "new-B.json",
+     "q27-served-by.md",
+     "qserved.txt",
+     "readback-02.txt",
+     "readback-04.txt",
+     "runA.end",
+     "runA.exit",
+     "runA.start",
+     "runA.stderr",
+     "runA.stdout",
+     "runB.end",
+     "runB.exit",
+     "runB.start",
+     "runB.stderr",
+     "runB.stdout",
+     "sampler.pid",
+     "show-A.txt",
+     "show-B.txt",
+     "sids.txt",
+     "tri.pids",
+     "triX.end",
+     "triX.exit",
+     "triX.start",
+     "triX.stderr",
+     "triX.stdout",
+     "triY.end",
+     "triY.exit",
+     "triY.start",
+     "triY.stderr",
+     "triY.stdout",
+     "triZ.end",
+     "triZ.exit",
+     "triZ.start",
+     "triZ.stderr",
+     "triZ.stdout"
+    ],
+    "key_observation": "两路与三路并发全部退出 0，台面上依次执行无重叠；每个会话尝试数等于提交数，无重复或多余尝试"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S14",
+    "S6",
+    "S9"
+   ],
+   "requirement_refs": [
+    "A-00b",
+    "A-20",
+    "A-24"
+   ]
+  },
+  {
+   "q": "从 error/evicted、界面加载但未对话、界面加载且刚对话三种起点，agent ask --model qwen27 能否得到回答？台面 holder 与 llm 状态是什么？",
+   "facet": "F14",
+   "leak_point": "q26 高缺口纵向追问：换模型后 chat 持续 409 evicted；_chat_precheck still_holds",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a77d376a9c64177d8.output"
+   },
+   "probed_at": "2026-10-19T19:34:44+09:00",
+   "states_to_capture": [
+    "01-起点 a 的 ask 结果与状态采样",
+    "02-起点 b 的 ask 结果与状态采样",
+    "03-起点 c 的 ask 结果与状态采样",
+    "04-重试期间直接 chat 的响应",
+    "05-desk.log 相关时段摘录"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub; real model output"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q41/",
+    "files": [
+     "a-exit.txt",
+     "a-meta.txt",
+     "a-samples.txt",
+     "a-stderr.txt",
+     "a-stdout.txt",
+     "aborted-first-run",
+     "b-exit.txt",
+     "b-meta.txt",
+     "b-pre-state.txt",
+     "b-pre-status.txt",
+     "b-samples.txt",
+     "b-setup-wait.txt",
+     "b-setup.txt",
+     "b-stderr.txt",
+     "b-stdout.txt",
+     "c-exit.txt",
+     "c-meta.txt",
+     "c-samples.txt",
+     "c-setup-retry.txt",
+     "c-setup-wait.txt",
+     "c-setup.txt",
+     "c-stderr.txt",
+     "c-stdout.txt",
+     "c-ui-chat-attempt1.txt",
+     "c-ui-chat.txt",
+     "d-direct-chat.txt",
+     "desk-log-excerpt.txt",
+     "q41-served-by.md",
+     "qNN-served-by.md",
+     "run_ask.sh",
+     "samples-summary.txt",
+     "start.txt"
+    ],
+    "key_observation": "agent 加载 qwen27 后，界面再加载 superqwen：/api/llm/status 显示 loaded superqwen，但 /api/state 的 holder 仍是 qwen27（since 未变），此时界面身份的对话也返回 409 evicted「模型已被台面收回」，需手动 unload 再 load 才恢复；(a)(b) 起点 agent 换模型后正常回答；(c) 起点按 5 分钟窗口等待至 240s 超时。另：ask 在 stdin 是未关闭的非终端时阻塞在读 stdin，超过 --timeout 8 分钟仍未返回"
+   },
+   "verdict": "gap",
+   "severity": "high",
+   "surfaces": [
+    "S5",
+    "S34",
+    "S35",
+    "S36"
+   ],
+   "requirement_refs": [
+    "A-22",
+    "A-20",
+    "A-00d",
+    "A-12",
+    "A-25"
+   ]
+  },
+  {
+   "q": "lmdesk ask 在 stdin 为未关闭的管道（agent 执行器常见）时会阻塞读 stdin、无视 --timeout 永不返回？在 Claude Code/Codex 的命令执行环境下是否发生？",
+   "facet": "F1",
+   "leak_point": "q41 首次运行：后台子 shell 下 ask 阻塞在 read() 8 分钟以上；A-12 非 TTY 即读 stdin",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/ab82114adfbb8501e.output"
+   },
+   "probed_at": "2026-10-19T19:54:49+09:00",
+   "states_to_capture": [
+    "01-stdin 关闭",
+    "02-stdin 为不关闭的管道",
+    "03-本 agent Bash 工具直接运行与其 stdin 类型",
+    "04-经 claude -p 运行",
+    "05-经 codex exec 运行"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q42/",
+    "files": [
+     "q42-01-exit.txt",
+     "q42-01-secs.txt",
+     "q42-01-stderr.txt",
+     "q42-01-stdout.txt",
+     "q42-02-stderr.txt",
+     "q42-02-stdout.txt",
+     "q42-02b-exit.txt",
+     "q42-02b-secs.txt",
+     "q42-02b-stderr.txt",
+     "q42-02b-stdout.txt",
+     "q42-03-exit.txt",
+     "q42-03-secs.txt",
+     "q42-03-stderr.txt",
+     "q42-03-stdin-type.txt",
+     "q42-03-stdout.txt",
+     "q42-04-exit.txt",
+     "q42-04-secs.txt",
+     "q42-04-stderr.txt",
+     "q42-04-stdout.txt",
+     "q42-05-exit.txt",
+     "q42-05-secs.txt",
+     "q42-05-stderr.txt",
+     "q42-05-stdout.txt",
+     "q42-served-by.md",
+     "work"
+    ],
+    "key_observation": "stdin 为 /dev/null 时 1–2s 返回；Claude Code（Bash 工具 stdin 为 /dev/null）与 codex exec 各 15s 正常拿到「白」；stdin 为不关闭的管道时 --timeout 60 无效，120s 外部强杀前无任何输出"
+   },
+   "verdict": "gap",
+   "severity": "medium",
+   "surfaces": [
+    "S5",
+    "S2"
+   ],
+   "requirement_refs": [
+    "A-12",
+    "A-25"
+   ]
+  },
+  {
+   "q": "界面正在流式对话时 agent 发起生图：界面对话能否完整收完？agent 何时提交？对话模型何时被卸载？",
+   "facet": "F14",
+   "leak_point": "decide：active_chats>0 等待；生图需卸掉对话模型且 ui_chat_recent 时等待",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a82327876230a0825.output"
+   },
+   "probed_at": "2026-10-19T20:02:05+09:00",
+   "states_to_capture": [
+    "01-流式对话事件与时间戳",
+    "02-lmdesk stderr 与退出码",
+    "03-状态采样时间线"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q28/",
+    "files": [
+     "lmdesk_exit.txt",
+     "lmdesk_start.txt",
+     "lmdesk_stderr.txt",
+     "lmdesk_stdout.txt",
+     "q28-served-by.md",
+     "run.sh",
+     "stream_events.txt",
+     "stream_stderr.txt",
+     "timeline.txt"
+    ],
+    "key_observation": "界面流式对话 822 token 正常 done、无错误事件；agent 先等「有对话正在进行」，再等「生成需要卸掉对话模型，但台面里最近在用它」约 300s，ui_chat_recent 变 false 后才提交，随后对话模型被驱逐，生图退出 0"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S14",
+    "S6",
+    "S35",
+    "S36"
+   ],
+   "requirement_refs": [
+    "A-20",
+    "A-00d",
+    "A-40"
+   ]
+  },
+  {
+   "q": "agent 换模型后聊天页有没有可关闭的切换提示？关掉后再换会不会再出现？界面自己换模型会不会误报？",
+   "facet": "F13",
+   "leak_point": "agent_switch.js prevKey 判定；A-66",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a292e696c1029d9af.output"
+   },
+   "probed_at": "2026-10-19T20:09:13+09:00",
+   "states_to_capture": [
+    "01-初始聊天页",
+    "02-agent 换到 superqwen 后",
+    "03-关闭提示后",
+    "04-agent 再换到 qwen27 后",
+    "05-界面亲手换模型后",
+    "06-刷新后"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist",
+    "mock_layers": [],
+    "checked_absent": [
+     "no MOCK switch or service worker observed"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q32/",
+    "files": [
+     "01-initial.png",
+     "01-status.json",
+     "02-after-agent-superqwen.png",
+     "02-ask-superqwen.txt",
+     "02-snapshot.md",
+     "02-status.json",
+     "03-after-close.png",
+     "03-status.json",
+     "04-after-agent-qwen27.png",
+     "04-ask-qwen27.txt",
+     "04-status.json",
+     "05-after-ui-load.png",
+     "05-status.json",
+     "05a-after-load-click.png",
+     "06-after-refresh.png",
+     "06-status.json",
+     "q32-served-by.md",
+     "served-by.txt"
+    ],
+    "key_observation": "agent 换到 superqwen、再换到 qwen27 时，聊天页不刷新也各出现「模型已被 agent 切换为 X」与关闭按钮，关闭后消失；界面亲手换模型后截图无提示；刷新后提示容器隐藏。第 4 步 agent 换到 qwen27 后 ask 仍循环「模型被换走了，重新排队」900s 退出 3，页面同时显示「已加载：Qwen27」与「内存里：SuperQwen」"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S42"
+   ],
+   "requirement_refs": [
+    "A-66"
+   ]
+  },
+  {
+   "q": "命令行链接失效或缺失、而 agent 行都已安装时，「应用」能不能点？点了有没有修好？接口与菜单栏状态是什么？",
+   "facet": "F10",
+   "leak_point": "pure/agent_skill.js applyEnabled 只看 agent 行；RC4 与第 2 轮 RC1/RC2 澄清",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/af3fe1ddf691c42a4.output"
+   },
+   "probed_at": "2026-10-19T20:29:29+09:00",
+   "states_to_capture": [
+    "01-命令行链接失效时的设置页",
+    "02-失效时的接口返回",
+    "03-点应用后（或无法修复）的页面与链接读回",
+    "04-命令行链接缺失时的设置页与接口",
+    "05-恢复原状后的链接读回"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31005 dist",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock switch seen"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q29/",
+    "files": [
+     "01-link-before.txt",
+     "01-settings-cli-stale.png",
+     "02-agent-skill-stale.json",
+     "02-state-stale.txt",
+     "03-link-after-ui-attempts.txt",
+     "04-agent-skill-absent.txt",
+     "04-link-absent.txt",
+     "04-settings-cli-absent.png",
+     "04-state-absent.txt",
+     "05-restored.txt",
+     "q29-served-by.md"
+    ],
+    "key_observation": "命令行链接失效时页面显示「已失效，点应用更新」但「应用」禁用，检查也不改变；缺失时显示「未安装」且「应用」禁用；只有改动某个 agent 勾选才能点应用。/api/agent-skill 的 cli 为 stale/absent，而 /api/state 的 agent_skill_stale 两种情形都是 false"
+   },
+   "verdict": "gap",
+   "severity": "medium",
+   "surfaces": [
+    "S41",
+    "S26",
+    "S29",
+    "S33"
+   ],
+   "requirement_refs": [
+    "A-64",
+    "A-52",
+    "A-71",
+    "A-62"
+   ]
+  },
+  {
+   "q": "skill 链接指向存在的旧位置与不存在的路径时，设置页该行显示什么、应用能否修复、agent_skill_stale 是什么？",
+   "facet": "F10",
+   "leak_point": "RC5 澄清两种文字；A-71 启动时算一次（第 2 轮 RC2 澄清为实时）",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/ab7e446d45e8288d0.output"
+   },
+   "probed_at": "2026-10-19T20:30:53+09:00",
+   "states_to_capture": [
+    "01-情形 A 设置页",
+    "02-情形 A 接口与应用后结果",
+    "03-情形 B 设置页",
+    "04-情形 B 接口与应用后结果",
+    "05-恢复原状读回"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "PID 31005 dist",
+    "mock_layers": [],
+    "checked_absent": [
+     "no request interception in browser"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q30/",
+    "files": [
+     "q30-01-caseA-settings.png",
+     "q30-02-caseA-after-apply.png",
+     "q30-03-caseB-settings.png",
+     "q30-04-caseB-after-apply.png",
+     "q30-05-restored.txt",
+     "q30-A-after-apply-api.json",
+     "q30-A-after-apply-link.txt",
+     "q30-A-api-agent-skill.json",
+     "q30-A-api-state.json",
+     "q30-A-link.txt",
+     "q30-B-after-apply-api.json",
+     "q30-B-after-apply-link.txt",
+     "q30-B-api-agent-skill.json",
+     "q30-B-api-state.json",
+     "q30-B-link.txt",
+     "q30-served-by.md"
+    ],
+    "key_observation": "旧位置存在时显示「指向旧位置，点应用更新」、不存在时显示「已失效，点应用更新」，两种情形「应用」可点且点后变已安装、链接指向 dist；运行中链接失效时 agent_skill_stale 为 false（A-71 规定启动时计算，q33 实测重启后为 true）"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S41",
+    "S26",
+    "S27",
+    "S29",
+    "S33"
+   ],
+   "requirement_refs": [
+    "A-62",
+    "A-64",
+    "A-71",
+    "A-53"
+   ]
+  },
+  {
+   "q": "skill 链接正常与失效时，菜单栏图标与菜单各是什么样？重启后与应用修复后呢？",
+   "facet": "F12",
+   "leak_point": "A-71 启动时计算 stale；Swift agentSkillMenuNote 与圆点；第 2 轮 RC1/RC2 澄清",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/ae0396df52526cda7.output"
+   },
+   "probed_at": "2026-10-19T20:32:33+09:00",
+   "states_to_capture": [
+    "01-链接正常时图标与菜单",
+    "02-链接失效未重启时图标、菜单与 agent_skill_stale",
+    "03-重启后图标、菜单与 agent_skill_stale",
+    "04-点击相关菜单项后",
+    "05-应用修复后未重启时图标、菜单与 agent_skill_stale"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "python3.13 -s -m desk pid 31005 → 重启后 pid 77323（dist app pid 77291）",
+    "mock_layers": [],
+    "checked_absent": [
+     "no other LocalModelDesk instance launched",
+     "no proxy in front of 8766"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q33/",
+    "files": [
+     "01-normal-icon-ondark.png",
+     "01-normal-icon.png",
+     "01-normal-menu-items.txt",
+     "01-normal-menu.png",
+     "01-normal-state.txt",
+     "02-broken-icon-ondark.png",
+     "02-broken-icon.png",
+     "02-broken-menu-items.txt",
+     "02-broken-menu.png",
+     "02-broken-state.txt",
+     "03-restart-icon-ondark.png",
+     "03-restart-icon.png",
+     "03-restart-menu-items.txt",
+     "03-restart-menu.png",
+     "03-restart-state.txt",
+     "04-after-click-fullscreen.png",
+     "04-after-click-window-2.png",
+     "04-after-click-window.png",
+     "04-ax-window.txt",
+     "05-after30s-state.txt",
+     "05-applied-icon-ondark.png",
+     "05-applied-icon.png",
+     "05-applied-menu-items.txt",
+     "05-applied-menu.png",
+     "05-immediate-state.txt",
+     "05-settings-after-apply.png",
+     "05-settings-before-apply.png",
+     "q33-served-by.md"
+    ],
+    "key_observation": "运行中链接失效：菜单与图标不变、stale=false；重启后 stale=true，菜单出现「agent 链接指向旧位置，打开设置更新」；在设置页应用修复后不重启，stale 立即变 false、该菜单项消失、图标无圆点。点击该菜单项打开了一个 LocalModelDesk 窗口，但窗口内容截不到，无法确认是否为设置页"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S45",
+    "S33"
+   ],
+   "requirement_refs": [
+    "A-71",
+    "A-72"
+   ]
+  },
+  {
+   "q": "Codex 默认沙箱下用户让它用本地模型翻译时，Codex 最终对用户说了什么、有没有给出放行方法、照做能否成功？",
+   "facet": "F11",
+   "leak_point": "SKILL.md 退出码 6 的 Codex 放行说明；命令行 exit 6 文案只说需要放行",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/ad92bbe5333a9445a.output"
+   },
+   "probed_at": "2026-10-19T20:41:11+09:00",
+   "states_to_capture": [
+    "01-默认沙箱下 codex 的执行记录与最终消息",
+    "02-按其给出的放行方法再运行的结果"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 77323 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or proxy on 8766"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q34/",
+    "files": [
+     "q34-01-exit.txt",
+     "q34-01-stderr.txt",
+     "q34-01-stdout.txt",
+     "q34-02-exit.txt",
+     "q34-02-stderr.txt",
+     "q34-02-stdout.txt",
+     "q34-served-by.md",
+     "work1",
+     "work2"
+    ],
+    "key_observation": "Codex 读了 SKILL.md、lmdesk ask 退出 6 后，最终只说「需放行本机网络（127.0.0.1）」，没有转述 config.toml 或 -c 参数，并附上自己翻的「参考译文」；按 SKILL.md 的 -c sandbox_workspace_write.network_access=true 运行则成功调用本地模型"
+   },
+   "verdict": "gap",
+   "severity": "medium",
+   "surfaces": [
+    "S31",
+    "S7"
+   ],
+   "requirement_refs": [
+    "A-82",
+    "A-33",
+    "A-T9"
+   ]
+  },
+  {
+   "q": "dist 台面没在运行时执行 status --json 与 models：有没有拉起台面、用了多久、有没有窗口或 Dock 图标？",
+   "facet": "F8",
+   "leak_point": "A-31 连接被拒时 open -gj 拉起所在 app；RC10 澄清",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a84a5d718acfa44a6.output"
+   },
+   "probed_at": "2026-10-19T20:43:01+09:00",
+   "states_to_capture": [
+    "01-退出后确认无进程无监听",
+    "02-status --json 的输出、耗时与进程/窗口/前台/Dock 采样",
+    "03-命令结束后 30 秒的进程与窗口",
+    "04-第二次 models 的同样记录",
+    "05-最终 dist 台面在运行的确认"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766（命令运行期间无监听）",
+    "process": "退出前 pid 77323；重启后 pid 2919（dist app pid 2877）",
+    "mock_layers": [],
+    "checked_absent": [
+     "8766 无监听、无 LocalModelDesk 进程（命令运行期间）"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q11/",
+    "files": [
+     "q11-01-after-quit-no-process-no-listen.txt",
+     "q11-02-cmd-start.txt",
+     "q11-02-samples-status-json.txt",
+     "q11-02-status-exit-and-time.txt",
+     "q11-02-status-stderr.txt",
+     "q11-02-status-stdout.txt",
+     "q11-03-after-cmd-30s-samples.txt",
+     "q11-04-models-exit-and-time.txt",
+     "q11-04-models-stderr.txt",
+     "q11-04-models-stdout.txt",
+     "q11-04-samples-models.txt",
+     "q11-05-final-running.txt",
+     "q11-pre-quit-served-by.md",
+     "q11-served-by.md"
+    ],
+    "key_observation": "台面未运行时 ~/.local/bin/lmdesk status --json 与 models 都在 0.13s 内退出 1，提示「台面没有运行。请先打开 LocalModelDesk。」（json 码 desk_not_running）；之后约 70s 采样内没有任何 LocalModelDesk 进程被拉起"
+   },
+   "verdict": "gap",
+   "severity": "medium",
+   "surfaces": [
+    "S7",
+    "S1",
+    "S3",
+    "S4"
+   ],
+   "requirement_refs": [
+    "A-31",
+    "A-13"
+   ]
+  },
+  {
+   "q": "J1 走得通吗？",
+   "facet": "F8",
+   "journey": "J1",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/af1ad24d3b95dac7f.output"
+   },
+   "probed_at": "2026-10-19T20:47:38+09:00",
+   "states_to_capture": [
+    "起点",
+    "终态"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "python3.13 -m desk pid 7817 (dist app pid 7812, started 20:48 during the claude run)",
+    "mock_layers": [],
+    "checked_absent": [
+     "no 8766 listener right after the quit"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q36/",
+    "files": [
+     "proj",
+     "q36-00-start.md",
+     "q36-01-after-quit-ps.txt",
+     "q36-02-claude-out.txt",
+     "q36-02-exit.txt",
+     "q36-03-proj-ls.txt",
+     "q36-04-file.txt",
+     "q36-served-by.md"
+    ],
+    "key_observation": "台面退出后，claude -p 用一句中文请求在 ./assets 得到 1024x1024 png；台面在 claude 运行中被拉起（q43：首个 lmdesk 调用后 3s 启动、父进程 launchd，会话记录 1 条尝试且与文件 md5 相同）；「全程没有弹出台面主窗口」未被观察（实测官未采集窗口），无法对 oracle 第 3 条下结论"
+   },
+   "steps": [
+    {
+     "n": 1,
+     "action": "create empty project dir and record start",
+     "observed": "0 files; desk pids 2877/2919 listening on 8766",
+     "status": "done",
+     "evidence": "q36-00-start.md"
+    },
+    {
+     "n": 2,
+     "action": "quit the desk via osascript, then check ps and lsof",
+     "observed": "no desk process and no listener",
+     "status": "done",
+     "evidence": "q36-01-after-quit-ps.txt"
+    },
+    {
+     "n": 3,
+     "action": "run claude -p with the request in the project dir",
+     "observed": "exit 0; reply says icon.png saved in ./assets; the reply describes a blue-purple rounded square with a white speech-bubble symbol",
+     "status": "done",
+     "evidence": "q36-02-claude-out.txt"
+    },
+    {
+     "n": 4,
+     "action": "ls the project dir and check ps/lsof",
+     "observed": "assets/icon.png is 613533 bytes; the desk is running with new pids 7812/7817 and 8766 is listening",
+     "status": "done",
+     "evidence": "q36-03-proj-ls.txt"
+    },
+    {
+     "n": 5,
+     "action": "file icon.png and curl 8766",
+     "observed": "PNG 1024x1024; HTTP 200",
+     "status": "done",
+     "evidence": "q36-04-file.txt"
+    }
+   ],
+   "terminal_state": {
+    "snapshot": "q36-03-proj-ls.txt"
+   },
+   "instance": [
+    "request text: 帮我给这个项目生成一个应用图标图片，用本地模型生成，放到 ./assets 目录里。 (no command names)",
+    "project dir: empty, 0 files",
+    "run #1",
+    "timeout 900s, completed well under it",
+    "tools allowed: Bash,Read,Write",
+    "desk was running at the start and I quit it with osascript"
+   ],
+   "verdict": "unprovable",
+   "surfaces": [
+    "S7",
+    "S14",
+    "S31"
+   ],
+   "requirement_refs": [
+    "A-31",
+    "A-T9",
+    "A-27"
+   ]
+  },
+  {
+   "q": "J1 那次 claude -p 会话执行了哪些命令？台面是被谁拉起的？台面会话记录与项目文件是否一致？",
+   "facet": "F8",
+   "leak_point": "J1 终态台面被重新拉起，与 q11（lmdesk 未拉起）结果相反（纵向追问）",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/ab096d7c160118ef2.output"
+   },
+   "probed_at": "2026-10-19T20:50:38+09:00",
+   "states_to_capture": [
+    "01-claude 会话执行的命令序列与结果",
+    "02-该时段台面被启动的日志线索",
+    "03-台面会话记录与项目文件比对"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 7817 python3.13 -s -m desk (dist app pid 7812)",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mocks or proxies"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q43/",
+    "files": [
+     "q43-01-claude-session-commands.txt",
+     "q43-02-desk-log.txt",
+     "q43-02b-desk-log-nonget.txt",
+     "q43-02c-system-log.txt",
+     "q43-03-md5.txt",
+     "q43-03-session-image-app-icon.json",
+     "q43-03-session.json",
+     "q43-served-by.md"
+    ],
+    "key_observation": "claude 会话只执行了 Skill、两条 lmdesk Bash 命令与 Read，没有 open 命令；台面进程在首个 lmdesk 调用（20:48:23）后 3s 启动、父进程 launchd；会话「应用图标」1 条 done 尝试，与项目 icon.png md5 相同"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S7",
+    "S11",
+    "S12",
+    "S14",
+    "S24"
+   ],
+   "requirement_refs": [
+    "A-31",
+    "A-27"
+   ]
+  },
+  {
+   "q": "q11（实测官 Bash 下 kill 台面后运行 lmdesk：不拉起、退出 1 desk_not_running）与 J1/q43（osascript 退出后经 Claude Code 运行 lmdesk：被拉起）结果相反，触发拉起与否的条件是什么？",
+   "facet": "F8",
+   "leak_point": "discovery.app_bundle_of(here) 找不到包时报 desk_not_running；RC10 澄清「不弹窗口、不抢前台」",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/af6eb64f26c31f4d7.output"
+   },
+   "probed_at": "2026-10-19T20:52:25+09:00",
+   "states_to_capture": [
+    "01-各组合结果表（拉起与否、退出码、输出、耗时、窗口/前台）",
+    "02-拉起时的进程启动时间与父进程",
+    "03-lmdesk 包装脚本与 python argv",
+    "04-最终 dist 台面在运行的确认"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31246 python3.13 -s -m desk (dist app pid 31212)",
+    "mock_layers": [],
+    "checked_absent": [
+     "no 8766 listener before each run",
+     "no other-location LocalModelDesk launched"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q44/",
+    "files": [
+     "01-02-combo-table.md",
+     "03-lmdesk-wrapper-and-argv.md",
+     "03-wrapper-file.txt",
+     "04-final-desk-running.md",
+     "combo.sh",
+     "q44-served-by.md",
+     "run-a1",
+     "run-a2",
+     "run-a3",
+     "run-b1",
+     "run-b2",
+     "run-b3",
+     "snap.js",
+     "snap.py"
+    ],
+    "key_observation": "两种退出方式 × 三种调用方式共 6 组全部拉起台面（父进程 launchd，直接调用 1.18s），退出 0 并输出状态 JSON；q11 的不拉起未复现。每次拉起后都出现一个标题 LocalModelDesk、onscreen=true、1200x832 的窗口；前台应用保持 Orca"
+   },
+   "verdict": "gap",
+   "severity": "medium",
+   "surfaces": [
+    "S7",
+    "S1",
+    "S3",
+    "S47"
+   ],
+   "requirement_refs": [
+    "A-31"
+   ]
+  },
+  {
+   "q": "J2 走得通吗？",
+   "facet": "F10",
+   "journey": "J2",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a8c9b5a133ff2d232.output"
+   },
+   "probed_at": "2026-10-19T20:56:15+09:00",
+   "states_to_capture": [
+    "起点",
+    "终态"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "PID 31246 dist python3.13 -s -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "service worker not observed",
+     "MOCK switch not observed"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q37/",
+    "files": [
+     "q37-00-start.png",
+     "q37-00-start.yml",
+     "q37-01-settings.png",
+     "q37-02-checked.png",
+     "q37-03-applied.png",
+     "q37-03-terminal.txt",
+     "q37-05-combined.txt",
+     "q37-after-apply-fs.txt",
+     "q37-pre-uninstall.txt",
+     "q37-restored.txt",
+     "q37-served-by.md"
+    ],
+    "key_observation": "从首页点设置→只勾 Claude Code→应用，页面 Claude Code 已安装、其余未安装、命令行 lmdesk 已安装；磁盘上只有 ~/.claude/skills/local-model-desk 与 ~/.local/bin/lmdesk 两条指向 dist 的链接"
+   },
+   "steps": [
+    {
+     "n": 1,
+     "action": "Open http://127.0.0.1:8766/",
+     "observed": "Chat tab loaded; top bar has a 设置 button.",
+     "status": "done",
+     "evidence": "q37-00-start.png"
+    },
+    {
+     "n": 2,
+     "action": "Click 设置",
+     "observed": "The 设置 panel opened on the right with a 本机 agent section; all four agents were 未安装 and 应用 was disabled.",
+     "status": "done",
+     "evidence": "q37-01-settings.png"
+    },
+    {
+     "n": 3,
+     "action": "Tick the Claude Code checkbox",
+     "observed": "Checkbox ticked. I did not read the state of 应用 at this step.",
+     "status": "done",
+     "evidence": "q37-02-checked.png"
+    },
+    {
+     "n": 4,
+     "action": "Click 应用",
+     "observed": "Claude Code now shows 已安装. The other three show 未安装. lmdesk shows 已安装.",
+     "status": "done",
+     "evidence": "q37-03-applied.png"
+    },
+    {
+     "n": 5,
+     "action": "Read the panel text and the ~/ links on disk",
+     "observed": "The panel text matches the screenshot. Only ~/.claude/skills/local-model-desk and ~/.local/bin/lmdesk exist.",
+     "status": "done",
+     "evidence": "q37-05-combined.txt"
+    }
+   ],
+   "terminal_state": {
+    "url": "http://127.0.0.1:8766/#tab=chat",
+    "snapshot": "q37-03-terminal.txt"
+   },
+   "instance": [
+    "viewport 1280x800",
+    "entered at http://127.0.0.1:8766/, no waiting",
+    "ticked only the Claude Code checkbox, then clicked 应用",
+    "used Playwright MCP, no extra waits"
+   ],
+   "verdict": "done",
+   "surfaces": [
+    "S41",
+    "S27",
+    "S30"
+   ],
+   "requirement_refs": [
+    "A-50",
+    "A-52",
+    "A-54",
+    "A-56",
+    "A-63",
+    "A-64"
+   ]
+  },
+  {
+   "q": "J3 走得通吗？",
+   "facet": "F4",
+   "journey": "J3",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/af8751f3be765f3e2.output"
+   },
+   "probed_at": "2026-10-19T20:57:33+09:00",
+   "states_to_capture": [
+    "起点",
+    "终态"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "python3.13 pid 31246 dist (app pid 31212)",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub server on 8766"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q38/",
+    "files": [
+     "proj",
+     "q38-00-start.md",
+     "q38-01-run.txt",
+     "q38-02-final.txt",
+     "q38-03-commands.txt",
+     "q38-served-by.md"
+    ],
+    "key_observation": "Claude Code 用 --first-frame image:猫:<id> 生成第一段、--continue 续第二段，以 wait --out 拿到 10.29s 成片放进项目（单段约 5.2s）；全程没有执行 join，台面视频会话里没有合成记录（oracle「台面视频会话里有合成记录」未命中）；两段各因视频模型的内存保护中止一次后重试成功，用时 21 分钟"
+   },
+   "steps": [
+    {
+     "n": 1,
+     "action": "Recorded the start state: dir empty, request text, listener on 8766",
+     "observed": "Dir has 0 files. python3.13 pid 31246 listens on 8766 and the app is running.",
+     "status": "done",
+     "evidence": "q38-00-start.md"
+    },
+    {
+     "n": 2,
+     "action": "Ran claude -p with the request",
+     "observed": "Exit 0 after 21m13s. Claude Code reported two retried memory-guard aborts, then success. 猫-成片.mp4 appeared in the project dir.",
+     "status": "done",
+     "evidence": "q38-01-run.txt"
+    },
+    {
+     "n": 3,
+     "action": "Checked the output with ffprobe",
+     "observed": "h264/aac, 768x448, 10.29s.",
+     "status": "done",
+     "evidence": "q38-02-final.txt"
+    },
+    {
+     "n": 4,
+     "action": "Extracted Claude Code's tool-call sequence from the session jsonl",
+     "observed": "27 tool calls: lmdesk image show, video new, video gen --first-frame image:猫:<id>, video wait, video gen --continue, video wait --out.",
+     "status": "done",
+     "evidence": "q38-03-commands.txt"
+    }
+   ],
+   "terminal_state": {
+    "snapshot": "q38-02-final.txt"
+   },
+   "instance": [
+    "Request verbatim: 用本机台面图片会话「猫」里已有的那张图做首帧生成一段视频，再接着续一段，最后合成一个成片放进当前项目目录",
+    "Project dir had 0 files at the start",
+    "Run 1 of 1; one non-interactive claude -p with tools Bash,Read,Write; the wall-clock wait was 21m13s (alarm limit 2400s)"
+   ],
+   "verdict": "gap",
+   "stuck_kind": "misleading",
+   "severity": "medium",
+   "surfaces": [
+    "S17",
+    "S18",
+    "S19",
+    "S31"
+   ],
+   "requirement_refs": [
+    "B-13",
+    "B-14",
+    "B-41",
+    "A-T9"
+   ]
+  },
+  {
+   "q": "J4 走得通吗？",
+   "facet": "F5",
+   "journey": "J4",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/ab2f4602ca1313ab0.output"
+   },
+   "probed_at": "2026-10-19T21:19:55+09:00",
+   "states_to_capture": [
+    "起点",
+    "终态"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "pid 31246 dist python3.13 -m desk",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock or stub on 8766"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q39/",
+    "files": [
+     ".t0",
+     "proj",
+     "q39-00-start.md",
+     "q39-01-claude-out.txt",
+     "q39-02-commands.txt",
+     "q39-03-file.txt",
+     "q39-04-peak.txt",
+     "q39-served-by.md"
+    ],
+    "key_observation": "一句不带歌词的请求，Claude Code 70s 内执行 music new 与 music gen --lyrics [instrumental] --duration 15 --out ./assets/bgm.wav，得到 15.0s 非静音 WAV；歌词字段为 [instrumental]，没有自编歌词；有无人声未经人耳确认"
+   },
+   "steps": [
+    {
+     "n": 1,
+     "action": "Recorded start state (empty dir, request text) and the 8766 listener",
+     "observed": "Dir had 0 files. The listener on 127.0.0.1:8766 is pid 31246, the desk python inside dist/LocalModelDesk.app.",
+     "status": "done",
+     "evidence": "q39-00-start.md"
+    },
+    {
+     "n": 2,
+     "action": "Ran claude -p with the request",
+     "observed": "Exit 0 after 70s. Claude Code reported bgm.wav generated, 15.0s, with lyrics set to [instrumental].",
+     "status": "done",
+     "evidence": "q39-01-claude-out.txt"
+    },
+    {
+     "n": 3,
+     "action": "Extracted the commands Claude Code ran from its session record",
+     "observed": "Skill local-model-desk, then lmdesk music sessions, music new, and music gen with --duration 15 and --out ./assets/bgm.wav.",
+     "status": "done",
+     "evidence": "q39-02-commands.txt"
+    },
+    {
+     "n": 4,
+     "action": "Checked the output file with afinfo and file",
+     "observed": "WAV, 44.1kHz stereo 16-bit, 15.000091s, 2.6MB, in ./assets.",
+     "status": "done",
+     "evidence": "q39-03-file.txt"
+    },
+    {
+     "n": 5,
+     "action": "Measured peak amplitude",
+     "observed": "Peak 22609, so the audio is not silent.",
+     "status": "done",
+     "evidence": "q39-04-peak.txt"
+    }
+   ],
+   "terminal_state": {
+    "snapshot": "q39-03-file.txt"
+   },
+   "instance": [
+    "request verbatim: 帮我用本机模型生成一段15秒左右的纯音乐背景乐，放到项目的 ./assets 目录里",
+    "project dir had 0 files at start",
+    "1st run",
+    "waited 70s (alarm limit 1200s)"
+   ],
+   "verdict": "done",
+   "surfaces": [
+    "S20",
+    "S21",
+    "S31"
+   ],
+   "requirement_refs": [
+    "B-20",
+    "B-41",
+    "A-T9"
+   ]
+  },
+  {
+   "q": "覆盖重建 dist 后，已装的 skill 链接与 ~/.local/bin/lmdesk 是否不需重装就指向新构建？",
+   "facet": "F12",
+   "leak_point": "A-70 软链接随 app 更新；build-app.sh 用 staging 再替换",
+   "medium": "runtime",
+   "agent_model": "sonnet",
+   "agent_task": {
+    "output_file": "/private/tmp/claude-502/-Users-aa-LocalModelDesk/fa6582dc-b056-49e3-a1d5-3b44596f2ffe/tasks/a5ddaa7eb96d8255d.output"
+   },
+   "probed_at": "2026-10-19T21:22:12+09:00",
+   "states_to_capture": [
+    "01-重建前链接与目标文件指纹",
+    "02-构建输出与退出码",
+    "03-重建后链接与目标文件指纹",
+    "04-重启后 lmdesk status 与 /api/agent-skill",
+    "05-claude 列出的 skill"
+   ],
+   "served_by": {
+    "host": "127.0.0.1:8766",
+    "process": "重建前 pid 31246，重建后 pid 74069（同一 dist app）",
+    "mock_layers": [],
+    "checked_absent": [
+     "no mock server",
+     "no other listener while quit"
+    ]
+   },
+   "evidence": {
+    "dir": "evidence/q35/",
+    "files": [
+     "q35-01-before.txt",
+     "q35-02-build-exit.txt",
+     "q35-02-build.log",
+     "q35-03-after.txt",
+     "q35-04-api-agent-skill.json",
+     "q35-04-lmdesk-status.json",
+     "q35-05-claude-skills.txt",
+     "q35-served-by.md"
+    ],
+    "key_observation": "build-app.sh 192s 退出 0；重建后 .app 与 Resources inode 都换新，链接本身不变且解析到新 inode 的 SKILL.md；重启后 lmdesk status 正常、/api/agent-skill 三行 installed、cli installed；claude -p 仍列出 local-model-desk。bin/lmdesk 实体文件指纹未采集"
+   },
+   "verdict": "done",
+   "surfaces": [
+    "S47",
+    "S31",
+    "S26"
+   ],
+   "requirement_refs": [
+    "A-70",
+    "A-90",
+    "A-91",
+    "A-02",
+    "A-03"
+   ]
+  }
+ ],
+ "journeys": [
+  {
+   "id": "J1",
+   "who": "用 Claude Code 写项目的开发者",
+   "circumstance": "dist 台面进程未运行；空的临时项目目录；skill 已装在 ~/.claude/skills；一句中文请求，不提 lmdesk",
+   "progress": "项目 ./assets 下得到本地模型生成的图片",
+   "preconditions": [
+    "dist/LocalModelDesk.app 未运行（先退出）",
+    "~/.claude/skills/local-model-desk 已安装指向 dist",
+    "空的临时项目目录"
+   ],
+   "waypoints": [],
+   "oracle": {
+    "done_looks_like": [
+     "./assets 下有非空图片文件",
+     "台面图片会话里有对应生成记录",
+     "全程没有弹出台面主窗口"
+    ],
+    "stuck_looks_like": [
+     "agent 连不上台面后放弃",
+     "agent 改用非本地模型手段出图（代码绘制、网络下载）",
+     "同一请求在台面里生成两次以上",
+     "弹出台面主窗口"
+    ]
+   },
+   "step_budget": 15,
+   "status": "examined",
+   "risk": {
+    "level": "high",
+    "why": "核心卖点：不开界面即可用"
+   },
+   "entry_q": "J1 走得通吗？"
+  },
+  {
+   "id": "J2",
+   "who": "第一次装 skill 的用户",
+   "circumstance": "三个 agent 都没装 skill（测前卸掉，测后恢复 claude/codex/pi 三条链接）；在 dist 台面的设置页操作",
+   "progress": "只给 Claude Code 装上 skill",
+   "preconditions": [
+    "dist 台面在运行",
+    "所有 agent skill 链接与 ~/.local/bin/lmdesk 已卸载",
+    "测后恢复 claude、codex、pi 三条链接"
+   ],
+   "waypoints": [],
+   "oracle": {
+    "done_looks_like": [
+     "页面上 Claude Code 显示已安装，其余未安装",
+     "~/.claude/skills/local-model-desk 是指向 dist 的链接",
+     "~/.agents/skills、~/.pi/agent/skills、~/.dsh/skills 下没有 local-model-desk",
+     "~/.local/bin/lmdesk 指向 dist 的 bin/lmdesk"
+    ],
+    "stuck_looks_like": [
+     "不能只勾一个",
+     "勾选后「应用」仍灰",
+     "应用后别的 agent 也被装上",
+     "点了应用页面无任何反馈"
+    ]
+   },
+   "step_budget": 15,
+   "status": "examined",
+   "risk": {
+    "level": "high",
+    "why": "用户明确要求多选安装"
+   },
+   "entry_q": "J2 走得通吗？"
+  },
+  {
+   "id": "J3",
+   "who": "Claude Code 用户",
+   "circumstance": "图片会话「猫」里至少有一张图；空的临时项目目录；一句中文请求",
+   "progress": "项目里得到以猫图为首帧、两段合成的视频",
+   "preconditions": [
+    "dist 台面在运行",
+    "图片会话「猫」存在且有成功尝试",
+    "空的临时项目目录"
+   ],
+   "waypoints": [],
+   "oracle": {
+    "done_looks_like": [
+     "项目里有 mp4，时长大于任一单段",
+     "台面视频会话里有合成记录",
+     "第一段首帧引用「猫」会话里的图"
+    ],
+    "stuck_looks_like": [
+     "另行新生成图当首帧，或直接文生视频",
+     "等待中重复提交生成",
+     "最终无 mp4 或 mp4 只有一段"
+    ]
+   },
+   "step_budget": 20,
+   "status": "examined",
+   "risk": {
+    "level": "high",
+    "why": "第二期视频主链路"
+   },
+   "entry_q": "J3 走得通吗？"
+  },
+  {
+   "id": "J4",
+   "who": "Claude Code 用户",
+   "circumstance": "空的临时项目目录；请求不带歌词",
+   "progress": "./assets 下得到一段纯音乐",
+   "preconditions": [
+    "dist 台面在运行",
+    "空的临时项目目录"
+   ],
+   "waypoints": [],
+   "oracle": {
+    "done_looks_like": [
+     "得到非空音频文件，时长 ≥ 8 秒",
+     "台面音乐会话里有对应生成记录，歌词为纯音乐标记"
+    ],
+    "stuck_looks_like": [
+     "因缺歌词反复退出码 2 后放弃",
+     "歌词字段里出现 agent 自编的歌词文字"
+    ]
+   },
+   "step_budget": 15,
+   "status": "examined",
+   "risk": {
+    "level": "medium",
+    "why": "第二期音乐主链路"
+   },
+   "entry_q": "J4 走得通吗？"
+  }
+ ],
+ "open_threads": [
+  {
+   "q": "界面在对话模型内存不足时能否确认后强制加载？同情形 lmdesk ask 实际输出与退出码？",
+   "facet": "F1",
+   "leak_point": "desk/agent_cli/decide.py:62 「对话模型不能强制加载」；RC1 澄清规则"
+  },
+  {
+   "q": "卸载脚本真实运行时不打印删了哪些链接，用户能否知道链接被清理？",
+   "facet": "F9",
+   "leak_point": "q05 实测官顺带观察：真实运行 stdout 无删除行"
+  },
+  {
+   "q": "卸载（全不选应用）后 ~/.agents/skills、~/.dsh/skills 留下空的父目录，是否影响各 agent？",
+   "facet": "F9",
+   "leak_point": "q03 实测官读回：卸载后父目录为空目录"
+  },
+  {
+   "q": "lmdesk status 文本输出在模型为空时显示「对话模型：idle 」，--json 的 media.kind 在空闲时仍是上一个任务的 kind",
+   "facet": "F8",
+   "leak_point": "q08/q09 实测官顺带观察"
+  },
+  {
+   "q": "生产包里 LMDESK_FAKE_VERSION 环境变量可以覆盖命令行版本号，是否该只在测试里生效？",
+   "facet": "F8",
+   "leak_point": "q09：dist 下该变量生效；普查 S10"
+  },
+  {
+   "q": "image new 同名时不提示，agent 新建同名会话后按名调用会撞退出 2；是否该在 new 时提示或拒绝？",
+   "facet": "F3",
+   "leak_point": "q17：两次 new 同名均退出 0 无提示"
+  },
+  {
+   "q": "--lyrics-file 指向空文件时客户端放行、以空歌词提交，服务端如何处理？",
+   "facet": "F5",
+   "leak_point": "q23 实测官读 _check_music：空文件通过二选一校验，未实际发送"
+  },
+  {
+   "q": "台面日志 desk.log 已 451MB、server-stdout.log 240MB，是否有轮转？",
+   "facet": "F8",
+   "leak_point": "q13 实测官顺带观察（不在本交付范围）"
+  },
+  {
+   "q": "直接打开 #tab=settings 时设置面板宽度为 0 不显示，需点顶部「设置」才出现",
+   "facet": "F10",
+   "leak_point": "q31 实测官顺带观察"
+  },
+  {
+   "q": "设置页首次加载时控制台有 2 条错误，是什么？",
+   "facet": "F10",
+   "leak_point": "q31 实测官顺带观察，未打开日志"
+  },
+  {
+   "q": "生图挤掉对话模型期间 /api/llm/status 显示 status=error，界面与 lmdesk status 会不会把它当成加载失败？",
+   "facet": "F14",
+   "leak_point": "q14 状态采样：image 运行中 llm 为 error，完成后 loading→loaded"
+  },
+  {
+   "q": "SIGINT 落在任务已完成后，image/video/music gen 是否同样谎报「已取消」？（共用 _run_job）",
+   "facet": "F6",
+   "leak_point": "q16 t1：compose 已 done 仍打印已中断并取消"
+  },
+  {
+   "q": "60 段合成被取消时日志是「Error opening input file」指向存在的文件，取消是否被误记成输入错误？",
+   "facet": "F4",
+   "leak_point": "q16 t2 job 9 log"
+  },
+  {
+   "q": "q19 探针把 --size 等选项放在位置参数后时 argparse 报 unrecognized arguments 并打印顶层 usage；什么写法会触发？SKILL 示例写法是否受影响？",
+   "facet": "F8",
+   "leak_point": "q19 evidence 04-try.log"
+  },
+  {
+   "q": "取消文案重复前缀「生成已取消：已取消：…」",
+   "facet": "F3",
+   "leak_point": "q19 01"
+  },
+  {
+   "q": "failed 状态尝试的 show/wait 输出未取证（造不出失败）",
+   "facet": "F3",
+   "leak_point": "q19 could_not"
+  },
+  {
+   "q": "--steps 99999 通过客户端与服务端提交校验，任务运行后才以「steps must be in [1, 1000]」失败；视频参数上限是否应在提交时拒绝？",
+   "facet": "F4",
+   "leak_point": "q21 case 2 variant"
+  },
+  {
+   "q": "两个早期 h3-joined-20261008-22* 文件不被任何会话引用、首帧与候选段都不相似，来源不明（可能是旧版残留）",
+   "facet": "F4",
+   "leak_point": "q40 could_not"
+  },
+  {
+   "q": "点击菜单栏「agent 链接指向旧位置，打开设置更新」后打开的是不是设置页？",
+   "facet": "F12",
+   "leak_point": "q33 could_not：窗口内容截图为空、AX 读不到"
+  },
+  {
+   "q": "用 AppleEvent quit 退出台面超时（-1712）不退出；卸载或系统登出时能否正常退出？",
+   "facet": "F12",
+   "leak_point": "q33 顺带观察"
+  },
+  {
+   "q": "设置页首次 resize 时控制台 193 条错误是什么？",
+   "facet": "F10",
+   "leak_point": "J2 实测官顺带观察"
+  },
+  {
+   "q": "视频模型的内存保护在可用内存约 88% 时因 swap 活动中止生成，agent 只能盲目重试；命令行是否该给出可行提示？",
+   "facet": "F4",
+   "leak_point": "J3 实测官顺带观察"
+  }
+ ],
+ "patterns": [
+  {
+   "pattern_id": "P1",
+   "hypothesis": "面向用户/agent 的能力与退出情形文字停留在第一期，未随第二期与澄清规则更新",
+   "enumerated": true,
+   "enumerator_model": "sonnet",
+   "sites": [
+    {
+     "site": "SKILL.md 退出码 3 说明",
+     "facet": "F11",
+     "entry_q": "SKILL.md 对退出码 3 怎么说？超时、SIGINT、SIGTERM、ask 排不上队四种退出码 3 时 stderr 实际打印什么、任务是否继续？"
+    },
+    {
+     "site": "设置页「本机 agent」说明文字",
+     "facet": "F10",
+     "entry_q": "设置页「本机 agent」区块的说明文字写了什么？1280x800、800x600、640x480 下有没有横向滚动或溢出？"
+    },
+    {
+     "site": "SKILL.md frontmatter description（SKILL.md:3）",
+     "facet": "F11"
+    },
+    {
+     "site": "SKILL.md 开头与「调用」节（SKILL.md:8-14）",
+     "facet": "F11"
+    },
+    {
+     "site": "SKILL.md「对话」节（SKILL.md:16-25）",
+     "facet": "F11"
+    },
+    {
+     "site": "SKILL.md「生图与素材管理」节：被工具超时打断时生成在台面继续（SKILL.md:41）",
+     "facet": "F11"
+    },
+    {
+     "site": "SKILL.md「视频」节（SKILL.md:44-61）",
+     "facet": "F11"
+    },
+    {
+     "site": "SKILL.md「音乐」节（SKILL.md:63-76）",
+     "facet": "F11"
+    },
+    {
+     "site": "SKILL.md「例子」节只有对话与生图（SKILL.md:92-97）",
+     "facet": "F11"
+    },
+    {
+     "site": "设置页 TRY_PHRASE 与面板文案（pure/agent_skill.js:2、panes/agent_skill.js）",
+     "facet": "F10"
+    },
+    {
+     "site": "lmdesk argparse 帮助（cli.py:19-26、media.py:37-80）",
+     "facet": "F8"
+    },
+    {
+     "site": "提交后续等提示「中断后可用 … wait 继续等待」（media.py:140-142）",
+     "facet": "F6"
+    },
+    {
+     "site": "媒体中断/超时/台面退出文案（media.py:141-154）",
+     "facet": "F6"
+    },
+    {
+     "site": "通用中断「已中断」（cli.py:98-99）",
+     "facet": "F6"
+    },
+    {
+     "site": "Waiter 超时与进度文案（waiter.py:35,41,43）",
+     "facet": "F2"
+    },
+    {
+     "site": "wait 命令失败/取消文案（media.py:152-164,206）",
+     "facet": "F3"
+    },
+    {
+     "site": "join 文案（media.py:110,168-173,384）",
+     "facet": "F4"
+    },
+    {
+     "site": "ask 文案（chat.py）",
+     "facet": "F1"
+    },
+    {
+     "site": "decide 等待原因文案（decide.py）",
+     "facet": "F2"
+    },
+    {
+     "site": "连接与启动文案（discovery.py、cli.py:91,103）",
+     "facet": "F8",
+     "entry_q": "Codex 默认沙箱下用户让它用本地模型翻译时，Codex 最终对用户说了什么、有没有给出放行方法、照做能否成功？"
+    },
+    {
+     "site": "media 参数校验文案",
+     "facet": "F4"
+    },
+    {
+     "site": "内存不足与提交失败文案（media.py:107,132,310）",
+     "facet": "F3"
+    },
+    {
+     "site": "菜单栏 Swift 文案（ShellStatus.swift:47、StatusItemController.swift:27）",
+     "facet": "F12"
+    },
+    {
+     "site": "build-app.sh 输出",
+     "facet": "F12"
+    },
+    {
+     "site": "uninstall-app.sh 输出",
+     "facet": "F9"
+    },
+    {
+     "site": "scripts/lmdesk 注释",
+     "facet": "F12"
+    }
+   ]
+  },
+  {
+   "pattern_id": "P2",
+   "hypothesis": "命令行把服务端可能持续返回的错误码当作可重试，重试期间只读状态、不改变条件，导致无进展地等到超时",
+   "enumerated": true,
+   "enumerator_model": "sonnet",
+   "sites": [
+    {
+     "site": "chat.py:run_ask POST /api/llm/chat code=evicted（服务端 _chat_precheck still_holds 为假时返回）",
+     "facet": "F14",
+     "entry_q": "界面 1 分钟内刚用模型 A 对话，agent 用模型 B 问答：agent 等多久？界面对话有没有被打断？"
+    },
+    {
+     "site": "chat.py:_swap POST /api/llm/load code=media_busy",
+     "facet": "F1"
+    },
+    {
+     "site": "chat.py:_swap POST /api/llm/load code=load_in_progress",
+     "facet": "F1"
+    },
+    {
+     "site": "chat.py:_swap POST /api/llm/load code=model_mismatch",
+     "facet": "F1"
+    },
+    {
+     "site": "chat.py:_swap POST /api/llm/load code=evicted",
+     "facet": "F1"
+    },
+    {
+     "site": "chat.py:_swap POST /api/llm/load code=no_model_loaded",
+     "facet": "F1"
+    },
+    {
+     "site": "chat.py:_swap POST /api/llm/load code=job_not_running",
+     "facet": "F1"
+    },
+    {
+     "site": "chat.py:_swap POST /api/llm/load code=insufficient_budget",
+     "facet": "F1"
+    },
+    {
+     "site": "chat.py:run_ask POST /api/llm/chat code=no_model_loaded",
+     "facet": "F1"
+    },
+    {
+     "site": "chat.py:run_ask POST /api/llm/chat code=model_mismatch",
+     "facet": "F1"
+    },
+    {
+     "site": "chat.py:run_ask POST /api/llm/chat code=media_busy/load_in_progress/job_not_running",
+     "facet": "F1"
+    },
+    {
+     "site": "media.py:_submit POST 媒体/合成端点 code=media_busy",
+     "facet": "F2"
+    },
+    {
+     "site": "media.py:_submit POST 媒体/合成端点 code=load_in_progress",
+     "facet": "F2"
+    },
+    {
+     "site": "media.py:_submit POST 媒体/合成端点 code=model_mismatch",
+     "facet": "F2"
+    },
+    {
+     "site": "media.py:_submit POST 媒体/合成端点 code=evicted",
+     "facet": "F2"
+    },
+    {
+     "site": "media.py:_submit POST 媒体/合成端点 code=no_model_loaded",
+     "facet": "F2"
+    },
+    {
+     "site": "media.py:_submit POST 媒体/合成端点 code=job_not_running",
+     "facet": "F2"
+    },
+    {
+     "site": "arbiter holder 在换模型（界面或 agent 加载另一模型）后未更新，导致 /api/llm/chat 的 still_holds 为假持续 409 evicted",
+     "facet": "F14",
+     "entry_q": "从 error/evicted、界面加载但未对话、界面加载且刚对话三种起点，agent ask --model qwen27 能否得到回答？台面 holder 与 llm 状态是什么？"
+    }
+   ]
+  }
+ ],
+ "census_model": "claude-opus-5-5 (session)",
+ "journey_candidates": []
+}

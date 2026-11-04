@@ -1,0 +1,4 @@
+{"event": "run_started", "message": "run command invoked after bootstrap audits", "run_id": "20260923T181103Z-d0b32ae9", "status": "started", "ts": "2026-09-23T18:11:03.513772+00:00"}
+{"event": "diagnosis_cap_override", "message": "user authorized continuing past diagnosis cap 5 (session 29c5cac0, 2026-09-24: 继续，跑完剩下的步骤)", "run_id": "20260923T181103Z-d0b32ae9", "status": "started", "ts": "2026-09-24T00:12:18.577540+00:00"}
+{"event": "final_qa_rerun", "message": "user authorised one final image-session-verify rerun after repair budget exhausted; N-04 accepted as-is; criteria timeline-three-rounds aligned with design §7.1", "run_id": "20260923T181103Z-d0b32ae9", "status": "started", "ts": "2026-09-24T10:13:16.561745+00:00"}
+{"event": "run_completed", "message": "all 6 nodes done; verify accepted_with_gaps (user); dist rebuilt", "run_id": "20260923T181103Z-d0b32ae9", "status": "completed", "ts": "2026-09-24T11:03:25.253410+00:00"}

@@ -1,0 +1,1 @@
+lrwxr-xr-x@ 1 aa  staff  92 Oct 19 20:31 /Users/aa/.claude/skills/local-model-desk -> /private/tmp/q30old/OldDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk

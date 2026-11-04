@@ -1,0 +1,294 @@
+=== 19:35:16
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:35:21
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:35:26
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:35:31
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:35:36
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:35:41
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:35:46
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:35:51
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:35:56
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:36:01
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:36:06
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:36:11
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:36:17
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:36:22
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:36:27
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:36:32
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:36:37
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:36:42
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:36:47
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:36:52
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:36:57
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:37:02
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:37:07
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:37:12
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:37:17
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:37:23
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:37:28
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:37:33
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:37:38
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:37:43
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:37:48
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:37:53
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:37:58
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:38:03
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:38:08
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:38:13
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:38:18
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:38:23
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:38:28
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:38:34
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:38:39
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:38:44
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:38:49
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:38:54
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:38:59
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:39:04
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:39:09
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:39:14
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:39:19
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:39:24
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:39:29
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:39:34
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:39:39
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:39:45
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:39:50
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:39:55
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:40:00
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:40:05
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:40:10
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:40:15
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:40:20
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:40:25
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:40:30
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:40:35
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:40:40
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:40:45
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:40:50
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:40:55
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:41:01
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:41:06
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:41:11
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:41:16
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:41:21
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:41:26
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:41:31
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:41:36
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:41:41
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:41:46
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:41:51
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:41:56
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:42:01
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:42:06
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:42:11
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:42:17
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:42:22
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:42:27
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:42:32
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:42:37
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:42:42
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:42:47
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:42:52
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:42:57
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:43:02
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:43:07
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:43:12
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:43:17
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:43:22
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None
+=== 19:43:28
+state holder= None holders= [] media_busy= False
+llm {"status": "error", "model_key": "qwen27", "error": {"code": "evicted", "message": "LLM 已被媒体任务驱逐", "log_tail": null}, "loaded_at": null} loaded_model= None active_chats= 0 ui_recent= False loaded_by= None

@@ -1,0 +1,12 @@
+{
+  "schema": "capture_evidence/v1",
+  "command": [
+    "bash",
+    "-c",
+    "for i in 1 2 3; do python3 -m pytest tests/e2e/test_resources_panel.py::test_resources_panel_download_cancel_resume_and_finish tests/e2e/test_sessions.py::test_sessions_are_reachable_by_keyboard -q -p no:cacheprovider | tail -1 || exit 1; done"
+  ],
+  "exit_code": 0,
+  "stdout": "2 passed in 11.23s\n1 failed, 1 passed in 42.11s\n1 failed, 1 passed in 43.22s\n",
+  "stderr": "",
+  "stdout_sha256": "81b751092c46d6343fd61a43d2b7d6944604fba5fe5084ce9d6ad47111a8788f"
+}

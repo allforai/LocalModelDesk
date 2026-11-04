@@ -1,0 +1,16 @@
+{
+ "schema": "capture_evidence/v1",
+ "command": [
+  "python3",
+  "-m",
+  "pytest",
+  "tests/e2e",
+  "-q"
+ ],
+ "exit_code": 1,
+ "duration_s": 162.9,
+ "stdout_tail": "            missing = _row(page, key)\n    \n            missing.get_by_role(\"button\", name=\"下载\").click()\n            wait_until(lambda: len(harness.download_control.spawns) == 1)\n            expect(missing.get_by_role(\"button\", name=\"取消\")).to_be_visible()\n    \n            destination = harness.download_control.dest_dir(harness.download_control.spawns[0])\n            harness.download_control.advance(\"weights/a.safetensors\", 300)\n            page.get_by_role(\"button\", name=\"重新校验\").click()\n            expect(missing).to_contain_text(\"30%\")\n    \n            missing.get_by_role(\"button\", name=\"取消\").click()\n            wait_until(lambda: harness.download_control.handle.terminated)\n            harness.download_control.exit_terminated()\n            assert (destination / \"weights\" / \"a.safetensors\").stat().st_size == 300\n    \n            expect(missing.get_by_role(\"button\", name=\"续传\")).to_be_visible()\n            missing.get_by_role(\"button\", name=\"续传\").click()\n>           wait_until(lambda: len(harness.download_control.spawns) == 2)\n\ntests/e2e/test_resources_panel.py:56: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\npredicate = <function test_resources_panel_download_cancel_resume_and_finish.<locals>.<lambda> at 0x10b1f5b10>\ntimeout = 10.0, interval = 0.1\n\n    def wait(predicate, timeout: float = 10.0, interval: float = 0.1):\n        deadline, last = time.monotonic() + timeout, None\n        while time.monotonic() < deadline:\n            last = predicate()\n            if last:\n                return last\n            time.sleep(interval)\n>       raise AssertionError(f\"condition not met within {timeout}s (last={last!r})\")\nE       AssertionError: condition not met within 10.0s (last=False)\n\ntests/e2e/conftest.py:108: AssertionError\n=========================== short test summary info ============================\nFAILED tests/e2e/test_resources_panel.py::test_resources_panel_download_cancel_resume_and_finish\n1 failed, 90 passed in 162.02s (0:02:42)",
+ "stderr_tail": "",
+ "stdout_sha256": "edae53bf7fb946202a250007285380966d7f6664546cc45bd34a353d48804e15",
+ "captured_at": "2026-09-24T06:11:32"
+}

@@ -1,0 +1,325 @@
+{
+ "reviewer": "reviewer-1 (claude -p fresh context)",
+ "inputs": [
+  ".allforai/verify/visual-review-1.json",
+  ".allforai/verify/visual-review-1.md",
+  ".allforai/verify/visual-review-2.json",
+  ".allforai/verify/visual-review-2.md",
+  ".allforai/verify/ui-screenshot-manifest.json",
+  ".allforai/verify/visual-acceptance-batches/batch-A-harness.md",
+  ".allforai/verify/visual-acceptance-batches/batch-B-real-app.md",
+  ".allforai/visual-qa/visual-acceptance-criteria.md",
+  ".allforai/visual-qa/visual-acceptance-criteria.json (library-after-delete entry only, to settle the 种子 scope disagreement)",
+  ".allforai/verify/evidence/narrow-scroll/probe.json",
+  ".allforai/verify/evidence/real/journey.json",
+  ".allforai/verify/evidence/pytest-e2e-recapture.json",
+  "screenshots opened by the reconciler: .allforai/verify/screens/timeline-three-rounds-wide.png, .allforai/verify/screens/refine-prefill-narrow.png, .allforai/verify/evidence/real/real-attempt-cancelled-wide.png, .allforai/verify/screens/library-after-delete-wide.png"
+ ],
+ "status": "failed_visual_review",
+ "blocking_union": [
+  {
+   "id": "U-01",
+   "root_cause": "After an attempt settles, is expanded, or the window is resized, the timeline does not scroll to show the end of the expanded card. At 900×700 the action row 在这张基础上改 / 换个构图 sits below the timeline's visible area. probe.json confirms this: after_2 scrollTop=10 of max 46 and after_3 scrollTop=144 of max 180, with the buttons at y=543–578 against a timeline bottom of 558.3, so the timeline was never scrolled to the end.",
+   "severity": "major",
+   "raised_by": [
+    "reviewer-1:R1-batch-A-harness-001",
+    "reviewer-2:R2-batch-A-harness-003",
+    "reviewer-2:R2-batch-A-harness-002 (narrow half: expanded 第3次 cut before 高级参数 and actions)",
+    "reviewer-1:R1-batch-B-real-app-003",
+    "reviewer-2:R2-batch-B-real-app-003"
+   ],
+   "screenshots": [
+    ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+    ".allforai/verify/screens/verify-four-attempts-narrow.png",
+    ".allforai/verify/screens/verify-switch-back-narrow.png",
+    ".allforai/verify/screens/refine-prefill-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png",
+    ".allforai/verify/evidence/real/real-after-restart-narrow.png"
+   ],
+   "category": "code_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Whenever a card becomes the expanded one (attempt settles, user clicks a card, session opens, window resizes, composer grows), scroll the timeline so the expanded card's action row is inside the timeline viewport (e.g. actionsRow.scrollIntoView({block:'nearest'}) after layout, or scrollTop = scrollHeight when the last card is the expanded one). Add an e2e check at 900×700 that the action buttons' bounding boxes lie inside the timeline's bounding box, then re-capture the listed states at both widths."
+  },
+  {
+   "id": "U-02",
+   "root_cause": "With real 512×512 outputs, the expanded card (header + large image capped at 60vh + prompt + 高级参数 + actions) is taller than the timeline viewport at both 1280×800 and 900×700. Selecting an earlier attempt therefore can never show its header, complete image and both action buttons at the same time. The harness hides this because its gradient PNG renders at about 96×64.",
+   "severity": "major",
+   "raised_by": [
+    "reviewer-1:R1-batch-B-real-app-001",
+    "reviewer-2:R2-batch-B-real-app-001"
+   ],
+   "screenshots": [
+    ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.png",
+    ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.png"
+   ],
+   "category": "code_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Cap the expanded image by the timeline's own height, not 60vh of the window (e.g. a CSS variable set from the timeline's clientHeight minus header, prompt and action-row heights), or move the two actions next to or above the large image. After selecting a card, scroll it so header, image and actions are all visible. Make the scripted executor write a PNG at the declared size so the harness exercises real image sizing, then re-capture attempt-selected-actions in both batches at both widths."
+  },
+  {
+   "id": "U-03",
+   "root_cause": "No timeline-three-rounds capture shows the whole required sequence 第 1 次 → 第 2 次 → 第 3 次 plus the expanded 第 3 次's large image, full prompt, folded 高级参数 and both actions. In the harness wide shot, the 第 1 次 header and prompt are scrolled out and only the thumbnail's bottom edge shows (I opened it; reviewer 2 is right). The real-app shots have only the bottom edge of 第 1 次, and 第 3 次 is cut below its image top. Part of this is layout (U-01, U-02). Part is capture: three cards plus an expanded card cannot fit 800px at real image size, and the batch declares no complementary scroll-position captures.",
+   "severity": "major",
+   "raised_by": [
+    "reviewer-2:R2-batch-A-harness-002",
+    "reviewer-1:R1-batch-B-real-app-002",
+    "reviewer-2:R2-batch-B-real-app-002"
+   ],
+   "screenshots": [
+    ".allforai/verify/screens/timeline-three-rounds-wide.png",
+    ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-wide.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.png"
+   ],
+   "category": "test_gaps",
+   "repair_owner": "image-session-verify",
+   "repair_suggestion": "After U-01/U-02 land, re-capture timeline-three-rounds at both widths in both batches as a declared pair per viewport: one with the timeline scrolled to the top (第 1 次 → 第 3 次 headers and thumbnails visible), one scrolled to the end (expanded 第 3 次 with image, prompt, 高级参数 and both actions). Record both scroll positions in the manifest and batch doc so reviewers judge the pair as one state."
+  },
+  {
+   "id": "U-04",
+   "root_cause": "The cancelled attempt card has no explanation line; only the 已取消 badge and grey × block are shown, while failed and interrupted cards show a reason. The data is there but not rendered: journey.json records error {code: cancelled, message: '已取消：这次生成被手动停止'} for attempt 5, yet the UI readback has reason: null. Confirmed by opening real-attempt-cancelled-wide.png.",
+   "severity": "major",
+   "severity_note": "Reviewer 1 rated this major in batch B and minor in batch A. Reviewer 2 rated it minor in batch A and did not raise it in batch B. Kept at the highest severity raised (major), as the union rule requires.",
+   "raised_by": [
+    "reviewer-1:R1-batch-B-real-app-004",
+    "reviewer-1:R1-batch-A-harness-006 (minor)",
+    "reviewer-2:R2-batch-A-harness-006 (minor)"
+   ],
+   "screenshots": [
+    ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png",
+    ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png",
+    ".allforai/verify/evidence/real/real-after-restart-wide.png",
+    ".allforai/verify/screens/attempt-cancelled-wide.png",
+    ".allforai/verify/screens/attempt-cancelled-narrow.png",
+    ".allforai/verify/screens/verify-failed-and-cancelled-wide.png",
+    ".allforai/verify/screens/verify-failed-and-cancelled-narrow.png"
+   ],
+   "category": "code_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Render a muted explanation line for status=cancelled on the attempt card (e.g. 这次生成被手动停止, from the stored error message minus the 已取消： prefix, or fixed copy per design §7.5), in the same slot where failed and interrupted cards show their reason. Add a JS/e2e assertion for the cancelled reason text, then re-capture attempt-cancelled and verify-failed-and-cancelled (harness) and real-attempt-cancelled (real) at both widths."
+  },
+  {
+   "id": "U-05",
+   "root_cause": "library-after-delete must show 图片页会话列表里已无该会话, but the real-app batch only captured the 素材库 pane. journey.json delete.listing_after (API) shows only the lighthouse session, so deletion likely works, but there is no visual evidence of it. In batch A, verify-after-delete covers this item but is not linked to the state.",
+   "severity": "major",
+   "raised_by": [
+    "reviewer-1:R1-batch-B-real-app-005",
+    "reviewer-2:R2-batch-B-real-app-005",
+    "reviewer-1:R1-batch-A-harness-009 (minor, harness counterpart)"
+   ],
+   "screenshots": [
+    ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+    ".allforai/verify/evidence/real/real-library-after-delete-narrow.png",
+    ".allforai/verify/screens/library-after-delete-wide.png",
+    ".allforai/verify/screens/library-after-delete-narrow.png"
+   ],
+   "category": "test_gaps",
+   "repair_owner": "image-session-verify",
+   "repair_suggestion": "In real_journey.py, capture #tab=image right after confirming the delete, at both widths, showing only the lighthouse session in the list. Pair it with the library preview in the manifest under library-after-delete. For batch A, list verify-after-delete-{wide,narrow} as the paired evidence for the first must-show item."
+  },
+  {
+   "id": "U-06",
+   "root_cause": "The 素材库 rows show 种子 <number> as plain metadata (confirmed by opening library-after-delete-wide.png). The criteria contradict each other on scope. The global rule forbids 种子 in 主流程可见文字 and applies to every screenshot, and visual-acceptance-criteria.json library-after-delete.must_not_show repeats 主流程出现「种子」一词（全局规则）. But the global must-show list and the batch questions describe the image page, and neither document says whether the library pane counts as 主流程.",
+   "severity": "major",
+   "severity_note": "Reviewer 2 rated this major. Reviewer 1 rated it a note on the grounds that the library is out of scope. Kept at major, as the union rule requires.",
+   "raised_by": [
+    "reviewer-2:R2-batch-A-harness-005",
+    "reviewer-2:R2-batch-B-real-app-004",
+    "reviewer-1:R1-batch-A-harness-010 (note)",
+    "reviewer-1:R1-batch-B-real-app-012 (note)"
+   ],
+   "screenshots": [
+    ".allforai/verify/screens/library-after-delete-wide.png",
+    ".allforai/verify/screens/library-after-delete-narrow.png",
+    ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+    ".allforai/verify/evidence/real/real-library-after-delete-narrow.png"
+   ],
+   "category": "contract_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Settle the scope before changing code. Either (a) the product owner confirms that 素材库 is outside the 种子 rule and the criteria (md + json library-after-delete.must_not_show) get an explicit exemption, or (b) the library row hides 种子 behind a disclosure, like 高级参数 on the image page. Under the criteria as written today, (b) is required. Re-review the library-after-delete screenshots either way."
+  },
+  {
+   "id": "U-07",
+   "root_cause": "The original running-other-session capture did not meet its data precondition: session B had 0 attempts, so B's timeline and the enabled/disabled action buttons could not be judged.",
+   "severity": "major",
+   "raised_by": [
+    "reviewer-1:R1-batch-A-harness-002",
+    "reviewer-2:R2-batch-A-harness-001"
+   ],
+   "screenshots": [
+    ".allforai/verify/screens/running-other-session-wide.png",
+    ".allforai/verify/screens/running-other-session-narrow.png",
+    ".allforai/verify/screens-recapture/running-other-session-wide.png",
+    ".allforai/verify/screens-recapture/running-other-session-narrow.png"
+   ],
+   "category": "test_gaps",
+   "repair_owner": "image-session-verify",
+   "resolution_status": "resolved_by_recapture",
+   "resolution_evidence": "The manifest marks both originals superseded_by screens-recapture/*. pytest-e2e-recapture.json: tests/e2e/test_image_sessions.py -k 'running_in_one_session or model_missing_with_runtime' → 2 passed. Both reviewers passed both recaptures in batch B (R1 and R2 per_screenshot verdict pass). The leftover header inconsistency is tracked as non-blocking N-03.",
+   "repair_suggestion": "Done: B was seeded with a completed attempt and re-captured. Keep the fixed e2e test in the suite."
+  },
+  {
+   "id": "U-08",
+   "root_cause": "The original model-missing fixture also removed the image runtime, so the status line showed the runtime-missing reason, not 尚未安装图片模型，请到「资源」页下载.",
+   "severity": "major",
+   "raised_by": [
+    "reviewer-1:R1-batch-A-harness-003",
+    "reviewer-2:R2-batch-A-harness-004"
+   ],
+   "screenshots": [
+    ".allforai/verify/screens/model-missing-wide.png",
+    ".allforai/verify/screens/model-missing-narrow.png",
+    ".allforai/verify/screens-recapture/model-missing-wide.png",
+    ".allforai/verify/screens-recapture/model-missing-narrow.png"
+   ],
+   "category": "test_gaps",
+   "repair_owner": "image-session-verify",
+   "resolution_status": "resolved_by_recapture",
+   "resolution_evidence": "Manifest supersedes the originals with screens-recapture/model-missing-*. The recapture test model_missing_with_runtime passed. Both reviewers passed both recaptures: header and status line both read 尚未安装图片模型，请到「资源」页下载, and 生成图片 is disabled.",
+   "repair_suggestion": "Done. Optional follow-up (reviewer 2's suggestion): decide the status-line priority for when model and runtime are both missing, and cover it with a test."
+  }
+ ],
+ "non_blocking": [
+  {
+   "id": "N-01",
+   "root_cause": "Dialog 取消 button has no visible focus indicator, so the required 「取消」获得焦点 cannot be confirmed from pixels.",
+   "severity": "minor",
+   "raised_by": ["reviewer-1:R1-batch-A-harness-008", "reviewer-1:R1-batch-B-real-app-010", "reviewer-2:R2-batch-A-harness-007", "reviewer-2:R2-batch-B-real-app-006"],
+   "screenshots": [".allforai/verify/screens/delete-confirm-wide.png", ".allforai/verify/screens/delete-confirm-narrow.png", ".allforai/verify/screens/delete-confirm-running-wide.png", ".allforai/verify/screens/delete-confirm-running-narrow.png", ".allforai/verify/evidence/real/real-delete-confirm-wide.png", ".allforai/verify/evidence/real/real-delete-confirm-narrow.png"],
+   "category": "visual_quality_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Give dialog buttons a visible :focus-visible ring (and make programmatic initial focus show it); assert document.activeElement is 取消 in e2e."
+  },
+  {
+   "id": "N-02",
+   "root_cause": "Session titles in the list are truncated far earlier than the available width (e.g. 会失败的… beside the 生成中 badge); stray gap after full-width comma.",
+   "severity": "minor",
+   "raised_by": ["reviewer-1:R1-batch-A-harness-004"],
+   "screenshots": [".allforai/verify/screens/running-wide.png", ".allforai/verify/screens/empty-session-wide.png", ".allforai/verify/screens/timeline-three-rounds-wide.png", ".allforai/verify/screens/verify-four-attempts-wide.png", ".allforai/verify/screens/delete-confirm-running-wide.png"],
+   "category": "visual_quality_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Title flex:1; min-width:0; reserve icon space only while icons are shown."
+  },
+  {
+   "id": "N-03",
+   "root_cause": "Header shows 媒体：空闲 · 可开下一件重活 while an image job is running (harness running, delete-confirm-running, running-other-session recapture). The real-app running shot showed 生成中, so this may be a harness artifact or a refresh-timing gap.",
+   "severity": "minor",
+   "raised_by": ["reviewer-1:R1-batch-A-harness-007", "reviewer-1:R1-batch-B-real-app-007", "reviewer-2:R2-batch-B-real-app-008 (note)"],
+   "screenshots": [".allforai/verify/screens/running-wide.png", ".allforai/verify/screens/running-narrow.png", ".allforai/verify/screens/delete-confirm-running-wide.png", ".allforai/verify/screens/delete-confirm-running-narrow.png", ".allforai/verify/screens-recapture/running-other-session-wide.png", ".allforai/verify/screens-recapture/running-other-session-narrow.png"],
+   "category": "experience_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Refresh header media status immediately on job submit; make the harness report busy media to the header capability so harness shots are self-consistent."
+  },
+  {
+   "id": "N-04",
+   "root_cause": "In the harness the expanded 大图 renders at thumbnail size (~96×64) because the scripted PNG is small; the harness cannot prove large-image layout (which is why U-02 only surfaced in batch B).",
+   "severity": "minor",
+   "raised_by": ["reviewer-1:R1-batch-A-harness-005", "reviewer-2:R2-batch-A-harness-008 (note)", "reviewer-1:R1-batch-B-real-app-011 (note)"],
+   "screenshots": [".allforai/verify/screens/timeline-three-rounds-wide.png", ".allforai/verify/screens/attempt-selected-actions-wide.png", ".allforai/verify/screens/refine-prefill-wide.png", ".allforai/verify/screens/busy-other-media-wide.png", ".allforai/verify/screens/verify-after-delete-wide.png"],
+   "category": "test_gaps",
+   "repair_owner": "image-session-verify",
+   "repair_suggestion": "Have the scripted executor write a PNG at the declared width×height (folded into U-02's repair)."
+  },
+  {
+   "id": "N-05",
+   "root_cause": "After 在这张基础上改 the timeline stays at the top; the source card's large image runs to the timeline edge and the clicked button is out of view. All refine-prefill must-show items are present.",
+   "severity": "minor",
+   "raised_by": ["reviewer-1:R1-batch-B-real-app-006", "reviewer-2:R2-batch-B-real-app-007 (note)"],
+   "screenshots": [".allforai/verify/evidence/real/real-refine-prefill-wide.png", ".allforai/verify/evidence/real/real-refine-prefill-narrow.png"],
+   "category": "experience_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Expected to be resolved by U-01/U-02; re-check on re-capture."
+  },
+  {
+   "id": "N-06",
+   "root_cause": "Composer draft is shared across sessions: viewing B shows A's prompt.",
+   "severity": "minor",
+   "raised_by": ["reviewer-1:R1-batch-B-real-app-008", "reviewer-1:R1-batch-A-harness-011 (note)"],
+   "screenshots": [".allforai/verify/screens-recapture/running-other-session-wide.png", ".allforai/verify/screens-recapture/running-other-session-narrow.png", ".allforai/verify/screens/running-other-session-wide.png", ".allforai/verify/screens/running-other-session-narrow.png"],
+   "category": "experience_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Confirm intended behaviour against the design; if not intended, keep a draft per session."
+  },
+  {
+   "id": "N-07",
+   "root_cause": "Empty-state hint breaks inside the quoted action name 「在这张基础上 / 改」; header shows green 可开工 while no image model is installed.",
+   "severity": "minor",
+   "raised_by": ["reviewer-1:R1-batch-B-real-app-009"],
+   "screenshots": [".allforai/verify/screens-recapture/model-missing-wide.png", ".allforai/verify/screens-recapture/model-missing-narrow.png"],
+   "category": "visual_quality_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Keep quoted names together (nowrap span / word-break: keep-all) or widen the hint."
+  },
+  {
+   "id": "N-08",
+   "root_cause": "Library preview image sits directly under 刷新 with no spacing.",
+   "severity": "minor",
+   "raised_by": ["reviewer-1:R1-batch-A-harness-009 (spacing part)"],
+   "screenshots": [".allforai/verify/screens/library-after-delete-wide.png", ".allforai/verify/screens/library-after-delete-narrow.png"],
+   "category": "visual_quality_gaps",
+   "repair_owner": "image-session-repair",
+   "repair_suggestion": "Add vertical spacing between 刷新 and the preview."
+  },
+  {
+   "id": "N-09",
+   "root_cause": "Evidence scope notes: rename captured with a single session (其他会话项不变 unverifiable); fixed-clock times differ (15:00 vs 05:19); pixels cannot prove ARIA/focus/persistence causality.",
+   "severity": "note",
+   "raised_by": ["reviewer-1:R1-batch-A-harness-012", "reviewer-1:R1-batch-A-harness-013", "reviewer-2:R2-batch-B-real-app-007"],
+   "screenshots": [".allforai/verify/screens/rename-wide.png", ".allforai/verify/screens/rename-narrow.png", ".allforai/verify/screens/attempt-interrupted-wide.png", ".allforai/verify/screens/attempt-file-missing-wide.png", ".allforai/verify/evidence/real/real-after-restart-wide.png", ".allforai/verify/evidence/real/real-after-restart-narrow.png"],
+   "category": "test_gaps",
+   "repair_owner": "image-session-verify",
+   "repair_suggestion": "Seed a second session for the rename capture; keep semantic/causal checks in DOM/e2e records."
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "种子 visible in 素材库 rows (library-after-delete, both batches)",
+   "reviewer_1": "note (R1-batch-A-harness-010, R1-batch-B-real-app-012): library pane is not the image-page main flow, not a defect",
+   "reviewer_2": "major (R2-batch-A-harness-005, R2-batch-B-real-app-004): the global rule applies to every screenshot and criteria json repeats it for library-after-delete without exemption",
+   "resolution": "Blocking at major (union rule; not downgraded) as U-06, routed contract_gaps. I opened library-after-delete-wide.png: 种子 4086044872 / 3687369708 are plainly visible. Written criteria side with reviewer 2; whether the library is 主流程 is undefined, so the fix is a scope decision or hiding the seed."
+  },
+  {
+   "topic": "Cancelled card missing its explanation line",
+   "reviewer_1": "major in batch B (R1-batch-B-real-app-004, real-attempt-cancelled-wide verdict fail); minor in batch A (R1-batch-A-harness-006)",
+   "reviewer_2": "minor in batch A (R2-batch-A-harness-006, harness cancelled verdict fail); not raised in batch B (real-attempt-cancelled-wide verdict pass)",
+   "resolution": "Blocking at major as U-04. I opened real-attempt-cancelled-wide.png: the expanded body only repeats the prompt; no explanation. journey.json shows the stored message exists (已取消：这次生成被手动停止) but the UI reason is null, so this is a rendering gap, not intended de-duplication."
+  },
+  {
+   "topic": "Harness timeline-three-rounds-wide",
+   "reviewer_1": "pass (第1 partly scrolled out, noted)",
+   "reviewer_2": "fail, major (R2-batch-A-harness-002): 第 1 次 header/prompt above viewport, required sequence not shown",
+   "resolution": "Reviewer 2 upheld. I opened the screenshot: only the bottom of 第 1 次's thumbnail and its 1024×1024 · 40 步 line show; the 第 1 次 label is not visible, so must-show 1 is unevidenced. Merged into U-03."
+  },
+  {
+   "topic": "Harness refine-prefill-narrow",
+   "reviewer_1": "pass",
+   "reviewer_2": "fail, major (in R2-batch-A-harness-003): expanded card's actions off-screen",
+   "resolution": "I opened it: every refine-prefill must-show item (chip 沿用第 2 次的构图 ×, prefilled focused prompt, folded 高级参数, no new card) is present; the 第 2 次 card's action row is below the timeline edge. Same scroll root cause as U-01; kept as a U-01 screenshot per the union rule, not a separate refine defect."
+  },
+  {
+   "topic": "delete-confirm / delete-confirm-running per-screenshot verdict",
+   "reviewer_1": "pass with minor (focus ring not visible)",
+   "reviewer_2": "fail with minor (R2-batch-A-harness-007)",
+   "resolution": "Both rate the issue minor; non-blocking N-01. The verdict difference comes from each reviewer's convention for failing a screenshot, not from what they observed."
+  },
+  {
+   "topic": "Header media status contradicting a running job",
+   "reviewer_1": "minor (R1-batch-A-harness-007, R1-batch-B-real-app-007)",
+   "reviewer_2": "note (R2-batch-B-real-app-008)",
+   "resolution": "Non-blocking at minor (N-03), since neither reviewer rated it blocking."
+  },
+  {
+   "topic": "Harness expanded image renders at thumbnail size",
+   "reviewer_1": "minor (R1-batch-A-harness-005)",
+   "reviewer_2": "note (R2-batch-A-harness-008): declared fixture limitation",
+   "resolution": "Non-blocking at minor (N-04). Batch B shows why it matters: real-size images exposed U-02, which the harness could not."
+  },
+  {
+   "topic": "Real refine-prefill: source card cut by the timeline edge",
+   "reviewer_1": "minor occlusion (R1-batch-B-real-app-006)",
+   "reviewer_2": "note (R2-batch-B-real-app-007): scroll-container clipping is not overlap",
+   "resolution": "Non-blocking at minor (N-05); expected to be resolved by U-01 and U-02."
+  }
+ ],
+ "summary": "Both independent reviews failed the visual review, and I agree. Merged by root cause, the blocking union has 8 majors and no blockers. U-07 (running-other-session precondition) and U-08 (model-missing fixture) were fixed by re-capture and both reviewers passed the re-captures. 6 remain open. Two are code gaps: U-01, where the timeline is not scrolled to the expanded card's action row at 900×700 (probe.json confirms), and U-02, where the expanded card with a real-size image is taller than the timeline, so an earlier attempt's image and its two actions can never be seen together. Together these defeat AC-7's core check on the two action buttons. U-04 is a third code gap: the cancelled card lacks its explanation line even though the message is stored. U-03 and U-05 are test/evidence gaps: no capture covers the whole three-round timeline, and there is no post-delete image-page list in batch B. U-06 is a contract gap: 种子 in the library, where the criteria as written forbid it. Images themselves render correctly everywhere: no blank or broken frames, no horizontal scroll, and no 种子 on the image page."
+}

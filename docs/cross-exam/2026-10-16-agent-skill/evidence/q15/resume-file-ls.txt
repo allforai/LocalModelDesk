@@ -1,0 +1,1 @@
+-rw-r--r--@ 1 aa  staff  1517787 Oct 19 18:38 /Users/aa/Library/Application Support/LocalModelDesk/outputs/qwen-image-20261019-183709-fd99a561.png

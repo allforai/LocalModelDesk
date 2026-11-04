@@ -1,0 +1,3 @@
+GET /api/agent/precheck?op=image
+{"error": {"code": "invalid_params", "message": "width/height/steps 须为整数"}}
+HTTP 400

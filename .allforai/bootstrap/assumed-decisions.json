@@ -1,0 +1,80 @@
+{
+ "schema_version": "1.0",
+ "decisions": [
+  {
+   "id": "accepted-gaps-image-session-verify",
+   "node_id": "image-session-verify",
+   "outcome": "accepted_with_gaps",
+   "at": "2026-09-24T19:42:23+09:00",
+   "source": "user",
+   "user_reference": "session 29c5cac0 · 2026-09-24 · 用户在「剩下 3 个小问题和几条备注」提问中选择「接受并重建 app」",
+   "reason": "7/7 验收 verified（真实模型、无 mock），双评审无 blocker/major；剩余 minor/note 不阻断，留待下一轮（与以图生图一起）",
+   "accepted_gaps": [
+    {
+     "id": "N-01",
+     "category": "code_gaps",
+     "severity": "minor",
+     "summary": "Real app (WKWebView) delete dialog: 取消 does not receive focus. The journey DOM readback delete_dialog_focus has activeElement = the session LI, in_dialog:false; the capture shows no ring on 取消 while t"
+    },
+    {
+     "id": "N-07",
+     "category": "test_gaps",
+     "severity": "note",
+     "summary": "Evidence framing. Library captures are scrolled past the tabs, and the image-page half of library-after-delete comes from verify-after-delete / real-after-delete. timeline-three-rounds is shown by the"
+    },
+    {
+     "id": "N-08",
+     "category": "visual_quality_gaps",
+     "severity": "minor",
+     "summary": "Expanded cards with no image (failed, cancelled, interrupted, file-missing) keep the prompt summary in the header and repeat the full prompt below, so the same prompt appears twice. Expanded done card"
+    },
+    {
+     "id": "N-09",
+     "category": "visual_quality_gaps",
+     "severity": "minor",
+     "summary": "Harness only: right after an image job is submitted (已用 0秒), the top bar still reads 媒体：空闲 · 可开下一件重活. In the real app, real-running-wide at 已用 3秒 correctly shows 图片生成中 / 媒体：生成中, and harness running-ot"
+    },
+    {
+     "id": "N-10",
+     "category": "visual_quality_gaps",
+     "severity": "note",
+     "summary": "Disabled-reason line shown both inside the expanded card and under the composer."
+    },
+    {
+     "id": "N-05",
+     "category": "visual_quality_gaps",
+     "severity": "note",
+     "summary": "Copy details: the runtime-unavailable header still says 可离线生成; the empty state says 点「生成图片」 while the button is disabled (model-missing, runtime-unavailable). Carried over from round-2 N-05."
+    },
+    {
+     "id": "N-11",
+     "category": "visual_quality_gaps",
+     "severity": "note",
+     "summary": "session-list-load-failed leaves the timeline area empty. It meets the criteria because the list shows the reason and 重试, and the status line says 会话还没加载好."
+    },
+    {
+     "id": "N-06",
+     "category": "visual_quality_gaps",
+     "severity": "note",
+     "summary": "After restart, the current session item shows a double outline and a solid red trash button. Carried over from round-2 N-06."
+    }
+   ]
+  },
+  {
+   "id": "n04-shared-draft",
+   "outcome": "accepted_as_is",
+   "at": "2026-09-24T19:42:23+09:00",
+   "source": "user",
+   "user_reference": "session 29c5cac0 · 2026-09-24 · 「每个会话要不要各自保留草稿？」→「这次不做」",
+   "reason": "草稿全局共享，本次不做按会话草稿"
+  },
+  {
+   "id": "final-qa-rerun-outside-engine",
+   "outcome": "authorized",
+   "at": "2026-09-24T19:42:23+09:00",
+   "source": "user",
+   "user_reference": "session 29c5cac0 · 2026-09-24 · 「修复次数用完…接下来？」→「只跑一次最终验收」",
+   "reason": "修复预算耗尽后仅重跑一次 QA，不再修复"
+  }
+ ]
+}

@@ -1,0 +1,6 @@
+width=768
+height=448
+duration=2.333333
+nb_frames=56
+duration=2.333344
+nb_frames=74

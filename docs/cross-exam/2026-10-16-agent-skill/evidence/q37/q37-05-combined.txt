@@ -1,0 +1,8 @@
+== q37-03-terminal.txt ==
+"本机 agent\n\n让选中的 agent 通过 lmdesk 命令使用本机模型（对话、生图、图片会话）。\n\nClaude Code\n已检测到\n已安装\nCodex\n已检测到\n未安装\n同时对 pi、DeepSeek Harness 生效\npi\n已检测到\n未安装\nDeepSeek Harness\n已检测到\n未安装\n应用\n检查\n\n命令行 lmdesk：/Users/aa/.local/bin/lmdesk · 已安装（至少勾选一个 agent 时自动安装）\n\n用本地模型把这句话翻成英文：今天天气很好\n复制"
+== q37-after-apply-fs.txt ==
+ls: /Users/aa/.agents/skills/local-model-desk: No such file or directory
+ls: /Users/aa/.dsh/skills/local-model-desk: No such file or directory
+ls: /Users/aa/.pi/agent/skills/local-model-desk: No such file or directory
+lrwxr-xr-x@ 1 aa  staff  109 Oct 19 20:56 /Users/aa/.claude/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+lrwxr-xr-x@ 1 aa  staff   78 Oct 19 20:56 /Users/aa/.local/bin/lmdesk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin/lmdesk

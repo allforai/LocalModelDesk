@@ -1,0 +1,35 @@
+{
+ "state_id": "running-other-session-new-empty",
+ "viewport": {
+  "name": "narrow",
+  "width": 900,
+  "height": 700
+ },
+ "url": "http://127.0.0.1:55587/#tab=image",
+ "session_ids": [
+  "f8e3d644edc840f8a38fcbf5b7ea18fb",
+  "618904483268496d87c720d08ffb5cd3"
+ ],
+ "dom_checks": {
+  "seed_word_in_main_flow": false,
+  "seed_texts": [],
+  "blank_images": 0,
+  "blank_srcs": [],
+  "horizontal_scroll": false,
+  "clipped_buttons": [],
+  "clipped_titles": [],
+  "overlaps": [],
+  "outside_viewport": 0,
+  "foreign_panes": false
+ },
+ "served_by": {
+  "host": "http://127.0.0.1:55587",
+  "process": "desk.testing.launch_test_harness",
+  "mock_layers": [
+   "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+   "FakeLlmBackend",
+   "FakeMemoryReader",
+   "FixedClock"
+  ]
+ }
+}

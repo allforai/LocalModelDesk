@@ -1,0 +1,125 @@
+{
+ "node_id": "image-session-ship",
+ "requirement_ref": {
+  "path": ".allforai/bootstrap/local-requirements.json",
+  "id": "image-sessions",
+  "revision": 1
+ },
+ "status": "passed",
+ "status_reason": "The dist/LocalModelDesk.app was rebuilt and signed with the same Developer ID (team B49F324XWZ). codesign verify --deep --strict passes. The old idle instance was quit by pid and the new one started from dist. The new service returns HTTP 200 for /api/image-sessions. The chat session count was 15 before and 15 after. The image tab shows the session UI.",
+ "must_read": {
+  "image-sessions-verify": "passed (user accepted the remaining minor gaps: accepted_with_gaps in assumed-decisions.json)",
+  "repair_report": ".allforai/image-sessions/repair-report.json status passed"
+ },
+ "idle_check": {
+  "endpoint": "http://127.0.0.1:8766/api/state",
+  "result": {
+   "holders": [],
+   "media_busy": false
+  },
+  "media_job": "job 1 status done",
+  "llm": "not loaded (no chat stream)",
+  "downloads_in_flight": 0,
+  "evidence": ".allforai/image-sessions/evidence/ship/old-state.json"
+ },
+ "scratch_verify_bundle_instances": "none running",
+ "build": {
+  "command": [
+   "bash",
+   "scripts/build-app.sh",
+   "--identity",
+   "Developer ID Application: SUPERSTRING TECH K.K. (B49F324XWZ)"
+  ],
+  "exit_code": 0,
+  "evidence": ".allforai/image-sessions/evidence/ship/build-app.json",
+  "staging_then_swap": true,
+  "built_at": "2026-09-24T19:58 local (signature timestamp 2026-09-24 19:53:44)",
+  "notarized": false
+ },
+ "signature": {
+  "identity": "Developer ID Application: SUPERSTRING TECH K.K. (B49F324XWZ)",
+  "team_before": "B49F324XWZ",
+  "team_after": "B49F324XWZ",
+  "codesign_dv": [
+   "Identifier=com.aa.localmodeldesk",
+   "Authority=Developer ID Application: SUPERSTRING TECH K.K. (B49F324XWZ)",
+   "Authority=Developer ID Certification Authority",
+   "Authority=Apple Root CA",
+   "Timestamp=Sep 24, 2026 at 19:53:44",
+   "TeamIdentifier=B49F324XWZ",
+   "Runtime Version=27.0.0"
+  ],
+  "verify_deep_strict_exit": 0,
+  "evidence": [
+   ".allforai/image-sessions/evidence/ship/codesign-dv.json",
+   ".allforai/image-sessions/evidence/ship/codesign-verify.json"
+  ]
+ },
+ "processes": {
+  "old": {
+   "shell_pid": 11404,
+   "service_pid": 11409,
+   "quit": "JXA NSRunningApplication(pid 11404).terminate; both pids gone within ~1s"
+  },
+  "new": {
+   "shell_pid": 60372,
+   "service_pid": 60379,
+   "started": "2026-09-24 19:59:18",
+   "listen": "127.0.0.1:8766"
+  }
+ },
+ "chat_sessions": {
+  "before": 15,
+  "after": 15,
+  "unchanged": true,
+  "evidence": [
+   ".allforai/image-sessions/evidence/ship/old-sessions.json",
+   ".allforai/image-sessions/evidence/ship/new-sessions.json"
+  ]
+ },
+ "real_api": {
+  "request": "GET http://127.0.0.1:8766/api/image-sessions",
+  "response_at_launch": "[]\nHTTP 200",
+  "response_after_opening_image_tab": [
+   {
+    "id": "90c95397688940d798ec0ef965158e21",
+    "title": "新会话",
+    "created": "2026-09-24T19:59:54",
+    "updated": "2026-09-24T19:59:54",
+    "attempt_count": 0,
+    "running": false,
+    "cover": null
+   }
+  ],
+  "served_by": {
+   "host": "127.0.0.1",
+   "process": "dist/LocalModelDesk.app service pid 60379",
+   "mock_layers": []
+  },
+  "evidence": [
+   ".allforai/image-sessions/evidence/ship/new-image-sessions.json",
+   ".allforai/image-sessions/evidence/ship/new-image-sessions-after-tab.json"
+  ]
+ },
+ "screenshots": [
+  {
+   "path": ".allforai/image-sessions/evidence/ship/app-initial.png",
+   "shows": "The new app window opens on the chat tab, with the existing chat sessions in the list"
+  },
+  {
+   "path": ".allforai/image-sessions/evidence/ship/app-image-tab.png",
+   "shows": "The image tab shows the session list (新会话 button and the card '新会话 · 0 次生成 · 19:59'), the empty state that explains 在这张基础上改 and 换个构图, the prompt box, the 生成图片 button and 高级参数. Nothing is clipped or covered."
+  }
+ ],
+ "observations": [
+  "The first time the image tab opened on the user's real data (no image sessions yet), the pane created and saved an empty session named '新会话'. This is expected product behavior, and the session was left in place."
+ ],
+ "failure_codes": [],
+ "effect_verification": {
+  "real-run": ".allforai/image-sessions/evidence/ship/build-app.json",
+  "real-api": ".allforai/image-sessions/evidence/ship/new-image-sessions.json",
+  "screenshot": ".allforai/image-sessions/evidence/ship/app-image-tab.png",
+  "downstream_effect_owner": "image-session-verify (it proved the full generation and session acceptance with the real model); this node proves only that the shipped bundle serves the feature"
+ },
+ "source_files_modified": []
+}

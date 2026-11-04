@@ -1,0 +1,1 @@
+(e) empty --lyrics-file not run. media.py _check_music: bool(args.lyrics)==bool(args.lyrics_file) uses the file PATH string (truthy), so the check passes; read_text("") returns "" with no further check client-side, then body lyrics="" would be submitted. Looked like a real submit, so not sent.

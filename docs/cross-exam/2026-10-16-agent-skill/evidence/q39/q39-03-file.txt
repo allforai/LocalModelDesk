@@ -1,0 +1,17 @@
+File:           /Users/aa/LocalModelDesk/docs/cross-exam/2026-10-16-agent-skill/evidence/q39/proj/assets/bgm.wav
+File type ID:   WAVE
+Num Tracks:     1
+----
+Data format:     2 ch,  44100 Hz, Int16, interleaved
+                no channel layout.
+estimated duration: 15.000091 sec
+audio bytes: 2646016
+audio packets: 661504
+bit rate: 1411200 bits per second
+packet size upper bound: 4
+maximum packet size: 4
+audio data file offset: 44
+optimized
+source bit depth: I16
+----
+/Users/aa/LocalModelDesk/docs/cross-exam/2026-10-16-agent-skill/evidence/q39/proj/assets/bgm.wav: RIFF (little-endian) data, WAVE audio, Microsoft PCM, 16 bit, stereo 44100 Hz

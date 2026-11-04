@@ -1,0 +1,27 @@
+== /Users/aa/.claude/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+119966710 lrwxr-xr-x@ 1 aa  staff  109 Oct 19 20:56 /Users/aa/.claude/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+== /Users/aa/.agents/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+119966822 lrwxr-xr-x@ 1 aa  staff  109 Oct 19 20:57 /Users/aa/.agents/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+== /Users/aa/.pi/agent/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+119966823 lrwxr-xr-x@ 1 aa  staff  109 Oct 19 20:57 /Users/aa/.pi/agent/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+== /Users/aa/.local/bin/lmdesk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin/lmdesk
+119966711 lrwxr-xr-x@ 1 aa  staff  78 Oct 19 20:56 /Users/aa/.local/bin/lmdesk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin/lmdesk
+-- /Users/aa/.claude/skills/local-model-desk/SKILL.md
+inode=118632863 mtime=Oct 16 04:37:57 2026
+1b6604e0a5af2ce4fa24405e294e2eaee0ce0db749e291f4bdcc17081948ba99  /Users/aa/.claude/skills/local-model-desk/SKILL.md
+-- /Users/aa/.agents/skills/local-model-desk/SKILL.md
+inode=118632863 mtime=Oct 16 04:37:57 2026
+1b6604e0a5af2ce4fa24405e294e2eaee0ce0db749e291f4bdcc17081948ba99  /Users/aa/.agents/skills/local-model-desk/SKILL.md
+-- /Users/aa/.pi/agent/skills/local-model-desk/SKILL.md
+inode=118632863 mtime=Oct 16 04:37:57 2026
+1b6604e0a5af2ce4fa24405e294e2eaee0ce0db749e291f4bdcc17081948ba99  /Users/aa/.pi/agent/skills/local-model-desk/SKILL.md
+-- /Users/aa/.local/bin/lmdesk
+inode=119966711 mtime=Oct 19 20:56:59 2026
+bc98fd5f860646acbeceaffa3d6b157e6dcdcd15b2179e4f0b10ffd08d82b78a  /Users/aa/.local/bin/lmdesk
+-- bundle.json
+{"app": "LocalModelDesk", "bundle_version": "1.0.0", "python": "python/bin/python3.13"}
+dist/LocalModelDesk.app/Contents/Resources/bundle.json
+-- Resources inode
+inode=118632793 mtime=Oct 16 05:02:01 2026
+118632790 dist/LocalModelDesk.app
+118632793 dist/LocalModelDesk.app/Contents/Resources

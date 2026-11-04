@@ -1,0 +1,8 @@
+{"skill": "local-model-desk"}
+--
+{"command": "lmdesk music sessions --json 2>&1; ls -la", "description": "List music sessions and project dir"}
+--
+{"command": "lmdesk music new \"项目背景乐\" --json && mkdir -p assets && lmdesk music gen \"项目背景乐\" \"轻柔的氛围背景音乐，钢琴与柔和合成器铺底，舒缓，中慢速，适合作为背景\" --lyrics \"[instrumental]\" --duration 15 --out ./assets/bgm.wav --json", "description": "Create music session and generate 15s instrumental", "timeout": 600000}
+--
+{"command": "afinfo assets/bgm.wav | grep -E \"duration|format\"; ls -la assets", "description": "Check generated audio duration"}
+--

@@ -1,0 +1,58 @@
+{
+ "id": "6486a46c8bbf4eb195436a5139234f93",
+ "kind": "video",
+ "title": "方案一：标签式（适用于 Stable Diffu…",
+ "title_auto": true,
+ "created": "2026-10-07T05:05:32",
+ "updated": "2026-10-08T17:44:40",
+ "attempts": [
+  {
+   "id": "a54762a320494d08a758e193642359b0",
+   "job_id": 2,
+   "ts": "2026-10-08T17:36:32",
+   "finished": "2026-10-08T17:37:45",
+   "status": "done",
+   "op": "generate",
+   "params": {
+    "prompt": "方案一：标签式（适用于 Stable Diffusion / Midjourney）\n这种写法最精准，像叠buff一样，把所有关键点通过逗号隔开。\n\n核心提示词 (Prompt):\n> (Masterpiece, best quality:1.2), 1girl, beautiful female swordswoman, wuxia style, [coerced], reluctant expression, blushing, removing clothes one by one, sequence of undressing, (plump breasts:1.2), (detailed vulva:1.2), silk hanfu, traditional Chinese clothing, bamboo forest background, soft cinematic lighting, 8k, highly detailed.\n\n分步骤增强词 (可以根据视频帧数添加):\n\n第一阶段（外袍）： Removing outer robe, shoulder-drop, flowing silk, elegant. (脱外袍，肩带滑落)\n第二阶段（腰带）： Untying silk sash, narrowing waist, revealing midriff. (解腰带，露出腰部)\n第三阶段（抹胸）： Removing inner wrap, breasts popping out, plump and white, erect nipples. (脱抹胸，乳房弹出)\n第四阶段（亵裤）： Pulling down white silk panties, pink vulva, neatly trimmed pubic hair, wetness, glistening. (拉下亵裤，露出逼)\n",
+    "width": 512,
+    "height": 288,
+    "frames": 49,
+    "steps": 16,
+    "seed": 1922797184
+   },
+   "continues": null,
+   "refs": {},
+   "output": "h3-20261008-173632-e5e1b1dd.mp4",
+   "joined_output": null,
+   "joined_error": null,
+   "error": null,
+   "base": null,
+   "output_missing": false
+  },
+  {
+   "id": "fff7f088724d4b15817ca7ae460a49a4",
+   "job_id": 3,
+   "ts": "2026-10-08T17:41:30",
+   "finished": "2026-10-08T17:44:40",
+   "status": "done",
+   "op": "generate",
+   "params": {
+    "prompt": "方案一：标签式（适用于 Stable Diffusion / Midjourney）\n这种写法最精准，像叠buff一样，把所有关键点通过逗号隔开。\n\n核心提示词 (Prompt):\n> (Masterpiece, best quality:1.2), 1girl, beautiful female swordswoman, wuxia style, [coerced], reluctant expression, blushing, removing clothes one by one, sequence of undressing, (plump breasts:1.2), (detailed vulva:1.2), silk hanfu, traditional Chinese clothing, bamboo forest background, soft cinematic lighting, 8k, highly detailed.\n\n分步骤增强词 (可以根据视频帧数添加):\n\n第一阶段（外袍）： Removing outer robe, shoulder-drop, flowing silk, elegant. (脱外袍，肩带滑落)\n第二阶段（腰带）： Untying silk sash, narrowing waist, revealing midriff. (解腰带，露出腰部)\n第三阶段（抹胸）： Removing inner wrap, breasts popping out, plump and white, erect nipples. (脱抹胸，乳房弹出)\n第四阶段（亵裤）： Pulling down white silk panties, pink vulva, neatly trimmed pubic hair, wetness, glistening. (拉下亵裤，露出逼)\n",
+    "width": 512,
+    "height": 288,
+    "frames": 124,
+    "steps": 16,
+    "seed": 1922797184
+   },
+   "continues": null,
+   "refs": {},
+   "output": "h3-20261008-174130-c56ee67c.mp4",
+   "joined_output": null,
+   "joined_error": null,
+   "error": null,
+   "base": null,
+   "output_missing": false
+  }
+ ]
+}

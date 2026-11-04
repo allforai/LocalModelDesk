@@ -1,0 +1,9 @@
+E       AssertionError: ('after shrinking the window to 900×620', 'expanded 大图 shrunk below 192px', {'bottom': 350.796875, 'height': 96, 'left...840, ...}, 'image': {'bottom': 350.796875, 'height': 96, 'left': 329, 'right': 425, ...}, 'image_complete': True, ...})
+E           AssertionError: ('wide: last attempt after it settled', 'expanded card repeats the header thumbnail above its large image', {'buttons'...20, ...}, 'image': {'bottom': 530.796875, 'height': 247, 'left': 329, 'right': 576, ...}, 'image_complete': True, ...})
+E               AssertionError: ('wide', 'title cut beside 生成中 while buttons are hidden', {'actions_width': 74, 'client': 80, 'gap': 0, 'scroll': 84, ...})
+E           AssertionError: Locator expected to have count '0'
+FAILED tests/e2e/test_image_sessions.py::test_action_buttons_of_the_settled_attempt_are_in_view_at_900x700
+FAILED tests/e2e/test_image_sessions.py::test_selected_attempt_with_a_full_size_image_shows_header_image_and_actions_together
+FAILED tests/e2e/test_image_sessions.py::test_session_list_gives_the_running_title_its_room_and_spaces_the_new_button
+FAILED tests/e2e/test_image_flow.py::test_three_rounds_refine_keep_order_seed_and_recompose
+4 failed, 3 passed, 19 deselected in 28.25s

@@ -1,0 +1,212 @@
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260904-160546.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260906-031805.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=362
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=473
+format|duration=15.083344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260906-203355.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260906-204148.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260906-204902.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260906-210125.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260907-032735.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260907-055045.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260908-015752.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260908-022333.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260908-023007.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260908-023614.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260908-023959.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260908-024310.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260908-025401.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260908-025928.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260908-032545.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260908-104739.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260908-105519.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260914-012538.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260914-012729.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260914-020346.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260914-023335.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260922-135316.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260922-135724.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260922-145846.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260922-233321.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20260929-185336-abacd483.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=124
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=163
+format|duration=5.166667
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261008-173632-e5e1b1dd.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261008-174130-c56ee67c.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=124
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=163
+format|duration=5.166667
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261008-183349-41fe701d.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261008-185057-df49b783.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261008-191432-b3e4e943.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261008-191645-1f3dcd59.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261008-220003-abae9ad0.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261008-220217-887d1367.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261008-220329-4f757589.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261014-165932-9c86073f.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261014-170725-cc971305.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261015-044910-7a4d23b1.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=192
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=251
+format|duration=8.000000
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261016-050552-877f99ab.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261016-050738-f9ef2518.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261019-185049-cd931bf9.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261019-185657-9dd47de6.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261019-190152-7d5e09ff.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=56
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=74
+format|duration=2.333344
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-compose-20261016-050938-c7eb20d5.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=111
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=218
+format|duration=4.625042
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-compose-20261019-184007-1e42e415.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=111
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=218
+format|duration=4.625042
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-joined-20261008-191801-c39728df.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=111
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=218
+format|duration=4.625042
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-joined-20261008-220244-f1747b8c.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=111
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=218
+format|duration=4.625042
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-joined-20261008-220358-d12da778.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=166
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=326
+format|duration=6.916729
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-joined-20261016-050936-93324baa.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=111
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=218
+format|duration=4.625042
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-joined-20261019-190502-c51fee9b.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=111
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=218
+format|duration=4.625042
+/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-soundtrack-20261008-191900-3a522865.mp4
+stream|codec_type=video|r_frame_rate=24/1|nb_frames=111
+stream|codec_type=audio|r_frame_rate=0/0|nb_frames=200
+format|duration=4.625000

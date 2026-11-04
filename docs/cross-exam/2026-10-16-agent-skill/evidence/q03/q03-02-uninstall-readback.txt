@@ -1,0 +1,56 @@
+# 02 readback
+--- ls -la $HOME/.claude/skills
+total 0
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 ..
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 local-model-desk
+--- ls -la $HOME/.agents/skills
+total 0
+drwxr-xr-x@ 2 aa  staff  64 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 ..
+--- ls -la $HOME/.pi/agent/skills
+total 0
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 ..
+lrwxr-xr-x@ 1 aa  staff  63 Oct 16 15:10 local-model-desk -> /var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.Bgc49rroAg
+--- ls -la $HOME/.dsh/skills
+total 0
+drwxr-xr-x@ 2 aa  staff  64 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 ..
+--- ls -la $HOME/.local/bin
+total 8
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 ..
+-rw-r--r--@ 1 aa  staff  20 Oct 16 15:10 lmdesk
+--- real dir files
+total 8
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 ..
+-rw-r--r--@ 1 aa  staff  24 Oct 16 15:10 mine.txt
+REAL-SKILL-FILE-CONTENT
+--- lmdesk content
+REAL-LMDESK-CONTENT
+--- unrelated target
+total 8
+drwx------@    3 aa  staff      96 Oct 16 15:10 .
+drwx------@ 5677 aa  staff  181664 Oct 16 15:10 ..
+-rw-r--r--@    1 aa  staff      10 Oct 16 15:10 x.txt
+--- find all under HOME
+.
+./.agents
+./.agents/skills
+./.claude
+./.claude/skills
+./.claude/skills/local-model-desk
+./.claude/skills/local-model-desk/mine.txt
+./.dsh
+./.dsh/skills
+./.local
+./.local/bin
+./.local/bin/lmdesk
+./.pi
+./.pi/agent
+./.pi/agent/skills
+./.pi/agent/skills/local-model-desk
+06eba674183b9767fa3d40d0e00b80e9384f0284  /var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.ImUjLpOtz7/.claude/skills/local-model-desk/mine.txt
+3402097624c55e16e221af5759610e12d9bbfa43  /var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.ImUjLpOtz7/.local/bin/lmdesk

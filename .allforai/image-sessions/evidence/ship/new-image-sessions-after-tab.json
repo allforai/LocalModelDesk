@@ -1,0 +1,13 @@
+{
+  "schema": "capture_evidence/v1",
+  "command": [
+    "curl",
+    "-s",
+    "-m5",
+    "http://127.0.0.1:8766/api/image-sessions"
+  ],
+  "exit_code": 0,
+  "stdout": "[{\"id\": \"90c95397688940d798ec0ef965158e21\", \"title\": \"\u65b0\u4f1a\u8bdd\", \"created\": \"2026-09-24T19:59:54\", \"updated\": \"2026-09-24T19:59:54\", \"attempt_count\": 0, \"running\": false, \"cover\": null}]",
+  "stderr": "",
+  "stdout_sha256": "367587ad7752c574442a74b96c92ffef3b7ac4a8fd78415a274b159c4808607a"
+}

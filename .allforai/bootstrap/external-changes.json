@@ -1,0 +1,230 @@
+{
+  "changes": {
+    "05097ce4f82f122ec0644af490f32e499ee7ff06bec583516febefca467490a0": {
+      "baseline_version": 1,
+      "change_id": "05097ce4f82f122ec0644af490f32e499ee7ff06bec583516febefca467490a0",
+      "classification": "product-conflict",
+      "classification_basis": "b7495fa98676234e36178df96271cf5df3baa8cacc2efd942be32a89133600f2",
+      "files": {
+        ".allforai/visual-qa/visual-acceptance-criteria.json": "changed",
+        ".allforai/visual-qa/visual-acceptance-criteria.md": "changed",
+        "docs/superpowers/specs/2026-09-24-image-sessions-design.md": "changed"
+      },
+      "impact": {
+        "acceptance": [
+          ".allforai/image-sessions/pane-report.json"
+        ],
+        "documents": [],
+        "facts": [
+          ".allforai/visual-qa/visual-acceptance-criteria.json",
+          ".allforai/visual-qa/visual-acceptance-criteria.md",
+          "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+        ],
+        "product_decisions": [
+          ".allforai/bootstrap/local-requirements.json#image-sessions"
+        ],
+        "tasks": [
+          "image-session-pane",
+          "image-session-repair",
+          "image-session-ship",
+          "image-session-verify"
+        ]
+      },
+      "node_id": "image-session-pane",
+      "requirement_binding": {
+        ".allforai/bootstrap/local-requirements.json#image-sessions": "d34bc472f94478a1087ca26ac09a6c62b8f9483cda57f9ae8d6c6c34a558309c"
+      },
+      "resolution": null,
+      "verification": {
+        "command": [
+          "python3",
+          ".allforai/image-sessions/verify_pane.py"
+        ],
+        "returncode": 1,
+        "stderr": "",
+        "stdout": "FAIL: consumer desk/static/js/panes/image.js:41 does not contain 'availability({'\n"
+      }
+    },
+    "8b4e88c0ea79127b66112a62a3c7376b03dd14929202d9a11c0a8354297a1e52": {
+      "baseline_version": 1,
+      "change_id": "8b4e88c0ea79127b66112a62a3c7376b03dd14929202d9a11c0a8354297a1e52",
+      "classification": "fact-update",
+      "classification_basis": "9328c2284d7c30a58f3c17f531e0c07d2ded3946e56e92478016dd1a03fad7a3",
+      "files": {
+        ".allforai/visual-qa/visual-acceptance-criteria.json": "changed",
+        ".allforai/visual-qa/visual-acceptance-criteria.md": "changed"
+      },
+      "impact": {
+        "acceptance": [
+          ".allforai/image-sessions/backend-report.json"
+        ],
+        "documents": [],
+        "facts": [
+          ".allforai/visual-qa/visual-acceptance-criteria.json",
+          ".allforai/visual-qa/visual-acceptance-criteria.md"
+        ],
+        "product_decisions": [
+          ".allforai/bootstrap/local-requirements.json#image-sessions"
+        ],
+        "tasks": [
+          "image-session-backend",
+          "image-session-pane",
+          "image-session-repair",
+          "image-session-ship",
+          "image-session-verify"
+        ]
+      },
+      "node_id": "image-session-backend",
+      "requirement_binding": {
+        ".allforai/bootstrap/local-requirements.json#image-sessions": "d34bc472f94478a1087ca26ac09a6c62b8f9483cda57f9ae8d6c6c34a558309c"
+      },
+      "resolution": null,
+      "verification": {
+        "command": [
+          "python3",
+          ".allforai/image-sessions/verify_backend.py"
+        ],
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "........................................................................ [ 47%]\n........................................................................ [ 94%]\n........                                                                 [100%]\n152 passed in 3.83s\n\n{\"result\": \"ok\", \"session_id\": \"705a51de6f7045b7806a9b17bf43d605\", \"outputs\": [\"qwen-image-20250831-092640-6429d7c5.png\", \"qwen-image-20250831-092640-5e909b7e.png\"], \"attempt_statuses\": [\"done\", \"done\", \"cancelled\"]}\nOK\n"
+      }
+    },
+    "8facaebeeb57c630c7ec8d16af5fef6509d94b6937f3b2340960eb1940c3b5cc": {
+      "baseline_version": 1,
+      "change_id": "8facaebeeb57c630c7ec8d16af5fef6509d94b6937f3b2340960eb1940c3b5cc",
+      "classification": "fact-update",
+      "classification_basis": "b9d088aaa26f433cb946c320b8b320dd48895eece926acd6c24a350c7773c45c",
+      "files": {
+        ".allforai/visual-qa/visual-acceptance-criteria.json": "changed",
+        ".allforai/visual-qa/visual-acceptance-criteria.md": "changed"
+      },
+      "impact": {
+        "acceptance": [
+          ".allforai/image-sessions/pane-report.json"
+        ],
+        "documents": [],
+        "facts": [
+          ".allforai/visual-qa/visual-acceptance-criteria.json",
+          ".allforai/visual-qa/visual-acceptance-criteria.md"
+        ],
+        "product_decisions": [
+          ".allforai/bootstrap/local-requirements.json#image-sessions"
+        ],
+        "tasks": [
+          "image-session-pane",
+          "image-session-repair",
+          "image-session-ship",
+          "image-session-verify"
+        ]
+      },
+      "node_id": "image-session-pane",
+      "requirement_binding": {
+        ".allforai/bootstrap/local-requirements.json#image-sessions": "d34bc472f94478a1087ca26ac09a6c62b8f9483cda57f9ae8d6c6c34a558309c"
+      },
+      "resolution": null,
+      "verification": {
+        "command": [
+          "python3",
+          ".allforai/image-sessions/verify_pane.py"
+        ],
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "s)\n\u2714 confirmDialog \u6e32\u67d3\u6587\u6848\uff0c\u786e\u8ba4\u6216\u53d6\u6d88\u540e\u79fb\u9664\u5f39\u5c42\u5e76\u8fd4\u56de\u9009\u62e9 (0.397209ms)\n\u2714 statusbar \u5199 data-ok \u5e76\u6362\u56fe\u6807\uff08F1\uff09 (0.154584ms)\n\u2139 tests 322\n\u2139 suites 0\n\u2139 pass 322\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 400.766667\n\n............                                                             [100%]\n12 passed in 31.91s\n\nOK\n"
+      }
+    },
+    "e5f5b6b84b0f940ac2192791ccfb3b04448b0d6b5d3c220cb9317ed9ed6f8cd1": {
+      "baseline_version": 1,
+      "change_id": "e5f5b6b84b0f940ac2192791ccfb3b04448b0d6b5d3c220cb9317ed9ed6f8cd1",
+      "classification": "fact-update",
+      "classification_basis": "591f16377fc39c33cb4c4cdfd194c6e2dc3f11b580c3bc779fccf3054608cae5",
+      "files": {
+        ".allforai/visual-qa/visual-acceptance-criteria.json": "changed",
+        ".allforai/visual-qa/visual-acceptance-criteria.md": "changed",
+        "docs/superpowers/specs/2026-09-24-image-sessions-design.md": "changed"
+      },
+      "impact": {
+        "acceptance": [
+          ".allforai/image-sessions/backend-report.json"
+        ],
+        "documents": [],
+        "facts": [
+          ".allforai/visual-qa/visual-acceptance-criteria.json",
+          ".allforai/visual-qa/visual-acceptance-criteria.md",
+          "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+        ],
+        "product_decisions": [
+          ".allforai/bootstrap/local-requirements.json#image-sessions"
+        ],
+        "tasks": [
+          "image-session-backend",
+          "image-session-pane",
+          "image-session-repair",
+          "image-session-ship",
+          "image-session-verify"
+        ]
+      },
+      "node_id": "image-session-backend",
+      "requirement_binding": {
+        ".allforai/bootstrap/local-requirements.json#image-sessions": "d34bc472f94478a1087ca26ac09a6c62b8f9483cda57f9ae8d6c6c34a558309c"
+      },
+      "resolution": null,
+      "verification": {
+        "command": [
+          "python3",
+          ".allforai/image-sessions/verify_backend.py"
+        ],
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "........................................................................ [ 47%]\n........................................................................ [ 94%]\n........                                                                 [100%]\n152 passed in 3.76s\n\n{\"result\": \"ok\", \"session_id\": \"343245345ee84332bad2936d62b70cb3\", \"outputs\": [\"qwen-image-20250831-092640-c67155a4.png\", \"qwen-image-20250831-092640-5656408a.png\"], \"attempt_statuses\": [\"done\", \"done\", \"cancelled\"]}\nOK\n"
+      }
+    },
+    "f598fb06c6cc220e6a716c5250cc31d073f3de7779ad5f3db6e8906091641303": {
+      "baseline_version": 1,
+      "change_id": "f598fb06c6cc220e6a716c5250cc31d073f3de7779ad5f3db6e8906091641303",
+      "classification": "fact-update",
+      "classification_basis": "b7495fa98676234e36178df96271cf5df3baa8cacc2efd942be32a89133600f2",
+      "files": {
+        ".allforai/image-sessions/verify_pane.py": "changed",
+        ".allforai/visual-qa/visual-acceptance-criteria.json": "changed",
+        ".allforai/visual-qa/visual-acceptance-criteria.md": "changed",
+        "docs/superpowers/specs/2026-09-24-image-sessions-design.md": "changed"
+      },
+      "impact": {
+        "acceptance": [
+          ".allforai/image-sessions/pane-report.json"
+        ],
+        "documents": [],
+        "facts": [
+          ".allforai/image-sessions/verify_pane.py",
+          ".allforai/visual-qa/visual-acceptance-criteria.json",
+          ".allforai/visual-qa/visual-acceptance-criteria.md",
+          "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+        ],
+        "product_decisions": [
+          ".allforai/bootstrap/local-requirements.json#image-sessions"
+        ],
+        "tasks": [
+          "image-session-pane",
+          "image-session-repair",
+          "image-session-ship",
+          "image-session-verify"
+        ]
+      },
+      "node_id": "image-session-pane",
+      "requirement_binding": {
+        ".allforai/bootstrap/local-requirements.json#image-sessions": "d34bc472f94478a1087ca26ac09a6c62b8f9483cda57f9ae8d6c6c34a558309c"
+      },
+      "resolution": null,
+      "verification": {
+        "command": [
+          "python3",
+          ".allforai/image-sessions/verify_pane.py"
+        ],
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "ms)\n\u2714 confirmDialog \u6e32\u67d3\u6587\u6848\uff0c\u786e\u8ba4\u6216\u53d6\u6d88\u540e\u79fb\u9664\u5f39\u5c42\u5e76\u8fd4\u56de\u9009\u62e9 (0.220209ms)\n\u2714 statusbar \u5199 data-ok \u5e76\u6362\u56fe\u6807\uff08F1\uff09 (0.11675ms)\n\u2139 tests 321\n\u2139 suites 0\n\u2139 pass 321\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 372.281375\n\n............                                                             [100%]\n12 passed in 32.84s\n\nOK\n"
+      }
+    }
+  },
+  "schema_version": "1.0"
+}

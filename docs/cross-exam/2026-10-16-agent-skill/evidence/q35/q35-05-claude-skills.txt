@@ -1,0 +1,110 @@
+共 82 个，按来源分组：
+
+**项目 / 本地**
+- local-model-desk
+- run
+- collaborating-with-codex
+- collaborating-with-gemini
+- computer-use
+- find-skills
+- orca-cli
+- orchestration
+
+**superpowers**
+- brainstorming
+- diagnosing-superpowers
+- dispatching-parallel-agents
+- executing-plans
+- finishing-a-development-branch
+- receiving-code-review
+- requesting-code-review
+- subagent-driven-development
+- systematic-debugging
+- test-driven-development
+- using-git-worktrees
+- using-superpowers
+- verification-before-completion
+- writing-plans
+- writing-skills
+
+**mattpocock-skills**
+- diagnosing-bugs
+- tdd
+- prototype
+- research
+- domain-modeling
+- codebase-design
+- code-review
+- pr
+- wizard
+- grilling
+- writing-for-agents
+
+**只能由你手动调用**
+- grillstorm:grillstorm
+- superstorm:cross-exam
+- superstorm:keep-code-simple
+- superstorm:product-review
+- superstorm:superstorm
+- meta-skill:bootstrap
+- meta-skill:setup
+
+**codex**
+- codex:rescue
+- codex:setup
+- codex:codex-cli-runtime（内部）
+- codex:codex-result-handling（内部）
+- codex:gpt-5-4-prompting（内部）
+
+**ralph-loop**
+- ralph-loop:ralph-loop
+- ralph-loop:cancel-ralph
+- ralph-loop:help
+
+**chrome-devtools-mcp**
+- a11y-debugging
+- chrome-devtools
+- chrome-devtools-cli
+- cookie-debugging
+- debug-optimize-lcp
+- memory-leak-debugging
+- troubleshooting
+
+**jev**
+- jev:classify
+- jev:code-scan
+
+**其他插件**
+- frontend-design:frontend-design
+- skill-creator:skill-creator
+
+**Claude Code 内置**
+- code-review
+- simplify
+- security-review
+- init
+- loop
+- schedule
+- update-config
+- keybindings-help
+- fewer-permission-prompts
+- claude-api
+- dataviz
+- workflow-authoring
+- plugin-authoring
+
+**anthropic-skills**
+- built-in-browser
+- chrome-browser
+- computer-use
+- deep-research
+- docs
+- docx
+- google-workspace
+- import-memory
+- morning
+- pdf
+- pptx
+- skill-creator
+- xlsx
+exit=0

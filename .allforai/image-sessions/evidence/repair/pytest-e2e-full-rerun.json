@@ -1,0 +1,16 @@
+{
+ "schema": "capture_evidence/v1",
+ "command": [
+  "python3",
+  "-m",
+  "pytest",
+  "tests/e2e",
+  "-q"
+ ],
+ "exit_code": 0,
+ "duration_s": 159.5,
+ "stdout_tail": "........................................................................ [ 78%]\n....................                                                     [100%]\n92 passed in 158.28s (0:02:38)",
+ "stderr_tail": "",
+ "stdout_sha256": "86c24b2e97aa0bda91db1902e6fa2c405aebbf6f5908403278c3051a5c2ecce6",
+ "captured_at": "2026-09-24T06:20:22"
+}

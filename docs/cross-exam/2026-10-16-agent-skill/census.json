@@ -1,0 +1,298 @@
+{
+ "surfaces": [
+  {
+   "id": "S1",
+   "name": "lmdesk entry point and global parsing (prog=lmdesk; exit codes 0/1/2/3/4/5/6; SIGINT/SIGTERM become Interrupted; with --json a usage error prints {\"error\":{\"code\":\"usage\"}} to stdout; when CLI and desk versions differ, a warning goes to stderr)",
+   "entry": "desk/agent_cli/cli.py:main / _parser; desk/agent_cli/__main__.py; desk/agent_cli/errors.py:3"
+  },
+  {
+   "id": "S2",
+   "name": "Options shared by every leaf subcommand: --json, --timeout (default 1800s)",
+   "entry": "desk/agent_cli/cli.py:_parser common"
+  },
+  {
+   "id": "S3",
+   "name": "lmdesk status",
+   "entry": "desk/agent_cli/cli.py:_dispatch → chat.run_status (GET /api/llm/status, /api/media/job, /api/state)"
+  },
+  {
+   "id": "S4",
+   "name": "lmdesk models (text output is tab-separated; --json wraps it as {models:[...]})",
+   "entry": "desk/agent_cli/chat.py:run_models (GET /api/resources/catalog group=chat)"
+  },
+  {
+   "id": "S5",
+   "name": "lmdesk ask <question> [--model] [--system] [--file ... repeatable] [--max-tokens]; also reads stdin when it is not a TTY",
+   "entry": "desk/agent_cli/chat.py:run_ask (GET /api/agent/precheck op=chat; POST /api/llm/load origin=agent; POST /api/llm/chat)"
+  },
+  {
+   "id": "S6",
+   "name": "Decision logic: wait / swap / submit / fail, plus RETRY_CODES",
+   "entry": "desk/agent_cli/decide.py:decide, RETRY_CODES"
+  },
+  {
+   "id": "S7",
+   "name": "Desk discovery: LMD_SHELL_PORT (default 8766); when the connection is refused, starts the enclosing .app hidden with open -gj (waits up to 60s); classifies sandbox errors (EPERM/EACCES → exit 6)",
+   "entry": "desk/agent_cli/discovery.py:connect, port_from_env, app_bundle_of"
+  },
+  {
+   "id": "S8",
+   "name": "HTTP client (GET/POST/PATCH; maps errors to refused / sandbox / other and HttpError)",
+   "entry": "desk/agent_cli/client.py:DeskClient"
+  },
+  {
+   "id": "S9",
+   "name": "Waiter: backoff 2→5s, a progress line on stderr every 15s, overall deadline",
+   "entry": "desk/agent_cli/waiter.py:Waiter"
+  },
+  {
+   "id": "S10",
+   "name": "Version source: bundle.json bundle_version → packaging/VERSION → unknown; environment override LMDESK_FAKE_VERSION",
+   "entry": "desk/agent_cli/version.py:read_version; desk/agent_cli/chat.py:57"
+  },
+  {
+   "id": "S11",
+   "name": "lmdesk image sessions",
+   "entry": "desk/agent_cli/media.py:dispatch sessions (GET /api/media-sessions/image)"
+  },
+  {
+   "id": "S12",
+   "name": "lmdesk image new <name>",
+   "entry": "desk/agent_cli/media.py:dispatch new (POST then PATCH /api/media-sessions/image/{id})"
+  },
+  {
+   "id": "S13",
+   "name": "lmdesk image show <session>",
+   "entry": "desk/agent_cli/media.py:dispatch show"
+  },
+  {
+   "id": "S14",
+   "name": "lmdesk image gen <session> <prompt> [--seed --out --force --no-wait --size(1024x1024) --steps(40) --from --strength(0.6)]",
+   "entry": "desk/agent_cli/media.py:run_gen/_check_image/_build_image (POST /api/media/image)"
+  },
+  {
+   "id": "S15",
+   "name": "lmdesk image wait <session> <attempt> [--out]",
+   "entry": "desk/agent_cli/media.py:dispatch wait → wait_attempt"
+  },
+  {
+   "id": "S16",
+   "name": "lmdesk image rename <session> <name>",
+   "entry": "desk/agent_cli/media.py:dispatch rename"
+  },
+  {
+   "id": "S17",
+   "name": "lmdesk video sessions/new/show/wait/rename",
+   "entry": "desk/agent_cli/media.py:add_parsers kind=video"
+  },
+  {
+   "id": "S18",
+   "name": "lmdesk video gen <session> <prompt> [--seed --out --force --no-wait --size(768x448) --frames(49|73|124|192|243|362, default 124) --steps(16) --continue | --first-frame <file|image:session:attempt>]",
+   "entry": "desk/agent_cli/media.py:_check_video/_build_video/_upload_first_frame (POST /api/media/inputs, /api/media/video, /api/media/inputs/discard on failure)"
+  },
+  {
+   "id": "S19",
+   "name": "lmdesk video join <session> <parts...> [--out --no-wait] (at least 2 parts)",
+   "entry": "desk/agent_cli/media.py:run_join (POST /api/media/compose)"
+  },
+  {
+   "id": "S20",
+   "name": "lmdesk music sessions/new/show/wait/rename",
+   "entry": "desk/agent_cli/media.py:add_parsers kind=music"
+  },
+  {
+   "id": "S21",
+   "name": "lmdesk music gen <session> <prompt> [--seed --out --force --no-wait --lyrics | --lyrics-file (exactly one required) --duration(60) --continue]",
+   "entry": "desk/agent_cli/media.py:_check_music/_build_music (POST /api/media/music)"
+  },
+  {
+   "id": "S22",
+   "name": "lmdesk music join <session> <parts...> [--out --no-wait]",
+   "entry": "desk/agent_cli/media.py:run_join"
+  },
+  {
+   "id": "S23",
+   "name": "Interrupt and resume during generation: SIGINT cancels the job (POST /api/media/cancel {job_id}); SIGTERM, timeout, or desk exit print a resume hint for lmdesk <kind> wait; signals are blocked while the submit request is in flight",
+   "entry": "desk/agent_cli/media.py:_run_job, _hold_signals, _resume_hint"
+  },
+  {
+   "id": "S24",
+   "name": "Copying output with --out (directory or file; prints '已覆盖' when overwriting)",
+   "entry": "desk/agent_cli/media.py:_copy_out"
+  },
+  {
+   "id": "S25",
+   "name": "GET /api/agent/precheck?op=chat|image|video|music (plus model / width,height,steps / frames / duration)",
+   "entry": "desk/agent_skill/routes.py:build_precheck_routes; mounted at desk/runtime.py:158"
+  },
+  {
+   "id": "S26",
+   "name": "GET /api/agent-skill (targets[] + cli link status)",
+   "entry": "desk/agent_skill/routes.py:build_routes get_status"
+  },
+  {
+   "id": "S27",
+   "name": "POST /api/agent-skill {targets:[claude|codex|pi|dsh]} (install selected, uninstall the rest; ~/.local/bin/lmdesk is linked when at least one target is installed)",
+   "entry": "desk/agent_skill/routes.py:post_apply → service.apply → installer.apply"
+  },
+  {
+   "id": "S28",
+   "name": "POST /api/agent-skill/check (runs <cli> status --json --timeout 10)",
+   "entry": "desk/agent_skill/routes.py:post_check → service.check"
+  },
+  {
+   "id": "S29",
+   "name": "Agent skill link states: installed / stale / occupied / absent / error; recognizing our own scripts/lmdesk requires a desk/agent_cli directory beside it",
+   "entry": "desk/agent_skill/installer.py:link_state, _ours"
+  },
+  {
+   "id": "S30",
+   "name": "Agent targets: claude(~/.claude/skills), codex(~/.agents/skills, shared_note), pi(~/.pi/agent/skills), dsh(~/.dsh/skills); detected by command on PATH or by path",
+   "entry": "desk/agent_skill/targets.py:TARGETS"
+  },
+  {
+   "id": "S31",
+   "name": "Bundled SKILL.md (local-model-desk): call conventions, chat, image, video, music, exit codes, examples",
+   "entry": "desk/agent_skill/bundled/local-model-desk/SKILL.md"
+  },
+  {
+   "id": "S32",
+   "name": "user_home() as the single place HOME is read",
+   "entry": "desk/foundation/paths.py:user_home"
+  },
+  {
+   "id": "S33",
+   "name": "GET /api/state adds the fields version and agent_skill_stale",
+   "entry": "desk/runtime.py:162-164; desk/testing/harness.py:251-253"
+  },
+  {
+   "id": "S34",
+   "name": "POST /api/llm/load accepts origin (agent|ui, default ui)",
+   "entry": "desk/llm/routes.py:65 → LlmService.load(origin)"
+  },
+  {
+   "id": "S35",
+   "name": "GET /api/llm/status adds fields active_chats, ui_chat_recent (UI chat within 300s), loaded_by (agent|ui|null)",
+   "entry": "desk/llm/service.py:status, UI_CHAT_RECENT_S"
+  },
+  {
+   "id": "S36",
+   "name": "Chat counting: /api/llm/chat and /api/llm/chat/stream increment and decrement active_chats; requests whose origin is not agent update last_ui_chat",
+   "entry": "desk/llm/service.py:_chat_begin/_chat_end/_counted_stream"
+  },
+  {
+   "id": "S37",
+   "name": "LlmService.precheck_load(key) (dry run of the arbiter, no acquire)",
+   "entry": "desk/llm/service.py:precheck_load"
+  },
+  {
+   "id": "S38",
+   "name": "POST /api/media/inputs/discard {id} (deletes .inputs/<32hex>.<ext>; malformed or unknown ids are a no-op)",
+   "entry": "desk/media/routes.py:93 → MediaService.discard_input → desk/media/inputs.py:discard_input"
+  },
+  {
+   "id": "S39",
+   "name": "POST /api/media/cancel accepts optional job_id (must be an int, else 400 invalid_params; returns 409 job_not_running if the id does not match the running job)",
+   "entry": "desk/media/routes.py:cancel → MediaService._cancel"
+  },
+  {
+   "id": "S40",
+   "name": "MediaService.precheck_image / precheck_media(video|music|image)",
+   "entry": "desk/media/service.py:precheck_image, precheck_media"
+  },
+  {
+   "id": "S41",
+   "name": "Settings page section '本机 agent' (local agents): checkbox per target, Apply (disabled until something changes), Check, cli line, try-it phrase with Copy, error line",
+   "entry": "desk/static/index.html:148 [data-agent-skill]; desk/static/js/panes/agent_skill.js:createAgentSkillSection; desk/static/js/pure/agent_skill.js"
+  },
+  {
+   "id": "S42",
+   "name": "Chat page notice when an agent switches the model (dismissible)",
+   "entry": "desk/static/index.html:13 [data-agent-switch]; desk/static/js/panes/chat.js:renderLlm; desk/static/js/pure/agent_switch.js:agentSwitchNotice"
+  },
+  {
+   "id": "S43",
+   "name": "Frontend API functions agentSkillStatus / agentSkillApply / agentSkillCheck",
+   "entry": "desk/static/js/api.js:86-88"
+  },
+  {
+   "id": "S44",
+   "name": "Styles .agent-skill-* / .agent-switch-notice",
+   "entry": "desk/static/app.css:508-515"
+  },
+  {
+   "id": "S45",
+   "name": "Menu bar: agentSkillStale parsing, a menu item 'agent 链接指向旧位置，打开设置更新' (agent links point at an old location, open Settings to update; clicking opens Settings), and a dot on the status icon",
+   "entry": "macos/ShellStatus.swift:DeskStateSnapshot.parse, agentSkillMenuNote; macos/StatusItemController.swift:agentSkillItem, render, configureStatusButton(dot:)"
+  },
+  {
+   "id": "S46",
+   "name": "Swift harness subcommand agent-skill-note",
+   "entry": "macos/harness/ShellHarness.swift:14"
+  },
+  {
+   "id": "S47",
+   "name": "Packaging: generates Contents/Resources/bin/lmdesk (embedded python3.13 -s -m desk.agent_cli, follows symlinks)",
+   "entry": "scripts/build-app.sh:51-59"
+  },
+  {
+   "id": "S48",
+   "name": "Development entry scripts/lmdesk (LMDESK_PYTHON overrides the interpreter)",
+   "entry": "scripts/lmdesk"
+  },
+  {
+   "id": "S49",
+   "name": "Uninstall removes agent links (~/.claude/skills, ~/.codex/skills, ~/.agents/skills, ~/.pi/agent/skills, ~/.dsh/skills /local-model-desk, ~/.local/bin/lmdesk); only symlinks pointing at our targets; honors --dry-run",
+   "entry": "scripts/uninstall-app.sh:remove_agent_links (called at line ~167)"
+  }
+ ],
+ "dead_contracts": [
+  {
+   "name": "The 'origin':'agent' field the CLI sends in media start, compose and cancel bodies; the media route handlers do not read origin",
+   "entry": "POST /api/media/image|video|music|compose|cancel",
+   "defined_at": "desk/agent_cli/media.py:378,386,358 (sender); desk/media/routes.py:35-90 (no reader)"
+  },
+  {
+   "name": "Waiter.expired / Waiter.elapsed (no callers in desk/)",
+   "entry": "desk/agent_cli/waiter.py",
+   "defined_at": "desk/agent_cli/waiter.py:21,27"
+  },
+  {
+   "name": "The memory_warning field in the precheck response (agent_cli does not read it)",
+   "entry": "GET /api/agent/precheck",
+   "defined_at": "desk/llm/service.py:precheck_load; desk/media/service.py:precheck_media"
+  },
+  {
+   "name": "The link path ~/.codex/skills/local-model-desk is in the uninstall script's list but has no matching entry in TARGETS",
+   "entry": "scripts/uninstall-app.sh:remove_agent_links",
+   "defined_at": "scripts/uninstall-app.sh:51; desk/agent_skill/targets.py:23-31"
+  }
+ ],
+ "mock_layers": [
+  {
+   "name": "Injected test seams: connect_fn / here / env / stdin / out / err",
+   "evidence": "desk/agent_cli/cli.py:main signature"
+  },
+  {
+   "name": "Injected discovery seams: probe / launcher / sleep / clock",
+   "evidence": "desk/agent_cli/discovery.py:connect"
+  },
+  {
+   "name": "AgentSkillService which/run injection",
+   "evidence": "desk/agent_skill/service.py:14"
+  },
+  {
+   "name": "LMDESK_FAKE_VERSION environment override for the version",
+   "evidence": "desk/agent_cli/chat.py:57"
+  },
+  {
+   "name": "Test desk harness mounts the same agent routes",
+   "evidence": "desk/testing/harness.py:219,249-253"
+  }
+ ],
+ "could_not": [
+  "Did not run lmdesk --help or the app, so the argparse help text and actual output are not verified (read-only constraint)",
+  "The command 'image|video|music' with no subcommand: the top-level parser has no common parent, so --json is not accepted at that level; the runtime error behavior was not run",
+  "Per the scope, UI-only fields (ui_surfaces, layout_thresholds, locales, and so on) are not returned"
+ ]
+}

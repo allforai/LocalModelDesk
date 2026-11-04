@@ -1,0 +1,275 @@
+{
+ "node_id": "image-session-repair",
+ "requirement_ref": {
+  "path": ".allforai/bootstrap/local-requirements.json",
+  "id": "image-sessions",
+  "revision": 1
+ },
+ "status": "blocked",
+ "status_reason": "All code_gaps and test_gaps owned by this node are fixed with red-then-green tests; U-06 needs a product decision (does the 素材库 count as 主流程 for the 「种子」 rule?) and is handed back unfixed under Pattern I.",
+ "inputs_read": [
+  ".allforai/verify/image-sessions-verify.json",
+  ".allforai/verify/ui-visual-reconciliation.json",
+  "docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+  ".allforai/bootstrap/local-requirements.json",
+  ".allforai/visual-qa/visual-acceptance-criteria.md",
+  ".allforai/visual-qa/visual-acceptance-criteria.json",
+  ".allforai/verify/evidence/narrow-scroll/probe.json",
+  ".allforai/verify/probe_narrow_scroll.py",
+  ".allforai/product-concept/decision-journal.json"
+ ],
+ "gaps": [
+  {
+   "gap": "U-01",
+   "kind": "code_gaps",
+   "fix": "panes/image.js: after every render the pane fits the expanded card and re-applies a scroll intent ('bottom' on open/append/settle, 'selected' on card click, refine and library refill, cleared when the user scrolls themselves, restored when they scroll back to the end). It re-runs on the large image's load event and on a ResizeObserver over the timeline and the expanded card (window resize, composer growth, 高级参数 toggle), deferred one frame.",
+   "files": [
+    "desk/static/js/panes/image.js",
+    "desk/static/js/widgets/image_session_card.js"
+   ],
+   "test": [
+    "tests/e2e/test_image_sessions.py::test_action_buttons_of_the_settled_attempt_are_in_view_at_900x700 (was failing in image-session-verify; now passes, plus a new re-pin-after-shrinking-the-window assertion)"
+   ],
+   "red_evidence": "image-session-verify regression: 13 passed, 1 failed (this test); rerun here before the fix failed at attempt 1 with buttons at y=775–810 vs timeline bottom 558",
+   "evidence_path": ".allforai/image-sessions/evidence/repair/pytest-e2e-full-rerun.json"
+  },
+  {
+   "gap": "U-02",
+   "kind": "code_gaps",
+   "fix": "The expanded card's large image gets max-height min(60vh, timeline visible height − the rest of the card), floor 96px, so header, whole image, prompt, 高级参数 and both actions fit the timeline at 1280×800 and 900×700 (still within D-74's 60vh bound). The scripted executor now writes its PNG at the job's declared --width/--height so the harness lays out a 1024×1024 result like the real model (N-04 enabler).",
+   "files": [
+    "desk/static/js/panes/image.js",
+    "desk/static/js/widgets/image_session_card.js",
+    "desk/testing/fakes.py",
+    "desk/testing/seed.py"
+   ],
+   "test": [
+    "tests/e2e/test_image_sessions.py::test_selected_attempt_with_a_full_size_image_shows_header_image_and_actions_together"
+   ],
+   "red_evidence": "failed before the pane fix: 'wide: last attempt after it settled' expanded card not wholly inside the timeline viewport",
+   "evidence_path": ".allforai/image-sessions/evidence/repair/pytest-image-e2e-with-shots.json",
+   "screenshots": [
+    ".allforai/image-sessions/evidence/repair/screens/verify-selected-full-size-wide.png",
+    ".allforai/image-sessions/evidence/repair/screens/verify-selected-full-size-narrow.png"
+   ]
+  },
+  {
+   "gap": "U-03",
+   "kind": "test_gaps",
+   "fix": "timeline-three-rounds is captured as a declared pair per viewport: pinned to the end (expanded 第 3 次 whole: label, image, full prompt, 高级参数, both actions — asserted inside the timeline) and scrolled to the top by the user (第 1 次 → 第 3 次 headers asserted inside the timeline) as timeline-three-rounds-top.",
+   "files": [
+    "tests/e2e/test_image_flow.py"
+   ],
+   "test": [
+    "tests/e2e/test_image_flow.py::test_three_rounds_refine_keep_order_seed_and_recompose"
+   ],
+   "evidence_path": ".allforai/image-sessions/evidence/repair/pytest-image-e2e-with-shots.json",
+   "screenshots": [
+    ".allforai/image-sessions/evidence/repair/screens/timeline-three-rounds-wide.png",
+    ".allforai/image-sessions/evidence/repair/screens/timeline-three-rounds-narrow.png",
+    ".allforai/image-sessions/evidence/repair/screens/timeline-three-rounds-top-wide.png",
+    ".allforai/image-sessions/evidence/repair/screens/timeline-three-rounds-top-narrow.png"
+   ],
+   "note": "Re-capture in the real-app batch (real_journey.py) remains image-session-verify's."
+  },
+  {
+   "gap": "U-04",
+   "kind": "code_gaps",
+   "fix": "attemptView for a user cancel keeps the 「已取消」 mark (D-85) and adds, as its explanation line, the stored D-09 message without the repeated 「已取消：」 prefix: 「这次生成被手动停止」. cancelled_on_quit is unchanged (its title already is the reason).",
+   "files": [
+    "desk/static/js/pure/image_session.js"
+   ],
+   "test": [
+    "tests/js/image_session.test.js::尝试状态 → 标记与原因（D-84、D-85）",
+    "tests/js/image_pane.test.js::失败、已取消、文件不在：不画图片框，写明原因，仍给两个动作（D-84–D-86）",
+    "tests/e2e/test_image_sessions.py::test_ac6_failed_and_cancelled_attempts_keep_their_reason_and_no_blank_image"
+   ],
+   "red_evidence": "node --test on the two files: 29 pass, 2 fail before the fix",
+   "evidence_path": ".allforai/image-sessions/evidence/repair/node-test.json",
+   "screenshots": [
+    ".allforai/image-sessions/evidence/repair/screens/verify-failed-and-cancelled-wide.png",
+    ".allforai/image-sessions/evidence/repair/screens/attempt-cancelled-wide.png"
+   ]
+  },
+  {
+   "gap": "U-07/U-08",
+   "kind": "test_gaps",
+   "fix": "test_image_flow.py: the first-entry test keeps the MLX runtime so its model-missing capture meets the precondition and now asserts the exact 「尚未安装图片模型，请到「资源」页下载」; the running-while-viewing-another test's capture (B empty) is renamed running-other-session-new-empty, since the criteria state is captured with its precondition by test_image_sessions.py. The both-missing case keeps coverage in a new test asserting §7.6's runtime-first priority.",
+   "files": [
+    "tests/e2e/test_image_flow.py",
+    "tests/e2e/test_image_sessions.py"
+   ],
+   "test": [
+    "tests/e2e/test_image_flow.py::test_first_entry_creates_one_session_and_keeps_advanced_folded",
+    "tests/e2e/test_image_flow.py::test_running_job_stays_in_its_session_while_viewing_another",
+    "tests/e2e/test_image_sessions.py::test_model_and_runtime_both_missing_names_the_runtime_first"
+   ],
+   "evidence_path": ".allforai/image-sessions/evidence/repair/pytest-image-e2e-with-shots.json"
+  },
+  {
+   "gap": "N-01",
+   "kind": "visual_quality_gaps",
+   "fix": "app.css: .dialog-actions button:focus draws a 2px accent outline, so the script-placed focus on 「取消」 (D-90) is visible.",
+   "files": [
+    "desk/static/app.css"
+   ],
+   "test": [
+    "tests/e2e/test_image_sessions.py::test_ac5_deleting_a_session_keeps_its_images_in_the_library (focus-ring assertion)"
+   ],
+   "red_evidence": "failed before: outline none on the focused 取消",
+   "evidence_path": ".allforai/image-sessions/evidence/repair/pytest-image-e2e-with-shots.json"
+  },
+  {
+   "gap": "N-05",
+   "kind": "visual_quality_gaps",
+   "fix": "Covered by the U-01/U-02 intent: 在这张基础上改 on the selected card keeps that card whole in view after the refine chip makes the composer taller.",
+   "files": [
+    "desk/static/js/panes/image.js"
+   ],
+   "test": [
+    "tests/e2e/test_image_sessions.py::test_selected_attempt_with_a_full_size_image_shows_header_image_and_actions_together (after 在这张基础上改)"
+   ],
+   "evidence_path": ".allforai/image-sessions/evidence/repair/pytest-image-e2e-with-shots.json"
+  },
+  {
+   "gap": "N-07 (hint line break)",
+   "kind": "visual_quality_gaps",
+   "fix": "The empty-session hint wraps each 「…」 action name in a nowrap span, so 「在这张基础上改」 never breaks inside.",
+   "files": [
+    "desk/static/js/panes/image.js",
+    "desk/static/app.css"
+   ],
+   "test": [
+    "tests/e2e/test_image_sessions.py::test_first_entry_without_sessions_creates_exactly_one"
+   ],
+   "red_evidence": "failed before: no keep-together spans",
+   "evidence_path": ".allforai/image-sessions/evidence/repair/pytest-image-e2e-with-shots.json",
+   "screenshots": [
+    ".allforai/image-sessions/evidence/repair/screens/empty-session-narrow.png"
+   ]
+  },
+  {
+   "gap": "N-08",
+   "kind": "visual_quality_gaps",
+   "fix": "app.css: a non-empty library preview gets 16px top margin (same as the list below it).",
+   "files": [
+    "desk/static/app.css"
+   ],
+   "test": [
+    "tests/e2e/test_image_sessions.py::test_ac5_deleting_a_session_keeps_its_images_in_the_library (preview_gap ≥ 8)"
+   ],
+   "evidence_path": ".allforai/image-sessions/evidence/repair/pytest-image-e2e-with-shots.json"
+  }
+ ],
+ "code_gaps": [],
+ "test_gaps": [],
+ "contract_gaps": [
+  {
+   "id": "U-06",
+   "kind": "unspecified_user_visible_decision",
+   "detail": "素材库 image rows show 「种子 <n>」 as plain text. BR-7 forbids 种子 in 界面主流程; design D-50 scopes the rule to the image page and never says whether the 素材库 is 主流程; BR-1 says 只改图片页; the visual criteria's global rule applies to every screenshot. Hiding the seed in the library (or exempting it) is a user-visible decision the design does not make, so it is not implemented here.",
+   "options": [
+    "(a) the 素材库 is outside the 主流程: record an exemption in the design (D-50) and the criteria (global rule + library-after-delete.must_not_show)",
+    "(b) the 素材库 hides 种子 behind a disclosure like 高级参数: extend D-50 to the library and let image-session-repair implement it"
+   ],
+   "repair_owner": "interactive-bootstrap",
+   "decision_source_needed": ".allforai/product-concept/decision-journal.json",
+   "evidence": [
+    ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+    "desk/static/js/panes/library.js"
+   ]
+  }
+ ],
+ "not_fixed": [
+  {
+   "gap": "U-06",
+   "reason": "needs a product decision (Pattern I); see contract_gaps"
+  },
+  {
+   "gap": "U-05",
+   "reason": "repair_owner image-session-verify: add the post-delete image-page capture to .allforai/verify/real_journey.py"
+  },
+  {
+   "gap": "T-real-failure",
+   "reason": "repair_owner image-session-verify: real-model failure evidence; the product must not be altered to force a failure"
+  },
+  {
+   "gap": "N-04",
+   "reason": "verify-owned; enabled here (harness PNG now at declared size), the re-review is image-session-verify's"
+  },
+  {
+   "gap": "N-09",
+   "reason": "verify-owned evidence-scope note"
+  },
+  {
+   "gap": "N-02",
+   "reason": "The early truncation comes from the shared .session card layout that reserves the hover-only rename/delete column (F7) and is the same on the chat page; D-70 requires the image list to reuse that style. Changing it for the image list alone breaks D-70's parity; changing it for both touches the chat page. Left for a design decision; minor."
+  },
+  {
+   "gap": "N-03",
+   "reason": "The header's 媒体 status is the shared statusbar updated by main.js's 2 s tick for every media pane; a capture taken within one tick of starting shows 空闲. The real-app run showed 生成中. Changing the global tick is outside the image page (BR-1); minor."
+  },
+  {
+   "gap": "N-06",
+   "reason": "Design D-64 specifies that switching sessions keeps the prompt, width, height and steps (only the seed and chip are cleared); changing it would alter design-set behavior, so no change."
+  },
+  {
+   "gap": "N-07 (header 可开工)",
+   "reason": "The green 可开工 is the global heavy-work availability in the shared header, not the image model state (the image page's own header and hint name the missing model). Not image-page scope; minor."
+  }
+ ],
+ "regression": {
+  "backend": {
+   "command": "python3 -m pytest tests --ignore=tests/e2e -q",
+   "result": "1106 passed",
+   "evidence_path": ".allforai/image-sessions/evidence/repair/pytest-backend.json"
+  },
+  "frontend": {
+   "command": "node --test tests/js/*.test.js",
+   "result": "321 passed",
+   "evidence_path": ".allforai/image-sessions/evidence/repair/node-test.json"
+  },
+  "e2e_full": {
+   "command": "python3 -m pytest tests/e2e -q",
+   "result": "92 passed",
+   "evidence_path": ".allforai/image-sessions/evidence/repair/pytest-e2e-full-rerun.json",
+   "note": "First full run had 1 failure in tests/e2e/test_resources_panel.py::test_resources_panel_download_cancel_resume_and_finish (a 10 s download-progress wait, unrelated to this change); it passed 3/3 in isolation and the full rerun (after the last test was added) passed 92/92. First run kept at pytest-e2e-full.json."
+  },
+  "image_e2e_with_shots": {
+   "command": "LMD_IMAGE_SESSIONS_SHOTS=.allforai/image-sessions/evidence/repair/screens python3 -m pytest tests/e2e/test_image_sessions.py tests/e2e/test_image_flow.py -q",
+   "result": "25 passed",
+   "evidence_path": ".allforai/image-sessions/evidence/repair/pytest-image-e2e-with-shots.json"
+  }
+ },
+ "test_integrity": "No assertion was removed or loosened. Changed assertions were tightened (hint not_to_have_text('') → exact model text; cancelled card now also asserts its explanation line). The first-entry test's harness now keeps the runtime to meet model-missing's precondition, and the dropped both-missing case moved to its own test with an exact expected text.",
+ "served_by": {
+  "host": "127.0.0.1 ephemeral port per test",
+  "process": "desk.testing.launch_test_harness + headless Chromium (Playwright)",
+  "mock_layers": [
+   "FakeMediaExecutor + MediaScript (gradient PNG at the declared size instead of image_cli.py)",
+   "FakeLlmBackend",
+   "FakeMemoryReader",
+   "FixedClock"
+  ],
+  "fixtures": [
+   "desk/testing/seed.py",
+   "desk/testing/scripts.py"
+  ]
+ },
+ "downstream": {
+  "rerun": "image-session-verify",
+  "verify_rerun_items": [
+   "U-01",
+   "U-02",
+   "U-03",
+   "U-04",
+   "U-07",
+   "U-08",
+   "N-01",
+   "N-05",
+   "N-07",
+   "N-08"
+  ],
+  "blocked_on": "U-06 product decision"
+ }
+}

@@ -1,0 +1,1 @@
+状态：空闲, agent 链接指向旧位置，打开设置更新, 内存 已用 38 / 总 128 GiB（可用 90 GiB）, missing value, 打开窗口, 打开成品目录, 设置…, missing value, 退出

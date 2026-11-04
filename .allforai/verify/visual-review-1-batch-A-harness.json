@@ -1,0 +1,536 @@
+{
+  "reviewer": {
+    "id": "reviewer-1",
+    "backend": "Claude Code fresh-context sub-agent",
+    "model": "claude-opus-5-5"
+  },
+  "batch": "batch-A-harness",
+  "status": "passed_with_warnings",
+  "inspected": [
+    ".allforai/verify/screens/first-entry-auto-session-wide.png",
+    ".allforai/verify/screens/first-entry-auto-session-narrow.png",
+    ".allforai/verify/screens/empty-session-wide.png",
+    ".allforai/verify/screens/empty-session-narrow.png",
+    ".allforai/verify/screens/running-wide.png",
+    ".allforai/verify/screens/running-narrow.png",
+    ".allforai/verify/screens/running-other-session-wide.png",
+    ".allforai/verify/screens/running-other-session-narrow.png",
+    ".allforai/verify/screens/timeline-three-rounds-wide.png",
+    ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+    ".allforai/verify/screens/attempt-selected-actions-wide.png",
+    ".allforai/verify/screens/attempt-selected-actions-narrow.png",
+    ".allforai/verify/screens/refine-prefill-wide.png",
+    ".allforai/verify/screens/refine-prefill-narrow.png",
+    ".allforai/verify/screens/attempt-failed-wide.png",
+    ".allforai/verify/screens/attempt-failed-narrow.png",
+    ".allforai/verify/screens/attempt-cancelled-wide.png",
+    ".allforai/verify/screens/attempt-cancelled-narrow.png",
+    ".allforai/verify/screens/attempt-interrupted-wide.png",
+    ".allforai/verify/screens/attempt-interrupted-narrow.png",
+    ".allforai/verify/screens/attempt-file-missing-wide.png",
+    ".allforai/verify/screens/attempt-file-missing-narrow.png",
+    ".allforai/verify/screens/model-missing-wide.png",
+    ".allforai/verify/screens/model-missing-narrow.png",
+    ".allforai/verify/screens/runtime-unavailable-wide.png",
+    ".allforai/verify/screens/runtime-unavailable-narrow.png",
+    ".allforai/verify/screens/busy-other-media-wide.png",
+    ".allforai/verify/screens/busy-other-media-narrow.png",
+    ".allforai/verify/screens/rename-wide.png",
+    ".allforai/verify/screens/rename-narrow.png",
+    ".allforai/verify/screens/delete-confirm-wide.png",
+    ".allforai/verify/screens/delete-confirm-narrow.png",
+    ".allforai/verify/screens/delete-confirm-running-wide.png",
+    ".allforai/verify/screens/delete-confirm-running-narrow.png",
+    ".allforai/verify/screens/library-after-delete-wide.png",
+    ".allforai/verify/screens/library-after-delete-narrow.png",
+    ".allforai/verify/screens/session-list-load-failed-wide.png",
+    ".allforai/verify/screens/session-list-load-failed-narrow.png",
+    ".allforai/verify/screens/corrupt-session-wide.png",
+    ".allforai/verify/screens/corrupt-session-narrow.png",
+    ".allforai/verify/screens/timeline-three-rounds-top-wide.png",
+    ".allforai/verify/screens/timeline-three-rounds-top-narrow.png",
+    ".allforai/verify/screens/running-other-session-new-empty-wide.png",
+    ".allforai/verify/screens/running-other-session-new-empty-narrow.png",
+    ".allforai/verify/screens/verify-four-attempts-wide.png",
+    ".allforai/verify/screens/verify-four-attempts-narrow.png",
+    ".allforai/verify/screens/verify-switch-back-wide.png",
+    ".allforai/verify/screens/verify-switch-back-narrow.png",
+    ".allforai/verify/screens/verify-after-delete-wide.png",
+    ".allforai/verify/screens/verify-after-delete-narrow.png",
+    ".allforai/verify/screens/verify-failed-and-cancelled-wide.png",
+    ".allforai/verify/screens/verify-failed-and-cancelled-narrow.png",
+    ".allforai/verify/screens/verify-selected-full-size-wide.png",
+    ".allforai/verify/screens/verify-selected-full-size-narrow.png"
+  ],
+  "per_screenshot": [
+    {
+      "path": ".allforai/verify/screens/first-entry-auto-session-wide.png",
+      "state": "first-entry-auto-session",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "One highlighted 新会话; two-line empty hint centred; 生成图片 enabled; 高级参数 folded; no progress bar, no image frame, no 种子."
+    },
+    {
+      "path": ".allforai/verify/screens/first-entry-auto-session-narrow.png",
+      "state": "first-entry-auto-session",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "One highlighted 新会话; two-line empty hint centred; 生成图片 enabled; 高级参数 folded; no progress bar, no image frame, no 种子."
+    },
+    {
+      "path": ".allforai/verify/screens/empty-session-wide.png",
+      "state": "empty-session",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "New 新会话 on top and highlighted, previous session below; two-line empty hint; prompt box focused (blue ring; shared draft is by user decision); no previous cards, no 种子."
+    },
+    {
+      "path": ".allforai/verify/screens/empty-session-narrow.png",
+      "state": "empty-session",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "New 新会话 on top and highlighted, previous session below; two-line empty hint; prompt box focused (blue ring; shared draft is by user decision); no previous cards, no 种子."
+    },
+    {
+      "path": ".allforai/verify/screens/running-wide.png",
+      "state": "running",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Running card last: 第 2 次 · 生成中…（已用 0秒）, progress bar, 取消, folded 日志, no image frame, no action buttons; list shows 生成中; 生成图片 disabled; status 正在生成这个会话里的第 2 次. Earlier failed card uses danger icon block. Top bar still says 媒体：空闲 (R1-002)."
+    },
+    {
+      "path": ".allforai/verify/screens/running-narrow.png",
+      "state": "running",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Running card last: 第 2 次 · 生成中…（已用 0秒）, progress bar, 取消, folded 日志, no image frame, no action buttons; list shows 生成中; 生成图片 disabled; status 正在生成这个会话里的第 2 次. Earlier failed card uses danger icon block. Top bar still says 媒体：空闲 (R1-002)."
+    },
+    {
+      "path": ".allforai/verify/screens/running-other-session-wide.png",
+      "state": "running-other-session",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "甲 has 生成中 marker; 乙 highlighted with its own completed card; status 「甲会话：正在生成」正在生成图片 + 回到该会话; 生成图片 and 换个构图 disabled, 在这张基础上改 enabled; no running card of A. Status line repeated inside card (R1-003); top bar says 媒体：空闲 (R1-002)."
+    },
+    {
+      "path": ".allforai/verify/screens/running-other-session-narrow.png",
+      "state": "running-other-session",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "甲 has 生成中 marker; 乙 highlighted with its own completed card; status 「甲会话：正在生成」正在生成图片 + 回到该会话; 生成图片 and 换个构图 disabled, 在这张基础上改 enabled; no running card of A. Status line repeated inside card (R1-003); top bar says 媒体：空闲 (R1-002). Narrow: timeline scrollable, card starts just below the header; no overlap."
+    },
+    {
+      "path": ".allforai/verify/screens/timeline-three-rounds-wide.png",
+      "state": "timeline-three-rounds",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Scrolled to bottom: 第 3 次 expanded with large real image (well over 192px), full prompt, folded 高级参数, both actions fully visible; bottom edge of 第 2 次 visible above. Title is first prompt with ellipsis. Order/thumbnails confirmed by the -top pair."
+    },
+    {
+      "path": ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+      "state": "timeline-three-rounds",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Scrolled to bottom: 第 3 次 expanded with large real image (well over 192px), full prompt, folded 高级参数, both actions fully visible; bottom edge of 第 2 次 visible above. Title is first prompt with ellipsis. Order/thumbnails confirmed by the -top pair."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-selected-actions-wide.png",
+      "state": "attempt-selected-actions",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "第 1 次 expanded with whole image (not clipped, <60vh), full prompt, folded 高级参数, both secondary buttons side by side; only one card expanded; no 种子."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-selected-actions-narrow.png",
+      "state": "attempt-selected-actions",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "第 1 次 expanded with whole image (not clipped, <60vh), full prompt, folded 高级参数, both secondary buttons side by side; only one card expanded; no 种子."
+    },
+    {
+      "path": ".allforai/verify/screens/refine-prefill-wide.png",
+      "state": "refine-prefill",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Prompt box holds 第 2 次 prompt with focus ring; chip 沿用第 2 次的构图 with ×; 高级参数 folded; no new/running card; no 种子."
+    },
+    {
+      "path": ".allforai/verify/screens/refine-prefill-narrow.png",
+      "state": "refine-prefill",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Prompt box holds 第 2 次 prompt with focus ring; chip 沿用第 2 次的构图 with ×; 高级参数 folded; no new/running card; no 种子."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-failed-wide.png",
+      "state": "attempt-failed",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "失败 badge + reason 生成程序异常退出; danger X icon block, no image frame; 详情 shows exit_nonzero: exit 1 and log tail; both actions visible. Prompt appears twice (R1-001)."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-failed-narrow.png",
+      "state": "attempt-failed",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "失败 badge + reason 生成程序异常退出; danger X icon block, no image frame; 详情 shows exit_nonzero: exit 1 and log tail; both actions visible. Prompt appears twice (R1-001)."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-cancelled-wide.png",
+      "state": "attempt-cancelled",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "第 2 次 has 已取消 badge + 这次生成被手动停止; grey icon block; both actions; not stuck in 生成中. Prompt appears twice (R1-001)."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-cancelled-narrow.png",
+      "state": "attempt-cancelled",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "第 2 次 has 已取消 badge + 这次生成被手动停止; grey icon block; both actions; not stuck in 生成中. Prompt appears twice (R1-001)."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-interrupted-wide.png",
+      "state": "attempt-interrupted",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "第 3 次: 失败 badge + 应用在生成途中关闭，这次没有完成; danger icon block; no progress bar, not 生成中; earlier cards show real thumbnails."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-interrupted-narrow.png",
+      "state": "attempt-interrupted",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "第 3 次: 失败 badge + 应用在生成途中关闭，这次没有完成; danger icon block; no progress bar, not 生成中; earlier cards show real thumbnails."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-file-missing-wide.png",
+      "state": "attempt-file-missing",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "第 1 次: 图片文件已不在 chip + 可能已在访达中移动或删除; grey picture icon block, no broken image; both actions enabled."
+    },
+    {
+      "path": ".allforai/verify/screens/attempt-file-missing-narrow.png",
+      "state": "attempt-file-missing",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "第 1 次: 图片文件已不在 chip + 可能已在访达中移动或删除; grey picture icon block, no broken image; both actions enabled."
+    },
+    {
+      "path": ".allforai/verify/screens/model-missing-wide.png",
+      "state": "model-missing",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Header and status line 尚未安装图片模型，请到「资源」页下载; 生成图片 disabled; no 种子. Empty hint still says 点「生成图片」 (R1-004)."
+    },
+    {
+      "path": ".allforai/verify/screens/model-missing-narrow.png",
+      "state": "model-missing",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Header and status line 尚未安装图片模型，请到「资源」页下载; 生成图片 disabled; no 种子. Empty hint still says 点「生成图片」 (R1-004)."
+    },
+    {
+      "path": ".allforai/verify/screens/runtime-unavailable-wide.png",
+      "state": "runtime-unavailable",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Status line gives runtime reason (图片 MLX 运行环境缺失…); 生成图片 disabled. Header still says 可离线生成 (R1-004)."
+    },
+    {
+      "path": ".allforai/verify/screens/runtime-unavailable-narrow.png",
+      "state": "runtime-unavailable",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Status line gives runtime reason (图片 MLX 运行环境缺失…); 生成图片 disabled. Header still says 可离线生成 (R1-004)."
+    },
+    {
+      "path": ".allforai/verify/screens/busy-other-media-wide.png",
+      "state": "busy-other-media",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Status 媒体作业进行中; 生成图片 and 换个构图 disabled; no 回到该会话; no 种子; top bar shows 视频生成中."
+    },
+    {
+      "path": ".allforai/verify/screens/busy-other-media-narrow.png",
+      "state": "busy-other-media",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Status 媒体作业进行中; 生成图片 and 换个构图 disabled; no 回到该会话; no 种子; top bar shows 视频生成中."
+    },
+    {
+      "path": ".allforai/verify/screens/rename-wide.png",
+      "state": "rename",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Session item turned into input with current title and focus ring, fits inside left column; only one session so 'others unchanged' is trivially true."
+    },
+    {
+      "path": ".allforai/verify/screens/rename-narrow.png",
+      "state": "rename",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Session item turned into input with current title and focus ring, fits inside left column; only one session so 'others unchanged' is trivially true."
+    },
+    {
+      "path": ".allforai/verify/screens/delete-confirm-wide.png",
+      "state": "delete-confirm",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Modal 删除会话 with exact body copy (图片仍保留在素材库); 取消 focused, 删除 danger red; no chat copy."
+    },
+    {
+      "path": ".allforai/verify/screens/delete-confirm-narrow.png",
+      "state": "delete-confirm",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Modal 删除会话 with exact body copy (图片仍保留在素材库); 取消 focused, 删除 danger red; no chat copy."
+    },
+    {
+      "path": ".allforai/verify/screens/delete-confirm-running-wide.png",
+      "state": "delete-confirm-running",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Base body + appended sentence 这个会话正在生成图片，生成会继续完成…; 取消 focused, 删除 danger. Top bar 媒体：空闲 behind dim (R1-002)."
+    },
+    {
+      "path": ".allforai/verify/screens/delete-confirm-running-narrow.png",
+      "state": "delete-confirm-running",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Base body + appended sentence 这个会话正在生成图片，生成会继续完成…; 取消 focused, 删除 danger. Top bar 媒体：空闲 behind dim (R1-002)."
+    },
+    {
+      "path": ".allforai/verify/screens/library-after-delete-wide.png",
+      "state": "library-after-delete",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Library shows real preview of 将被删除分组的灯塔 and the item listed with 预览/在访达中显示/回填参数; 种子 N in library metadata is exempt (D-50a). Frame is scrolled so page tabs are not visible (R1-006)."
+    },
+    {
+      "path": ".allforai/verify/screens/library-after-delete-narrow.png",
+      "state": "library-after-delete",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Library shows real preview of 将被删除分组的灯塔 and the item listed with 预览/在访达中显示/回填参数; 种子 N in library metadata is exempt (D-50a). Frame is scrolled so page tabs are not visible (R1-006). Narrow: metadata wraps (种子 on its own line), second item cut by viewport bottom only."
+    },
+    {
+      "path": ".allforai/verify/screens/session-list-load-failed-wide.png",
+      "state": "session-list-load-failed",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "List area shows 会话列表读不出来：磁盘读不出来 + 重试; 生成图片 disabled; status 会话还没加载好; no 种子. Timeline area empty (R1-005)."
+    },
+    {
+      "path": ".allforai/verify/screens/session-list-load-failed-narrow.png",
+      "state": "session-list-load-failed",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "List area shows 会话列表读不出来：磁盘读不出来 + 重试; 生成图片 disabled; status 会话还没加载好; no 种子. Timeline area empty (R1-005)."
+    },
+    {
+      "path": ".allforai/verify/screens/corrupt-session-wide.png",
+      "state": "corrupt-session",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Item 无法读取的会话 / 文件已损坏 with only delete button; timeline explanation text; 生成图片 disabled with 请选择其他会话或新建一个; no rename button."
+    },
+    {
+      "path": ".allforai/verify/screens/corrupt-session-narrow.png",
+      "state": "corrupt-session",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Item 无法读取的会话 / 文件已损坏 with only delete button; timeline explanation text; 生成图片 disabled with 请选择其他会话或新建一个; no rename button."
+    },
+    {
+      "path": ".allforai/verify/screens/timeline-three-rounds-top-wide.png",
+      "state": "timeline-three-rounds-top",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "第 1 次, 第 2 次 collapsed with real thumbnails, summaries and 1024×1024 · 40 步; 第 3 次 expanded below with large image; order correct; no 种子."
+    },
+    {
+      "path": ".allforai/verify/screens/timeline-three-rounds-top-narrow.png",
+      "state": "timeline-three-rounds-top",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "第 1 次, 第 2 次 collapsed with real thumbnails, summaries and 1024×1024 · 40 步; 第 3 次 expanded below with large image; order correct; no 种子."
+    },
+    {
+      "path": ".allforai/verify/screens/running-other-session-new-empty-wide.png",
+      "state": "running-other-session-new-empty",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "New empty session highlighted with empty hint; 甲会话的灯塔 marked 生成中; status + 回到该会话; 生成图片 disabled; top bar correctly shows 图片生成中."
+    },
+    {
+      "path": ".allforai/verify/screens/running-other-session-new-empty-narrow.png",
+      "state": "running-other-session-new-empty",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "New empty session highlighted with empty hint; 甲会话的灯塔 marked 生成中; status + 回到该会话; 生成图片 disabled; top bar correctly shows 图片生成中."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-four-attempts-wide.png",
+      "state": "verify-four-attempts",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "第 4 次 (768×512 · 20 步) expanded with landscape image, full prompt, both actions; title ellipsized; no clipping."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-four-attempts-narrow.png",
+      "state": "verify-four-attempts",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "第 4 次 (768×512 · 20 步) expanded with landscape image, full prompt, both actions; title ellipsized; no clipping."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-switch-back-wide.png",
+      "state": "verify-switch-back",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "乙会话：沙漠 highlighted with its own 第 2 次; 甲 below; layout clean."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-switch-back-narrow.png",
+      "state": "verify-switch-back",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "乙会话：沙漠 highlighted with its own 第 2 次; 甲 below; layout clean."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-after-delete-wide.png",
+      "state": "verify-after-delete",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Only 留下来的会话 remains and is current; its attempt expanded with image and actions."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-after-delete-narrow.png",
+      "state": "verify-after-delete",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Only 留下来的会话 remains and is current; its attempt expanded with image and actions."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-failed-and-cancelled-wide.png",
+      "state": "verify-failed-and-cancelled",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Failed card (内存不足，生成被中止, danger block) + cancelled card (grey block, both actions) after reload; no blank frames."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-failed-and-cancelled-narrow.png",
+      "state": "verify-failed-and-cancelled",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Failed card (内存不足，生成被中止, danger block) + cancelled card (grey block, both actions) after reload; no blank frames."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-selected-full-size-wide.png",
+      "state": "verify-selected-full-size",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Earlier 第 1 次 selected: header, whole image, prompt, 高级参数 and both actions visible together; refine chip + prefill below; nothing clipped."
+    },
+    {
+      "path": ".allforai/verify/screens/verify-selected-full-size-narrow.png",
+      "state": "verify-selected-full-size",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Earlier 第 1 次 selected: header, whole image, prompt, 高级参数 and both actions visible together; refine chip + prefill below; nothing clipped."
+    }
+  ],
+  "issues": [
+    {
+      "id": "R1-batch-A-harness-001",
+      "severity": "minor",
+      "failure_code": "inconsistent_expanded_card",
+      "screenshots": [
+        ".allforai/verify/screens/attempt-failed-wide.png",
+        ".allforai/verify/screens/attempt-failed-narrow.png",
+        ".allforai/verify/screens/attempt-cancelled-wide.png",
+        ".allforai/verify/screens/attempt-cancelled-narrow.png",
+        ".allforai/verify/screens/attempt-interrupted-wide.png",
+        ".allforai/verify/screens/attempt-interrupted-narrow.png",
+        ".allforai/verify/screens/attempt-file-missing-wide.png",
+        ".allforai/verify/screens/attempt-file-missing-narrow.png",
+        ".allforai/verify/screens/verify-failed-and-cancelled-wide.png",
+        ".allforai/verify/screens/verify-failed-and-cancelled-narrow.png"
+      ],
+      "criteria_ref": "timeline-three-rounds (展开卡片以完整提示词代替摘要); attempt-failed/attempt-cancelled/attempt-file-missing",
+      "observation": "Expanded failed / cancelled / interrupted / file-missing cards keep the prompt summary in the header row AND print the full prompt again below the icon block (e.g. 会失败的一张 twice), whereas expanded completed cards replace the summary with the full prompt. Not a blocking defect, but the same prompt reads twice and the rule is applied inconsistently.",
+      "repair_suggestion": "For expanded non-image cards, drop the header summary line (or drop the body prompt when it equals the summary) so each expanded card shows the prompt exactly once."
+    },
+    {
+      "id": "R1-batch-A-harness-002",
+      "severity": "minor",
+      "failure_code": "stale_global_status",
+      "screenshots": [
+        ".allforai/verify/screens/running-wide.png",
+        ".allforai/verify/screens/running-narrow.png",
+        ".allforai/verify/screens/running-other-session-wide.png",
+        ".allforai/verify/screens/running-other-session-narrow.png",
+        ".allforai/verify/screens/delete-confirm-running-wide.png",
+        ".allforai/verify/screens/delete-confirm-running-narrow.png"
+      ],
+      "criteria_ref": "global (outside image-sessions per-state list); running / running-other-session",
+      "observation": "While an image attempt is shown as 生成中（已用 0秒） the top bar still reads 媒体：空闲 · 可开下一件重活 / 可开工. In running-other-session-new-empty and busy-other-media the top bar does reflect the job (图片生成中 / 视频生成中), so this looks like header polling lag right after submit rather than wrong logic; the image page itself is correct.",
+      "repair_suggestion": "Refresh the top-bar status immediately when an image job is submitted (or when the image pane observes a running job), and confirm on batch B (real app) that the header flips to 图片生成中 within a second."
+    },
+    {
+      "id": "R1-batch-A-harness-003",
+      "severity": "note",
+      "failure_code": "duplicated_status",
+      "screenshots": [
+        ".allforai/verify/screens/running-other-session-wide.png",
+        ".allforai/verify/screens/running-other-session-narrow.png",
+        ".allforai/verify/screens/busy-other-media-wide.png",
+        ".allforai/verify/screens/busy-other-media-narrow.png"
+      ],
+      "criteria_ref": "running-other-session; busy-other-media",
+      "observation": "The disabled-reason line is shown twice: once inside the expanded card under the action buttons and again under the composer (「甲会话：正在生成」正在生成图片 / 媒体作业进行中). Required copy is present; the repetition is just visual noise.",
+      "repair_suggestion": "Optional: keep only the composer status line, or keep the in-card line as a short hint tied to the disabled 换个构图."
+    },
+    {
+      "id": "R1-batch-A-harness-004",
+      "severity": "note",
+      "failure_code": "copy_mismatch",
+      "screenshots": [
+        ".allforai/verify/screens/runtime-unavailable-wide.png",
+        ".allforai/verify/screens/runtime-unavailable-narrow.png",
+        ".allforai/verify/screens/model-missing-wide.png",
+        ".allforai/verify/screens/model-missing-narrow.png"
+      ],
+      "criteria_ref": "runtime-unavailable; model-missing",
+      "observation": "runtime-unavailable: header still says 模型文件完整 · 可离线生成 while generation is impossible; both states keep the empty hint 点「生成图片」 although the button is disabled. Status lines themselves are correct.",
+      "repair_suggestion": "Optional: when the runtime is missing, drop 可离线生成 from the header; consider muting the empty-state instruction when 生成图片 is disabled."
+    },
+    {
+      "id": "R1-batch-A-harness-005",
+      "severity": "note",
+      "failure_code": "empty_region",
+      "screenshots": [
+        ".allforai/verify/screens/session-list-load-failed-wide.png",
+        ".allforai/verify/screens/session-list-load-failed-narrow.png"
+      ],
+      "criteria_ref": "session-list-load-failed",
+      "observation": "The timeline area is completely empty; the reason sits only in the left column and the status line. Meets the criteria (list shows reason + 重试, status 会话还没加载好).",
+      "repair_suggestion": "Optional: echo a short centred hint in the timeline (e.g. 会话列表读不出来，点左侧「重试」)."
+    },
+    {
+      "id": "R1-batch-A-harness-006",
+      "severity": "note",
+      "failure_code": "evidence_framing",
+      "screenshots": [
+        ".allforai/verify/screens/library-after-delete-wide.png",
+        ".allforai/verify/screens/library-after-delete-narrow.png"
+      ],
+      "criteria_ref": "library-after-delete",
+      "observation": "The frame is scrolled to the preview, so page tabs/header are not in view and the 'image page no longer lists the session' half is not visible here; it is evidenced by verify-after-delete-*. The library preview shows a real image and the item is listed.",
+      "repair_suggestion": "Optional: capture library-after-delete scrolled to top or add a paired image-page shot next to it."
+    }
+  ],
+  "summary": "All 54 screenshots (27 states x wide/narrow) opened and judged. Layout (session list + 新会话, timeline, composer with folded 高级参数) is intact at both widths; no occlusion, clipping, horizontal scroll, blank/broken image frames, or 种子 on the image page. Every per-state must-show item is visible. Two minor issues (duplicated prompt on expanded non-image cards; top bar shows 媒体：空闲 right after an image job starts) and four notes."
+}

@@ -1,0 +1,1 @@
+首帧只支持 png、jpg、jpeg、webp

@@ -1,0 +1,16 @@
+{
+ "schema": "repair-execution-records/v1",
+ "derived_from": [
+  "/Users/aa/.claude/projects/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/subagents/workflows/wf_00471b1a-ed0/journal.jsonl",
+  "/Users/aa/.claude/projects/-Users-aa-LocalModelDesk/29c5cac0-5015-4876-ab6f-c9821d1b384c/subagents/workflows/wf_00471b1a-ed0/agent-ace352f8f59227608.jsonl"
+ ],
+ "records": [
+  {
+   "authorization_id": "run-61e937ff::image-session-repair::image-session-verify#1",
+   "node_id": "image-session-repair",
+   "event": "executor_started_then_stopped_by_orchestrator",
+   "at": "2026-09-23T21:30:56Z",
+   "detail": "Workflow run wf_00471b1a-ed0 dispatched image-session-repair (agent ace352f8f59227608) after repair-start granted #1; the executor issued one read-only shell command (cat node-spec / local-requirements) between 21:30:56Z and 21:30:59Z, then the orchestrator stopped the workflow to collect a user product decision (library seed exemption). No files were written by this attempt."
+  }
+ ]
+}

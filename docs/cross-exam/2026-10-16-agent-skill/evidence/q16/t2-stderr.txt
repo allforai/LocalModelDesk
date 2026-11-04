@@ -1,0 +1,2 @@
+[  0.142] 已提交：会话 cb93618047554c2c8ca037ca92ce3c5b 尝试 bbe38378aa744ef8977e1eb558aff5d1（中断后可用 lmdesk video wait cb93618047554c2c8ca037ca92ce3c5b bbe38378aa744ef8977e1eb558aff5d1 继续等待）
+[  0.193] 已中断并取消这次生成

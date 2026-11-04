@@ -1,0 +1,14 @@
+{
+  "model": "qwen35",
+  "nonstream_tool_calls": 1,
+  "unicode_followup": true,
+  "stream_tool_deltas": 1,
+  "stream_usage": {
+    "prompt_tokens": 297,
+    "completion_tokens": 57,
+    "total_tokens": 354
+  },
+  "active_chat_seen": true,
+  "active_chats_after": 0,
+  "done": true
+}

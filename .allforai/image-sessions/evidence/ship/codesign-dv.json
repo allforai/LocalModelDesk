@@ -1,0 +1,12 @@
+{
+  "schema": "capture_evidence/v1",
+  "command": [
+    "codesign",
+    "-dvvv",
+    "dist/LocalModelDesk.app"
+  ],
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "Executable=/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/MacOS/LocalModelDesk\nIdentifier=com.aa.localmodeldesk\nFormat=app bundle with Mach-O thin (arm64)\nCodeDirectory v=20500 size=1089 flags=0x10000(runtime) hashes=23+7 location=embedded\nHash type=sha256 size=32\nCandidateCDHash sha256=159bdf739a0fcf477100722fbbed16754ec68eda\nCandidateCDHashFull sha256=159bdf739a0fcf477100722fbbed16754ec68eda0fa974d0accee4d0e0cc51f6\nHash choices=sha256\nCMSDigest=159bdf739a0fcf477100722fbbed16754ec68eda0fa974d0accee4d0e0cc51f6\nCMSDigestType=2\nCDHash=159bdf739a0fcf477100722fbbed16754ec68eda\nSignature size=8992\nAuthority=Developer ID Application: SUPERSTRING TECH K.K. (B49F324XWZ)\nAuthority=Developer ID Certification Authority\nAuthority=Apple Root CA\nTimestamp=Sep 24, 2026 at 19:53:44\nInfo.plist entries=12\nTeamIdentifier=B49F324XWZ\nRuntime Version=27.0.0\nSealed Resources version=2 rules=13 files=31612\nInternal requirements count=1 size=184\n",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

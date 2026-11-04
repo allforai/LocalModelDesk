@@ -1,0 +1,14 @@
+5541232:2026-10-19 18:56:25,093 INFO desk.app http "POST /api/media/inputs HTTP/1.1" 200 -
+5541233:2026-10-19 18:56:25,109 INFO desk.app http "POST /api/media/video HTTP/1.1" 200 -
+5541248:2026-10-19 18:56:27,436 INFO desk.app http "POST /api/media/inputs HTTP/1.1" 200 -
+5541249:2026-10-19 18:56:27,437 INFO desk.app http "POST /api/media/video HTTP/1.1" 400 -
+5541250:2026-10-19 18:56:27,438 INFO desk.app http "POST /api/media/inputs/discard HTTP/1.1" 200 -
+5541284:2026-10-19 18:56:46,961 INFO desk.app http "POST /api/media/inputs HTTP/1.1" 200 -
+5541285:2026-10-19 18:56:46,962 INFO desk.app http "POST /api/media/video HTTP/1.1" 400 -
+5541286:2026-10-19 18:56:46,963 INFO desk.app http "POST /api/media/inputs/discard HTTP/1.1" 200 -
+5541293:2026-10-19 18:56:47,142 INFO desk.app http "POST /api/media/inputs HTTP/1.1" 200 -
+5541294:2026-10-19 18:56:47,143 INFO desk.app http "POST /api/media/video HTTP/1.1" 400 -
+5541295:2026-10-19 18:56:47,144 INFO desk.app http "POST /api/media/inputs/discard HTTP/1.1" 200 -
+5541302:2026-10-19 18:56:47,317 INFO desk.app http "POST /api/media/inputs HTTP/1.1" 200 -
+5541303:2026-10-19 18:56:47,318 INFO desk.app http "POST /api/media/video HTTP/1.1" 400 -
+5541304:2026-10-19 18:56:47,318 INFO desk.app http "POST /api/media/inputs/discard HTTP/1.1" 200 -

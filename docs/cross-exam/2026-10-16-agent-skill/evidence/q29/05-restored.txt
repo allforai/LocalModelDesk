@@ -1,0 +1,6 @@
+ls: /Users/aa/.dsh/skills/local-model-desk: No such file or directory
+lrwxr-xr-x@ 1 aa  staff  109 Oct 16 04:13 /Users/aa/.agents/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+lrwxr-xr-x@ 1 aa  staff  109 Oct 16 04:13 /Users/aa/.claude/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+lrwxr-xr-x@ 1 aa  staff   78 Oct 19 20:30 /Users/aa/.local/bin/lmdesk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin/lmdesk
+lrwxr-xr-x@ 1 aa  staff  109 Oct 16 04:13 /Users/aa/.pi/agent/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+{'path': '/Users/aa/.local/bin/lmdesk', 'state': 'installed', 'target': '/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin/lmdesk', 'message': None}

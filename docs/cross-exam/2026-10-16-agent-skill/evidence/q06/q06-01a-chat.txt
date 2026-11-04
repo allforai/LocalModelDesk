@@ -1,0 +1,3 @@
+### GET --data-urlencode op=chat --data-urlencode model=llama70
+{"ok": true, "reason": null, "release": [], "memory_warning": null}
+HTTP_STATUS:200

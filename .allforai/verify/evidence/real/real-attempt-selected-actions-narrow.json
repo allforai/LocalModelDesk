@@ -1,0 +1,67 @@
+{
+  "case_id": "real-attempt-selected-actions-narrow",
+  "label": "attempt-selected-actions (narrow, real app + real model)",
+  "build": "a45ad86+3becba8b0c78",
+  "captured_at": "2026-09-24T19:27:08+09:00",
+  "capture_mode": "viewport",
+  "headless": false,
+  "scrollbars": "overlay",
+  "scroll_profile": {
+    "scroll_width": 900,
+    "client_width": 900,
+    "scroll_height": 606,
+    "client_height": 606,
+    "gutter_px": 0
+  },
+  "capture_tool": "LocalModelDesk visual probe (WKWebView takeSnapshot)",
+  "setup": {
+    "js": "(document.querySelectorAll('#pane-image [data-image-timeline] .attempt')[0].click(), true)",
+    "result": {
+      "value": true
+    }
+  },
+  "window": {
+    "height": 700,
+    "width": 900,
+    "window_number": 20790,
+    "backing_scale": 2
+  },
+  "readback": {
+    "appearance": "dark",
+    "theme_attr": null,
+    "locale": "zh-CN",
+    "direction": "ltr",
+    "width": 900,
+    "height": 700,
+    "device_pixel_ratio": 2,
+    "root_font_px": 16,
+    "pointer": "mouse",
+    "dynamic_type": "浏览器缩放 100%",
+    "orientation": "landscape",
+    "hover": true,
+    "any_pointer_coarse": false,
+    "scroll_profile": {
+      "scroll_width": 900,
+      "client_width": 900,
+      "scroll_height": 606,
+      "client_height": 606,
+      "gutter_px": 0
+    },
+    "scroll_source": "#pane-image",
+    "pane": "#pane-image",
+    "session_list_profile": {
+      "scroll_width": 248,
+      "client_width": 248,
+      "scroll_height": 566,
+      "client_height": 566,
+      "gutter_px": 0
+    },
+    "tab": "tab=image"
+  },
+  "images": [
+    "real-attempt-selected-actions-narrow.png"
+  ],
+  "image_digests": {
+    "real-attempt-selected-actions-narrow.png": "7257cbd3630a7fee754058eb6106ca26c9a8e0a27514661d10738a27ebab2621"
+  }
+}

@@ -48,6 +48,8 @@ def test_parse_minimal_defaults():
             "max_tokens": 2048,
             "temperature": None,
             "top_p": None,
+            "tools": None,
+            "tool_choice": None,
         },
     }
 
@@ -74,9 +76,109 @@ def test_parse_rejects_invalid_requests_and_tools():
     )
     for invalid in ({}, {"messages": "not a list"}, {"messages": []}, {"messages": [{"role": "user"}]}):
         assert _reject(invalid).http == 400
-    for field, value in (("tools", [{"type": "function"}]), ("tool_choice", "auto"), ("functions", [{}])):
-        assert _reject({**body, field: value}).http == 400
+    # The retired pre-tools API is still refused, as is a malformed tools envelope.
+    for invalid in (
+        {**body, "functions": [{}]},
+        {**body, "tools": {"type": "function"}},
+        {**body, "tools": [{"type": "function"}]},
+        {**body, "tools": [{"type": "function", "function": {"name": ""}}]},
+        {**body, "tool_choice": "sometimes"},
+        {**body, "tool_choice": "required"},
+        {**body, "tool_choice": "none"},
+        {**body, "tool_choice": {"type": "function", "function": {"name": "read"}}},
+        {**body, "tools": [{"type": "custom", "function": {"name": "read"}}]},
+        {**body, "tools": [{"type": "function", "function": {"name": "read", "parameters": "bad"}}]},
+        {**body, "tools": [{"type": "function", "function": {"name": "read", "strict": True}}]},
+        {**body, "messages": [{"role": "assistant", "tool_calls": [{"type": "function",
+            "function": {"name": "read", "arguments": "{}"}}]}]},
+        {**body, "messages": [{"role": "assistant", "tool_calls": [{"type": "function", "id": "a",
+            "function": {"name": "read", "arguments": {}}}]}]},
+        {**body, "messages": [{"role": "user", "content": "hi", "tool_calls": [{"function": {"name": "read"}}]}]},
+        {**body, "messages": [{"role": "tool", "content": "x"}]},
+        {**body, "messages": [{"role": "user", "content": [{"type": "image_url", "image_url": {"url": "x"}}]}]},
+    ):
+        assert _reject(invalid).http == 400
     assert openai_dialect.parse_request({**body, "tools": []})["stream"] is False
+
+
+TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "read",
+            "description": "Read a file",
+            "parameters": {"type": "object", "required": ["path"], "properties": {"path": {"type": "string"}}},
+        },
+    }
+]
+
+
+def test_parse_tools_and_tool_choice_travel_to_the_model():
+    parsed = openai_dialect.parse_request({"messages": [{"role": "user", "content": "hi"}],
+                                           "tools": TOOLS, "tool_choice": "auto"})
+
+    assert parsed["chat_request"]["tools"] == TOOLS
+    assert parsed["chat_request"]["tool_choice"] == "auto"
+    assert openai_dialect.parse_request({"messages": [{"role": "user", "content": "hi"}]})[
+        "chat_request"]["tools"] is None
+
+
+def test_parse_text_blocks_from_openai_clients():
+    parsed = openai_dialect.parse_request({"messages": [{"role": "user", "content": [
+        {"type": "text", "text": "读 "}, {"type": "text", "text": "a.txt"},
+    ]}]})
+    assert parsed["chat_request"]["messages"] == [{"role": "user", "content": "读 a.txt"}]
+
+
+def test_parse_replays_assistant_tool_calls_and_tool_results():
+    parsed = openai_dialect.parse_request({"messages": [
+        {"role": "user", "content": "读 a.txt"},
+        {"role": "assistant", "content": None, "tool_calls": [
+            {"type": "function", "id": "call_1", "function": {"name": "read", "arguments": "{\"path\": \"a.txt\"}"}},
+        ]},
+        {"role": "tool", "tool_call_id": "call_1", "name": "read", "content": "第一行"},
+    ]})
+
+    messages = parsed["chat_request"]["messages"]
+    assert messages[1] == {
+        "role": "assistant", "content": "",
+        "tool_calls": [{"type": "function", "id": "call_1",
+                        "function": {"name": "read", "arguments": "{\"path\": \"a.txt\"}"}}],
+    }
+    assert messages[2] == {"role": "tool", "content": "第一行", "tool_call_id": "call_1", "name": "read"}
+
+
+def test_completion_response_carries_tool_calls():
+    result = {**RESULT, "content": "", "tool_calls": [
+        {"type": "function", "id": "call_1", "function": {"name": "read", "arguments": "{}"}},
+    ], "finish_reason": "tool_calls"}
+
+    response = openai_dialect.completion_response(result, "qwen3-30b", "chatcmpl-fixed", 1756605000)
+
+    choice = response["choices"][0]
+    assert choice["message"]["tool_calls"] == result["tool_calls"]
+    assert choice["finish_reason"] == "tool_calls"
+    assert "tool_calls" not in openai_dialect.completion_response(RESULT, "m", "id", 1)["choices"][0]["message"]
+
+
+def test_stream_chunks_forward_tool_calls():
+    events = [
+        ("content", "我来读"),
+        ("tool_calls", [{"type": "function", "index": 0, "id": "call_1",
+                         "function": {"name": "read", "arguments": "{}"}}]),
+        ("finish", {"finish_reason": "tool_calls",
+                     "usage": {"prompt_tokens": 4, "completion_tokens": 9}}),
+    ]
+
+    decoded = _decode(openai_dialect.stream_chunks(iter(events), "id", 1, "m"))
+
+    assert decoded[2]["choices"][0]["delta"] == {
+        "tool_calls": [{"type": "function", "index": 0, "id": "call_1",
+                        "function": {"name": "read", "arguments": "{}"}}],
+    }
+    assert decoded[3]["choices"][0]["finish_reason"] == "tool_calls"
+    assert decoded[3]["usage"] == {"prompt_tokens": 4, "completion_tokens": 9, "total_tokens": 13}
+    assert decoded[-1] == "[DONE]"
 
 
 def test_models_list_handles_unloaded_two_ids_and_duplicates():

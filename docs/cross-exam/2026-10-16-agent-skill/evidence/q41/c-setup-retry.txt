@@ -1,0 +1,16 @@
+# c retry: unload then load 19:48:17
+{"state": {"status": "idle", "model_key": null, "error": null, "loaded_at": null}}
+{"holder": null, "holders": [], "media_busy": false, "can_start": {"llm": {"ok": true, "reason": null}, "media": {"ok": true, "reason": null}}, "version": "1.0.0", "agent_skill_stale": false}
+{"state": {"status": "loading", "model_key": "superqwen", "error": null, "loaded_at": null}}
+19:48:18 loading superqwen False None
+19:48:21 loaded superqwen False ui
+{"holder": {"kind": "llm", "label": "superqwen", "display": "SuperQwen3.8 27B 越狱 4bit", "since": 1792406898.0666618, "phase": "held"}, "holders": [{"kind": "llm", "label": "superqwen", "display": "SuperQwen3.8 27B 越狱 4bit", "since": 1792406898.0666618, "phase": "held"}], "media_busy": false, "can_st
+
+HTTP/1.0 200 OK
+Server: BaseHTTP/0.6 Python/3.13.15
+Date: Mon, 19 Oct 2026 10:48:22 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 387
+
+{"content": "\n\n你好！有什么我可以帮你的吗？", "reasoning": "用户说\"你好，一句话回答\"，意思是让我用一句话来回应他的问候。我应该简短地回复一句问候即可。\n", "usage": {"prompt_tokens": 14, "completion_tokens": 38, "total_tokens": 52, "prompt_tokens_details": {"cached_tokens": 0}}, "finish_reason": "stop", "model": "superqwen"}
+loaded True ui

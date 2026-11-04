@@ -1,0 +1,1 @@
+127.0.0.1:8766 LISTEN: python3.13 -s -m desk (pid 77323, child of dist/LocalModelDesk.app pid 77291) after restart; before restart pid 31005 (app pid 30967). Both under /Users/aa/LocalModelDesk/dist/LocalModelDesk.app. No mocks.

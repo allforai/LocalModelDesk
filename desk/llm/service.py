@@ -513,7 +513,7 @@ class LlmService:
         # and download a second model from the Hub instead of using the
         # already resident local path.
         payload: dict[str, Any] = {"model": "default_model", "messages": request["messages"]}
-        for key in ("temperature", "top_p", "top_k", "max_tokens"):
+        for key in ("temperature", "top_p", "top_k", "max_tokens", "tools", "tool_choice"):
             if request.get(key) is not None:
                 payload[key] = request[key]
         payload.setdefault("max_tokens", DEFAULT_CHAT_MAX_TOKENS)
@@ -562,13 +562,17 @@ class LlmService:
         reasoning = message.get("reasoning_content")
         if reasoning is None:
             reasoning = message.get("reasoning")
-        return {
+        result = {
             "content": message.get("content") if message.get("content") is not None else "",
             "reasoning": reasoning,
             "usage": usage,
             "finish_reason": finish_reason,
             "model": entry.key,
         }
+        # Preserve the existing result shape for ordinary text-only responses.
+        if message.get("tool_calls"):
+            result["tool_calls"] = message["tool_calls"]
+        return result
 
     def chat_stream(self, request: dict[str, Any]):
         """Yield separated chat deltas and one terminal event from the resident model."""
@@ -607,8 +611,9 @@ class LlmService:
                 if reasoning is None:
                     reasoning = delta.get("reasoning")
                 reasoning = reasoning or None
-                if text is not None or reasoning is not None:
-                    yield delta_event(text, reasoning)
+                tool_calls = delta.get("tool_calls") or None
+                if text is not None or reasoning is not None or tool_calls is not None:
+                    yield delta_event(text, reasoning, tool_calls)
                 if choice.get("finish_reason") is not None:
                     finish_reason = choice["finish_reason"]
                 if chunk.get("usage") is not None:

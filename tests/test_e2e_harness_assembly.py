@@ -33,7 +33,7 @@ def test_launch_test_harness_serves_real_routes_on_ephemeral_ports(tmp_path):
 
         status, catalog = _get(harness.base_url + "/api/resources/catalog")
         assert status == 200
-        assert len(catalog) == 9
+        assert len(catalog) == 8
         image = next(entry for entry in catalog if entry["key"] == "qwen-image")
         assert image["group"] == "image"
         assert len(image["sources"]) == 2

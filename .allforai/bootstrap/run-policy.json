@@ -1,0 +1,5 @@
+{
+  "on_repeated_failure": "continue",
+  "on_needs_iteration": "auto_fix_once",
+  "on_safety_warning": "continue"
+}

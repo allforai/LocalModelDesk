@@ -1,0 +1,1 @@
+s=$(date +%s); perl -e 'alarm 120; exec @ARGV' ~/.local/bin/lmdesk ask '用一个词回答：雪是什么颜色' --model superqwen --timeout 60 >q42-02b-stdout.txt 2>q42-02b-stderr.txt; echo $? >q42-02b-exit.txt; echo $(( $(date +%s)-s )) >q42-02b-secs.txt

@@ -1,0 +1,2 @@
+/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_cli/__init__.py
+/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13

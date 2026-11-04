@@ -1,0 +1,18 @@
+[
+  {
+    "model": "superqwen",
+    "telemetry_routes": [
+      "lmdesk/superqwen"
+    ],
+    "reply": "自动切换成功",
+    "loaded_automatically": true
+  },
+  {
+    "model": "qwen35",
+    "telemetry_routes": [
+      "lmdesk/qwen35"
+    ],
+    "reply": "已切回本机模型",
+    "loaded_automatically": true
+  }
+]

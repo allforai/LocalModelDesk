@@ -1,0 +1,8 @@
+29895 29712 Mon Oct 19 20:54:56 2026     /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13 -s -m desk.agent_cli status --json
+29895 29712 Mon Oct 19 20:54:56 2026     /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13 -s -m desk.agent_cli status --json
+29895 29712 Mon Oct 19 20:54:56 2026     /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13 -s -m desk.agent_cli status --json
+29895 29712 Mon Oct 19 20:54:56 2026     /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13 -s -m desk.agent_cli status --json
+29895 29712 Mon Oct 19 20:54:56 2026     /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13 -s -m desk.agent_cli status --json
+29895 29712 Mon Oct 19 20:54:56 2026     /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13 -s -m desk.agent_cli status --json
+29895 29712 Mon Oct 19 20:54:56 2026     /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13 -s -m desk.agent_cli status --json
+29895 29712 Mon Oct 19 20:54:56 2026     /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13 -s -m desk.agent_cli status --json

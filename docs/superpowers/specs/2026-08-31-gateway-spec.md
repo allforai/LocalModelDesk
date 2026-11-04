@@ -31,6 +31,15 @@ README 将被改写为实际行为。
   Anthropic 的 `{"type":"error","error":{"type":...,"message":...}}`）。不得伪造成功响应。
 - **R-gateway-10** 请求里的 `model` 既接受目录 key，也接受当前加载模型的标识符；
   与当前驻留模型不符时按 R-gateway-08 报错说明，不静默换模型。
+- **R-gateway-11** OpenAI 原生函数工具：接受 `tools`（`type:"function"`）、省略或 `auto` 的
+  `tool_choice`；向 mlx-lm 转发工具定义，非流式返回 `message.tool_calls`，流式逐片返回
+  `delta.tool_calls`（保留 index/id/name/arguments），并保留 `finish_reason:"tool_calls"`。
+  接受多轮 assistant 的 `tool_calls`（可空 content）和 `role:"tool"` 的 `tool_call_id`/content。
+  **网关只传输，不执行工具**；执行仍由 pi 等客户端负责，走现有聊天计数、持有权检查和中断语义。
+- **R-gateway-12** OpenAI 流式终帧携带真实 `usage`（prompt/completion/total），不以估算冒充实测。
+  上游缺终帧或中断时仍报错且不发 `[DONE]`。当前 mlx-lm 不执行强制工具选择或严格 schema 约束，
+  因此 `tool_choice` 的非 `auto` 模式、`strict:true` 及旧式 `functions`/`function_call` 明确拒绝。
+  Anthropic `/v1/messages` 的工具块仍不在支持范围；若上游自发调用工具，必须明确报错而非丢弃后伪装成功。
 
 ## 暴露
 
@@ -46,6 +55,8 @@ README 将被改写为实际行为。
 
 全部用注入的假 LLM 后端做协议级测试，不需要真模型：
 - OpenAI 非流式/流式响应形状逐字段断言；
+- 原生工具往返：工具定义、并行 index、分片 arguments、调用 ID 与工具结果回传逐字段断言；
+  覆盖真实 Gateway → DeskGatewayBackend → LlmService 的接缝（仅 mlx 假件），检查 active_chats 收敛；
 - Anthropic 非流式响应形状逐字段断言；
 - Anthropic 流式：断言事件顺序与每个事件的 `event:`/`data:` 结构完整；
 - 503 用例：无模型 与 媒体在跑 两种，断言状态码、`Retry-After`、原因码，并断言**没有触发加载**；

@@ -1,0 +1,50 @@
+[
+ {
+  "mutation": "m1-refine-drops-seed",
+  "file": "desk/static/js/panes/image.js",
+  "breaks": "「在这张基础上改」 no longer carries the attempt's seed (AC-2 first half)",
+  "exit_code": 1,
+  "caught": true,
+  "failed_tests": [
+   "FAILED tests/e2e/test_image_sessions.py::test_ac1_ac2_three_refine_rounds_stay_ordered_with_their_params_and_seeds"
+  ],
+  "evidence": ".allforai/verify/evidence/mutation/m1-refine-drops-seed.json",
+  "restored_byte_identical": true
+ },
+ {
+  "mutation": "m2-recompose-reuses-seed",
+  "file": "desk/static/js/pure/image_session.js",
+  "breaks": "「换个构图」 reuses the original seed (AC-2 second half)",
+  "exit_code": 1,
+  "caught": true,
+  "failed_tests": [
+   "FAILED tests/e2e/test_image_sessions.py::test_ac1_ac2_three_refine_rounds_stay_ordered_with_their_params_and_seeds"
+  ],
+  "evidence": ".allforai/verify/evidence/mutation/m2-recompose-reuses-seed.json",
+  "restored_byte_identical": true
+ },
+ {
+  "mutation": "m3-delete-keeps-session",
+  "file": "desk/library/image_sessions.py",
+  "breaks": "deleting a session leaves it in the list (AC-5)",
+  "exit_code": 1,
+  "caught": true,
+  "failed_tests": [
+   "FAILED tests/e2e/test_image_sessions.py::test_ac5_deleting_a_session_keeps_its_images_in_the_library"
+  ],
+  "evidence": ".allforai/verify/evidence/mutation/m3-delete-keeps-session.json",
+  "restored_byte_identical": true
+ },
+ {
+  "mutation": "m4-failure-reason-hidden",
+  "file": "desk/static/js/pure/image_session.js",
+  "breaks": "a failed attempt no longer shows its reason (AC-6)",
+  "exit_code": 1,
+  "caught": true,
+  "failed_tests": [
+   "FAILED tests/e2e/test_image_sessions.py::test_ac6_failed_and_cancelled_attempts_keep_their_reason_and_no_blank_image"
+  ],
+  "evidence": ".allforai/verify/evidence/mutation/m4-failure-reason-hidden.json",
+  "restored_byte_identical": true
+ }
+]

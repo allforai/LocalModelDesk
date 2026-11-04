@@ -24,15 +24,20 @@ class DeskGatewayBackend:
         return self._arbiter.can_start_heavy(kind)
 
     def chat_completion(self, request: dict) -> dict:
-        return self._llm.chat_completion(request)
+        return self._llm.chat_completion({**request, "origin": "agent"})
 
     def chat_stream(self, request: dict):
-        for event in self._llm.chat_stream(request):
+        # Gateway traffic is external, not recent activity in the desk's chat UI.
+        # Keep active_chats accounting, but do not block agent model swaps by
+        # falsely marking every gateway request as a recent UI conversation.
+        for event in self._llm.chat_stream({**request, "origin": "agent"}):
             if event["type"] == "delta":
                 if event["reasoning"] is not None:
                     yield "reasoning", event["reasoning"]
                 if event["text"] is not None:
                     yield "content", event["text"]
+                if event.get("tool_calls") is not None:
+                    yield "tool_calls", event["tool_calls"]
             elif event["type"] == "done":
                 yield "finish", event
             else:

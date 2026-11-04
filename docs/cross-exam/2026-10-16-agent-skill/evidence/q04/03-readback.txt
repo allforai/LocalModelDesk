@@ -1,0 +1,22 @@
+== .agents/skills
+total 0
+drwxr-xr-x@ 2 aa  staff  64 Oct 16 15:11 .
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 ..
+== .pi/agent/skills
+total 0
+drwxr-xr-x@ 3 aa  staff   96 Oct 16 15:10 .
+drwxr-xr-x@ 6 aa  staff  192 Oct 16 15:11 ..
+lrwxr-xr-x@ 1 aa  staff  109 Oct 16 15:10 local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+== .claude/skills
+total 0
+drwxr-xr-x@ 2 aa  staff  64 Oct 16 15:11 .
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 ..
+== .dsh/skills
+total 0
+drwxr-xr-x@ 2 aa  staff  64 Oct 16 15:11 .
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 ..
+== .local/bin
+total 0
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 .
+drwxr-xr-x@ 3 aa  staff  96 Oct 16 15:10 ..
+lrwxr-xr-x@ 1 aa  staff  78 Oct 16 15:10 lmdesk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/bin/lmdesk

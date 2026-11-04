@@ -1,0 +1,1 @@
+lrwxr-xr-x@ 1 aa  staff  109 Oct 19 20:31 /Users/aa/.claude/skills/local-model-desk -> /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk

@@ -1,0 +1,1 @@
+desk.log only logs http access lines (POST /api/llm/chat 200), no body. mlx-lm.log shows "Prompt processing progress: 53/53" (53 prompt tokens) at 18:30:52, no body. No request body log found. Message assembly seen in chat.py _message (02-chat-py-message-src.txt) and model echo in 01-stdout.txt.

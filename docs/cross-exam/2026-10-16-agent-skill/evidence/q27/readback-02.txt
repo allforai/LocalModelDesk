@@ -1,0 +1,4 @@
+## df5c8e099e344942befd08d18bd3db27
+{"id": "df5c8e099e344942befd08d18bd3db27", "title": "盘问-并发A", "attempts": [{"id": "8a70fe6e47314065b5d9085b9cce7131", "status": "done", "prompt": "一只红色的狐狸在雪地里", "params": {"prompt": "一只红色的狐狸在雪地里", "width": 512, "height": 512, "steps": 8, "seed": 3777538804}, "base": null, "path": "/Users/aa/Library/Application Support/LocalModelDesk/outputs/qwen-image-20261019-192251-547f6c60.png", "error": null}]}
+## 44ee1ec484f743adae6ba6b243ddc50a
+{"id": "44ee1ec484f743adae6ba6b243ddc50a", "title": "盘问-并发B", "attempts": [{"id": "659636bb8c4740119c0f2844d1c9bb4c", "status": "done", "prompt": "一座蓝色的灯塔在夜晚的海边", "params": {"prompt": "一座蓝色的灯塔在夜晚的海边", "width": 512, "height": 512, "steps": 8, "seed": 869959758}, "base": null, "path": "/Users/aa/Library/Application Support/LocalModelDesk/outputs/qwen-image-20261019-192306-794aab07.png", "error": null}]}

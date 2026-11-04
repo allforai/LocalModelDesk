@@ -1,0 +1,2 @@
+epoch s: start 1792402340.996; image submitted 341.262; ask start 342.067; ask stderr lines @402.558 (60.5s after ask start), @420.087 (+17.5s), @435.349 (+15.3s); image stderr lines every ~15s; image end (process exit) 441.201; ask end 444.581 (+3.4s after image end); ask stdout "\n\n2"; both exit 0.
+llm status: "error" from first sample after ask start (346.1) through 436.3; "loading" @441.4; "loaded" @446.5. active_chats 0 throughout.

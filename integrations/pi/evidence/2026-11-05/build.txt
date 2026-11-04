@@ -1,0 +1,3 @@
+    skip notarization: set LMD_NOTARY_PROFILE to a 'xcrun notarytool store-credentials' profile name
+verify-app: OK (/tmp/lmdesk-native-c.PIxqYP/build/.staging.99141/LocalModelDesk.app)
+built: /tmp/lmdesk-native-c.PIxqYP/build/LocalModelDesk.app

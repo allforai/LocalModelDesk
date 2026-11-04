@@ -1,0 +1,109 @@
+{
+  "authorizations": [
+    {
+      "authorization_id": "run-61e937ff::image-session-repair::image-session-verify#0",
+      "budgets": {
+        "image-session-verify": 3
+      },
+      "charged": {
+        "image-session-verify": 1
+      },
+      "granted_at": "2026-09-23T20:56:01Z",
+      "obligations": [
+        "image-session-verify"
+      ],
+      "outcome": "failed",
+      "provenance": {
+        "host": "claude-run-engine"
+      },
+      "repair_node_id": "image-session-repair",
+      "request_digest": "8633723901e36e5a59672eb168811aa93720d744f40b811e92943f160e6102cf",
+      "settled_at": "2026-09-23T21:30:22Z",
+      "started_at": "2026-09-23T20:56:07Z",
+      "state": "settled"
+    },
+    {
+      "authorization_id": "run-61e937ff::image-session-repair::image-session-verify#1",
+      "budgets": {
+        "image-session-verify": 3
+      },
+      "charged": {
+        "image-session-verify": 2
+      },
+      "granted_at": "2026-09-23T21:30:29Z",
+      "obligations": [
+        "image-session-verify"
+      ],
+      "outcome": "unknown",
+      "provenance": {
+        "host": "claude-run-engine",
+        "reconciliation": {
+          "at": "2026-09-24T00:09:52Z",
+          "attribution": {
+            "kind": "execution_record",
+            "observation_ref": "records[0]",
+            "record": {
+              "at": "2026-09-23T21:30:56Z",
+              "authorization_id": "run-61e937ff::image-session-repair::image-session-verify#1",
+              "detail": "Workflow run wf_00471b1a-ed0 dispatched image-session-repair (agent ace352f8f59227608) after repair-start granted #1; the executor issued one read-only shell command (cat node-spec / local-requirements) between 21:30:56Z and 21:30:59Z, then the orchestrator stopped the workflow to collect a user product decision (library seed exemption). No files were written by this attempt.",
+              "event": "executor_started_then_stopped_by_orchestrator",
+              "node_id": "image-session-repair"
+            }
+          },
+          "basis": "Executor transcript shows the attempt ran (one read-only command) before the orchestrator stopped the run; charge stands, outcome unknown",
+          "determination": "executed",
+          "source_digest": "sha256:9ca74bcb34f77d9c356b3885cf53007b1cf3206827addab0990a8f9d345197cc",
+          "source_path": ".allforai/bootstrap/reconciliation/repair-attempt-1.json"
+        }
+      },
+      "repair_node_id": "image-session-repair",
+      "request_digest": "8633723901e36e5a59672eb168811aa93720d744f40b811e92943f160e6102cf",
+      "settled_at": "2026-09-24T00:09:52Z",
+      "started_at": "2026-09-23T21:30:35Z",
+      "state": "settled"
+    },
+    {
+      "authorization_id": "run-61e937ff::image-session-repair::image-session-verify#2",
+      "budgets": {
+        "image-session-verify": 3
+      },
+      "charged": {
+        "image-session-verify": 3
+      },
+      "granted_at": "2026-09-24T00:54:22Z",
+      "obligations": [
+        "image-session-verify"
+      ],
+      "outcome": "failed",
+      "provenance": {
+        "host": "claude-run-engine"
+      },
+      "repair_node_id": "image-session-repair",
+      "request_digest": "8633723901e36e5a59672eb168811aa93720d744f40b811e92943f160e6102cf",
+      "settled_at": "2026-09-24T01:52:10Z",
+      "started_at": "2026-09-24T00:54:28Z",
+      "state": "settled"
+    }
+  ],
+  "ledger_version": 1,
+  "origin": {
+    "binding": {
+      "loops": 0,
+      "repair_loops_digest": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "kind": "new_run",
+    "proof": {
+      "kind": "verified_untouched_workflow",
+      "observed": {
+        "completed": 0,
+        "repair_routes": 0,
+        "transition_log": 0
+      },
+      "source_digest": "sha256:df8f2e94f360152659453bd048a2f3a291443310dbe5fd328ad09d4fa802a497",
+      "source_path": ".allforai/bootstrap/workflow.json",
+      "verified_at": "2026-09-23T18:34:25Z"
+    },
+    "recorded_at": "2026-09-23T18:34:25Z"
+  },
+  "run_id": "run-61e937ff"
+}

@@ -1,0 +1,34 @@
+{
+ "id": "8f98fc59cfcf40aead9dabfdbef015d4",
+ "kind": "video",
+ "title": "A cinematic shot of a pr…",
+ "title_auto": true,
+ "created": "2026-10-15T04:48:17",
+ "updated": "2026-10-15T05:14:06",
+ "attempts": [
+  {
+   "id": "fbee38d8d581495e812a2b051537845b",
+   "job_id": 1,
+   "ts": "2026-10-15T04:49:10",
+   "finished": "2026-10-15T05:14:06",
+   "status": "done",
+   "op": "generate",
+   "params": {
+    "prompt": "A cinematic shot of a proud female swordswoman being coerced into undressing. With a reluctant and shy expression, she slowly removes her clothing piece by piece: first the flowing outer robe, then the tight silk sash, followed by the inner bandeau that reveals her plump, milky-white breasts. Finally, she hesitantly pulls down her translucent silk panties, exposing her pink, glistening vulva. The camera slowly zooms in from her face to her lower body.",
+    "width": 768,
+    "height": 448,
+    "frames": 192,
+    "steps": 16,
+    "seed": 3293254750
+   },
+   "continues": null,
+   "refs": {},
+   "output": "h3-20261015-044910-7a4d23b1.mp4",
+   "joined_output": null,
+   "joined_error": null,
+   "error": null,
+   "base": null,
+   "output_missing": false
+  }
+ ]
+}

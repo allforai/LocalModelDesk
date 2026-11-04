@@ -1,0 +1,125 @@
+{
+  "schema_version": "1.0",
+  "batches": [
+    {
+      "batch_id": "b-2026-09-24-image-sessions",
+      "topic": "image-sessions",
+      "source": "user_session",
+      "user_reference": "session 29c5cac0 · 2026-09-24 · 用户回答：会话形式选 b；新会话=手动新建；删除会话=图片保留在素材库；种子设计=「可以，就这样设计」",
+      "decisions": [
+        {
+          "question": "image-sessions",
+          "chosen": "图片页像聊天一样有会话列表；一个会话是围绕同一想法的一串生成尝试，用户不满意时可以调整后继续生成，之前的尝试都留在会话里",
+          "rationale": "用户选择按聊天那样分会话（b），并确认了手动新建、删除只删分组、「在这张基础上改 / 换个构图」两个动作且界面不出现种子的设计",
+          "operation": "confirm",
+          "supersedes": null,
+          "intent": {
+            "id": "image-sessions",
+            "topic": "image-sessions",
+            "origin": "user-request",
+            "goal": "图片页像聊天一样有会话列表；一个会话是围绕同一想法的一串生成尝试，用户不满意时可以调整后继续生成，之前的尝试都留在会话里",
+            "scope": [
+              "image-pane",
+              "image-sessions-store"
+            ],
+            "business_rules": [
+              "只改图片页；视频、音乐页不动",
+              "会话持久化在本机，重启 app 后仍在，每个会话一个 JSON 文件，沿用聊天会话的存储方式",
+              "会话内按时间顺序列出每次尝试：图片、提示词、宽高、步数、种子；失败或取消的尝试也列出并写明原因",
+              "会话需手动新建（像聊天的「新建」）；未新建时生成接在当前会话；会话标题默认取第一次生成的提示词",
+              "会话可切换、重命名、删除；删除会话只删分组，图片文件保留并仍出现在素材库",
+              "打开任意一次尝试后给两个动作：「在这张基础上改」把提示词回填到输入框并沿用该张种子，用户改完再生成；「换个构图」提示词不变、换一个新随机种子直接再生成",
+              "界面主流程不出现「种子」一词；种子与宽高、步数一起收进「高级参数」",
+              "新尝试总是追加到当前会话末尾，不覆盖旧图",
+              "局部重绘/图生图不在本次范围"
+            ],
+            "acceptance": [
+              "连续三轮「生成 → 在这张基础上改 → 再生成」后，三张图及各自参数都在同一个会话里按顺序显示",
+              "「在这张基础上改」生成的新图与原图种子相同；「换个构图」生成的新图提示词相同而种子不同",
+              "重启 app 后会话列表、每个会话的尝试和图片都还在",
+              "切到另一个会话再切回，内容不变；新建会话后生成的图只进新会话",
+              "删除会话后会话从列表消失，其中的图片仍能在素材库打开",
+              "失败或取消的尝试在会话里可见并显示原因，不会留下一张空白图",
+              "在真实浏览器中截图检查图片页的会话列表、尝试列表和两个动作按钮，无遮挡、截断或空白态错误"
+            ],
+            "revision": 1,
+            "status": "confirmed",
+            "confirmation": {
+              "source": "user",
+              "reference": ".allforai/product-concept/decision-journal.json#b-2026-09-24-image-sessions/decisions/0",
+              "decision_id": "b-2026-09-24-image-sessions/decisions/0",
+              "reason": "用户选择按聊天那样分会话（b），并确认了手动新建、删除只删分组、「在这张基础上改 / 换个构图」两个动作且界面不出现种子的设计",
+              "user_reference": "session 29c5cac0 · 2026-09-24 · 用户回答：会话形式选 b；新会话=手动新建；删除会话=图片保留在素材库；种子设计=「可以，就这样设计」"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "batch_id": "b-2026-09-24-image-sessions-scope",
+      "topic": "Product baseline scope",
+      "source": "user_session",
+      "user_reference": "session 29c5cac0 · 2026-09-24 · 「可以，就这样设计」",
+      "decisions": [
+        {
+          "question": "Freeze this product scope?",
+          "chosen": "Freeze explicit scope",
+          "rationale": "本次只做图片会话这一项已确认需求",
+          "baseline": {
+            "version": 1,
+            "requirement_refs": [
+              {
+                "path": ".allforai/bootstrap/local-requirements.json",
+                "id": "image-sessions",
+                "revision": 1
+              }
+            ],
+            "excluded": {},
+            "intents": [
+              {
+                "id": "image-sessions",
+                "topic": "image-sessions",
+                "origin": "user-request",
+                "goal": "图片页像聊天一样有会话列表；一个会话是围绕同一想法的一串生成尝试，用户不满意时可以调整后继续生成，之前的尝试都留在会话里",
+                "scope": [
+                  "image-pane",
+                  "image-sessions-store"
+                ],
+                "business_rules": [
+                  "只改图片页；视频、音乐页不动",
+                  "会话持久化在本机，重启 app 后仍在，每个会话一个 JSON 文件，沿用聊天会话的存储方式",
+                  "会话内按时间顺序列出每次尝试：图片、提示词、宽高、步数、种子；失败或取消的尝试也列出并写明原因",
+                  "会话需手动新建（像聊天的「新建」）；未新建时生成接在当前会话；会话标题默认取第一次生成的提示词",
+                  "会话可切换、重命名、删除；删除会话只删分组，图片文件保留并仍出现在素材库",
+                  "打开任意一次尝试后给两个动作：「在这张基础上改」把提示词回填到输入框并沿用该张种子，用户改完再生成；「换个构图」提示词不变、换一个新随机种子直接再生成",
+                  "界面主流程不出现「种子」一词；种子与宽高、步数一起收进「高级参数」",
+                  "新尝试总是追加到当前会话末尾，不覆盖旧图",
+                  "局部重绘/图生图不在本次范围"
+                ],
+                "acceptance": [
+                  "连续三轮「生成 → 在这张基础上改 → 再生成」后，三张图及各自参数都在同一个会话里按顺序显示",
+                  "「在这张基础上改」生成的新图与原图种子相同；「换个构图」生成的新图提示词相同而种子不同",
+                  "重启 app 后会话列表、每个会话的尝试和图片都还在",
+                  "切到另一个会话再切回，内容不变；新建会话后生成的图只进新会话",
+                  "删除会话后会话从列表消失，其中的图片仍能在素材库打开",
+                  "失败或取消的尝试在会话里可见并显示原因，不会留下一张空白图",
+                  "在真实浏览器中截图检查图片页的会话列表、尝试列表和两个动作按钮，无遮挡、截断或空白态错误"
+                ],
+                "revision": 1,
+                "status": "confirmed",
+                "confirmation": {
+                  "source": "user",
+                  "reference": ".allforai/product-concept/decision-journal.json#b-2026-09-24-image-sessions/decisions/0",
+                  "decision_id": "b-2026-09-24-image-sessions/decisions/0",
+                  "reason": "用户选择按聊天那样分会话（b），并确认了手动新建、删除只删分组、「在这张基础上改 / 换个构图」两个动作且界面不出现种子的设计",
+                  "user_reference": "session 29c5cac0 · 2026-09-24 · 用户回答：会话形式选 b；新会话=手动新建；删除会话=图片保留在素材库；种子设计=「可以，就这样设计」"
+                }
+              }
+            ],
+            "confirmation": ".allforai/product-concept/decision-journal.json#b-2026-09-24-image-sessions-scope/decisions/0"
+          }
+        }
+      ]
+    }
+  ]
+}

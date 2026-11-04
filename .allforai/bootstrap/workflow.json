@@ -1,0 +1,854 @@
+{
+ "schema_version": "2.0",
+ "project": "LocalModelDesk",
+ "goals": [
+  "implement",
+  "product-verify",
+  "visual-verify"
+ ],
+ "planned_at": "2026-09-24T00:00:00+09:00",
+ "user_steps": [
+  "/cross-exam",
+  "/product-review"
+ ],
+ "expanders": [],
+ "nodes": [
+  {
+   "node_id": "image-session-design",
+   "capability": "ui-design",
+   "goal": "产出图片会话的设计文档（数据模型、API 契约、作业与会话的挂接、界面布局与四态、文案）和可截图验收的视觉标准",
+   "exit_artifacts": [
+    {
+     "path": "docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+     "validation_commands": [
+      "grep -q '在这张基础上改' docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+      "grep -q '换个构图' docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+      "grep -q '/api/image-sessions' docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+     ]
+    },
+    {
+     "path": ".allforai/visual-qa/visual-acceptance-criteria.json",
+     "validation_commands": [
+      "python3 -c \"import json; d=json.load(open('.allforai/visual-qa/visual-acceptance-criteria.json')); assert d.get('status')=='passed', d.get('status')\""
+     ]
+    },
+    {
+     "path": ".allforai/visual-qa/visual-acceptance-criteria.md",
+     "validation_commands": []
+    },
+    {
+     "path": ".allforai/visual-qa/visual-evidence-requirements.json",
+     "validation_commands": [
+      "python3 -c \"import json; json.load(open('.allforai/visual-qa/visual-evidence-requirements.json'))\""
+     ]
+    }
+   ],
+   "responsibilities": [
+    "documentation"
+   ],
+   "source_inputs": [
+    ".allforai/bootstrap/local-requirements.json",
+    "desk/library/sessions.py",
+    "desk/library/history.py",
+    "desk/static/js/panes/chat.js",
+    "docs/superpowers/specs/2026-08-31-library-design.md"
+   ],
+   "parallel_write_scopes": [
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "knowledge_refs": [
+    "knowledge/capabilities/ui-design.md",
+    "knowledge/defensive-patterns.md",
+    "knowledge/cross-phase-protocols.md"
+   ],
+   "consumers": [
+    "image-session-backend",
+    "image-session-pane",
+    "image-session-verify"
+   ],
+   "hard_blocked_by": [],
+   "alignment_refs": [],
+   "unlocks": [
+    "image-session-backend"
+   ],
+   "human_gate": false,
+   "discipline_owner": null,
+   "decision_mode": "none",
+   "node_spec_path": ".allforai/bootstrap/node-specs/image-session-design.md",
+   "profile_slice": {
+    "tech_stacks": [
+     "python backend desk/",
+     "vanilla JS frontend desk/static/"
+    ],
+    "test_commands": {
+     "backend": "python3 -m pytest tests --ignore=tests/e2e -q",
+     "frontend": "node --test tests/js/",
+     "e2e": "python3 -m pytest tests/e2e -q"
+    }
+   },
+   "closure_verify": [],
+   "requirement_refs": [
+    {
+     "path": ".allforai/bootstrap/local-requirements.json",
+     "id": "image-sessions",
+     "revision": 1
+    }
+   ],
+   "decision_inputs": [
+    ".allforai/bootstrap/local-requirements.json"
+   ],
+   "product_goals": [
+    "图片页像聊天一样有会话列表；一个会话是围绕同一想法的一串生成尝试，用户不满意时可以调整后继续生成，之前的尝试都留在会话里"
+   ],
+   "acceptance": [
+    "连续三轮「生成 → 在这张基础上改 → 再生成」后，三张图及各自参数都在同一个会话里按顺序显示",
+    "「在这张基础上改」生成的新图与原图种子相同；「换个构图」生成的新图提示词相同而种子不同",
+    "重启 app 后会话列表、每个会话的尝试和图片都还在",
+    "切到另一个会话再切回，内容不变；新建会话后生成的图只进新会话",
+    "删除会话后会话从列表消失，其中的图片仍能在素材库打开",
+    "失败或取消的尝试在会话里可见并显示原因，不会留下一张空白图",
+    "在真实浏览器中截图检查图片页的会话列表、尝试列表和两个动作按钮，无遮挡、截断或空白态错误"
+   ]
+  },
+  {
+   "node_id": "image-session-backend",
+   "capability": "translate",
+   "goal": "实现图片会话的本地持久化、/api/image-sessions 路由，以及图片作业开始/结束时把尝试写进所属会话",
+   "exit_artifacts": [
+    {
+     "path": ".allforai/image-sessions/backend-report.json",
+     "validation_commands": [
+      "python3 -c \"import json; d=json.load(open('.allforai/image-sessions/backend-report.json')); assert d.get('status')=='passed', d.get('status')\"",
+      "python3 -m pytest tests/test_image_sessions.py tests/test_library_http.py tests/test_media_image_service.py -q"
+     ]
+    }
+   ],
+   "responsibilities": [
+    "implementation",
+    "verification"
+   ],
+   "source_inputs": [
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+    ".allforai/bootstrap/local-requirements.json",
+    "desk/library/sessions.py",
+    "desk/library/history.py",
+    "desk/library/errors.py",
+    "desk/media/commands.py",
+    "desk/media/image_cli.py"
+   ],
+   "parallel_write_scopes": [
+    "desk/library/image_sessions.py",
+    "desk/library/http.py",
+    "desk/library/__init__.py",
+    "desk/media/service.py",
+    "desk/media/routes.py",
+    "desk/foundation/paths.py",
+    "desk/foundation/routes.py",
+    "desk/app.py",
+    "desk/runtime.py",
+    "desk/testing/**",
+    "tests/test_image_sessions*.py",
+    "tests/test_library_*.py",
+    "tests/test_media_*.py",
+    "tests/media_fakes.py",
+    "tests/test_foundation_paths.py"
+   ],
+   "knowledge_refs": [
+    "knowledge/cross-phase-protocols.md",
+    "knowledge/defensive-patterns.md"
+   ],
+   "consumers": [
+    "image-session-pane",
+    "image-session-verify"
+   ],
+   "hard_blocked_by": [
+    "image-session-design"
+   ],
+   "alignment_refs": [],
+   "unlocks": [
+    "image-session-pane"
+   ],
+   "human_gate": false,
+   "discipline_owner": null,
+   "decision_mode": "none",
+   "downstream_effect_owner": "image-session-verify",
+   "input_dependencies": [
+    ".allforai/visual-qa/**"
+   ],
+   "node_spec_path": ".allforai/bootstrap/node-specs/image-session-backend.md",
+   "profile_slice": {
+    "tech_stacks": [
+     "python backend desk/",
+     "vanilla JS frontend desk/static/"
+    ],
+    "test_commands": {
+     "backend": "python3 -m pytest tests --ignore=tests/e2e -q",
+     "frontend": "node --test tests/js/",
+     "e2e": "python3 -m pytest tests/e2e -q"
+    }
+   },
+   "closure_verify": [],
+   "requirement_refs": [
+    {
+     "path": ".allforai/bootstrap/local-requirements.json",
+     "id": "image-sessions",
+     "revision": 1
+    }
+   ],
+   "decision_inputs": [
+    ".allforai/bootstrap/local-requirements.json"
+   ],
+   "product_goals": [
+    "图片页像聊天一样有会话列表；一个会话是围绕同一想法的一串生成尝试，用户不满意时可以调整后继续生成，之前的尝试都留在会话里"
+   ],
+   "acceptance": [
+    "连续三轮「生成 → 在这张基础上改 → 再生成」后，三张图及各自参数都在同一个会话里按顺序显示",
+    "「在这张基础上改」生成的新图与原图种子相同；「换个构图」生成的新图提示词相同而种子不同",
+    "重启 app 后会话列表、每个会话的尝试和图片都还在",
+    "切到另一个会话再切回，内容不变；新建会话后生成的图只进新会话",
+    "删除会话后会话从列表消失，其中的图片仍能在素材库打开",
+    "失败或取消的尝试在会话里可见并显示原因，不会留下一张空白图",
+    "在真实浏览器中截图检查图片页的会话列表、尝试列表和两个动作按钮，无遮挡、截断或空白态错误"
+   ]
+  },
+  {
+   "node_id": "image-session-pane",
+   "capability": "ui-forge",
+   "goal": "把图片页改成会话式界面：会话列表、尝试时间线、「在这张基础上改 / 换个构图」、折叠的高级参数，接到 /api/image-sessions",
+   "exit_artifacts": [
+    {
+     "path": ".allforai/image-sessions/pane-report.json",
+     "validation_commands": [
+      "python3 -c \"import json; d=json.load(open('.allforai/image-sessions/pane-report.json')); assert d.get('status')=='passed', d.get('status')\"",
+      "node --test tests/js/*.test.js"
+     ]
+    }
+   ],
+   "responsibilities": [
+    "implementation",
+    "verification"
+   ],
+   "source_inputs": [
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+    ".allforai/bootstrap/local-requirements.json",
+    "desk/static/js/panes/chat.js",
+    "desk/static/js/icons.js",
+    "desk/static/js/widgets/confirm.js",
+    "desk/static/js/widgets/error_block.js"
+   ],
+   "parallel_write_scopes": [
+    "desk/static/index.html",
+    "desk/static/app.css",
+    "desk/static/js/panes/image.js",
+    "desk/static/js/api.js",
+    "desk/static/js/main.js",
+    "desk/static/js/store.js",
+    "desk/static/js/pure/image_session*.js",
+    "desk/static/js/widgets/image_session*.js",
+    "desk/static/js/widgets/jobview.js",
+    "tests/js/image*.test.js",
+    "tests/js/api.test.js",
+    "tests/js/jobview*.test.js",
+    "tests/e2e/test_image_flow.py",
+    "desk/static/js/panes/library.js",
+    "desk/static/js/pure/history_fill.js",
+    "tests/js/history_fill.test.js",
+    "tests/js/library_pane.test.js",
+    "tests/e2e/test_library_panel.py",
+    "tests/js/media_panes.test.js"
+   ],
+   "knowledge_refs": [
+    "knowledge/capabilities/ui-forge.md",
+    "knowledge/cross-phase-protocols.md",
+    "knowledge/defensive-patterns.md"
+   ],
+   "consumers": [
+    "image-session-verify"
+   ],
+   "hard_blocked_by": [
+    "image-session-design",
+    "image-session-backend"
+   ],
+   "alignment_refs": [],
+   "unlocks": [
+    "image-session-verify"
+   ],
+   "human_gate": false,
+   "discipline_owner": null,
+   "decision_mode": "none",
+   "downstream_effect_owner": "image-session-verify",
+   "input_dependencies": [
+    ".allforai/visual-qa/**",
+    ".allforai/image-sessions/backend-report.json"
+   ],
+   "node_spec_path": ".allforai/bootstrap/node-specs/image-session-pane.md",
+   "profile_slice": {
+    "tech_stacks": [
+     "python backend desk/",
+     "vanilla JS frontend desk/static/"
+    ],
+    "test_commands": {
+     "backend": "python3 -m pytest tests --ignore=tests/e2e -q",
+     "frontend": "node --test tests/js/",
+     "e2e": "python3 -m pytest tests/e2e -q"
+    }
+   },
+   "closure_verify": [],
+   "requirement_refs": [
+    {
+     "path": ".allforai/bootstrap/local-requirements.json",
+     "id": "image-sessions",
+     "revision": 1
+    }
+   ],
+   "decision_inputs": [
+    ".allforai/bootstrap/local-requirements.json"
+   ],
+   "product_goals": [
+    "图片页像聊天一样有会话列表；一个会话是围绕同一想法的一串生成尝试，用户不满意时可以调整后继续生成，之前的尝试都留在会话里"
+   ],
+   "acceptance": [
+    "连续三轮「生成 → 在这张基础上改 → 再生成」后，三张图及各自参数都在同一个会话里按顺序显示",
+    "「在这张基础上改」生成的新图与原图种子相同；「换个构图」生成的新图提示词相同而种子不同",
+    "重启 app 后会话列表、每个会话的尝试和图片都还在",
+    "切到另一个会话再切回，内容不变；新建会话后生成的图只进新会话",
+    "删除会话后会话从列表消失，其中的图片仍能在素材库打开",
+    "失败或取消的尝试在会话里可见并显示原因，不会留下一张空白图",
+    "在真实浏览器中截图检查图片页的会话列表、尝试列表和两个动作按钮，无遮挡、截断或空白态错误"
+   ]
+  },
+  {
+   "node_id": "image-session-verify",
+   "capability": "product-verify",
+   "goal": "在真实 app 与真实 Qwen-Image 模型下走完用户验收旅程，截图并经两位独立评审，证明图片会话满足全部确认验收",
+   "exit_artifacts": [
+    {
+     "path": ".allforai/verify/image-sessions-verify.json",
+     "validation_commands": [
+      "python3 -c \"import json; d=json.load(open('.allforai/verify/image-sessions-verify.json')); assert d.get('status')=='passed', d.get('status')\"",
+      "python3 -m pytest tests/e2e/test_image_sessions.py -q"
+     ]
+    },
+    {
+     "path": ".allforai/verify/ui-screenshot-manifest.json",
+     "validation_commands": [
+      "python3 -c \"import json; json.load(open('.allforai/verify/ui-screenshot-manifest.json'))\""
+     ]
+    },
+    {
+     "path": ".allforai/verify/visual-review-1.json",
+     "validation_commands": [
+      "python3 -c \"import json; json.load(open('.allforai/verify/visual-review-1.json'))\""
+     ]
+    },
+    {
+     "path": ".allforai/verify/visual-review-1.md",
+     "validation_commands": []
+    },
+    {
+     "path": ".allforai/verify/visual-review-2.json",
+     "validation_commands": [
+      "python3 -c \"import json; json.load(open('.allforai/verify/visual-review-2.json'))\""
+     ]
+    },
+    {
+     "path": ".allforai/verify/visual-review-2.md",
+     "validation_commands": []
+    },
+    {
+     "path": ".allforai/verify/ui-visual-reconciliation.json",
+     "validation_commands": [
+      "python3 -c \"import json; json.load(open('.allforai/verify/ui-visual-reconciliation.json'))\""
+     ]
+    },
+    {
+     "path": ".allforai/verify/ui-visual-closure-audit.json",
+     "validation_commands": [
+      "python3 -c \"import json; json.load(open('.allforai/verify/ui-visual-closure-audit.json'))\""
+     ]
+    },
+    {
+     "path": ".allforai/verify/ui-visual-closure-audit.md",
+     "validation_commands": []
+    }
+   ],
+   "responsibilities": [
+    "verification"
+   ],
+   "source_inputs": [
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+    ".allforai/bootstrap/local-requirements.json"
+   ],
+   "parallel_write_scopes": [
+    "tests/e2e/test_image_sessions.py"
+   ],
+   "knowledge_refs": [
+    "knowledge/capabilities/product-verify.md",
+    "knowledge/capabilities/visual-verify.md",
+    "knowledge/verification-protocol.md"
+   ],
+   "consumers": [
+    "image-session-repair",
+    "image-session-ship"
+   ],
+   "hard_blocked_by": [
+    "image-session-design",
+    "image-session-backend",
+    "image-session-pane"
+   ],
+   "alignment_refs": [],
+   "unlocks": [
+    "image-session-repair",
+    "image-session-ship"
+   ],
+   "human_gate": false,
+   "discipline_owner": null,
+   "decision_mode": "none",
+   "input_dependencies": [
+    ".allforai/visual-qa/**",
+    ".allforai/image-sessions/backend-report.json",
+    ".allforai/image-sessions/pane-report.json"
+   ],
+   "node_spec_path": ".allforai/bootstrap/node-specs/image-session-verify.md",
+   "profile_slice": {
+    "tech_stacks": [
+     "python backend desk/",
+     "vanilla JS frontend desk/static/"
+    ],
+    "test_commands": {
+     "backend": "python3 -m pytest tests --ignore=tests/e2e -q",
+     "frontend": "node --test tests/js/",
+     "e2e": "python3 -m pytest tests/e2e -q"
+    }
+   },
+   "closure_verify": [],
+   "requirement_refs": [
+    {
+     "path": ".allforai/bootstrap/local-requirements.json",
+     "id": "image-sessions",
+     "revision": 1
+    }
+   ],
+   "decision_inputs": [
+    ".allforai/bootstrap/local-requirements.json"
+   ],
+   "product_goals": [
+    "图片页像聊天一样有会话列表；一个会话是围绕同一想法的一串生成尝试，用户不满意时可以调整后继续生成，之前的尝试都留在会话里"
+   ],
+   "acceptance": [
+    "连续三轮「生成 → 在这张基础上改 → 再生成」后，三张图及各自参数都在同一个会话里按顺序显示",
+    "「在这张基础上改」生成的新图与原图种子相同；「换个构图」生成的新图提示词相同而种子不同",
+    "重启 app 后会话列表、每个会话的尝试和图片都还在",
+    "切到另一个会话再切回，内容不变；新建会话后生成的图只进新会话",
+    "删除会话后会话从列表消失，其中的图片仍能在素材库打开",
+    "失败或取消的尝试在会话里可见并显示原因，不会留下一张空白图",
+    "在真实浏览器中截图检查图片页的会话列表、尝试列表和两个动作按钮，无遮挡、截断或空白态错误"
+   ]
+  },
+  {
+   "node_id": "image-session-repair",
+   "capability": "translate",
+   "goal": "按验收报告的 gaps 修复图片会话的实现或测试，然后由验收节点重跑确认",
+   "exit_artifacts": [
+    {
+     "path": ".allforai/image-sessions/repair-report.json",
+     "validation_commands": [
+      "python3 -c \"import json; json.load(open('.allforai/image-sessions/repair-report.json'))\""
+     ]
+    }
+   ],
+   "responsibilities": [
+    "implementation"
+   ],
+   "source_inputs": [
+    ".allforai/verify/image-sessions-verify.json",
+    ".allforai/verify/ui-visual-reconciliation.json",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+    ".allforai/bootstrap/local-requirements.json",
+    "tests/js/**",
+    "tests/e2e/**",
+    "tests/test_*.py",
+    "tests/media_fakes.py"
+   ],
+   "parallel_write_scopes": [
+    "desk/app.py",
+    "desk/foundation/paths.py",
+    "desk/foundation/routes.py",
+    "desk/library/__init__.py",
+    "desk/library/http.py",
+    "desk/library/image_sessions.py",
+    "desk/media/routes.py",
+    "desk/media/service.py",
+    "desk/runtime.py",
+    "desk/static/app.css",
+    "desk/static/index.html",
+    "desk/static/js/api.js",
+    "desk/static/js/main.js",
+    "desk/static/js/panes/image.js",
+    "desk/static/js/panes/library.js",
+    "desk/static/js/pure/history_fill.js",
+    "desk/static/js/pure/image_session*.js",
+    "desk/static/js/store.js",
+    "desk/static/js/widgets/image_session*.js",
+    "desk/static/js/widgets/jobview.js",
+    "desk/testing/**",
+    "tests/e2e/test_image_flow.py",
+    "tests/e2e/test_image_sessions.py",
+    "tests/e2e/test_library_panel.py",
+    "tests/js/api.test.js",
+    "tests/js/history_fill.test.js",
+    "tests/js/image*.test.js",
+    "tests/js/jobview*.test.js",
+    "tests/js/library_pane.test.js",
+    "tests/js/media_panes.test.js",
+    "tests/media_fakes.py",
+    "tests/test_foundation_paths.py",
+    "tests/test_image_sessions*.py",
+    "tests/test_library_*.py",
+    "tests/test_media_*.py"
+   ],
+   "knowledge_refs": [
+    "knowledge/cross-phase-protocols.md",
+    "knowledge/defensive-patterns.md"
+   ],
+   "consumers": [
+    "image-session-ship"
+   ],
+   "hard_blocked_by": [
+    "image-session-verify"
+   ],
+   "alignment_refs": [],
+   "unlocks": [
+    "image-session-ship"
+   ],
+   "human_gate": false,
+   "discipline_owner": null,
+   "decision_mode": "none",
+   "input_dependencies": [
+    ".allforai/image-sessions/backend-report.json",
+    ".allforai/image-sessions/pane-report.json"
+   ],
+   "node_spec_path": ".allforai/bootstrap/node-specs/image-session-repair.md",
+   "profile_slice": {
+    "tech_stacks": [
+     "python backend desk/",
+     "vanilla JS frontend desk/static/"
+    ],
+    "test_commands": {
+     "backend": "python3 -m pytest tests --ignore=tests/e2e -q",
+     "frontend": "node --test tests/js/",
+     "e2e": "python3 -m pytest tests/e2e -q"
+    }
+   },
+   "closure_verify": [],
+   "requirement_refs": [
+    {
+     "path": ".allforai/bootstrap/local-requirements.json",
+     "id": "image-sessions",
+     "revision": 1
+    }
+   ],
+   "decision_inputs": [
+    ".allforai/bootstrap/local-requirements.json"
+   ],
+   "product_goals": [
+    "图片页像聊天一样有会话列表；一个会话是围绕同一想法的一串生成尝试，用户不满意时可以调整后继续生成，之前的尝试都留在会话里"
+   ],
+   "acceptance": [
+    "连续三轮「生成 → 在这张基础上改 → 再生成」后，三张图及各自参数都在同一个会话里按顺序显示",
+    "「在这张基础上改」生成的新图与原图种子相同；「换个构图」生成的新图提示词相同而种子不同",
+    "重启 app 后会话列表、每个会话的尝试和图片都还在",
+    "切到另一个会话再切回，内容不变；新建会话后生成的图只进新会话",
+    "删除会话后会话从列表消失，其中的图片仍能在素材库打开",
+    "失败或取消的尝试在会话里可见并显示原因，不会留下一张空白图",
+    "在真实浏览器中截图检查图片页的会话列表、尝试列表和两个动作按钮，无遮挡、截断或空白态错误"
+   ]
+  },
+  {
+   "node_id": "image-session-ship",
+   "capability": "launch-prep",
+   "goal": "验收通过后重建用户日常使用的 dist/LocalModelDesk.app 并重新启动，冒烟确认图片会话在正式 app 里可用",
+   "exit_artifacts": [
+    {
+     "path": ".allforai/image-sessions/ship-report.json",
+     "validation_commands": [
+      "python3 -c \"import json; d=json.load(open('.allforai/image-sessions/ship-report.json')); assert d.get('status')=='passed', d.get('status')\"",
+      "codesign --verify --deep --strict dist/LocalModelDesk.app"
+     ]
+    }
+   ],
+   "responsibilities": [
+    "implementation",
+    "verification"
+   ],
+   "source_inputs": [
+    "desk/**",
+    "macos/**",
+    "packaging/**",
+    "scripts/build-app.sh",
+    "scripts/sign-app.sh"
+   ],
+   "parallel_write_scopes": [
+    "dist/LocalModelDesk.app/**"
+   ],
+   "knowledge_refs": [
+    "knowledge/capabilities/launch-prep.md",
+    "knowledge/verification-protocol.md"
+   ],
+   "consumers": [],
+   "hard_blocked_by": [
+    "image-session-design",
+    "image-session-verify",
+    "image-session-repair"
+   ],
+   "alignment_refs": [],
+   "unlocks": [],
+   "human_gate": false,
+   "discipline_owner": null,
+   "decision_mode": "none",
+   "input_dependencies": [
+    ".allforai/verify/image-sessions-verify.json",
+    ".allforai/image-sessions/repair-report.json"
+   ],
+   "node_spec_path": ".allforai/bootstrap/node-specs/image-session-ship.md",
+   "profile_slice": {
+    "tech_stacks": [
+     "python backend desk/",
+     "vanilla JS frontend desk/static/"
+    ],
+    "test_commands": {
+     "backend": "python3 -m pytest tests --ignore=tests/e2e -q",
+     "frontend": "node --test tests/js/",
+     "e2e": "python3 -m pytest tests/e2e -q"
+    }
+   },
+   "closure_verify": [],
+   "requirement_refs": [
+    {
+     "path": ".allforai/bootstrap/local-requirements.json",
+     "id": "image-sessions",
+     "revision": 1
+    }
+   ],
+   "decision_inputs": [
+    ".allforai/bootstrap/local-requirements.json"
+   ],
+   "product_goals": [
+    "图片页像聊天一样有会话列表；一个会话是围绕同一想法的一串生成尝试，用户不满意时可以调整后继续生成，之前的尝试都留在会话里"
+   ],
+   "acceptance": [
+    "连续三轮「生成 → 在这张基础上改 → 再生成」后，三张图及各自参数都在同一个会话里按顺序显示",
+    "「在这张基础上改」生成的新图与原图种子相同；「换个构图」生成的新图提示词相同而种子不同",
+    "重启 app 后会话列表、每个会话的尝试和图片都还在",
+    "切到另一个会话再切回，内容不变；新建会话后生成的图只进新会话",
+    "删除会话后会话从列表消失，其中的图片仍能在素材库打开",
+    "失败或取消的尝试在会话里可见并显示原因，不会留下一张空白图",
+    "在真实浏览器中截图检查图片页的会话列表、尝试列表和两个动作按钮，无遮挡、截断或空白态错误"
+   ]
+  }
+ ],
+ "not_applicable": {},
+ "diagnosis_history": [
+  {
+   "timestamp": "2026-09-24T04:14:04+09:00",
+   "failed_node": "image-session-backend",
+   "blocking_findings": []
+  },
+  {
+   "at": "2026-09-24T04:20:00+09:00",
+   "root_cause_node": "image-session-design",
+   "root_cause": "planning: design node-spec invited on-demand reads of files later rewritten by downstream nodes; executor registered them via freshness read, so backend delivery staled the design record (inverted_source_inputs pattern). evidence_freshness excludes downstream write scopes from source_inputs but not from registered extras.",
+   "hard_failure": "image-session-backend stale_upstream_evidence",
+   "repair": "pruned 13 registered reads inside downstream write scopes from the design freshness record; re-observe and republish design evidence unchanged; add a no-register rule to not-yet-run node-specs; re-dispatch backend to republish its evidence",
+   "removed_reads": [
+    "desk/foundation/paths.py",
+    "desk/library/__init__.py",
+    "desk/library/http.py",
+    "desk/media/routes.py",
+    "desk/media/service.py",
+    "desk/runtime.py",
+    "desk/static/app.css",
+    "desk/static/index.html",
+    "desk/static/js/main.js",
+    "desk/static/js/panes/image.js",
+    "desk/static/js/panes/library.js",
+    "desk/static/js/pure/history_fill.js",
+    "desk/static/js/widgets/jobview.js"
+   ]
+  },
+  {
+   "timestamp": "2026-09-24T04:56:33+09:00",
+   "failed_node": "image-session-pane",
+   "blocking_findings": []
+  },
+  {
+   "at": "2026-09-24T05:05:00+09:00",
+   "root_cause_node": "bootstrap-planning",
+   "hard_failure": "image-session-pane validation_command_environment + freshness_publication_blocked",
+   "root_cause": "planning: (1) validation used `node --test tests/js/` which Node v26 rejects (directory arg treated as module); (2) test files rewritten by pane were declared as nobody's input, so unmapped changes made published upstream records 'uncertain' while pane could not publish; tests/js/media_panes.test.js was outside every write scope",
+   "repair": "pane validation -> `node --test tests/js/*.test.js`; tests/** declared as source_inputs of image-session-repair (reads them when repairing; downstream ship writes only dist/, no inversion); media_panes.test.js added to pane/repair write scopes; Node-26 note on pane/verify/repair/ship specs; design/backend specs untouched"
+  },
+  {
+   "at": "2026-09-24T06:50:00+09:00",
+   "root_cause_node": "image-session-design",
+   "hard_failure": "image-session-repair unspecified_user_visible_decision U-06",
+   "root_cause": "design D-50 did not say whether the library (素材库) counts as main flow for the 「种子」 rule; product decision needed",
+   "repair": "user decided 2026-09-24: library exempt; D-50a added to design doc and visual criteria; design evidence republished; repair/verify specs note the decision; interrupted repair attempt #1 reconciled as executed (charge stands, 1 attempt left)"
+  },
+  {
+   "timestamp": "2026-09-24T10:52:22+09:00",
+   "failed_node": "image-session-repair",
+   "blocking_findings": []
+  }
+ ],
+ "corrections_applied": [],
+ "transition_log": [
+  {
+   "node_id": "image-session-design",
+   "status": "completed",
+   "artifacts_created": [
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+    ".allforai/visual-qa/visual-acceptance-criteria.json",
+    ".allforai/visual-qa/visual-acceptance-criteria.md",
+    ".allforai/visual-qa/visual-evidence-requirements.json"
+   ],
+   "verification": {
+    "method": "none",
+    "claim": "Only design documents were produced; no product behavior was built or exercised. The validation that did run is document checks: the node-spec validation_commands and an inline python3 -c acceptance check of the documents against the current source, published through evidence_freshness.py with status valid.",
+    "verifier": "python3 -c inline design-contract check (the same argv published to evidence_freshness.py)"
+   },
+   "timestamp": "2026-09-24T03:48:11+09:00"
+  },
+  {
+   "node_id": "image-session-backend",
+   "status": "completed",
+   "artifacts_created": [
+    ".allforai/image-sessions/backend-report.json",
+    ".allforai/image-sessions/evidence/pytest-backend.json",
+    ".allforai/image-sessions/evidence/real-api-harness.json",
+    ".allforai/image-sessions/evidence/pytest-e2e.json",
+    "desk/library/image_sessions.py",
+    "desk/library/http.py",
+    "desk/library/__init__.py",
+    "desk/media/service.py",
+    "desk/media/routes.py",
+    "desk/foundation/paths.py",
+    "desk/foundation/routes.py",
+    "desk/runtime.py",
+    "desk/testing/harness.py",
+    "desk/testing/fakes.py",
+    "desk/testing/seed.py",
+    "tests/test_image_sessions.py",
+    "tests/test_image_sessions_wiring.py",
+    "tests/test_media_image_service.py",
+    "tests/test_library_http.py",
+    "tests/media_fakes.py",
+    "tests/test_foundation_paths.py"
+   ],
+   "verification": {
+    "method": "real-api",
+    "evidence_path": ".allforai/image-sessions/evidence/real-api-harness.json",
+    "verifier": "python3 .allforai/image-sessions/verify_backend.py (freshness publish acceptance argv, status valid); plus captured python3 -m pytest tests --ignore=tests/e2e -q (1106 passed, .allforai/image-sessions/evidence/pytest-backend.json) and python3 -m pytest tests/e2e -q (67 passed, .allforai/image-sessions/evidence/pytest-e2e.json)",
+    "claim": "The probe made real HTTP calls to the harness. POST /api/media/image with no session_id returned 400 session_required. Then: create a session, run two generations (done, and the second kept the first one's seed), cancel a third (recorded as cancelled with code cancelled), and fetch the PNG outputs. Relaunching on the same data root kept the session list and attempts unchanged. DELETE removed the session from the list, /api/history and /api/outputs stayed identical, and the PNGs were still served.",
+    "served_by": {
+     "host": "127.0.0.1 ephemeral port",
+     "process": "desk.testing.launch_test_harness (real DeskApp HTTP server, LibraryService, ImageSessionStore on real filesystem, MediaService, arbiter)",
+     "mock_layers": [
+      "FakeMediaExecutor (scripted; writes a 96x64 gradient PNG instead of running image_cli.py)",
+      "FakeMemoryReader",
+      "FakeLlmBackend",
+      "FixedClock",
+      "stub mflux/mlx packages so the real image runtime probe reports present"
+     ],
+     "fixtures": [
+      "desk/testing/seed.py (sparse qwen-image pipeline, TINY_PNG)",
+      "desk/testing/scripts.py (fast_media_steps, cancellable_media_steps)"
+     ]
+    }
+   },
+   "timestamp": "2026-09-24T04:28:29+09:00"
+  },
+  {
+   "node_id": "image-session-pane",
+   "status": "completed",
+   "artifacts_created": [
+    "/Users/aa/LocalModelDesk/.allforai/image-sessions/pane-report.json",
+    "/Users/aa/LocalModelDesk/.allforai/image-sessions/evidence/pane-node-test.json",
+    "/Users/aa/LocalModelDesk/.allforai/image-sessions/evidence/pane-e2e.json",
+    "/Users/aa/LocalModelDesk/.allforai/image-sessions/evidence/screens"
+   ],
+   "verification": {
+    "method": "real-test",
+    "evidence_path": ".allforai/image-sessions/evidence/pane-e2e.json",
+    "verifier": "image-session-pane executor (self-check; final visual/user effect owned by image-session-verify)",
+    "claim": "Full e2e suite (76 tests, real Chromium via Playwright against desk.testing.launch_test_harness) and 321 node unit tests pass on current source; 36 screenshots of 18 image-session states at 1280x800 and 900x700 pass DOM checks (no seed word in the main flow, no blank images, no clipping or overlap)",
+    "served_by": {
+     "host": "127.0.0.1 ephemeral port per test",
+     "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, arbiter, static desk/static)",
+     "mock_layers": [
+      "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+      "FakeLlmBackend",
+      "FakeMemoryReader",
+      "FixedClock",
+      "stub mflux/mlx packages (image_runtime=True)",
+      "Playwright page.route 500 on GET /api/image-sessions (session-list-load-failed state only)"
+     ],
+     "fixtures": [
+      "desk/testing/seed.py",
+      "desk/testing/scripts.py"
+     ]
+    }
+   }
+  },
+  {
+   "node_id": "image-session-verify",
+   "status": "failed",
+   "error": "QA failed; routed to declared repair node image-session-repair (attempt 1 of 3)",
+   "timestamp": "2026-09-24T05:55:50+09:00"
+  },
+  {
+   "node_id": "image-session-verify",
+   "status": "failed",
+   "error": "QA failed; routed to declared repair node image-session-repair (attempt 3 of 3)",
+   "timestamp": "2026-09-24T09:54:12+09:00"
+  },
+  {
+   "node_id": "image-session-verify",
+   "status": "accepted_with_gaps",
+   "started_at": "2026-09-24T19:00:00+09:00",
+   "completed_at": "2026-09-24T19:42:23+09:00",
+   "artifacts_created": [
+    ".allforai/verify/image-sessions-verify.json",
+    ".allforai/verify/ui-screenshot-manifest.json",
+    ".allforai/verify/visual-review-1.json",
+    ".allforai/verify/visual-review-1.md",
+    ".allforai/verify/visual-review-2.json",
+    ".allforai/verify/visual-review-2.md",
+    ".allforai/verify/ui-visual-reconciliation.json",
+    ".allforai/verify/ui-visual-closure-audit.json",
+    ".allforai/verify/ui-visual-closure-audit.md"
+   ],
+   "note": "check_artifacts withholds on non-blocking minor/note gaps; user accepted them (assumed-decisions.json#accepted-gaps-image-session-verify). Not counted as fully verified."
+  },
+  {
+   "node_id": "image-session-repair",
+   "status": "completed",
+   "started_at": "2026-09-24T09:54:00+09:00",
+   "completed_at": "2026-09-24T19:47:21+09:00",
+   "artifacts_created": [
+    ".allforai/image-sessions/repair-report.json"
+   ],
+   "note": "fixes B-01/N-02/N-03 confirmed by round-3 verify; report fix-log renamed gaps->fixes_applied (no content change); check_artifacts all_exist true; freshness valid"
+  },
+  {
+   "node_id": "image-session-ship",
+   "status": "completed",
+   "started_at": "2026-09-24T19:45:00+09:00",
+   "completed_at": "2026-09-24T20:03:25+09:00",
+   "artifacts_created": [
+    ".allforai/image-sessions/ship-report.json"
+   ],
+   "note": "dist rebuilt with Developer ID B49F324XWZ; old pids 11404/11409 -> new 60372/60379; chat sessions 15 -> 15; /api/image-sessions 200"
+  }
+ ]
+}

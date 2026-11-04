@@ -1,0 +1,18 @@
+✔ native tools and real usage pass through; no prompt protocol (162.335791ms)
+✔ switch loads with origin agent, then sends native request (1013.747542ms)
+✔ memory refusal never loads or sends inference (16.770958ms)
+✔ cancel while loading is aborted, not an error or fake success (8.061542ms)
+✔ load timeout also bounds a hung control-plane HTTP request (43.340417ms)
+✔ native call IDs and Unicode tool results survive the follow-up (13.760458ms)
+✔ media and releasable budget cause waiting, never forced eviction (3017.190834ms)
+✔ failed load reports the desk's error; no inference or cloud fallback (1017.266959ms)
+✔ tool allowlist is applied to native declarations (23.422166ms)
+✔ autoload off skips control plane entirely (14.79325ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5333.891333

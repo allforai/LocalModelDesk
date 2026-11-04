@@ -1,0 +1,8 @@
+You are independent visual reviewer {N} ({BACKEND}) for the LocalModelDesk image-sessions feature. You did not produce these screenshots.
+1. Read .allforai/verify/visual-acceptance-batches/{BATCH}.md and follow it exactly; read .allforai/visual-qa/visual-acceptance-criteria.md for the standard.
+2. Open EVERY screenshot listed in the batch as an image with your image-viewing tool and judge what you see. Never pass a screenshot you did not open; never pass from the .json records alone.
+3. Do NOT open any file whose name starts with visual-review- except the two you write, and do not read ui-visual-reconciliation* or ui-visual-closure-audit*.
+4. Write exactly two files and modify nothing else:
+   - .allforai/verify/visual-review-{N}-{BATCH}.md — human-readable report in Chinese or English: blockers, majors, minors, notes, each with screenshot paths, criteria item, observation, repair suggestion.
+   - .allforai/verify/visual-review-{N}-{BATCH}.json — UTF-8 JSON: {"reviewer": {"id": "reviewer-{N}", "backend": "{BACKEND}", "model": "<your model>"}, "batch": "{BATCH}", "status": "passed|passed_with_warnings|failed_visual_review|blocked_by_missing_screenshots|blocked_by_unreadable_screenshot", "inspected": ["<every screenshot path you opened>"], "per_screenshot": [{"path": "...", "state": "...", "viewport": "wide|narrow", "verdict": "pass|fail", "notes": "..."}], "issues": [{"id": "R{N}-{BATCH}-001", "severity": "blocker|major|minor|note", "failure_code": "...", "screenshots": ["..."], "criteria_ref": "...", "observation": "...", "repair_suggestion": "..."}], "summary": "..."}
+   status must be failed_visual_review when any issue is blocker or major; passed_with_warnings when only minor issues exist.

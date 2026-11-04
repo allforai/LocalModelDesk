@@ -1,0 +1,29 @@
+
+────────────────────────────────────────────────────────────────────────────────
+                                                                                
+────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.8OakMkfmFt
+0.0%/262k (auto)                                   moonshotai/kimi-k2.6 • medium ▀▀█  v1.2.0                                                                    
+ █▀ █ escape interrupt · ctrl+c/ctrl+d clear/exit · / commands · ! bash ·       
+ ctrl+o more                                                                    
+ Press ctrl+o to show full startup help and loaded resources.                   
+                                                                                
+ Pi can explain its own features and look up its docs. Ask it how to use or     
+ extend Pi.                                                                     
+
+[Skills]                                                                        
+  local-model-desk                                                              
+
+
+ Warning: fd not found. Offline mode enabled, skipping download.                
+
+────────────────────────────────────────────────────────────────────────────────
+                                                                                
+────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.8OakMkfmFt
+0.0%/262k (auto)                                   moonshotai/kimi-k2.6 • medium/skill                                                                          → skill:local-model-desk  [p] 本机的本地模型台面（LocalModelDesk）。需要用本地  
+/private/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.8OakMkfmFt
+0.0%/262k (auto)                                   moonshotai/kimi-k2.6 • medium                                                                                
+────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/tmp.8OakMkfmFt
+0.0%/262k (auto)                                   moonshotai/kimi-k2.6 • medium

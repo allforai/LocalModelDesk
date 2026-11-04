@@ -1,0 +1,80 @@
+{
+ "schema_version": "1.0",
+ "batches": [
+  {
+   "batch_id": "plan-2026-09-24-image-sessions",
+   "topic": "Workflow plan",
+   "source": "user_session",
+   "user_reference": "session 29c5cac0 · 2026-09-24 · 在「这个计划可以吗？」（6 节点修订版，含 image-session-ship）之后，用户输入 /run",
+   "decisions": [
+    {
+     "question": "确认这 6 个节点及其依赖边？",
+     "chosen": "确认并执行（用户以 /run 回应确认问题）",
+     "rationale": "用户在修订计划展示后直接要求执行；按此理解为接受该计划",
+     "intent": {
+      "plan": {
+       "image-session-design": [],
+       "image-session-backend": [
+        "image-session-design"
+       ],
+       "image-session-pane": [
+        "image-session-design",
+        "image-session-backend"
+       ],
+       "image-session-verify": [
+        "image-session-design",
+        "image-session-backend",
+        "image-session-pane"
+       ],
+       "image-session-repair": [
+        "image-session-verify"
+       ],
+       "image-session-ship": [
+        "image-session-design",
+        "image-session-verify"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  {
+   "batch_id": "plan-2026-09-24-image-sessions-delta-1",
+   "topic": "Workflow plan delta",
+   "source": "user_session",
+   "user_reference": "session 29c5cac0 · 2026-09-24 · 用户：「可以，确认新依赖边」",
+   "decisions": [
+    {
+     "question": "image-session-ship 增加 hard_blocked_by image-session-repair（修复循环的收尾节点），确认？",
+     "chosen": "确认新依赖边",
+     "rationale": "就绪检查要求修复循环声明收尾节点；ship 在验收重跑通过后才重建 app",
+     "intent": {
+      "plan": {
+       "image-session-design": [],
+       "image-session-backend": [
+        "image-session-design"
+       ],
+       "image-session-pane": [
+        "image-session-design",
+        "image-session-backend"
+       ],
+       "image-session-verify": [
+        "image-session-design",
+        "image-session-backend",
+        "image-session-pane"
+       ],
+       "image-session-repair": [
+        "image-session-verify"
+       ],
+       "image-session-ship": [
+        "image-session-design",
+        "image-session-verify",
+        "image-session-repair"
+       ]
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

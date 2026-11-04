@@ -1,0 +1,2 @@
+{"job_id": 4, "status": "done", "kind": "video", "params": {"op": "compose", "parts": ["2b687f6bf28c42cf87855751878a5cd3", "a9173d38223c4e8b9150c75b4ee44997"]}, "output": "h3-compose-20261016-050938-c7eb20d5.mp4", "error": null, "started_at": 1792094978.840406, "finished_at": 1792094978.986911, "session_id": "cb93618047554c2c8ca037ca92ce3c5b", "attempt_id": "2caae5a212374d14b2e550c01a0e4b94", "refs": null, "log": "", "next_log_from": 0, "log_len": 0, "log_truncated": false, "elapsed_s": null}
+HTTP 200

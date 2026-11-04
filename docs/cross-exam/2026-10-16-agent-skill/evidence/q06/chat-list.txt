@@ -1,0 +1,6 @@
+glm 29.7
+superqwen 16.1
+qwen27 29.5
+gemma 33.8
+qwen35 36.8
+llama70 75.0

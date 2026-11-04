@@ -1,0 +1,9 @@
+I generated a 15-second instrumental background track with the local model and saved it as `./assets/bgm.wav`.
+
+- **Length and format:** exactly 15.0 seconds, a stereo WAV at 44.1 kHz, 16-bit (about 2.6 MB).
+- **Style:** a soft ambient track with piano over gentle synth pads, slow-to-medium tempo. The lyrics were set to `[instrumental]`, so it should have no vocals.
+- **Not listened to:** I can only read the file's properties, so I haven't heard it. Please play it to check how it sounds.
+
+The track is saved in a new session on the desk called 「项目背景乐」, using seed 2224206591. If it doesn't fit, I can generate another in that session with a different style (for example, livelier or acoustic guitar).
+exit=0
+waited 70s

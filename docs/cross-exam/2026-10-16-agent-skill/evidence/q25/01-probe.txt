@@ -1,0 +1,5 @@
+683b0c3fb831417e867ce7674a1b7c9c done music3-20261019-190645-c2c3561a.wav None {}
+  output /Users/aa/Library/Application Support/LocalModelDesk/outputs/music3-20261019-190645-c2c3561a.wav 17.496236 True
+6367cb3753e74e2ca6712c41ab01fb64 done music3-20261019-190856-4eaf3c70.wav music3-joined-20261019-190956-f0bbf93a.wav {}
+  output /Users/aa/Library/Application Support/LocalModelDesk/outputs/music3-20261019-190856-4eaf3c70.wav 20.015601 True
+  joined_output /Users/aa/Library/Application Support/LocalModelDesk/outputs/music3-joined-20261019-190956-f0bbf93a.wav 36.011837 True

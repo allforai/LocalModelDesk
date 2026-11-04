@@ -1,0 +1,1 @@
+gbk.txt: OpenPGP Public Key

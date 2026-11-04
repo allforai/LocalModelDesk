@@ -1,0 +1,17 @@
+{
+ "schema": "capture_evidence/v1",
+ "command": [
+  "python3",
+  "-m",
+  "pytest",
+  "tests/e2e/test_image_sessions.py",
+  "tests/e2e/test_image_flow.py",
+  "-q"
+ ],
+ "exit_code": 0,
+ "duration_s": 49.2,
+ "stdout_tail": ".........................                                                [100%]\n25 passed in 46.53s",
+ "stderr_tail": "",
+ "stdout_sha256": "dcd8d2ab22f9e350cda115424571887eac74e4778b43b7204eb5c08d237630c6",
+ "captured_at": "2026-09-24T06:17:42"
+}

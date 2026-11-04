@@ -1,0 +1,77 @@
+{
+ "schema_version": "1.0",
+ "confirmations": [
+  {
+   "revision": 1,
+   "stage": "step-3.4",
+   "presented_at": "2026-09-24T03:00:00+09:00",
+   "plan": {
+    "image-session-design": [],
+    "image-session-backend": [
+     "image-session-design"
+    ],
+    "image-session-pane": [
+     "image-session-design",
+     "image-session-backend"
+    ],
+    "image-session-verify": [
+     "image-session-design",
+     "image-session-backend",
+     "image-session-pane"
+    ],
+    "image-session-repair": [
+     "image-session-verify"
+    ],
+    "image-session-ship": [
+     "image-session-design",
+     "image-session-verify"
+    ]
+   },
+   "confirmation": {
+    "source": "user",
+    "reference": ".allforai/bootstrap/plan-confirmation-journal.json#plan-2026-09-24-image-sessions/decisions/0",
+    "reason": "展示了 6 节点修订计划（自审闭环后新增 image-session-ship），用户以 /run 回应，理解为接受"
+   }
+  },
+  {
+   "revision": 2,
+   "stage": "phase-a-delta",
+   "presented_at": "2026-09-24T03:30:00+09:00",
+   "plan": {
+    "image-session-design": [],
+    "image-session-backend": [
+     "image-session-design"
+    ],
+    "image-session-pane": [
+     "image-session-design",
+     "image-session-backend"
+    ],
+    "image-session-verify": [
+     "image-session-design",
+     "image-session-backend",
+     "image-session-pane"
+    ],
+    "image-session-repair": [
+     "image-session-verify"
+    ],
+    "image-session-ship": [
+     "image-session-design",
+     "image-session-verify",
+     "image-session-repair"
+    ]
+   },
+   "delta": {
+    "added": [],
+    "removed": [],
+    "rewired": [
+     "image-session-ship"
+    ]
+   },
+   "confirmation": {
+    "source": "user",
+    "reference": ".allforai/bootstrap/plan-confirmation-journal.json#plan-2026-09-24-image-sessions-delta-1/decisions/0",
+    "reason": "展示了 ship ← repair 新边及原因，用户明确确认"
+   }
+  }
+ ]
+}

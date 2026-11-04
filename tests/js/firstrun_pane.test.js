@@ -194,7 +194,7 @@ test("偏紧的模型也列出但标注偏紧", async () => {
   const calls = [];
   globalThis.fetch = catalogFetch(calls, [
     { key: "glm", name: "GLM", fit: { level: "fits" } },
-    { key: "llama70", name: "Llama70", fit: { level: "tight" } },
+    { key: "qwen35", name: "Qwen35", fit: { level: "tight" } },
     { key: "h3", name: "H3", fit: { level: "too_big" } },
   ]);
   try {
@@ -206,6 +206,6 @@ test("偏紧的模型也列出但标注偏紧", async () => {
     const items = controls.get("[data-fr-report-list]").children;
     assert.equal(items.length, 2);
     assert.equal(items[0].textContent, "GLM");
-    assert.equal(items[1].textContent, "Llama70（偏紧）");
+    assert.equal(items[1].textContent, "Qwen35（偏紧）");
   } finally { globalThis.fetch = oldFetch; }
 });

@@ -1,0 +1,1 @@
+{"desk": {"reachable": true, "url": "http://127.0.0.1:8766"}, "llm": {"status": "loaded", "model": "superqwen", "loaded_by": "agent", "active_chats": 0}, "media": {"running": false, "kind": "video"}, "version": {"cli": "1.0.0", "desk": "1.0.0"}}

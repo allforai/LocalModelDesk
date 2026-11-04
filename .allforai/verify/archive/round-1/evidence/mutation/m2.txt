@@ -1,0 +1,3 @@
+=========================== short test summary info ============================
+FAILED tests/e2e/test_image_sessions.py::test_ac1_ac2_three_refine_rounds_stay_ordered_with_their_params_and_seeds
+1 failed, 10 deselected in 3.27s

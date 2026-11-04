@@ -1,0 +1,58 @@
+{
+  "total": 6,
+  "verified": 0,
+  "unverified": 6,
+  "failed": 0,
+  "verified_pct": 0.0,
+  "unverified_pct": 100.0,
+  "failed_pct": 0.0,
+  "by_node": [
+    {
+      "node_id": "image-session-backend",
+      "state": "unverified",
+      "method": "real-api",
+      "reason": "\u7ecf mock \u5c42\uff08FakeMediaExecutor (scripted; writes a 96x64 gradient PNG instead of running image_cli.py), FakeMemoryReader, FakeLlmBackend, FixedClock, stub mflux/mlx packages so the real image runtime probe reports present\uff09\u7684 runtime \u4e0d\u80fd\u5224 done"
+    },
+    {
+      "node_id": "image-session-design",
+      "state": "unverified",
+      "method": "none",
+      "reason": ""
+    },
+    {
+      "node_id": "image-session-pane",
+      "state": "unverified",
+      "method": "real-test",
+      "reason": "\u7ecf mock \u5c42\uff08FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py), FakeLlmBackend, FakeMemoryReader, FixedClock, stub mflux/mlx packages (image_runtime=True), Playwright page.route 500 on GET /api/image-sessions (session-list-load-failed state only)\uff09\u7684 runtime \u4e0d\u80fd\u5224 done"
+    },
+    {
+      "node_id": "image-session-repair",
+      "state": "unverified",
+      "method": "none",
+      "reason": ""
+    },
+    {
+      "node_id": "image-session-ship",
+      "state": "unverified",
+      "method": "none",
+      "reason": ""
+    },
+    {
+      "node_id": "image-session-verify",
+      "state": "unverified",
+      "method": "none",
+      "reason": ""
+    }
+  ],
+  "refused": [
+    {
+      "node_id": "image-session-backend",
+      "reason": "\u7ecf mock \u5c42\uff08FakeMediaExecutor (scripted; writes a 96x64 gradient PNG instead of running image_cli.py), FakeMemoryReader, FakeLlmBackend, FixedClock, stub mflux/mlx packages so the real image runtime probe reports present\uff09\u7684 runtime \u4e0d\u80fd\u5224 done"
+    },
+    {
+      "node_id": "image-session-pane",
+      "reason": "\u7ecf mock \u5c42\uff08FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py), FakeLlmBackend, FakeMemoryReader, FixedClock, stub mflux/mlx packages (image_runtime=True), Playwright page.route 500 on GET /api/image-sessions (session-list-load-failed state only)\uff09\u7684 runtime \u4e0d\u80fd\u5224 done"
+    }
+  ],
+  "critical_unverified": []
+}

@@ -1,0 +1,1 @@
+22117 21909 Mon Oct 19 20:53:28 2026     /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13 -s -m desk.agent_cli status --json

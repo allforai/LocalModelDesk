@@ -1,0 +1,826 @@
+{
+ "reviewer": {
+  "id": "reviewer-1",
+  "backend": "claude -p fresh context",
+  "model": "claude-opus-5-5"
+ },
+ "round": 2,
+ "status": "failed_visual_review",
+ "merged_from": [
+  ".allforai/verify/visual-review-1-batch-A-harness.json",
+  ".allforai/verify/visual-review-1-batch-B-real-app.json"
+ ],
+ "inspected": [
+  ".allforai/verify/screens/first-entry-auto-session-wide.png",
+  ".allforai/verify/screens/first-entry-auto-session-narrow.png",
+  ".allforai/verify/screens/empty-session-wide.png",
+  ".allforai/verify/screens/empty-session-narrow.png",
+  ".allforai/verify/screens/running-wide.png",
+  ".allforai/verify/screens/running-narrow.png",
+  ".allforai/verify/screens/running-other-session-wide.png",
+  ".allforai/verify/screens/running-other-session-narrow.png",
+  ".allforai/verify/screens/timeline-three-rounds-wide.png",
+  ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+  ".allforai/verify/screens/attempt-selected-actions-wide.png",
+  ".allforai/verify/screens/attempt-selected-actions-narrow.png",
+  ".allforai/verify/screens/refine-prefill-wide.png",
+  ".allforai/verify/screens/refine-prefill-narrow.png",
+  ".allforai/verify/screens/attempt-failed-wide.png",
+  ".allforai/verify/screens/attempt-failed-narrow.png",
+  ".allforai/verify/screens/attempt-cancelled-wide.png",
+  ".allforai/verify/screens/attempt-cancelled-narrow.png",
+  ".allforai/verify/screens/attempt-interrupted-wide.png",
+  ".allforai/verify/screens/attempt-interrupted-narrow.png",
+  ".allforai/verify/screens/attempt-file-missing-wide.png",
+  ".allforai/verify/screens/attempt-file-missing-narrow.png",
+  ".allforai/verify/screens/model-missing-wide.png",
+  ".allforai/verify/screens/model-missing-narrow.png",
+  ".allforai/verify/screens/runtime-unavailable-wide.png",
+  ".allforai/verify/screens/runtime-unavailable-narrow.png",
+  ".allforai/verify/screens/busy-other-media-wide.png",
+  ".allforai/verify/screens/busy-other-media-narrow.png",
+  ".allforai/verify/screens/rename-wide.png",
+  ".allforai/verify/screens/rename-narrow.png",
+  ".allforai/verify/screens/delete-confirm-wide.png",
+  ".allforai/verify/screens/delete-confirm-narrow.png",
+  ".allforai/verify/screens/delete-confirm-running-wide.png",
+  ".allforai/verify/screens/delete-confirm-running-narrow.png",
+  ".allforai/verify/screens/library-after-delete-wide.png",
+  ".allforai/verify/screens/library-after-delete-narrow.png",
+  ".allforai/verify/screens/session-list-load-failed-wide.png",
+  ".allforai/verify/screens/session-list-load-failed-narrow.png",
+  ".allforai/verify/screens/corrupt-session-wide.png",
+  ".allforai/verify/screens/corrupt-session-narrow.png",
+  ".allforai/verify/screens/timeline-three-rounds-top-wide.png",
+  ".allforai/verify/screens/timeline-three-rounds-top-narrow.png",
+  ".allforai/verify/screens/running-other-session-new-empty-wide.png",
+  ".allforai/verify/screens/running-other-session-new-empty-narrow.png",
+  ".allforai/verify/screens/verify-four-attempts-wide.png",
+  ".allforai/verify/screens/verify-four-attempts-narrow.png",
+  ".allforai/verify/screens/verify-switch-back-wide.png",
+  ".allforai/verify/screens/verify-switch-back-narrow.png",
+  ".allforai/verify/screens/verify-after-delete-wide.png",
+  ".allforai/verify/screens/verify-after-delete-narrow.png",
+  ".allforai/verify/screens/verify-failed-and-cancelled-wide.png",
+  ".allforai/verify/screens/verify-failed-and-cancelled-narrow.png",
+  ".allforai/verify/screens/verify-selected-full-size-wide.png",
+  ".allforai/verify/screens/verify-selected-full-size-narrow.png",
+  ".allforai/verify/evidence/real/real-running-wide.png",
+  ".allforai/verify/evidence/real/real-running-narrow.png",
+  ".allforai/verify/evidence/real/real-refine-prefill-wide.png",
+  ".allforai/verify/evidence/real/real-refine-prefill-narrow.png",
+  ".allforai/verify/evidence/real/real-timeline-three-rounds-wide.png",
+  ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.png",
+  ".allforai/verify/evidence/real/real-timeline-three-rounds-top-wide.png",
+  ".allforai/verify/evidence/real/real-timeline-three-rounds-top-narrow.png",
+  ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.png",
+  ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.png",
+  ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png",
+  ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png",
+  ".allforai/verify/evidence/real/real-attempt-failed-wide.png",
+  ".allforai/verify/evidence/real/real-attempt-failed-narrow.png",
+  ".allforai/verify/evidence/real/real-after-restart-wide.png",
+  ".allforai/verify/evidence/real/real-after-restart-narrow.png",
+  ".allforai/verify/evidence/real/real-delete-confirm-wide.png",
+  ".allforai/verify/evidence/real/real-delete-confirm-narrow.png",
+  ".allforai/verify/evidence/real/real-after-delete-wide.png",
+  ".allforai/verify/evidence/real/real-after-delete-narrow.png",
+  ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+  ".allforai/verify/evidence/real/real-library-after-delete-narrow.png"
+ ],
+ "per_screenshot": [
+  {
+   "path": ".allforai/verify/screens/first-entry-auto-session-wide.png",
+   "state": "first-entry-auto-session",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Single highlighted 新会话; two-line empty state; 生成图片 enabled; 高级参数 folded; no seed/progress/image frame. R1-004 spacing."
+  },
+  {
+   "path": ".allforai/verify/screens/first-entry-auto-session-narrow.png",
+   "state": "first-entry-auto-session",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide; layout fits 900px."
+  },
+  {
+   "path": ".allforai/verify/screens/empty-session-wide.png",
+   "state": "empty-session",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "New session on top and highlighted; empty state; prompt focused (draft kept); no previous cards or image frames."
+  },
+  {
+   "path": ".allforai/verify/screens/empty-session-narrow.png",
+   "state": "empty-session",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/screens/running-wide.png",
+   "state": "running",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "第 2 次 · 生成中…（已用 0秒）, progress bar, 取消, folded 日志, 生成中 badge, 生成图片 disabled, status 正在生成这个会话里的第 2 次; no image frame/actions on running card. R1-002 title cut to 会失败的…"
+  },
+  {
+   "path": ".allforai/verify/screens/running-narrow.png",
+   "state": "running",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide. R1-002."
+  },
+  {
+   "path": ".allforai/verify/screens/running-other-session-wide.png",
+   "state": "running-other-session",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "A has 生成中 badge; B highlighted with its own attempt; status 「甲会话：正在生成」正在生成图片 + 回到该会话; 生成图片/换个构图 disabled, 在这张基础上改 enabled; no A card in B. Large image only ~182px (R1-001 context). R1-002, N-009."
+  },
+  {
+   "path": ".allforai/verify/screens/running-other-session-narrow.png",
+   "state": "running-other-session",
+   "viewport": "narrow",
+   "verdict": "fail",
+   "notes": "R1-001: the expanded large image is ~96px, the same size as the thumbnail above it. All must-show state items are otherwise present."
+  },
+  {
+   "path": ".allforai/verify/screens/timeline-three-rounds-wide.png",
+   "state": "timeline-three-rounds",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "第 3 次 expanded: image (~247px), full prompt, folded 高级参数, both actions unclipped; title 一只橘猫坐在窗边… Order verified via the -top pair."
+  },
+  {
+   "path": ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+   "state": "timeline-three-rounds",
+   "viewport": "narrow",
+   "verdict": "fail",
+   "notes": "R1-001: expanded large image ~126px, barely larger than the 96px thumbnail. Other items present."
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-selected-actions-wide.png",
+   "state": "attempt-selected-actions",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "第 1 次 expanded alone; image uncropped (~247px); both actions fully visible."
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-selected-actions-narrow.png",
+   "state": "attempt-selected-actions",
+   "viewport": "narrow",
+   "verdict": "fail",
+   "notes": "R1-001: expanded large image ~147px. Actions fully visible."
+  },
+  {
+   "path": ".allforai/verify/screens/refine-prefill-wide.png",
+   "state": "refine-prefill",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Chip 沿用第 2 次的构图 ×; prompt = 第 2 次 prompt and focused; 高级参数 folded; no new card."
+  },
+  {
+   "path": ".allforai/verify/screens/refine-prefill-narrow.png",
+   "state": "refine-prefill",
+   "viewport": "narrow",
+   "verdict": "fail",
+   "notes": "R1-001: expanded large image ~110px. Refine-prefill must-show items themselves pass."
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-failed-wide.png",
+   "state": "attempt-failed",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "失败 badge + 生成程序异常退出; danger X icon block; 详情 shows exit_nonzero: exit 1 + log tail; both actions."
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-failed-narrow.png",
+   "state": "attempt-failed",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-cancelled-wide.png",
+   "state": "attempt-cancelled",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "已取消 badge + 这次生成被手动停止; grey X icon block; both actions."
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-cancelled-narrow.png",
+   "state": "attempt-cancelled",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-interrupted-wide.png",
+   "state": "attempt-interrupted",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "应用在生成途中关闭，这次没有完成 with danger icon block; no progress bar. N-010: top card header cut by the scroll edge (normal)."
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-interrupted-narrow.png",
+   "state": "attempt-interrupted",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-file-missing-wide.png",
+   "state": "attempt-file-missing",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "图片文件已不在 + 可能已在访达中移动或删除; grey image icon block; actions enabled; no broken image."
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-file-missing-narrow.png",
+   "state": "attempt-file-missing",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/screens/model-missing-wide.png",
+   "state": "model-missing",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Header + status line 尚未安装图片模型，请到「资源」页下载; 生成图片 disabled. N-005."
+  },
+  {
+   "path": ".allforai/verify/screens/model-missing-narrow.png",
+   "state": "model-missing",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/screens/runtime-unavailable-wide.png",
+   "state": "runtime-unavailable",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Status line gives the runtime reason (图片 MLX 运行环境缺失…); 生成图片 disabled. N-005."
+  },
+  {
+   "path": ".allforai/verify/screens/runtime-unavailable-narrow.png",
+   "state": "runtime-unavailable",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/screens/busy-other-media-wide.png",
+   "state": "busy-other-media",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Status 媒体作业进行中; 生成图片/换个构图 disabled; no 回到该会话."
+  },
+  {
+   "path": ".allforai/verify/screens/busy-other-media-narrow.png",
+   "state": "busy-other-media",
+   "viewport": "narrow",
+   "verdict": "fail",
+   "notes": "R1-001: the expanded large image is ~96px, identical in size to the thumbnail above it. State items otherwise present."
+  },
+  {
+   "path": ".allforai/verify/screens/rename-wide.png",
+   "state": "rename",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Item becomes a focused input with the title and fits the left column. N-007: only one session."
+  },
+  {
+   "path": ".allforai/verify/screens/rename-narrow.png",
+   "state": "rename",
+   "viewport": "narrow",
+   "verdict": "fail",
+   "notes": "R1-001: expanded large image ~147px. Rename must-show items themselves pass."
+  },
+  {
+   "path": ".allforai/verify/screens/delete-confirm-wide.png",
+   "state": "delete-confirm",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "删除会话 title; exact body copy (images stay in 素材库); 取消 focused, 删除 danger; no chat copy."
+  },
+  {
+   "path": ".allforai/verify/screens/delete-confirm-narrow.png",
+   "state": "delete-confirm",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide; dialog fits."
+  },
+  {
+   "path": ".allforai/verify/screens/delete-confirm-running-wide.png",
+   "state": "delete-confirm-running",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Base body + appended running sentence present. R1-002 in list behind the modal."
+  },
+  {
+   "path": ".allforai/verify/screens/delete-confirm-running-narrow.png",
+   "state": "delete-confirm-running",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/screens/library-after-delete-wide.png",
+   "state": "library-after-delete",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Real preview image of the deleted session's picture; both rows listed; 种子 in library metadata exempt (D-50a). N-006 framing."
+  },
+  {
+   "path": ".allforai/verify/screens/library-after-delete-narrow.png",
+   "state": "library-after-delete",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Real preview image; target row cut at the bottom edge (N-006)."
+  },
+  {
+   "path": ".allforai/verify/screens/session-list-load-failed-wide.png",
+   "state": "session-list-load-failed",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "会话列表读不出来：磁盘读不出来 + 重试; 生成图片 disabled; status 会话还没加载好."
+  },
+  {
+   "path": ".allforai/verify/screens/session-list-load-failed-narrow.png",
+   "state": "session-list-load-failed",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/screens/corrupt-session-wide.png",
+   "state": "corrupt-session",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "无法读取的会话 / 文件已损坏 / delete-only; timeline copy correct; 生成图片 disabled with 请选择其他会话或新建一个."
+  },
+  {
+   "path": ".allforai/verify/screens/corrupt-session-narrow.png",
+   "state": "corrupt-session",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide; timeline copy wraps cleanly."
+  },
+  {
+   "path": ".allforai/verify/screens/timeline-three-rounds-top-wide.png",
+   "state": "timeline-three-rounds-top",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "第 1 / 第 2 / 第 3 次 top to bottom; three real thumbnails; summaries + 1024×1024 · 40 步."
+  },
+  {
+   "path": ".allforai/verify/screens/timeline-three-rounds-top-narrow.png",
+   "state": "timeline-three-rounds-top",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same; summaries wrap to two lines."
+  },
+  {
+   "path": ".allforai/verify/screens/running-other-session-new-empty-wide.png",
+   "state": "running-other-session-new-empty",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Empty B highlighted; A with 生成中 badge; status + 回到该会话; 生成图片 disabled. R1-002."
+  },
+  {
+   "path": ".allforai/verify/screens/running-other-session-new-empty-narrow.png",
+   "state": "running-other-session-new-empty",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/screens/verify-four-attempts-wide.png",
+   "state": "verify-four-attempts",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "第 4 次 768×512 · 20 步 expanded (~371×247) with both actions. N-008 title spacing."
+  },
+  {
+   "path": ".allforai/verify/screens/verify-four-attempts-narrow.png",
+   "state": "verify-four-attempts",
+   "viewport": "narrow",
+   "verdict": "fail",
+   "notes": "R1-001: expanded large image ~221×147."
+  },
+  {
+   "path": ".allforai/verify/screens/verify-switch-back-wide.png",
+   "state": "verify-switch-back",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "B highlighted with its own 第 2 次 expanded; A listed below."
+  },
+  {
+   "path": ".allforai/verify/screens/verify-switch-back-narrow.png",
+   "state": "verify-switch-back",
+   "viewport": "narrow",
+   "verdict": "fail",
+   "notes": "R1-001: expanded large image ~147px."
+  },
+  {
+   "path": ".allforai/verify/screens/verify-after-delete-wide.png",
+   "state": "verify-after-delete",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Only 留下来的会话 remains and is current."
+  },
+  {
+   "path": ".allforai/verify/screens/verify-after-delete-narrow.png",
+   "state": "verify-after-delete",
+   "viewport": "narrow",
+   "verdict": "fail",
+   "notes": "R1-001: expanded large image ~147px."
+  },
+  {
+   "path": ".allforai/verify/screens/verify-failed-and-cancelled-wide.png",
+   "state": "verify-failed-and-cancelled",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Failed card (内存不足，生成被中止) + cancelled card with icon blocks and both actions after reload."
+  },
+  {
+   "path": ".allforai/verify/screens/verify-failed-and-cancelled-narrow.png",
+   "state": "verify-failed-and-cancelled",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/screens/verify-selected-full-size-wide.png",
+   "state": "verify-selected-full-size",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Header, whole image (~211px), prompt, 高级参数, both actions and the refine chip together."
+  },
+  {
+   "path": ".allforai/verify/screens/verify-selected-full-size-narrow.png",
+   "state": "verify-selected-full-size",
+   "viewport": "narrow",
+   "verdict": "fail",
+   "notes": "R1-001: a 1024×1024 image shows at ~110px, only slightly larger than the 96px thumbnail."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-running-wide.png",
+   "state": "real-running",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Card 第 1 次 · 生成中…（已用 3秒） with progress bar, 取消 and collapsed 日志. List item shows 生成中; 生成图片 disabled; status line 正在生成这个会话里的第 1 次. No image frame, no action buttons, no 种子."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-running-narrow.png",
+   "state": "real-running",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide (已用 5秒). Layout fits."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-refine-prefill-wide.png",
+   "state": "real-refine-prefill",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Chip 沿用第 2 次的构图 ×; prompt equals attempt 2 with caret; 高级参数 collapsed; no new card."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-refine-prefill-narrow.png",
+   "state": "real-refine-prefill",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide. Expanded image barely larger than the thumbnail (minor 001)."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-wide.png",
+   "state": "real-timeline-three-rounds",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Pinned to the end. 第 3 次 expanded with real large image, full prompt, collapsed 高级参数 and both buttons."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.png",
+   "state": "real-timeline-three-rounds",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-top-wide.png",
+   "state": "real-timeline-three-rounds-top",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "第 1/2/3 次 in order, each with a real thumbnail, prompt summary and 512×512 · 6 步. Session title 一座海边灯塔，黄…"
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-top-narrow.png",
+   "state": "real-timeline-three-rounds-top",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.png",
+   "state": "real-attempt-selected-actions",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "第 1 次 expanded, next card collapsed; large image complete; both actions fully visible."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.png",
+   "state": "real-attempt-selected-actions",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png",
+   "state": "real-attempt-cancelled",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "已取消 badge, 这次生成被手动停止, grey × icon block with no image frame, both action buttons."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png",
+   "state": "real-attempt-cancelled",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-attempt-failed-wide.png",
+   "state": "real-attempt-failed",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "失败 badge and reason 生成程序异常退出; red × icon block; collapsed 详情 and 高级参数; both action buttons."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-attempt-failed-narrow.png",
+   "state": "real-attempt-failed",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-after-restart-wide.png",
+   "state": "real-after-restart",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Both sessions persist; lighthouse session highlighted with 6 次生成; attempts 4/5/6 and their images and icon blocks persist."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-after-restart-narrow.png",
+   "state": "real-after-restart",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-delete-confirm-wide.png",
+   "state": "real-delete-confirm",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Title 删除会话 and body text match the criteria exactly; 删除 in danger style; focus on 取消 not visually evident (minor 002)."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-delete-confirm-narrow.png",
+   "state": "real-delete-confirm",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide; the modal overlapping the list is allowed for a dialog."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-after-delete-wide.png",
+   "state": "real-after-delete",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Only the lighthouse session remains, highlighted; the deleted session is gone."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-after-delete-narrow.png",
+   "state": "real-after-delete",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+   "state": "real-library-after-delete",
+   "viewport": "wide",
+   "verdict": "pass",
+   "notes": "Real bamboo image preview (正在预览：另一个想法：竹林小径，晨雾); entry with 预览, 在访达中显示, 回填参数; 种子 N in the metadata is exempt (D-50a)."
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-library-after-delete-narrow.png",
+   "state": "real-library-after-delete",
+   "viewport": "narrow",
+   "verdict": "pass",
+   "notes": "Same as wide; metadata wraps cleanly."
+  }
+ ],
+ "issues": [
+  {
+   "id": "R1-batch-A-harness-001",
+   "severity": "major",
+   "failure_code": "missing_required_element",
+   "screenshots": [
+    ".allforai/verify/screens/busy-other-media-narrow.png",
+    ".allforai/verify/screens/running-other-session-narrow.png",
+    ".allforai/verify/screens/verify-selected-full-size-narrow.png",
+    ".allforai/verify/screens/refine-prefill-narrow.png",
+    ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+    ".allforai/verify/screens/attempt-selected-actions-narrow.png",
+    ".allforai/verify/screens/rename-narrow.png",
+    ".allforai/verify/screens/verify-switch-back-narrow.png",
+    ".allforai/verify/screens/verify-after-delete-narrow.png",
+    ".allforai/verify/screens/verify-four-attempts-narrow.png"
+   ],
+   "criteria_ref": "timeline-three-rounds must-show 大图; attempt-selected-actions must-show 大图完整显示（不超过 60vh、不被裁切）; design D-74 (width ≤ timeline column, height ≤ 60vh)",
+   "observation": "In the 900×700 viewport the expanded card's large image is only ~96–147px tall. In busy-other-media-narrow and running-other-session-narrow it is exactly thumbnail size (~96px), directly under the 96px thumbnail. The expanded card spends height on a header thumbnail, the full prompt, a second copy of the prompt, 高级参数 and the actions, and the image is shrunk to fit whatever remains in the visible timeline, although D-74 allows ~500×420 here. Wide captures get 182–247px. Nothing is clipped, but the page's core output cannot really be viewed.",
+   "repair_suggestion": "Hide the header thumbnail and the duplicate prompt when a card is expanded (frees ~130px). Give the large image a real floor, e.g. max-height: min(60vh, timeline height − ~150px) with min-height ~240–280px, and let the actions scroll into view rather than shrinking the image. Then re-capture the narrow screenshots."
+  },
+  {
+   "id": "R1-batch-A-harness-002",
+   "severity": "minor",
+   "failure_code": "clipped_text",
+   "screenshots": [
+    ".allforai/verify/screens/running-wide.png",
+    ".allforai/verify/screens/running-narrow.png",
+    ".allforai/verify/screens/running-other-session-wide.png",
+    ".allforai/verify/screens/running-other-session-narrow.png",
+    ".allforai/verify/screens/running-other-session-new-empty-wide.png",
+    ".allforai/verify/screens/running-other-session-new-empty-narrow.png",
+    ".allforai/verify/screens/delete-confirm-running-wide.png",
+    ".allforai/verify/screens/delete-confirm-running-narrow.png"
+   ],
+   "criteria_ref": "Global rules (ellipsis allowed on session titles); batch visual question 6 (readable)",
+   "observation": "When the 生成中 badge is shown, the session title is cut to 3–4 characters (会失败的…, 甲会话：…, 甲会话的…, 删除时还…) although ~90px to the right of the badge is empty. The space looks reserved for the edit/delete buttons, which are not rendered. The generating session cannot be identified by name.",
+   "repair_suggestion": "Reserve action-button width only when the buttons are rendered (or on hover/current), or move the 生成中 badge to the meta line so the title gets the full row."
+  },
+  {
+   "id": "R1-batch-A-harness-003",
+   "severity": "minor",
+   "failure_code": "layout_redundancy",
+   "screenshots": [
+    ".allforai/verify/screens/timeline-three-rounds-wide.png",
+    ".allforai/verify/screens/attempt-selected-actions-wide.png",
+    ".allforai/verify/screens/verify-selected-full-size-wide.png",
+    ".allforai/verify/screens/busy-other-media-wide.png"
+   ],
+   "criteria_ref": "Design D-73/D-74 (collapsed header shows a ≤2-line summary; the expanded body adds the full prompt)",
+   "observation": "Expanded cards show the full prompt in the header and again under the image, and the 96px thumbnail duplicates the large image. This redundancy is the cause of R1-001.",
+   "repair_suggestion": "When expanded, hide the header thumbnail and header prompt, or reduce the header prompt to a one-line summary."
+  },
+  {
+   "id": "R1-batch-A-harness-004",
+   "severity": "minor",
+   "failure_code": "spacing",
+   "screenshots": [
+    ".allforai/verify/screens/first-entry-auto-session-wide.png",
+    ".allforai/verify/screens/empty-session-narrow.png"
+   ],
+   "criteria_ref": "Global layout (batch visual question 1)",
+   "observation": "The bottom edge of the 新会话 button (y≈146) touches the first session card's top border (y≈147) with no gap. This happens in every image-page screenshot and looks cramped, almost overlapping the highlighted item's border.",
+   "repair_suggestion": "Add ~8–12px margin below the 新会话 button."
+  },
+  {
+   "id": "R1-batch-A-harness-005",
+   "severity": "note",
+   "failure_code": "copy",
+   "screenshots": [
+    ".allforai/verify/screens/model-missing-wide.png",
+    ".allforai/verify/screens/model-missing-narrow.png",
+    ".allforai/verify/screens/runtime-unavailable-wide.png",
+    ".allforai/verify/screens/runtime-unavailable-narrow.png"
+   ],
+   "criteria_ref": "model-missing / runtime-unavailable",
+   "observation": "The empty state still says 点「生成图片」 while the button is disabled; the status line does give the reason.",
+   "repair_suggestion": "Optionally point the empty state at the unavailable reason."
+  },
+  {
+   "id": "R1-batch-A-harness-006",
+   "severity": "note",
+   "failure_code": "evidence_framing",
+   "screenshots": [
+    ".allforai/verify/screens/library-after-delete-wide.png",
+    ".allforai/verify/screens/library-after-delete-narrow.png"
+   ],
+   "criteria_ref": "library-after-delete must-show 图片页会话列表里已无该会话",
+   "observation": "The capture is scrolled to the bottom of the library: the app header and tabs are off-screen, and in the narrow capture the target row is cut at the viewport edge. The image-page half of the must-show appears only in verify-after-delete-*. The real preview image and the 正在预览 label are visible.",
+   "repair_suggestion": "Frame the header and target row, or pair the capture explicitly with verify-after-delete."
+  },
+  {
+   "id": "R1-batch-A-harness-007",
+   "severity": "note",
+   "failure_code": "evidence_framing",
+   "screenshots": [
+    ".allforai/verify/screens/rename-wide.png",
+    ".allforai/verify/screens/rename-narrow.png"
+   ],
+   "criteria_ref": "rename must-show 其他会话项不变",
+   "observation": "Only one session exists, so 其他会话项不变 cannot be observed.",
+   "repair_suggestion": "Seed a second session before capturing."
+  },
+  {
+   "id": "R1-batch-A-harness-008",
+   "severity": "note",
+   "failure_code": "copy",
+   "screenshots": [
+    ".allforai/verify/screens/verify-four-attempts-wide.png",
+    ".allforai/verify/screens/verify-four-attempts-narrow.png"
+   ],
+   "criteria_ref": "Global readability",
+   "observation": "The session title reads 「清晨的港口， 渔船…」 with an odd extra space after the full-width comma.",
+   "repair_suggestion": "Check title derivation and whitespace normalisation."
+  },
+  {
+   "id": "R1-batch-A-harness-009",
+   "severity": "note",
+   "failure_code": "ux",
+   "screenshots": [
+    ".allforai/verify/screens/running-other-session-wide.png",
+    ".allforai/verify/screens/running-other-session-narrow.png"
+   ],
+   "criteria_ref": "running-other-session",
+   "observation": "While session B is shown, the composer still holds A's prompt 甲会话：正在生成 (the draft is global), so B's composer looks like A's.",
+   "repair_suggestion": "Consider whether drafts should follow the session; no change is required for this gate."
+  },
+  {
+   "id": "R1-batch-A-harness-010",
+   "severity": "note",
+   "failure_code": "none",
+   "screenshots": [
+    ".allforai/verify/screens/attempt-interrupted-wide.png"
+   ],
+   "criteria_ref": "Global occlusion",
+   "observation": "The timeline is scrolled, so the top card's header is cut by the scroll-container edge. This is normal scroll clipping, not a defect.",
+   "repair_suggestion": "None."
+  },
+  {
+   "id": "R1-batch-B-real-app-001",
+   "severity": "minor",
+   "failure_code": "redundant_expanded_image",
+   "screenshots": [
+    ".allforai/verify/evidence/real/real-refine-prefill-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.png"
+   ],
+   "criteria_ref": "attempt-selected-actions 大图完整显示; timeline-three-rounds 展开：大图",
+   "observation": "The expanded card keeps its thumbnail and repeats the same picture as the large image. At 900px the large image is only slightly bigger than the thumbnail (about 150 vs 96 CSS px), so it reads as a duplicate rather than an enlarged view. Nothing is clipped or blank.",
+   "repair_suggestion": "Hide the thumbnail when the card is expanded, or let the large image grow toward the 60vh / column width limit."
+  },
+  {
+   "id": "R1-batch-B-real-app-002",
+   "severity": "minor",
+   "failure_code": "focus_not_visible",
+   "screenshots": [
+    ".allforai/verify/evidence/real/real-delete-confirm-wide.png",
+    ".allforai/verify/evidence/real/real-delete-confirm-narrow.png"
+   ],
+   "criteria_ref": "delete-confirm: 「取消」获得焦点",
+   "observation": "取消 in the delete dialog has no visible focus ring or highlight, so this must-show item cannot be confirmed from the image.",
+   "repair_suggestion": "Give dialog buttons a visible :focus-visible ring when focus is set programmatically, then recapture."
+  },
+  {
+   "id": "R1-batch-B-real-app-003",
+   "severity": "note",
+   "failure_code": "none",
+   "screenshots": [
+    ".allforai/verify/evidence/real/real-after-restart-wide.png",
+    ".allforai/verify/evidence/real/real-after-restart-narrow.png"
+   ],
+   "criteria_ref": "global rules",
+   "observation": "The highlighted session shows pencil and solid red trash buttons with a double focus ring. This looks like probe hover/focus state; it is loud but not a defect.",
+   "repair_suggestion": "Consider a neutral trash button at rest that turns red only on hover."
+  },
+  {
+   "id": "R1-batch-B-real-app-004",
+   "severity": "note",
+   "failure_code": "none",
+   "screenshots": [
+    ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+    ".allforai/verify/evidence/real/real-library-after-delete-narrow.png"
+   ],
+   "criteria_ref": "library-after-delete",
+   "observation": "The captures are scrolled so the header and tab bar are out of view. The active 素材库 tab is inferred from the content, not seen.",
+   "repair_suggestion": "Recapture with the tab bar visible."
+  },
+  {
+   "id": "R1-batch-B-real-app-005",
+   "severity": "note",
+   "failure_code": "none",
+   "screenshots": [
+    ".allforai/verify/evidence/real/real-running-narrow.png"
+   ],
+   "criteria_ref": "out of scope (app header)",
+   "observation": "The narrow header shortens its status chips to 媒体：忙 × 忙, which is vague compared with the wide 不可：媒体作业进行中.",
+   "repair_suggestion": "Optional: keep a short reason in the narrow header."
+  }
+ ],
+ "summary": "batch-A-harness: failed_visual_review — All 54 screenshots were opened and inspected. Layout, clipping, blank states, seed word, per-state copy and disabled states pass at both widths; no blockers. One major: in the narrow viewport the expanded 大图 is thumbnail-sized (96–147px; exactly thumbnail size in busy-other-media-narrow and running-other-session-narrow). The expanded card duplicates the thumbnail and the prompt, and the image is shrunk to make the card fit. 3 minors: session titles cut too short beside the 生成中 badge, redundant prompt/thumbnail in expanded cards, and the 新会话 button touching the first card. 6 notes. | batch-B-real-app: passed_with_warnings — All 22 screenshots were opened and judged visually. At both widths the layout, both action buttons, real images, cancelled and failed icon blocks, the no-种子 rule, persistence after restart, the delete dialog text and the library preview meet the criteria. No blocker or major issues. There are 2 minor issues (the expanded card repeats its thumbnail as a barely larger image; focus on 取消 is not visible in the delete dialog) and 3 notes."
+}

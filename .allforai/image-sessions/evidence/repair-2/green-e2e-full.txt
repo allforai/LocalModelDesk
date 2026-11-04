@@ -1,0 +1,30 @@
+........................................................................ [ 77%]
+.....F...............                                                    [100%]
+=================================== FAILURES ===================================
+___________________ test_sessions_are_reachable_by_keyboard ____________________
+
+page = <Page url='http://127.0.0.1:50740/#tab=chat'>
+tmp_path = PosixPath('/private/var/folders/yk/1lzd8nn12m50n2l4gd8r28340000gp/T/pytest-of-aa/pytest-3222/test_sessions_are_reachable_by0')
+audit_violations = []
+
+    def test_sessions_are_reachable_by_keyboard(page, tmp_path, audit_violations):
+        with launch_test_harness(tmp_path) as harness:
+            page.goto(harness.base_url)
+            pane = page.locator("#pane-chat")
+            pane.get_by_role("button", name="新会话").click()
+            cards = pane.locator("li.session")
+>           expect(cards).to_have_count(2)
+E           AssertionError: Locator expected to have count '2'
+E           Actual value: 1 
+E           Call log:
+E             - Expect "to_have_count" with timeout 10000ms
+E             - waiting for locator("#pane-chat").locator("li.session")
+E               - locator resolved to 0 elements
+E               - unexpected value "0"
+E               23 × locator resolved to 1 element
+E                  - unexpected value "1"
+
+tests/e2e/test_sessions.py:71: AssertionError
+=========================== short test summary info ============================
+FAILED tests/e2e/test_sessions.py::test_sessions_are_reachable_by_keyboard - ...
+1 failed, 92 passed in 178.87s (0:02:58)

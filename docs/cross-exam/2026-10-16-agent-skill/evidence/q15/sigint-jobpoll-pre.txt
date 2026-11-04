@@ -1,0 +1,5 @@
+18:36:14 done 一只橘猫
+18:36:16 running 一只蓝色的鸟
+18:36:31 sending INT to 65867
+  PID  PPID COMMAND
+65867 65831 /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13 -s -m desk.agent_cli image gen 盘问-排队 一只蓝色的鸟 --size 1024x1024

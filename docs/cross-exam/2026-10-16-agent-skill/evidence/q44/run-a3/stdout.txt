@@ -1,0 +1,5 @@
+Here is the output, unchanged:
+
+```
+{"desk": {"reachable": true, "url": "http://127.0.0.1:8766"}, "llm": {"status": "idle", "model": null, "loaded_by": null, "active_chats": 0}, "media": {"running": false, "kind": null}, "version": {"cli": "1.0.0", "desk": "1.0.0"}}
+```

@@ -1,0 +1,3 @@
+{"split": [], "merged": [],
+ "kept": ["image-session-design", "image-session-backend", "image-session-pane", "image-session-verify", "image-session-repair", "image-session-ship"],
+ "notes": "每个节点一个主要产出、可单独验收：设计文档+视觉标准 / 后端存储与作业挂接 / 前端界面 / 真实环境验收 / 修复 / 重建交付。backend 与 pane 未合并：前者可用 pytest 与 HTTP 独立验收，后者依赖其契约；合并会让一个节点同时跨 desk/library、desk/media、desk/static 三层，超出单节点注意力预算。"}

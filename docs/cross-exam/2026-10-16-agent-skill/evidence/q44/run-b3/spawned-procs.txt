@@ -1,0 +1,6 @@
+31212     1 Mon Oct 19 20:55:12 2026     /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/MacOS/LocalModelDesk
+31246 31212 Mon Oct 19 20:55:12 2026     /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13 -s -m desk
+  PID  PPID STARTED                      COMMAND
+31212     1 Mon Oct 19 20:55:12 2026     /Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/MacOS/LocalModelDesk
+  PID  PPID STARTED                      COMMAND
+    1     0 Sun Sep 27 02:07:43 2026     /sbin/launchd

@@ -1,0 +1,211 @@
+{
+ "node_id": "image-session-repair",
+ "round": 2,
+ "requirement_ref": {
+  "path": ".allforai/bootstrap/local-requirements.json",
+  "id": "image-sessions",
+  "revision": 1
+ },
+ "status": "passed",
+ "status_reason": "The one blocking gap, B-01, is fixed with red-then-green tests. At 900×700 the expanded 大图 now renders at 234px, up from 147px. The minor list gaps N-02 and N-03 are fixed with a new e2e test. Four notes are not fixed, and each has a reason: N-01 cannot be reproduced outside WKWebView and its widget is outside this node's write scope, N-04 would need a new product decision, and N-05 and N-06 are copy or look notes. U-06 is no longer a contract gap: the user decided it on 2026-09-24 (D-50a). One non-blocking follow-up goes to the owner of the visual criteria.",
+ "round_1_report": ".allforai/image-sessions/evidence/repair-2/round-1-repair-report.json",
+ "inputs_read": [
+  ".allforai/bootstrap/node-specs/image-session-repair.md",
+  ".allforai/bootstrap/local-requirements.json",
+  ".allforai/bootstrap/protocols/input-freshness.md",
+  ".allforai/verify/image-sessions-verify.json",
+  ".allforai/verify/ui-visual-reconciliation.json",
+  ".allforai/verify/ui-visual-closure-audit.json",
+  ".allforai/visual-qa/visual-acceptance-criteria.md",
+  "docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+  ".allforai/image-sessions/verify_repair.py",
+  "desk/static/js/widgets/image_session_card.js",
+  "desk/static/js/widgets/image_session_list.js",
+  "desk/static/js/widgets/confirm.js",
+  "desk/static/js/panes/image.js",
+  "desk/static/app.css",
+  "desk/static/index.html",
+  "tests/e2e/test_image_sessions.py",
+  "tests/e2e/test_image_flow.py",
+  "tests/js/image_pane.test.js"
+ ],
+ "code_gaps": [],
+ "test_gaps": [],
+ "contract_gaps": [],
+ "follow_ups": [
+  {
+   "id": "B-01-contract",
+   "kind": "criteria_wording",
+   "blocking": false,
+   "repair_owner": "image-session-verify (owner of .allforai/visual-qa/visual-acceptance-criteria.md/.json)",
+   "detail": "The closure audit sent this follow-up to this node. The criteria files are outside this node's parallel_write_scopes, so they were read but not edited. Two changes are needed. (1) timeline-three-rounds says 「三张缩略图都显示真实图片」 and 「每张卡片有提示词摘要」. After B-01, the expanded card shows its large image in place of the thumbnail, and its full prompt in place of the summary. This matches the design's §7.1 sketch, and the design document wins over derived criteria (cross-phase-protocols F). Suggested wording: collapsed cards show a real thumbnail and a prompt summary; the expanded card shows the large image and the full prompt instead. (2) attempt-selected-actions / timeline-three-rounds should add a minimum rendered size for 大图: at least 192px (2× the 96px thumbnail) or 60vh, whichever is smaller. Enforced by e2e IMAGE_FLOOR.",
+   "not_a_product_decision": "The design already fixes both points: the §7.1 sketch shows the expanded card as label, then 大图, then 完整提示词; D-74 sets the upper bound. The floor is a quality bar asked for by the verify reviewers, not a new user-visible behaviour.",
+   "resolved": "2026-09-24: timeline-three-rounds criteria aligned with design §7.1 by orchestrator before round-3 verify"
+  }
+ ],
+ "not_fixed": [
+  {
+   "gap": "N-01",
+   "reason": "In the real app (WKWebView), 取消 in the delete dialog shows no visible focus ring. The dialog is the shared desk/static/js/widgets/confirm.js, which calls cancelBtn.focus(). app.css already draws a ring on :focus, not only :focus-visible, and Chromium shows it. The problem cannot be reproduced in the Chromium harness, and confirm.js is outside this node's write scope and shared with chat, video, music, resources and settings. Non-blocking (minor). Next step: image-session-verify should record document.activeElement in real_journey.py, so we know whether focus actually moved in WKWebView."
+  },
+  {
+   "gap": "N-04",
+   "reason": "A per-session composer draft is not specified by the design: D-64 keeps the prompt when switching sessions, and D-65 keeps it after generating. Giving each session its own draft would be a new user-visible decision (Pattern I), so it was not built. It is a non-blocking experience note, not required by any acceptance statement. If wanted, it goes to interactive bootstrap as a product question."
+  },
+  {
+   "gap": "N-05",
+   "reason": "These are copy notes. The empty-state text is fixed verbatim by D-80, and while 生成图片 is disabled the page's hint line already gives the reason (§7.6). The space after the full-width comma comes from the typed prompt: D-11 folds whitespace but does not rewrite punctuation. The compact 媒体：忙 × 忙 chips belong to the shared global header, not the image page (BR-1). Non-blocking note."
+  },
+  {
+   "gap": "N-06",
+   "reason": "The reviewer wrote 'loud but not a defect'. It is the shared btn-danger style plus the focus ring the selected session keeps after restart. Non-blocking note."
+  },
+  {
+   "gap": "N-07",
+   "reason": "Evidence framing is owned by image-session-verify (repair_owner in the verify report)."
+  }
+ ],
+ "regression": {
+  "backend": {
+   "command": "python3 -m pytest tests --ignore=tests/e2e -q",
+   "result": "1106 passed",
+   "evidence_path": ".allforai/image-sessions/evidence/repair-2/pytest-backend.json"
+  },
+  "frontend": {
+   "command": "node --test tests/js/*.test.js",
+   "result": "322 passed (321 + the new B-01 card test)",
+   "evidence_path": ".allforai/image-sessions/evidence/repair-2/node-test.json"
+  },
+  "image_e2e_with_shots": {
+   "command": "LMD_IMAGE_SESSIONS_SHOTS=.allforai/image-sessions/evidence/repair-2/screens python3 -m pytest tests/e2e/test_image_sessions.py tests/e2e/test_image_flow.py -q",
+   "result": "26 passed (25 + the new N-02/N-03 test)",
+   "evidence_path": ".allforai/image-sessions/evidence/repair-2/pytest-image-e2e-with-shots.json"
+  },
+  "e2e_full": {
+   "command": "python3 -m pytest tests/e2e -q",
+   "result": "93 passed",
+   "evidence_path": ".allforai/image-sessions/evidence/repair-2/pytest-e2e-full.json",
+   "note": "Two earlier full runs each had one timing failure in a test this repair does not touch. The first was tests/e2e/test_sessions.py::test_sessions_are_reachable_by_keyboard (chat pane). The second was tests/e2e/test_resources_panel.py::test_resources_panel_download_cancel_resume_and_finish, a 10 s download-progress wait that round 1 also saw. Rerun in isolation, both passed each time they were run on their own (evidence-free console runs). In a captured 3× loop running both together, one of the pair failed in 2 of 3 iterations; the captured tail does not say which, and it is kept honestly as pytest-flake-isolation.json. The first full run is kept as pytest-e2e-full-run1.json. The durations of the isolated runs (2–17 s for the same test) point to machine load."
+  }
+ },
+ "test_integrity": {
+  "summary": "No assertion was deleted. Four assertions changed because B-01's exit condition changes what the expanded card shows. Each one still checks the same user-visible property, now against the image the card actually displays.",
+  "changes": [
+   "test_image_sessions.py::_assert_expanded_card_in_view: the large image and both actions must always be inside the timeline. The header label is still required inside whenever the whole card fits the timeline. It is only exempt when the card cannot fit with the image at its floor, which happens at 900×620 in test_action_buttons_…_900x700. New assertions: the image is at least IMAGE_FLOOR (192px, or 60vh / its natural height if smaller), and the expanded card has no header thumbnail.",
+   "test_selected_attempt_with_a_full_size_image…: image height ≥ 192 (was ≥ 96), and the whole card must fit at 1280×800 and 900×700, so the header-in-view check keeps its full strength at both declared viewports.",
+   "_timeline_snapshot: the per-card image key now reads the image the card shows (thumbnail when collapsed, large image when expanded). Before, it read the thumbnail only, which an expanded card no longer has. AC-4's switch-away-and-back comparison is unchanged otherwise.",
+   "AC-1/AC-2 three-rounds (test_image_sessions): each card must show exactly one image whose src is that attempt's output (it was: the thumbnail's src). test_image_flow three-rounds: collapsed cards must show a visible thumbnail, and the expanded 第 3 次 must have none. Its large image was already asserted visible."
+  ]
+ },
+ "effect_verification": {
+  "method": "real-test",
+  "stage_local_proof": "Real Chromium against launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService and desk/static). The only mock is the scripted media executor, which writes 1024×1024 PNGs. The acceptance items AC-1 to AC-7 are re-run by the image e2e (26 passed). For AC-7, the visual states are re-captured with their DOM checks under evidence/repair-2/screens.",
+  "downstream_effect_owner": "image-session-verify",
+  "downstream_effect": "Re-capture the harness and real-app narrow states, run the dual visual review and repeat the closure audit for AC-7. Re-run the packaged-app real-model journey for AC-1 to AC-6."
+ },
+ "served_by": {
+  "host": "127.0.0.1 ephemeral port per test",
+  "process": "desk.testing.launch_test_harness (real DeskApp + desk/static in Playwright Chromium)",
+  "mock_layers": [
+   "FakeMediaExecutor scripted media (desk/testing/scripts.py MediaScript) instead of the Qwen-Image subprocess"
+  ],
+  "fixtures": [
+   "desk/testing/seed.py",
+   "desk/testing/fakes.py"
+  ]
+ },
+ "downstream": {
+  "rerun": "image-session-verify",
+  "reads": "gaps[].screenshots, follow_ups[B-01-contract], not_fixed[N-01] (real-app focus probe)"
+ },
+ "fixes_applied": [
+  {
+   "gap": "B-01",
+   "kind": "visual_quality_gaps",
+   "severity": "major",
+   "blocking": true,
+   "fix": "The expanded done card no longer repeats itself above the large image. It drops the header thumbnail, because the large image replaces it (the §7.1 sketch draws the expanded card with no thumbnail). It hides the header prompt summary, because the full prompt sits right under the image. It puts 「第 N 次 · HH:MM」 and 「宽×高 · N 步」 on one line. The collapsed cards, and the failed, cancelled and missing-file cards, are unchanged (D-73, D-84). Inside the expanded area the gaps shrink from 12px to 8px, and an empty action-hint line takes no space. The pane still caps the image by the space left in the timeline (D-74's 60vh bound is kept), but the cap now has a floor of 192px, twice the thumbnail. When the card cannot fit with the image at the floor, revealExpanded keeps the image's top and both actions in view, and only the header line scrolls away. Measured at 900×700 in the harness: the expanded image went from 147px to 234px (1024×1024 PNG), and the card's non-image height went from 245px to 158px.",
+   "files": [
+    "desk/static/js/widgets/image_session_card.js",
+    "desk/static/js/panes/image.js",
+    "desk/static/app.css"
+   ],
+   "test": [
+    "tests/js/image_pane.test.js::展开卡片只放一张图：大图代替标题行的缩略图；折叠卡片仍是缩略图（D-73、D-74、§7.1 草图；B-01）",
+    "tests/e2e/test_image_sessions.py::test_selected_attempt_with_a_full_size_image_shows_header_image_and_actions_together",
+    "tests/e2e/test_image_sessions.py::test_action_buttons_of_the_settled_attempt_are_in_view_at_900x700",
+    "tests/e2e/test_image_flow.py::test_three_rounds_refine_keep_order_seed_and_recompose"
+   ],
+   "red_evidence": [
+    ".allforai/image-sessions/evidence/repair-2/red-js-expanded-single-image.txt",
+    ".allforai/image-sessions/evidence/repair-2/red-e2e.txt"
+   ],
+   "red_summary": "Before the fix: the JS test found two images (thumbnail plus large image) in the expanded card. On the e2e side, 900×620 left the 大图 at 96px (the floor assertion wants 192px). The wide expanded card repeated its header thumbnail. test_three_rounds found a .attempt-thumb on the expanded 第 3 次.",
+   "evidence_path": ".allforai/image-sessions/evidence/repair-2/pytest-image-e2e-with-shots.json",
+   "screenshots": [
+    ".allforai/image-sessions/evidence/repair-2/screens/busy-other-media-narrow.png",
+    ".allforai/image-sessions/evidence/repair-2/screens/running-other-session-narrow.png",
+    ".allforai/image-sessions/evidence/repair-2/screens/verify-selected-full-size-narrow.png",
+    ".allforai/image-sessions/evidence/repair-2/screens/refine-prefill-narrow.png",
+    ".allforai/image-sessions/evidence/repair-2/screens/timeline-three-rounds-narrow.png",
+    ".allforai/image-sessions/evidence/repair-2/screens/attempt-selected-actions-narrow.png",
+    ".allforai/image-sessions/evidence/repair-2/screens/rename-narrow.png",
+    ".allforai/image-sessions/evidence/repair-2/screens/verify-switch-back-narrow.png",
+    ".allforai/image-sessions/evidence/repair-2/screens/verify-after-delete-narrow.png",
+    ".allforai/image-sessions/evidence/repair-2/screens/verify-four-attempts-narrow.png",
+    ".allforai/image-sessions/evidence/repair-2/screens/timeline-three-rounds-wide.png",
+    ".allforai/image-sessions/evidence/repair-2/screens/attempt-selected-actions-wide.png"
+   ],
+   "note": "The real-app batch (real_journey.py) is image-session-verify's to re-capture, as are both reviewers' re-review of every narrow state.",
+   "verified_by": ".allforai/verify/image-sessions-verify.json (round 3, 2026-09-24, status passed; B-01/N-02/N-03 confirmed fixed by dual review)"
+  },
+  {
+   "gap": "N-02",
+   "kind": "visual_quality_gaps",
+   "severity": "minor",
+   "blocking": false,
+   "fix": "In image session items, the 改名/删除 buttons take no width while they are hidden (display:none instead of visibility:hidden), so the title and the 生成中 mark use the whole row. On hover or focus the buttons come back in their own grid column and never cover the title, so the F7 rule (no overlap with the title) still holds. The chat page's list is untouched (BR-1). Round 1 left this for a design decision. D-70 asks for the same session card and action buttons, and those are still used. It does not fix how much width a hidden button reserves, so this is a layout fix, not a new user-visible decision.",
+   "files": [
+    "desk/static/app.css"
+   ],
+   "test": [
+    "tests/e2e/test_image_sessions.py::test_session_list_gives_the_running_title_its_room_and_spaces_the_new_button"
+   ],
+   "red_evidence": [
+    ".allforai/image-sessions/evidence/repair-2/red-e2e.txt"
+   ],
+   "red_summary": "wide: the title 会失败的港口 was cut beside 生成中 (scrollWidth 84 > clientWidth 80, hidden actions reserving 74px)",
+   "evidence_path": ".allforai/image-sessions/evidence/repair-2/pytest-image-e2e-with-shots.json",
+   "screenshots": [
+    ".allforai/image-sessions/evidence/repair-2/screens/running-narrow.png",
+    ".allforai/image-sessions/evidence/repair-2/screens/running-other-session-narrow.png"
+   ],
+   "verified_by": ".allforai/verify/image-sessions-verify.json (round 3, 2026-09-24, status passed; B-01/N-02/N-03 confirmed fixed by dual review)"
+  },
+  {
+   "gap": "N-03",
+   "kind": "visual_quality_gaps",
+   "severity": "minor",
+   "blocking": false,
+   "fix": "The image page's session list starts 12px below the 新会话 button, the same gap as between list items. The rule is scoped to #pane-image.",
+   "files": [
+    "desk/static/app.css"
+   ],
+   "test": [
+    "tests/e2e/test_image_sessions.py::test_session_list_gives_the_running_title_its_room_and_spaces_the_new_button"
+   ],
+   "red_evidence": [
+    ".allforai/image-sessions/evidence/repair-2/red-e2e.txt"
+   ],
+   "red_summary": "gap between the 新会话 button and the first item was 0px (same failing run as N-02)",
+   "evidence_path": ".allforai/image-sessions/evidence/repair-2/pytest-image-e2e-with-shots.json",
+   "screenshots": [
+    ".allforai/image-sessions/evidence/repair-2/screens/first-entry-auto-session-wide.png",
+    ".allforai/image-sessions/evidence/repair-2/screens/empty-session-narrow.png"
+   ],
+   "verified_by": ".allforai/verify/image-sessions-verify.json (round 3, 2026-09-24, status passed; B-01/N-02/N-03 confirmed fixed by dual review)"
+  }
+ ],
+ "gaps": [],
+ "report_shape_note": "2026-09-24 orchestrator: the former 'gaps' list was a log of fixes, not open gaps; renamed to fixes_applied with no content change so the artifact gate reads it correctly. Remaining minor items (N-01 etc.) are accepted gaps recorded in .allforai/bootstrap/assumed-decisions.json."
+}

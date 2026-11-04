@@ -1,0 +1,1 @@
+host: 127.0.0.1:8766 ; process: pid 31005 dist/LocalModelDesk.app/Contents/Resources/python/bin/python3.13 -s -m desk (lsof LISTEN). lmdesk ask client = python3.13 -m desk.agent_cli (same bundle). mock layers: none.

@@ -1,0 +1,252 @@
+{
+ "node_id": "image-session-pane",
+ "status": "passed",
+ "requirement_ref": {
+  "path": ".allforai/bootstrap/local-requirements.json",
+  "id": "image-sessions",
+  "revision": 1
+ },
+ "design_doc": "docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+ "visual_criteria": [
+  ".allforai/visual-qa/visual-acceptance-criteria.json",
+  ".allforai/visual-qa/visual-acceptance-criteria.md",
+  ".allforai/visual-qa/visual-evidence-requirements.json"
+ ],
+ "upstream": {
+  "image-session-backend": ".allforai/image-sessions/backend-report.json (status passed)"
+ },
+ "evidence": [
+  {
+   "kind": "real-test",
+   "path": ".allforai/image-sessions/evidence/pane-node-test.json",
+   "command": "node --test tests/js/*.test.js",
+   "result": "321 passed, 0 failed (rerun 2026-09-24 after freshness observe)"
+  },
+  {
+   "kind": "real-test",
+   "path": ".allforai/image-sessions/evidence/pane-e2e.json",
+   "command": "LMD_IMAGE_SESSIONS_SHOTS=.allforai/image-sessions/evidence/screens python3 -m pytest tests/e2e -q",
+   "result": "76 passed in 128.18s (full e2e, real Chromium via Playwright; includes the image-session tests and the library refill test; rerun 2026-09-24)",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, arbiter, static desk/static)",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)",
+     "Playwright page.route 500 on GET /api/image-sessions (session-list-load-failed state only)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   }
+  },
+  {
+   "kind": "screenshot",
+   "path": ".allforai/image-sessions/evidence/screens",
+   "command": "same e2e run with LMD_IMAGE_SESSIONS_SHOTS set",
+   "result": "36 screenshots (18 states x wide 1280x800 / narrow 900x700) each with a .json of DOM checks: seed_word_in_main_flow false, blank_images 0, horizontal_scroll false, clipped_buttons [], overlaps []; self-check only, final visual acceptance belongs to image-session-verify"
+  },
+  {
+   "kind": "known-environment-failure",
+   "path": ".allforai/image-sessions/evidence/pane-node-test-dirarg.json",
+   "command": "node --test tests/js/",
+   "expect_exit": 1,
+   "result": "Node v26.7.0 treats the directory argument as a module path (MODULE_NOT_FOUND) before any test runs; independent of this change. The same suite run by file glob passes (pane-node-test.json)."
+  }
+ ],
+ "self_check_screenshots": {
+  "empty_session": [
+   ".allforai/image-sessions/evidence/screens/first-entry-auto-session-wide.png",
+   ".allforai/image-sessions/evidence/screens/empty-session-wide.png",
+   ".allforai/image-sessions/evidence/screens/empty-session-narrow.png"
+  ],
+  "three_round_timeline": [
+   ".allforai/image-sessions/evidence/screens/timeline-three-rounds-wide.png",
+   ".allforai/image-sessions/evidence/screens/timeline-three-rounds-narrow.png"
+  ],
+  "failed_attempt": [
+   ".allforai/image-sessions/evidence/screens/attempt-failed-wide.png",
+   ".allforai/image-sessions/evidence/screens/attempt-failed-narrow.png"
+  ]
+ },
+ "consumers": [
+  {
+   "file": "desk/static/js/main.js",
+   "line": 52,
+   "contains": "image:createImagePane($(\"#pane-image\"), { onStarted })",
+   "role": "production: pane constructed at desk boot"
+  },
+  {
+   "file": "desk/static/js/main.js",
+   "line": 101,
+   "contains": "panes.image.refresh()",
+   "role": "showTab(image) loads the session list and current session (D-92)"
+  },
+  {
+   "file": "desk/static/js/main.js",
+   "line": 107,
+   "contains": "panes.image.applyFill(plan)",
+   "role": "library refill goes back to the attempt's session (D-94/D-95)"
+  },
+  {
+   "file": "desk/static/js/main.js",
+   "line": 131,
+   "contains": "panes.image.applyJob(payload, { replaceLog: changed })",
+   "role": "2 s tick hands image jobs to the pane (D-82)"
+  },
+  {
+   "file": "desk/static/js/main.js",
+   "line": 155,
+   "contains": "await panes.image.poll(deskState)",
+   "role": "re-fetch until the backend settles the attempt (D-27)"
+  },
+  {
+   "file": "desk/static/js/panes/image.js",
+   "line": 41,
+   "contains": "availability({",
+   "role": "pure/image_session.js availability (§7.6)"
+  },
+  {
+   "file": "desk/static/js/panes/image.js",
+   "line": 107,
+   "contains": "renderSessionItem(doc, summary, {",
+   "role": "widgets/image_session_list.js"
+  },
+  {
+   "file": "desk/static/js/panes/image.js",
+   "line": 117,
+   "contains": "beginRenameItem(doc, li, summary",
+   "role": "widgets/image_session_list.js rename (D-89)"
+  },
+  {
+   "file": "desk/static/js/panes/image.js",
+   "line": 180,
+   "contains": "renderAttemptCard(doc, {",
+   "role": "widgets/image_session_card.js"
+  },
+  {
+   "file": "desk/static/js/panes/image.js",
+   "line": 230,
+   "contains": "api.getImageSession(id)",
+   "role": "api.js image-session calls"
+  },
+  {
+   "file": "desk/static/js/panes/image.js",
+   "line": 313,
+   "contains": "api.startImageJob(params)",
+   "role": "POST /api/media/image with session_id"
+  },
+  {
+   "file": "desk/static/js/panes/image.js",
+   "line": 380,
+   "contains": "recomposeParams(attempt, currentId, drawSeed)",
+   "role": "换个构图 with crypto.getRandomValues seed (D-46)"
+  },
+  {
+   "file": "desk/static/js/panes/library.js",
+   "line": 135,
+   "contains": "fillPlan(entry)",
+   "role": "history_fill image plan carries session_id/attempt_id (D-93)"
+  }
+ ],
+ "downstream_contract": {
+  "consumer": "image-session-verify",
+  "selectors": {
+   "pane": "#pane-image",
+   "new_session": "[data-image-session-new]",
+   "session_list": "[data-image-session-list]",
+   "session_item": "[data-image-session-list] [data-session-id]  (aria-current=\"true\" on the current one; data-corrupt=\"1\" on a corrupt file)",
+   "session_title": ".session-title",
+   "session_meta": ".session-meta",
+   "session_running_mark": "[data-session-running]",
+   "rename_button": "role=button name=改名",
+   "rename_input": "input.session-rename",
+   "delete_button": "role=button name=删除会话：<标题>",
+   "confirm_dialog": ".overlay .dialog",
+   "list_retry": "[data-image-sessions-retry]",
+   "timeline": "[data-image-timeline]",
+   "empty_state": "[data-image-empty]",
+   "attempt_card": "[data-image-timeline] .attempt[data-attempt-id]  (data-attempt-status = running|done|failed|cancelled|missing; aria-expanded)",
+   "attempt_label": ".attempt-label",
+   "attempt_prompt": ".attempt-prompt",
+   "attempt_spec": ".attempt-spec",
+   "attempt_badge": ".attempt-badge",
+   "attempt_reason": ".attempt-reason",
+   "attempt_icon_block": ".attempt-icon (.tone-danger / .tone-muted)",
+   "attempt_thumb_img": ".attempt-thumb img",
+   "attempt_big_img": "img.attempt-image",
+   "attempt_full_prompt": ".attempt-full-prompt",
+   "attempt_advanced": "details.attempt-advanced",
+   "attempt_error_details": "details.attempt-error-details",
+   "refine_button": "[data-attempt-refine]  (text 在这张基础上改)",
+   "recompose_button": "[data-attempt-recompose]  (text 换个构图)",
+   "recompose_reason": ".attempt-action-hint",
+   "running_progress": ".attempt progress",
+   "running_cancel": "[data-attempt-cancel]",
+   "running_log": "details.attempt-log pre",
+   "prompt": "[data-image-prompt]",
+   "start": "[data-image-start]",
+   "advanced": "details[data-image-advanced]",
+   "width": "[data-image-width]",
+   "height": "[data-image-height]",
+   "steps": "[data-image-steps]",
+   "seed": "[data-image-seed]",
+   "advanced_error": "[data-image-advanced-error]",
+   "refine_chip": "[data-image-refine]",
+   "refine_chip_text": "[data-image-refine-text]",
+   "refine_chip_clear": "[data-image-refine-clear]",
+   "status_line": "[data-image-hint] / [data-image-hint-text]",
+   "return_to_session": "[data-image-return]",
+   "error_line": "[data-image-error]",
+   "model_status": "[data-image-model]"
+  },
+  "dom_check_script": "tests/e2e/test_image_flow.py DOM_CHECKS (seed word outside the two advanced <details>, blank images, horizontal scroll, clipped buttons, overlaps)",
+  "screenshot_switch": "LMD_IMAGE_SESSIONS_SHOTS=<dir> python3 -m pytest tests/e2e/test_image_flow.py writes <state>-<wide|narrow>.png + .json"
+ },
+ "quality_questions": {
+  "switch_while_generating": "Progress and result stay in the session that started the job: running cards render only where attempt_id matches; the other session shows 「<标题>」正在生成图片 + 回到该会话; after settle the other session has 0 attempts (test_running_job_stays_in_its_session_while_viewing_another; image_pane.test.js D-82/D-87 case).",
+  "seed_word": "DOM_CHECKS asserts no 「种子」 in visible text, title, aria-label or placeholder outside details.image-advanced / details.attempt-advanced in every checked state at both viewports; image_session.test.js checks every main-flow string.",
+  "failed_cancelled_reason": "failed / cancelled / interrupted / missing cards render an icon block (no <img>), a badge and the reason; asserted in e2e (attempt-failed, attempt-cancelled, attempt-interrupted, attempt-file-missing) with blank_images 0.",
+  "narrow_900x700": "Every state is checked at 900x700: no horizontal scroll, no clipped buttons, no overlap between session list, head, timeline and composer, nothing past the viewport edge."
+ },
+ "found_and_fixed_during_self_check": [
+  "Screenshots showed 「正在生成这个会话里的第 N 次」 after the attempt had already settled (the 2 s job poll lagged the session file). loadSession now treats the session file as authoritative; e2e asserts the hint clears within 1.5 s (mutation-checked: removing the fix fails 2 e2e tests).",
+  "A new session created in the same second as the previous update could sort below it; orderSessions puts the freshly created one first on ties (D-60).",
+  "library routes return {error: \"<原因>\"} strings; api.js now surfaces that text as the DeskApiError message so rename/delete/404 reasons reach the user."
+ ],
+ "scope_read": [
+  "docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+  ".allforai/bootstrap/local-requirements.json",
+  ".allforai/visual-qa/*",
+  ".allforai/image-sessions/backend-report.json",
+  "desk/static/js/panes/chat.js",
+  "desk/static/js/icons.js",
+  "desk/static/js/widgets/confirm.js",
+  "desk/static/js/widgets/error_block.js",
+  "desk/static/js/widgets/jobview.js",
+  "desk/static/js/pure/{sessions,job_error,job_progress,format,history_fill}.js",
+  "desk/static/js/panes/library.js",
+  "desk/static/index.html",
+  "desk/static/app.css",
+  "desk/library/image_sessions.py (list/corrupt id shape)",
+  "desk/library/http.py (routes)",
+  "desk/media/service.py (job_status)",
+  "desk/testing/{harness,scripts,fakes,seed}.py",
+  "tests/e2e/conftest.py"
+ ],
+ "out_of_scope_writes": [
+  {
+   "file": "tests/js/media_panes.test.js",
+   "change": "removed the four old image-pane tests (fixed seed 42, jobview player) that assert behaviour the design replaces (D-19, D-66, D-91); equivalent and new coverage lives in tests/js/image_pane.test.js. Video/music tests untouched."
+  }
+ ],
+ "code_gaps": [],
+ "test_gaps": [],
+ "contract_gaps": [],
+ "visual_quality_gaps": [],
+ "downstream_effect_owner": "image-session-verify"
+}

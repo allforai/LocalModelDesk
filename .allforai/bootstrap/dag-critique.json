@@ -1,0 +1,60 @@
+{
+  "closure_gaps": [
+    {
+      "node_id": "image-session-pane",
+      "finding": "Structured source_inputs does not include .allforai/image-sessions/backend-report.json, which the node's own Attention Contract requires as a blocking Must-read input (upstream producer is image-session-backend, and hard_blocked_by does list it correctly — but the pull-list field a mechanical executor would read from does not).",
+      "evidence": "\"上游 backend-report.json 为 passed... 任一缺失 → blocked\" (image-session-pane.md Attention Contract) vs source_inputs array which omits this path entirely.",
+      "severity": "blocker"
+    },
+    {
+      "node_id": "image-session-verify",
+      "finding": "Structured source_inputs lists only 2 files; five files this node's Attention Contract requires as gating Must-read inputs (visual-acceptance-criteria.json/.md, visual-evidence-requirements.json from image-session-design; backend-report.json from image-session-backend; pane-report.json from image-session-pane) are absent from source_inputs even though their producing nodes exist and are correctly named in hard_blocked_by.",
+      "evidence": "\"Must-read inputs：...视觉验收标准（JSON + MD）与截图证据要求...；上游 backend-report.json、pane-report.json 为 passed。缺失 → blocked。\" vs source_inputs: [\"docs/superpowers/specs/2026-09-24-image-sessions-design.md\", \".allforai/bootstrap/local-requirements.json\"]",
+      "severity": "blocker"
+    },
+    {
+      "node_id": "image-session-ship",
+      "finding": "source_inputs (repo-wide globs) omits .allforai/verify/image-sessions-verify.json, the single file this node's Stop Conditions gate on. Lower risk than the two above since hard_blocked_by already names image-session-verify.",
+      "evidence": "\"Must-read inputs：`.allforai/verify/image-sessions-verify.json` 为 passed（否则 blocked，不重建）\" vs source_inputs: [\"desk/**\", \"macos/**\", \"packaging/**\", \"scripts/build-app.sh\", \"scripts/sign-app.sh\"]",
+      "severity": "warning"
+    }
+  ],
+  "dead_nodes": [
+    {
+      "node_id": "image-session-repair",
+      "finding": "consumers=[] and unlocks=[] in workflow.json — no other node's hard_blocked_by or source_inputs names image-session-repair's output (.allforai/image-sessions/repair-report.json). This is not actually a dead end in practice: unattended-run-readiness-spec.json's required_repair_loops entry ({qa_node_ids:[image-session-verify], repair_node_id:image-session-repair, closure_node_ids:[image-session-ship], max_attempts:3}) makes the orchestrator, not another node, the consumer that reruns image-session-verify after repair. But nothing in the node's own JSON fields or spec prose says this, so a reader of the graph alone (ignoring the readiness spec) would misclassify it as dead.",
+      "evidence": "image-session-repair node entry: \"consumers\": [], \"unlocks\": [] — cross-checked against unattended-run-readiness-spec.json required_repair_loops which does name it as repair_node_id.",
+      "severity": "warning"
+    }
+  ],
+  "goal_gaps": [
+    {
+      "finding": "Acceptance item 5 ('删除会话后会话从列表消失，其中的图片仍能在素材库打开') has two halves; image-session-verify's enumerated automated regression list only names the second half ('删除会话后素材库仍能打开图片'). The first half — that the session itself disappears from the session list after delete — has no explicitly named producing+verifying pair in the verify node's test enumeration, even though it is part of the confirmed rev1 acceptance text.",
+      "evidence": "local-requirements.json acceptance[4]: \"删除会话后会话从列表消失，其中的图片仍能在素材库打开\" vs image-session-verify.md Guidance #1: \"...删除会话后素材库仍能打开图片；生成中删除所属会话不报错且图进素材库...\" (list-disappearance half absent from the enumerated test list)",
+      "severity": "blocker"
+    },
+    {
+      "finding": "business_rule '会话标题默认取第一次生成的提示词' (title auto-set from first prompt) has a producing node (image-session-design Guidance #1, implemented by backend+pane) but no explicit verifying test in image-session-verify's enumerated automated regression list.",
+      "evidence": "local-requirements.json business_rules: \"...会话标题默认取第一次生成的提示词\"; image-session-design.md: \"标题规则：空会话首次生成时取提示词（截断长度写明），重命名后不再自动改。\"; image-session-verify.md Guidance #1's enumerated checks never mention title.",
+      "severity": "warning"
+    },
+    {
+      "finding": "business_rule 'rename a session' (会话可切换、重命名、删除) has a producing node (image-session-pane's user-visible-decisions table lists rename) but image-session-verify's enumerated automated functional test list never names rename; rename is only implicitly covered by the design node's screenshot-state list ('重命名/删除确认'), which is visual, not a data-level assertion that the rename persisted.",
+      "evidence": "local-requirements.json business_rules: \"会话可切换、重命名、删除\"; image-session-verify.md Guidance #1 lists switch/create/delete-adjacent checks but no rename check.",
+      "severity": "warning"
+    },
+    {
+      "finding": "business_rule '未新建时生成接在当前会话；首次进入且没有任何会话时的行为' — image-session-design explicitly defers the first-run-no-session behavior to itself ('选一种并写理由'), i.e. it is a producing decision, but image-session-verify's enumerated test list has no check that generation before any manual 'new session' click actually lands in the current/auto-created session as documented.",
+      "evidence": "local-requirements.json business_rules: \"会话需手动新建...未新建时生成接在当前会话\"; image-session-design.md Guidance #5: \"首次进入且没有任何会话时的行为（自动建一个还是提示新建——选一种并写理由...）\"; image-session-verify.md Guidance #1 tests 'new session isolates new generations' but not the no-session-yet default-attach case.",
+      "severity": "warning"
+    }
+  ],
+  "spofs": [
+    {
+      "node_id": "image-session-design",
+      "finding": "All five other production nodes (backend, pane, verify, repair, ship) transitively hard-depend on this single design document with no independent review checkpoint before the two parallel implementation nodes (backend, pane) start building against it — unlike image-session-verify, which is explicitly dual-reviewed, image-session-design's own Effect Verification is a single self-authored mapping table. An error or omission in this one document propagates silently into two independently-built implementation nodes and is only caught downstream at image-session-verify, after both are already built.",
+      "evidence": "image-session-design.md Effect Verification: \"证明方式：逐条把 image-sessions rev 1 的 business_rules 和 acceptance 映射到设计文档的章节...任何映射不到的条目 → quality_gaps，本节点不通过。\" (self-check only, no second reviewer) — contrasted with image-session-verify.md's explicit \"双评审：评审一...评审二...\" gate.",
+      "severity": "warning"
+    }
+  ]
+}

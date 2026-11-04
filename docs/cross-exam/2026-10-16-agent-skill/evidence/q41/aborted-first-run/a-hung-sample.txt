@@ -1,0 +1,40 @@
+Sampling process 16560 for 1 second with 1 millisecond of run time between samples
+Sampling completed, processing symbols...
+Sample analysis of process 16560 written to file /tmp/python3.13_2026-10-19_194319_Klu1.sample.txt
+
+Analysis of sampling python3.13 (pid 16560) every 1 millisecond
+Process:         python3.13 [16560]
+Path:            /Users/USER/*/LocalModelDesk.app/Contents/Resources/python/bin/python3.13
+Load Address:    0x100030000
+Identifier:      python3.13
+Version:         ???
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  zsh [16555]
+Target Type:     live task
+
+Date/Time:       2026-10-19 19:43:19.397 +0900
+Launch Time:     2026-10-19 19:35:16.174 +0900
+OS Version:      macOS 26.6.2 (25G83)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         25.1M
+Physical footprint (peak):  25.1M
+Idle exit:                  untracked
+----
+
+Call graph:
+    795 Thread_148880298   DispatchQueue_1: com.apple.main-thread  (serial)
+    + 795 start  (in dyld) + 6992  [0x18d7d84e4]
+    +   795 main  (in python3.13) + 36  [0x100246598]
+    +     795 pymain_main.llvm.6989411160101684734  (in python3.13) + 468  [0x100246778]
+    +       795 Py_RunMain  (in python3.13) + 504  [0x10029999c]
+    +         795 pymain_run_module  (in python3.13) + 232  [0x10029b5b8]
+    +           795 _PyEval_EvalFrameDefault  (in python3.13) + 2340  [0x1000c5b24]
+    +             795 cfunction_vectorcall_FASTCALL_KEYWORDS.llvm.5934472028368951802  (in python3.13) + 88  [0x1003927e8]
+    +               795 builtin_exec  (in python3.13) + 388  [0x1001c7838]
+    +                 795 PyEval_EvalCode  (in python3.13) + 132  [0x1001c7dc4]
+    +                   795 _PyEval_EvalFrameDefault  (in python3.13) + 2340  [0x1000c5b24]
+    +                     795 method_vectorcall_FASTCALL.llvm.13750171137839849998  (in python3.13) + 108  [0x100379ad0]
+    +                       795 _io_TextIOWrapper_read  (in python3.13) + 176  [0x1003168ac]

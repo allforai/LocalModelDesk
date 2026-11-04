@@ -1,0 +1,27 @@
+{"skill": "local-model-desk"}
+{"command": "lmdesk image sessions --json; echo; lmdesk image show 猫 --json; echo; lmdesk video sessions --json", "timeout": 600000}
+{"command": "lmdesk video gen --help 2>&1 | head -40"}
+{"command": "lmdesk video new \"猫\" --json && lmdesk video gen \"猫\" \"虎斑小猫在洒满阳光的窗台上慢慢抬起头，伸了个懒腰，阳光微微晃动，镜头缓缓推近\" --first-frame image:猫:4790403593d54904bb14b9a6e34366d2 --no-wait --json", "timeout": 600000}
+{"command": "lmdesk video wait aff63b3293124a74bb8b170ef10959c4 eafc7118e71048d9882a89862e9ecf25 --json --timeout 7000", "timeout": 7200000, "run_in_background": true}
+{"command": "cat /private/tmp/claude-502/-Users-aa-LocalModelDesk-docs-cross-exam-2026-10-16-agent-skill-evidence-q38-proj/b3fe6bc3-7ac5-4025-8636-096cfca6009d/tasks/bxnrj81ih.output; lmdesk video show 猫 --json"}
+{"command": "lmdesk models --json; echo; sysctl vm.swapusage; memory_pressure | tail -3; ps -axo rss,comm -m | head -8"}
+{"command": "lmdesk video gen \"猫\" \"虎斑小猫在洒满阳光的窗台上慢慢抬起头，伸了个懒腰，阳光微微晃动，镜头缓缓推近\" --first-frame image:猫:4790403593d54904bb14b9a6e34366d2 --no-wait --json", "timeout": 600000}
+{"command": "lmdesk video wait aff63b3293124a74bb8b170ef10959c4 1334eff52b974dd8a62bc3fc08dbd0a5 --json --timeout 7000", "timeout": 7200000, "run_in_background": true}
+{"command": "tail -2 /private/tmp/claude-502/-Users-aa-LocalModelDesk-docs-cross-exam-2026-10-16-agent-skill-evidence-q38-proj/b3fe6bc3-7ac5-4025-8636-096cfca6009d/tasks/brm1clp1a.output; lmdesk video gen \"猫\" \"小猫跳下窗台，轻快地走向镜头，尾巴高高翘起，温暖的午后阳光\" --continue 1334eff52b974dd8a62bc3fc08dbd0a5 --no-wait -
+{"command": "lmdesk video wait aff63b3293124a74bb8b170ef10959c4 e69de2faaa374e5aa28f170c0ce58656 --json --timeout 7000", "timeout": 7200000, "run_in_background": true}
+{"command": "tail -3 /private/tmp/claude-502/-Users-aa-LocalModelDesk-docs-cross-exam-2026-10-16-agent-skill-evidence-q38-proj/b3fe6bc3-7ac5-4025-8636-096cfca6009d/tasks/b7cd7qvtl.output; lmdesk video show 猫 --json | python3 -I -c \"import json,sys;[print(a['id'],a['status'],a['path'],(a['error'] or
+{"command": "lmdesk video gen \"猫\" \"小猫跳下窗台，轻快地走向镜头，尾巴高高翘起，温暖的午后阳光\" --continue 1334eff52b974dd8a62bc3fc08dbd0a5 --no-wait --json", "timeout": 600000}
+{"command": "lmdesk video wait aff63b3293124a74bb8b170ef10959c4 721c1ed27b6c4fa28c011447a548e016 --json --timeout 7000 --out ./猫-成片.mp4", "timeout": 7200000, "run_in_background": true}
+{"command": "tail -2 /private/tmp/claude-502/-Users-aa-LocalModelDesk-docs-cross-exam-2026-10-16-agent-skill-evidence-q38-proj/b3fe6bc3-7ac5-4025-8636-096cfca6009d/tasks/b7jtxygn3.output; ls -la; ffprobe -v error -show_entries format=duration:stream=codec_type,width,height -of compact 猫-成片.mp4; ffpr
+{"command": "cd /tmp && ffmpeg -v error -y -ss 0.2 -i \"/Users/aa/LocalModelDesk/docs/cross-exam/2026-10-16-agent-skill/evidence/q38/proj/猫-成片.mp4\" -frames:v 1 cat_a.jpg -ss 9.5 -i \"/Users/aa/LocalModelDesk/docs/cross-exam/2026-10-16-agent-skill/evidence/q38/proj/猫-成片.mp4\" -frames:v 1 cat_b.jpg &
+{"file_path": "/tmp/cat_a.jpg"}
+{"file_path": "/tmp/cat_b.jpg"}
+{"file_path": "/tmp/cat_a.jpg"}
+{"file_path": "/tmp/cat_b.jpg"}
+{"command": "F=\"猫-成片.mp4\"; for t in 0.2 2.5 5.0 5.4 7.5 9.5; do ffmpeg -v error -ss $t -i \"$F\" -frames:v 1 -f rawvideo -pix_fmt gray - | md5; done; echo; ffmpeg -v error -i \"$F\" -vf \"signalstats,metadata=print:key=lavfi.signalstats.YDIF\" -f null - 2>&1 | awk -F= '/YDIF/{s+=$2;n++; if($2>m)m=
+{"command": "for f in \"猫-成片.mp4\" \"/Users/aa/Library/Application Support/LocalModelDesk/outputs/h3-20261019-205904-a3edbb97.mp4\"; do ffmpeg -i \"$f\" -vf \"signalstats,metadata=print:key=lavfi.signalstats.YDIF:file=-\" -f null - 2>/dev/null | awk -F= '/YDIF/{s+=$2;n++; if($2>m)m=$2} END{print n\"
+{"command": "for t in 4.8 9.8; do ffmpeg -v error -y -ss $t -i 猫-成片.mp4 -frames:v 1 /tmp/cat_$t.jpg; done; ls /tmp/cat_4.8.jpg /tmp/cat_9.8.jpg"}
+{"file_path": "/tmp/cat_4.8.jpg"}
+{"file_path": "/tmp/cat_9.8.jpg"}
+{"file_path": "/tmp/cat_4.8.jpg"}
+{"file_path": "/tmp/cat_9.8.jpg"}

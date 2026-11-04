@@ -1,0 +1,244 @@
+{
+  "reviewer": {
+    "id": "reviewer-1",
+    "backend": "Claude Code fresh-context sub-agent",
+    "model": "claude-opus-5-5"
+  },
+  "batch": "batch-B-real-app",
+  "status": "passed_with_warnings",
+  "inspected": [
+    ".allforai/verify/evidence/real/real-running-wide.png",
+    ".allforai/verify/evidence/real/real-running-narrow.png",
+    ".allforai/verify/evidence/real/real-refine-prefill-wide.png",
+    ".allforai/verify/evidence/real/real-refine-prefill-narrow.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-wide.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-top-wide.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-top-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.png",
+    ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png",
+    ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-failed-wide.png",
+    ".allforai/verify/evidence/real/real-attempt-failed-narrow.png",
+    ".allforai/verify/evidence/real/real-after-restart-wide.png",
+    ".allforai/verify/evidence/real/real-after-restart-narrow.png",
+    ".allforai/verify/evidence/real/real-delete-confirm-wide.png",
+    ".allforai/verify/evidence/real/real-delete-confirm-narrow.png",
+    ".allforai/verify/evidence/real/real-after-delete-wide.png",
+    ".allforai/verify/evidence/real/real-after-delete-narrow.png",
+    ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+    ".allforai/verify/evidence/real/real-library-after-delete-narrow.png"
+  ],
+  "per_screenshot": [
+    {
+      "path": ".allforai/verify/evidence/real/real-running-wide.png",
+      "state": "running",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Running card with elapsed time, progress bar, 取消, collapsed 日志; list 生成中 badge; 生成图片 disabled; status line correct; no image frame/actions/seed."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-running-narrow.png",
+      "state": "running",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Running card with elapsed time, progress bar, 取消, collapsed 日志; list 生成中 badge; 生成图片 disabled; status line correct; no image frame/actions/seed."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-refine-prefill-wide.png",
+      "state": "refine-prefill",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Chip 沿用第 2 次的构图 with ×, prompt prefilled with caret, 高级参数 collapsed, no new card."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-refine-prefill-narrow.png",
+      "state": "refine-prefill",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Chip 沿用第 2 次的构图 with ×, prompt prefilled with caret, 高级参数 collapsed, no new card."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-wide.png",
+      "state": "timeline-three-rounds",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "第 3 次 expanded: large real image, full prompt, collapsed 高级参数, both actions fully visible."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.png",
+      "state": "timeline-three-rounds",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "第 3 次 expanded: large real image, full prompt, collapsed 高级参数, both actions fully visible."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-top-wide.png",
+      "state": "timeline-three-rounds",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Order 第1/2/3 次; real thumbnails; summaries; 512×512 · 6 步."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-top-narrow.png",
+      "state": "timeline-three-rounds",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Order 第1/2/3 次; real thumbnails; summaries; 512×512 · 6 步."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.png",
+      "state": "attempt-selected-actions",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Only 第 1 次 expanded; image complete; both actions visible."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.png",
+      "state": "attempt-selected-actions",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Only 第 1 次 expanded; image complete; both actions visible."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png",
+      "state": "attempt-cancelled",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "已取消 badge, grey icon block, reason, two actions; prompt shown twice (minor 001)."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png",
+      "state": "attempt-cancelled",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "已取消 badge, grey icon block, reason, two actions; prompt shown twice (minor 001)."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-attempt-failed-wide.png",
+      "state": "attempt-failed",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "失败 badge, danger icon block, 生成程序异常退出, 详情, two actions; prompt shown twice (minor 001)."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-attempt-failed-narrow.png",
+      "state": "attempt-failed",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "失败 badge, danger icon block, 生成程序异常退出, 详情, two actions; prompt shown twice (minor 001)."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-after-restart-wide.png",
+      "state": "after-restart",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Both sessions and all attempts/images persisted; current item shows focus ring + filled red trash (note)."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-after-restart-narrow.png",
+      "state": "after-restart",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Both sessions and all attempts/images persisted; current item shows focus ring + filled red trash (note)."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-delete-confirm-wide.png",
+      "state": "delete-confirm",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Title 删除会话, correct body, red 删除; 取消 focus not visually obvious (note)."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-delete-confirm-narrow.png",
+      "state": "delete-confirm",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Title 删除会话, correct body, red 删除; 取消 focus not visually obvious (note)."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-after-delete-wide.png",
+      "state": "library-after-delete (image page)",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Deleted session gone; remaining session highlighted."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-after-delete-narrow.png",
+      "state": "library-after-delete (image page)",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Deleted session gone; remaining session highlighted."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+      "state": "library-after-delete",
+      "viewport": "wide",
+      "verdict": "pass",
+      "notes": "Real bamboo image preview; item listed; seed metadata exempt (D-50a); header scrolled out of frame (note)."
+    },
+    {
+      "path": ".allforai/verify/evidence/real/real-library-after-delete-narrow.png",
+      "state": "library-after-delete",
+      "viewport": "narrow",
+      "verdict": "pass",
+      "notes": "Real bamboo image preview; item listed; seed metadata exempt (D-50a); header scrolled out of frame (note)."
+    }
+  ],
+  "issues": [
+    {
+      "id": "R1-batch-B-real-app-001",
+      "severity": "minor",
+      "failure_code": "redundant_content",
+      "screenshots": [
+        ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png",
+        ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png",
+        ".allforai/verify/evidence/real/real-attempt-failed-wide.png",
+        ".allforai/verify/evidence/real/real-attempt-failed-narrow.png",
+        ".allforai/verify/evidence/real/real-after-restart-wide.png",
+        ".allforai/verify/evidence/real/real-after-delete-wide.png"
+      ],
+      "criteria_ref": "timeline-three-rounds: 展开卡片以完整提示词代替摘要; attempt-cancelled; attempt-failed",
+      "observation": "Expanded cancelled (第5次) and failed (第6次) cards keep the header prompt summary and repeat the same prompt below as the full-prompt line, so the prompt appears twice; completed expanded cards replace the summary instead. All required elements are present.",
+      "repair_suggestion": "For expanded cards without an image, hide the header summary (or skip the full-prompt line when it equals the summary), so the full prompt replaces the summary for every status."
+    },
+    {
+      "id": "R1-batch-B-real-app-002",
+      "severity": "note",
+      "failure_code": "state_styling",
+      "screenshots": [
+        ".allforai/verify/evidence/real/real-after-restart-wide.png",
+        ".allforai/verify/evidence/real/real-after-restart-narrow.png"
+      ],
+      "criteria_ref": "global: 当前会话在列表中高亮",
+      "observation": "Current session item shows a double focus ring and a solid red delete button, likely a residual focus or hover state; nothing clipped.",
+      "repair_suggestion": "Confirm the resting style of the current item does not show a filled red trash button."
+    },
+    {
+      "id": "R1-batch-B-real-app-003",
+      "severity": "note",
+      "failure_code": "focus_visibility",
+      "screenshots": [
+        ".allforai/verify/evidence/real/real-delete-confirm-wide.png",
+        ".allforai/verify/evidence/real/real-delete-confirm-narrow.png"
+      ],
+      "criteria_ref": "delete-confirm: 「取消」获得焦点",
+      "observation": "Focus on 取消 is not clearly visible in the snapshot (faint border only).",
+      "repair_suggestion": "Verify activeElement via the probe readback; consider a stronger focus ring."
+    },
+    {
+      "id": "R1-batch-B-real-app-004",
+      "severity": "note",
+      "failure_code": "capture_framing",
+      "screenshots": [
+        ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+        ".allforai/verify/evidence/real/real-library-after-delete-narrow.png"
+      ],
+      "criteria_ref": "library-after-delete",
+      "observation": "The library captures are scrolled past the header and tabs, so the 素材库 tab is not in frame; the content still shows the library and a real preview.",
+      "repair_suggestion": "Optionally also capture the top of the library page, with the tab bar, in future runs."
+    }
+  ],
+  "summary": "All 22 real-app screenshots were opened and meet the criteria: no occlusion, clipping, blank or broken images, horizontal scroll, seed word on the image page, or foreign pane content. Real Qwen-Image outputs render in thumbnails, expanded cards and the library preview, and state persists across the restart. One minor: expanded cancelled/failed cards repeat the prompt. Three notes."
+}

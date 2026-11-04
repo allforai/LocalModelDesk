@@ -1,0 +1,11 @@
+newdir:
+total 816
+drwxr-xr-x@  3 aa  staff      96 Oct 19 18:46 .
+drwxr-xr-x@ 29 aa  staff     928 Oct 19 18:46 ..
+-rw-r--r--@  1 aa  staff  414766 Oct 19 18:46 qwen-image-20261019-184605-efede310.png
+
+outdir:
+total 992
+drwxr-xr-x@  3 aa  staff      96 Oct 19 18:46 .
+drwxr-xr-x@ 29 aa  staff     928 Oct 19 18:46 ..
+-rw-r--r--@  1 aa  staff  505077 Oct 19 18:46 qwen-image-20261019-184556-42e1966f.png

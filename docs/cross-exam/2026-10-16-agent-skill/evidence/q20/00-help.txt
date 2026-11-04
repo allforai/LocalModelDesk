@@ -1,0 +1,14 @@
+usage: lmdesk video [-h] {sessions,new,show,gen,wait,rename,join} ...
+
+positional arguments:
+  {sessions,new,show,gen,wait,rename,join}
+    sessions            列出视频会话
+    new                 新建视频会话
+    show                查看会话里的尝试
+    gen                 在会话里生成视频
+    wait                等待某次尝试的结果
+    rename              重命名会话
+    join                把几段合成成片
+
+options:
+  -h, --help            show this help message and exit

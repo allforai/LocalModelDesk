@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_cli/__main__.py", line 6, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_cli/cli.py", line 93, in main
+    result = _dispatch(args, client, waiter, stdin, err)
+  File "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_cli/cli.py", line 123, in _dispatch
+    return chat.run_ask(client, question=args.question, model=args.model, system=args.system, files=args.file,
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        stdin_text=_read_stdin(stdin), max_tokens=args.max_tokens, waiter=waiter)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_cli/chat.py", line 117, in run_ask
+    content = _message(question, files, stdin_text)
+  File "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/desk/agent_cli/chat.py", line 74, in _message
+    text = path.read_text(encoding="utf-8")
+  File "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/lib/python3.13/pathlib/_local.py", line 546, in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/aa/LocalModelDesk/dist/LocalModelDesk.app/Contents/Resources/python/lib/python3.13/pathlib/_abc.py", line 633, in read_text
+    return f.read()
+           ~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xb9 in position 2: invalid start byte

@@ -1,0 +1,46 @@
+{
+  "image-session-backend": [
+    ".allforai/image-sessions/probe_real_api.py",
+    ".allforai/image-sessions/verify_backend.py",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+  ],
+  "image-session-design": [
+    "desk/static/js/pure/desk_state.js",
+    "desk/static/js/pure/format.js",
+    "desk/static/js/pure/job_error.js",
+    "desk/static/js/pure/job_progress.js",
+    "desk/static/js/pure/sessions.js",
+    "desk/static/js/pure/tab_hash.js",
+    "desk/static/js/widgets/confirm.js"
+  ],
+  "image-session-pane": [
+    ".allforai/image-sessions/verify_pane.py",
+    "desk/static/js/pure/format.js",
+    "desk/static/js/pure/job_error.js",
+    "desk/static/js/pure/job_progress.js",
+    "desk/static/js/pure/sessions.js",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md",
+    "tests/e2e/conftest.py"
+  ],
+  "image-session-repair": [
+    ".allforai/image-sessions/verify_repair.py",
+    ".allforai/verify/evidence/narrow-scroll/probe.json",
+    ".allforai/verify/probe_narrow_scroll.py",
+    ".allforai/verify/ui-visual-closure-audit.json",
+    ".allforai/visual-qa/visual-acceptance-criteria.json",
+    ".allforai/visual-qa/visual-acceptance-criteria.md",
+    "desk/static/js/widgets/confirm.js"
+  ],
+  "image-session-verify": [
+    ".allforai/verify/mutation_check.py",
+    ".allforai/verify/probe_narrow_scroll.py",
+    ".allforai/verify/real_journey.py",
+    "desk/__main__.py",
+    "macos/DeskPaths.swift",
+    "macos/MainWindowController.swift",
+    "macos/VisualProbe.swift",
+    "scripts/build-app.sh",
+    "scripts/visual-capture.py",
+    "tests/e2e/conftest.py"
+  ]
+}

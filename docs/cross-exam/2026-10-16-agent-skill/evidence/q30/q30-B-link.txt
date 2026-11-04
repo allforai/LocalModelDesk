@@ -1,0 +1,2 @@
+lrwxr-xr-x@ 1 aa  staff  87 Oct 19 20:31 /Users/aa/.claude/skills/local-model-desk -> /Applications/GoneDesk.app/Contents/Resources/desk/agent_skill/bundled/local-model-desk
+ls: /Applications/GoneDesk.app: No such file or directory

@@ -1,0 +1,15 @@
+{
+  "schema": "capture_evidence/v1",
+  "command": [
+    "curl",
+    "-s",
+    "-m5",
+    "-w",
+    "\\nHTTP %{http_code}",
+    "http://127.0.0.1:8766/api/image-sessions"
+  ],
+  "exit_code": 0,
+  "stdout": "[]\nHTTP 200",
+  "stderr": "",
+  "stdout_sha256": "4f6b7489adda262ddd72575b4bca1cebb0312d6f713e0e4d1dae4df2709c7cd9"
+}

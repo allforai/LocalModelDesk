@@ -1,0 +1,13 @@
+{
+  "schema": "capture_evidence/v1",
+  "command": [
+    "curl",
+    "-s",
+    "-m5",
+    "http://127.0.0.1:8766/api/state"
+  ],
+  "exit_code": 0,
+  "stdout": "{\"holder\": null, \"holders\": [], \"media_busy\": false, \"can_start\": {\"llm\": {\"ok\": true, \"reason\": null}, \"media\": {\"ok\": true, \"reason\": null}}}",
+  "stderr": "",
+  "stdout_sha256": "4df0c2fab9a26c1fbe212dbfbd81c32c0c080682b994be2162421c9fb96f7a21"
+}

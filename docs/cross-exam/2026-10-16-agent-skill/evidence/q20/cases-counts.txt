@@ -1,0 +1,5 @@
+before 1
+case2 code=5 secs=0 attempts=1
+case3 code=5 secs=1 attempts=1
+case4 code=2 secs=0 attempts=1
+case5 code=2 secs=0 attempts=1

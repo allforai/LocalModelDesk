@@ -1,0 +1,87 @@
+{
+ "id": "c250396a0a014adfa569e44839b7aa30",
+ "kind": "video",
+ "title": "海边日落，一个人沿着沙滩慢慢走向镜头，海浪轻拍岸…",
+ "title_auto": true,
+ "created": "2026-10-08T19:14:19",
+ "updated": "2026-10-08T19:19:00",
+ "attempts": [
+  {
+   "id": "9f6ba5bd3dcd4cf9a19b107053076aba",
+   "job_id": 3,
+   "ts": "2026-10-08T19:14:32",
+   "finished": "2026-10-08T19:15:42",
+   "status": "done",
+   "op": "generate",
+   "params": {
+    "prompt": "海边日落，一个人沿着沙滩慢慢走向镜头，海浪轻拍岸边。环境声：海浪声、海鸥叫声。",
+    "width": 512,
+    "height": 288,
+    "frames": 49,
+    "steps": 16,
+    "seed": 3497289010
+   },
+   "continues": null,
+   "refs": {},
+   "output": "h3-20261008-191432-b3e4e943.mp4",
+   "joined_output": null,
+   "joined_error": null,
+   "error": null,
+   "base": null,
+   "output_missing": false
+  },
+  {
+   "id": "62b5fea2771f470884028426e5e351b7",
+   "job_id": 4,
+   "ts": "2026-10-08T19:16:45",
+   "finished": "2026-10-08T19:18:01",
+   "status": "done",
+   "op": "generate",
+   "params": {
+    "prompt": "那个人停下脚步，转身望向大海，太阳缓缓沉入海平线。环境声：海浪声、微风声。",
+    "width": 512,
+    "height": 288,
+    "frames": 49,
+    "steps": 16,
+    "seed": 4228768594,
+    "mode": "image",
+    "use_audio": true,
+    "first_frame": "0bf8397996934b96a5ea9d326a5c49a4.png"
+   },
+   "continues": "9f6ba5bd3dcd4cf9a19b107053076aba",
+   "refs": {},
+   "output": "h3-20261008-191645-1f3dcd59.mp4",
+   "joined_output": "h3-joined-20261008-191801-c39728df.mp4",
+   "joined_error": null,
+   "error": null,
+   "base": null,
+   "output_missing": false,
+   "joined_missing": false
+  },
+  {
+   "id": "e45f3bc03210420c8b9edb60e42f0183",
+   "job_id": 5,
+   "ts": "2026-10-08T19:19:00",
+   "finished": "2026-10-08T19:19:00",
+   "status": "done",
+   "op": "soundtrack",
+   "params": {
+    "source": "62b5fea2771f470884028426e5e351b7"
+   },
+   "continues": null,
+   "refs": {
+    "soundtrack": {
+     "kind": "music",
+     "session_id": "4360e782b70b4672b2dd16bb95969351",
+     "attempt_id": "0848e2b2591342fb8abd82ea7b20f0d9"
+    }
+   },
+   "output": "h3-soundtrack-20261008-191900-3a522865.mp4",
+   "joined_output": null,
+   "joined_error": null,
+   "error": null,
+   "base": null,
+   "output_missing": false
+  }
+ ]
+}

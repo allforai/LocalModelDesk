@@ -1,0 +1,2136 @@
+{
+ "node_id": "image-session-verify",
+ "criteria": ".allforai/visual-qa/visual-acceptance-criteria.json",
+ "evidence_requirements": ".allforai/visual-qa/visual-evidence-requirements.json",
+ "location_note": "Screenshots live under .allforai/verify/ rather than .allforai/visual-qa/evidence/ so that this node never writes into its own input directory (.allforai/visual-qa/** is an input dependency).",
+ "required_states": 20,
+ "required_captures": 40,
+ "required_missing": [],
+ "files_missing": [],
+ "screenshots": [
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "first-entry-auto-session",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/first-entry-auto-session-wide.png",
+   "dom_checks": ".allforai/verify/screens/first-entry-auto-session-wide.json",
+   "sha256": "4cf4722b9d0cfe70bdf74c6ac76aaec7bfbc31a8f97f402201f08fdf21e66b4d",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#first-entry-auto-session",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "first-entry-auto-session",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/first-entry-auto-session-narrow.png",
+   "dom_checks": ".allforai/verify/screens/first-entry-auto-session-narrow.json",
+   "sha256": "e08608d3a8a539842244a7e203ca330fbaf56f48f1a3fdd2e6360038a3b4bb86",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#first-entry-auto-session",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "empty-session",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/empty-session-wide.png",
+   "dom_checks": ".allforai/verify/screens/empty-session-wide.json",
+   "sha256": "e1824f436e0841a7799b3d0c499b2b2ca357423612306fb47e93ce7d233c709d",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#empty-session",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "empty-session",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/empty-session-narrow.png",
+   "dom_checks": ".allforai/verify/screens/empty-session-narrow.json",
+   "sha256": "7e0a9f1d8efd6d23378d615e8eb612a158897e54f4a94e95740aad643a87d159",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#empty-session",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "running",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/running-wide.png",
+   "dom_checks": ".allforai/verify/screens/running-wide.json",
+   "sha256": "34014388ba475d885d0adb2ef9c4e9a1fceeb20c5a1955985d954f3359515c4d",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#running",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "running",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/running-narrow.png",
+   "dom_checks": ".allforai/verify/screens/running-narrow.json",
+   "sha256": "69742b69cc5b3042edab52e4925e6ec8ced06a4e448ed34d602ef019a2b85497",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#running",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "running-other-session",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/running-other-session-wide.png",
+   "dom_checks": ".allforai/verify/screens/running-other-session-wide.json",
+   "sha256": "71ceedb74ad2e67f30141f85e071170b10e0567e809addc62c6d959dcafdb2ea",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#running-other-session",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness",
+   "superseded_by": ".allforai/verify/screens-recapture/running-other-session-wide.png",
+   "superseded_reason": "batch A reviewers found the capture did not meet the state's data precondition; re-captured with it"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "running-other-session",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens-recapture/running-other-session-wide.png",
+   "dom_checks": ".allforai/verify/screens-recapture/running-other-session-wide.json",
+   "sha256": "b7dbeb0632f1e2fda7f3fdce30ab63000e7ec1635c1b905b7a94b25ffb77be98",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-recapture.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#running-other-session",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-B-real-app",
+   "superseded_by": null,
+   "superseded_reason": null,
+   "required": true
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "running-other-session",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/running-other-session-narrow.png",
+   "dom_checks": ".allforai/verify/screens/running-other-session-narrow.json",
+   "sha256": "7569b3a6cfbe7c3025bf596f8f4ab42d97677c5fbf31cbf30138fb821f556afd",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#running-other-session",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness",
+   "superseded_by": ".allforai/verify/screens-recapture/running-other-session-narrow.png",
+   "superseded_reason": "batch A reviewers found the capture did not meet the state's data precondition; re-captured with it"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "running-other-session",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens-recapture/running-other-session-narrow.png",
+   "dom_checks": ".allforai/verify/screens-recapture/running-other-session-narrow.json",
+   "sha256": "17927979552d31c79fb3612f77474b112003204e663dba56b54c02566bd40d42",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-recapture.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#running-other-session",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-B-real-app",
+   "superseded_by": null,
+   "superseded_reason": null,
+   "required": true
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "timeline-three-rounds",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/timeline-three-rounds-wide.png",
+   "dom_checks": ".allforai/verify/screens/timeline-three-rounds-wide.json",
+   "sha256": "ee666d74641e082f82d93ac28bff4547ed5e248d683aefd910885ad69d374f0b",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#timeline-three-rounds",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "timeline-three-rounds",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+   "dom_checks": ".allforai/verify/screens/timeline-three-rounds-narrow.json",
+   "sha256": "b43479de69870ecd81a4c724248b165aaa3cc03f402eefe2db0f24217a99c50d",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#timeline-three-rounds",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "attempt-selected-actions",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/attempt-selected-actions-wide.png",
+   "dom_checks": ".allforai/verify/screens/attempt-selected-actions-wide.json",
+   "sha256": "710b3757e275615d3623b9779feb6a91a8e4e4ce3674479eab6da14f8caab2aa",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-selected-actions",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "attempt-selected-actions",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/attempt-selected-actions-narrow.png",
+   "dom_checks": ".allforai/verify/screens/attempt-selected-actions-narrow.json",
+   "sha256": "c7289d25761a8386685dbfeccdfe1270516b8cff56f5c340ecc96df2a20b6bc8",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-selected-actions",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "refine-prefill",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/refine-prefill-wide.png",
+   "dom_checks": ".allforai/verify/screens/refine-prefill-wide.json",
+   "sha256": "3b64bb70dd6a8d78f4e785d67e8b37dd9cb8066a2b0705684d55cad1d753d3ce",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#refine-prefill",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "refine-prefill",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/refine-prefill-narrow.png",
+   "dom_checks": ".allforai/verify/screens/refine-prefill-narrow.json",
+   "sha256": "54c35b6525a40f7bce7b1502e3ac62acf92eb867b9f481dcadb9bceaf03b3a64",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#refine-prefill",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "attempt-failed",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/attempt-failed-wide.png",
+   "dom_checks": ".allforai/verify/screens/attempt-failed-wide.json",
+   "sha256": "d75f49a8ee64e01bf1233f50d8225ee5f2fd46c916f226dba5c50df6566850cd",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-failed",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "attempt-failed",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/attempt-failed-narrow.png",
+   "dom_checks": ".allforai/verify/screens/attempt-failed-narrow.json",
+   "sha256": "dc87480bd7fce3ade70460fc5be3cf5e72c28be1642418b978edf6a8500cc3d1",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-failed",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "attempt-cancelled",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/attempt-cancelled-wide.png",
+   "dom_checks": ".allforai/verify/screens/attempt-cancelled-wide.json",
+   "sha256": "8a3963b069d83506cc45e96aa60407b43939cbbdab55517d94a5dd2a0edf1054",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-cancelled",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "attempt-cancelled",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/attempt-cancelled-narrow.png",
+   "dom_checks": ".allforai/verify/screens/attempt-cancelled-narrow.json",
+   "sha256": "c0e521040c65d2a5eda06b78efe7a7af246d7525dcf1b7a98864bf6b84d1f364",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-cancelled",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "attempt-interrupted",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/attempt-interrupted-wide.png",
+   "dom_checks": ".allforai/verify/screens/attempt-interrupted-wide.json",
+   "sha256": "562b0facdbe23497d19078782ebb48f99465c398ed4fe3391bd5acc886eaa5b5",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-interrupted",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "attempt-interrupted",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/attempt-interrupted-narrow.png",
+   "dom_checks": ".allforai/verify/screens/attempt-interrupted-narrow.json",
+   "sha256": "0ff4f149c32cedf9c48de53b8a4f2e6a804643597041257d84d2e2c6ffbfd8d1",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-interrupted",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "attempt-file-missing",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/attempt-file-missing-wide.png",
+   "dom_checks": ".allforai/verify/screens/attempt-file-missing-wide.json",
+   "sha256": "8a2264787fbae55d352d3794fc4073ccca963474d46f352a2e143f0cb2e6f6f7",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-file-missing",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "attempt-file-missing",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/attempt-file-missing-narrow.png",
+   "dom_checks": ".allforai/verify/screens/attempt-file-missing-narrow.json",
+   "sha256": "9a87d5c546838f795a8d623c01131501f85ab3d4cff79d71f017e2c67abc11e0",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-file-missing",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "model-missing",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/model-missing-wide.png",
+   "dom_checks": ".allforai/verify/screens/model-missing-wide.json",
+   "sha256": "a7959634b542cefa5f11fdc701454bc3fed2ac0d9dd5ab601ef15f8dd563f908",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#model-missing",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness",
+   "superseded_by": ".allforai/verify/screens-recapture/model-missing-wide.png",
+   "superseded_reason": "batch A reviewers found the capture did not meet the state's data precondition; re-captured with it"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "model-missing",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens-recapture/model-missing-wide.png",
+   "dom_checks": ".allforai/verify/screens-recapture/model-missing-wide.json",
+   "sha256": "79ffe9c3eb0ea2acbfd37c1db7d20f488ea13b2c9664fe77249405c77b9c1589",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-recapture.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#model-missing",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-B-real-app",
+   "superseded_by": null,
+   "superseded_reason": null,
+   "required": true
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "model-missing",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/model-missing-narrow.png",
+   "dom_checks": ".allforai/verify/screens/model-missing-narrow.json",
+   "sha256": "82152fc6c0663f5b5a002cb8d8e1d7d6a971df0fcc1d7596d04852cd0eb27cb5",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#model-missing",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness",
+   "superseded_by": ".allforai/verify/screens-recapture/model-missing-narrow.png",
+   "superseded_reason": "batch A reviewers found the capture did not meet the state's data precondition; re-captured with it"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "model-missing",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens-recapture/model-missing-narrow.png",
+   "dom_checks": ".allforai/verify/screens-recapture/model-missing-narrow.json",
+   "sha256": "65ecae2436b536ebaf817098d745f3ce6aaec7de38f0eee1f53b8caf42f08e5a",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-recapture.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#model-missing",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-B-real-app",
+   "superseded_by": null,
+   "superseded_reason": null,
+   "required": true
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "runtime-unavailable",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/runtime-unavailable-wide.png",
+   "dom_checks": ".allforai/verify/screens/runtime-unavailable-wide.json",
+   "sha256": "d06dea4bdece5010a8b238f68a461d5b8667462b2e024031b7be5526663a4993",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#runtime-unavailable",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "runtime-unavailable",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/runtime-unavailable-narrow.png",
+   "dom_checks": ".allforai/verify/screens/runtime-unavailable-narrow.json",
+   "sha256": "1a8dd9d1882e6d803ee14d735a8ebd84d29302a5075b1bb0d128c53a840223fb",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#runtime-unavailable",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "busy-other-media",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/busy-other-media-wide.png",
+   "dom_checks": ".allforai/verify/screens/busy-other-media-wide.json",
+   "sha256": "8cf8271fddf713596f98a3ab09b0985f4d1ca572241fc58839d17d02f91580ec",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#busy-other-media",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "busy-other-media",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/busy-other-media-narrow.png",
+   "dom_checks": ".allforai/verify/screens/busy-other-media-narrow.json",
+   "sha256": "2f52a81080a8af7e0df502bd6c4741ec44050c73ad59aa2d076c7a1bab2d35c1",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#busy-other-media",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "rename",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/rename-wide.png",
+   "dom_checks": ".allforai/verify/screens/rename-wide.json",
+   "sha256": "8130a8b0833bd84480fe1ae5a2695d8a13aa064ac7893790e7322cabbcf3a407",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#rename",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "rename",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/rename-narrow.png",
+   "dom_checks": ".allforai/verify/screens/rename-narrow.json",
+   "sha256": "2966e1da2f03d1f0e82779e4663d2c04376c022754f5ded7839557f5b0341359",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#rename",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "delete-confirm",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/delete-confirm-wide.png",
+   "dom_checks": ".allforai/verify/screens/delete-confirm-wide.json",
+   "sha256": "accabf9ff57620a97e658cd49b18043e99ce80487e98ac4facf16ba42552808d",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#delete-confirm",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "delete-confirm",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/delete-confirm-narrow.png",
+   "dom_checks": ".allforai/verify/screens/delete-confirm-narrow.json",
+   "sha256": "0bf500bf0f3862b49b88b2b8adadf8d59cf5c18822f2c1f10a0a59934ba316ef",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#delete-confirm",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "delete-confirm-running",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/delete-confirm-running-wide.png",
+   "dom_checks": ".allforai/verify/screens/delete-confirm-running-wide.json",
+   "sha256": "8309aea708a6ec4762aa91656949edbc1351e7c816cde22e924b9e6ccef6724a",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#delete-confirm-running",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "delete-confirm-running",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/delete-confirm-running-narrow.png",
+   "dom_checks": ".allforai/verify/screens/delete-confirm-running-narrow.json",
+   "sha256": "17a5b0f89e2b211112b2a5cab00bf20aa58a4181beef9280830ee079b54367d5",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#delete-confirm-running",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-library",
+   "flow_id": "image-sessions",
+   "state": "library-after-delete",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/library-after-delete-wide.png",
+   "dom_checks": ".allforai/verify/screens/library-after-delete-wide.json",
+   "sha256": "d72d1423535c431e28c372aa5a5494137ff283d4d4be9406b72df8273acb33cb",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#library-after-delete",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-library",
+   "flow_id": "image-sessions",
+   "state": "library-after-delete",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/library-after-delete-narrow.png",
+   "dom_checks": ".allforai/verify/screens/library-after-delete-narrow.json",
+   "sha256": "37e25023f3444660de916b5e4980ab87e24bc4aed7284114c748c202fdd111f9",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#library-after-delete",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "session-list-load-failed",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/session-list-load-failed-wide.png",
+   "dom_checks": ".allforai/verify/screens/session-list-load-failed-wide.json",
+   "sha256": "a201d67e8982fe758b0020f8c6953b071d9a2f02064639906ca3bfe53285d5dc",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#session-list-load-failed",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "session-list-load-failed",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/session-list-load-failed-narrow.png",
+   "dom_checks": ".allforai/verify/screens/session-list-load-failed-narrow.json",
+   "sha256": "11a39a9ffe13e377438457bb7e1302c96cdf7efcad3c4cd6093e08712d93e086",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#session-list-load-failed",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "corrupt-session",
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/corrupt-session-wide.png",
+   "dom_checks": ".allforai/verify/screens/corrupt-session-wide.json",
+   "sha256": "a4a61686e263320f5c2171f5165e284af95083ed55aa34fc3e742d2eaf7e6c36",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#corrupt-session",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "corrupt-session",
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/corrupt-session-narrow.png",
+   "dom_checks": ".allforai/verify/screens/corrupt-session-narrow.json",
+   "sha256": "5efb00f468cf6197ded65a4f4c3f5cc7e90830a8f93561ae0728e2d858719788",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#corrupt-session",
+    "docs/superpowers/specs/2026-09-24-image-sessions-design.md"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "verify-four-attempts",
+   "supplementary": true,
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/verify-four-attempts-wide.png",
+   "dom_checks": ".allforai/verify/screens/verify-four-attempts-wide.json",
+   "sha256": "28f8e45aa337319c3eca52f298644f59df99474aed69e599257f479c7b16ce5e",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md (global rules)"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "verify-four-attempts",
+   "supplementary": true,
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/verify-four-attempts-narrow.png",
+   "dom_checks": ".allforai/verify/screens/verify-four-attempts-narrow.json",
+   "sha256": "c56c9ab4936b0e7e5db2a6a21886bcec5747b82327919b4497ec2dee1960f547",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md (global rules)"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "verify-switch-back",
+   "supplementary": true,
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/verify-switch-back-wide.png",
+   "dom_checks": ".allforai/verify/screens/verify-switch-back-wide.json",
+   "sha256": "bd55d5ee84bf86a0b4087d2cd374bb803af0cd2594c83c4144768551d55f950c",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md (global rules)"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "verify-switch-back",
+   "supplementary": true,
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/verify-switch-back-narrow.png",
+   "dom_checks": ".allforai/verify/screens/verify-switch-back-narrow.json",
+   "sha256": "e11d8bfc94d86194d2f1669de367b927cd635dcd59d02383bfe151160b8894c7",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md (global rules)"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "verify-after-delete",
+   "supplementary": true,
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/verify-after-delete-wide.png",
+   "dom_checks": ".allforai/verify/screens/verify-after-delete-wide.json",
+   "sha256": "4c7c5331c0fcc92a5f6ffe119f2dfac369ab0a8a6c2f3d9fe47166ea327ef37a",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md (global rules)"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "verify-after-delete",
+   "supplementary": true,
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/verify-after-delete-narrow.png",
+   "dom_checks": ".allforai/verify/screens/verify-after-delete-narrow.json",
+   "sha256": "776b1e71b3beb54cf08e190a7d9265eca0d0583c631b18049f239fb44bae8bcb",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md (global rules)"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "verify-failed-and-cancelled",
+   "supplementary": true,
+   "viewport_or_device": "1280x800",
+   "screenshot_path": ".allforai/verify/screens/verify-failed-and-cancelled-wide.png",
+   "dom_checks": ".allforai/verify/screens/verify-failed-and-cancelled-wide.json",
+   "sha256": "dfa97b49520c9d3c816a6fe76229f82a495327ead19e19e346e2fa65fac546f5",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md (global rules)"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "web",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions",
+   "state": "verify-failed-and-cancelled",
+   "supplementary": true,
+   "viewport_or_device": "900x700",
+   "screenshot_path": ".allforai/verify/screens/verify-failed-and-cancelled-narrow.png",
+   "dom_checks": ".allforai/verify/screens/verify-failed-and-cancelled-narrow.json",
+   "sha256": "035729f9b77235b650f7f97398d126656d3b815908e2596610bb3d5be51c8283",
+   "captured_by": ".allforai/verify/evidence/pytest-e2e-screens.json",
+   "served_by": {
+    "host": "127.0.0.1 ephemeral port per test",
+    "process": "desk.testing.launch_test_harness (real DeskApp, LibraryService, ImageSessionStore, MediaService, desk/static) in headless Chromium via Playwright 1.62",
+    "mock_layers": [
+     "FakeMediaExecutor + MediaScript (writes a small gradient PNG instead of running image_cli.py)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock",
+     "stub mflux/mlx packages (image_runtime=True)"
+    ],
+    "fixtures": [
+     "desk/testing/seed.py",
+     "desk/testing/scripts.py"
+    ]
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md (global rules)"
+   ],
+   "reviewed_in": "batch-A-harness"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "running",
+   "viewport_or_device": "1280x800 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-running-wide.png",
+   "probe_record": ".allforai/verify/evidence/real/real-running-wide.json",
+   "sha256": "45711546f1443aa44b5bafc8a44288ee682e4ffbd8c761c35f0f5e914d52c4b7",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#running"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "running",
+   "viewport_or_device": "900x700 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-running-narrow.png",
+   "probe_record": ".allforai/verify/evidence/real/real-running-narrow.json",
+   "sha256": "b9742469082ae17c1f9c8347c1ed4aa4bdb03f7b8c2a1eb622803b817a6567a1",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#running"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "refine-prefill",
+   "viewport_or_device": "1280x800 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-refine-prefill-wide.png",
+   "probe_record": ".allforai/verify/evidence/real/real-refine-prefill-wide.json",
+   "sha256": "a3eb4f5ffb49bdbb75888839fa75f235bfd2a823612caf0663dfba9d7d8b9113",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#refine-prefill"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "refine-prefill",
+   "viewport_or_device": "900x700 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-refine-prefill-narrow.png",
+   "probe_record": ".allforai/verify/evidence/real/real-refine-prefill-narrow.json",
+   "sha256": "278bb1aa11c697cd4777a1ddd0467f0e99749030ba745589952039898bdb6ca0",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#refine-prefill"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "timeline-three-rounds",
+   "viewport_or_device": "1280x800 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-timeline-three-rounds-wide.png",
+   "probe_record": ".allforai/verify/evidence/real/real-timeline-three-rounds-wide.json",
+   "sha256": "fbf7af4357f174af2857998e821df579510a75f5ab31e5e50411ccc66df854e5",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#timeline-three-rounds"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "timeline-three-rounds",
+   "viewport_or_device": "900x700 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.png",
+   "probe_record": ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.json",
+   "sha256": "fb80da3def777cc79bf5ae76b83724c2269b4d8731b0f61ea616104804e36e02",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#timeline-three-rounds"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "attempt-selected-actions",
+   "viewport_or_device": "1280x800 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.png",
+   "probe_record": ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.json",
+   "sha256": "130fcf9e57d39cb2873f32bb175b5d9891df9f6e371e064f5b173a47068dff0e",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-selected-actions"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "attempt-selected-actions",
+   "viewport_or_device": "900x700 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.png",
+   "probe_record": ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.json",
+   "sha256": "94547298287716944a534c54a5cffc5f1b5f9eb968ca85f785c78390092227bb",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-selected-actions"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "attempt-cancelled",
+   "viewport_or_device": "1280x800 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png",
+   "probe_record": ".allforai/verify/evidence/real/real-attempt-cancelled-wide.json",
+   "sha256": "b23216e2a5671224f0dbfb5eb182ffc68952de078a09c10a19261e3225eefef9",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-cancelled"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "attempt-cancelled",
+   "viewport_or_device": "900x700 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png",
+   "probe_record": ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.json",
+   "sha256": "3261e1e38468a3e5d5e625dab17a863a345a646b45af8ed4cb7ed026da35871c",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#attempt-cancelled"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "after-restart",
+   "viewport_or_device": "1280x800 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-after-restart-wide.png",
+   "probe_record": ".allforai/verify/evidence/real/real-after-restart-wide.json",
+   "sha256": "53cb64849339a53a0a375af913224c53a1b53653628812e898f0c7c9faaf906f",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#global rules / AC-3"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "after-restart",
+   "viewport_or_device": "900x700 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-after-restart-narrow.png",
+   "probe_record": ".allforai/verify/evidence/real/real-after-restart-narrow.json",
+   "sha256": "5ada65b6a8b5225d4fb70a865d98b80a3e34ed9423b1a6eebeafdb736c10e084",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#global rules / AC-3"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "delete-confirm",
+   "viewport_or_device": "1280x800 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-delete-confirm-wide.png",
+   "probe_record": ".allforai/verify/evidence/real/real-delete-confirm-wide.json",
+   "sha256": "c26bc0a3bbcb3cfaaaff890ba9ed7774aa88e122359a6e1a0ba820f2c619110a",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#delete-confirm"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-image",
+   "flow_id": "image-sessions-real-model",
+   "state": "delete-confirm",
+   "viewport_or_device": "900x700 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-delete-confirm-narrow.png",
+   "probe_record": ".allforai/verify/evidence/real/real-delete-confirm-narrow.json",
+   "sha256": "7af99fc3b088ba194e152396bbeade1a3449c8c7e45c0925ede64a36a1bdea79",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#delete-confirm"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-library",
+   "flow_id": "image-sessions-real-model",
+   "state": "library-after-delete",
+   "viewport_or_device": "1280x800 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+   "probe_record": ".allforai/verify/evidence/real/real-library-after-delete-wide.json",
+   "sha256": "19cbd5ae326d0385a6f398dc00c60d0890ba47ae294a53bd229acc67c6c49e7b",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#library-after-delete"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  },
+  {
+   "module_id": "image-pane",
+   "client": "desktop",
+   "role": "desktop user",
+   "screen_or_scene_id": "#pane-library",
+   "flow_id": "image-sessions-real-model",
+   "state": "library-after-delete",
+   "viewport_or_device": "900x700 window",
+   "screenshot_path": ".allforai/verify/evidence/real/real-library-after-delete-narrow.png",
+   "probe_record": ".allforai/verify/evidence/real/real-library-after-delete-narrow.json",
+   "sha256": "667129b4f9655dac4ae57e99aefae06f4aaff51ca6fe7f866be9f7151178025c",
+   "capture_tool": "scripts/visual-capture.py (WKWebView takeSnapshot)",
+   "captured_by": ".allforai/verify/evidence/real-journey-run.json",
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk) / 127.0.0.1:8792 (visual probe)",
+    "process": "isolated copy of the packaged app built by scripts/build-app.sh into the session scratchpad (Contents/MacOS/LocalModelDesk + embedded python3.13 -s -m desk), own data root",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "expected_refs": [
+    ".allforai/visual-qa/visual-acceptance-criteria.md#library-after-delete"
+   ],
+   "reviewed_in": "batch-B-real-app"
+  }
+ ],
+ "review_batches": [
+  ".allforai/verify/visual-acceptance-batches/batch-A-harness.md",
+  ".allforai/verify/visual-acceptance-batches/batch-B-real-app.md"
+ ]
+}

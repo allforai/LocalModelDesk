@@ -1,0 +1,1 @@
+{"error": {"code": "invalid_lyrics_file", "message": "读不了歌词文件：/Users/aa/LocalModelDesk/docs/cross-exam/2026-10-16-agent-skill/evidence/q23/nonexistent.txt（[Errno 2] No such file or directory: '/Users/aa/LocalModelDesk/docs/cross-exam/2026-10-16-agent-skill/evidence/q23/nonexistent.txt'）"}}

@@ -1,0 +1,12 @@
+{
+  "schema": "capture_evidence/v1",
+  "command": [
+    "python3",
+    ".allforai/verify/probe_narrow_scroll.py",
+    ".allforai/verify/evidence/narrow-scroll"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n \"after_1\": {\n  \"timeline\": {\n   \"top\": 141.796875,\n   \"bottom\": 558.296875\n  },\n  \"scrollTop\": 0,\n  \"scrollHeight\": 417,\n  \"clientHeight\": 417,\n  \"buttons\": [\n   {\n    \"text\": \"\u5728\u8fd9\u5f20\u57fa\u7840\u4e0a\u6539\",\n    \"top\": 419.296875,\n    \"bottom\": 454.09375\n   },\n   {\n    \"text\": \"\u6362\u4e2a\u6784\u56fe\",\n    \"top\": 419.296875,\n    \"bottom\": 454.09375\n   }\n  ]\n },\n \"after_2\": {\n  \"timeline\": {\n   \"top\": 141.796875,\n   \"bottom\": 558.296875\n  },\n  \"scrollTop\": 10,\n  \"scrollHeight\": 463,\n  \"clientHeight\": 417,\n  \"buttons\": [\n   {\n    \"text\": \"\u5728\u8fd9\u5f20\u57fa\u7840\u4e0a\u6539\",\n    \"top\": 543.296875,\n    \"bottom\": 578.09375\n   },\n   {\n    \"text\": \"\u6362\u4e2a\u6784\u56fe\",\n    \"top\": 543.296875,\n    \"bottom\": 578.09375\n   }\n  ]\n },\n \"after_3\": {\n  \"timeline\": {\n   \"top\": 141.796875,\n   \"bottom\": 558.296875\n  },\n  \"scrollTop\": 144,\n  \"scrollHeight\": 597,\n  \"clientHeight\": 417,\n  \"buttons\": [\n   {\n    \"text\": \"\u5728\u8fd9\u5f20\u57fa\u7840\u4e0a\u6539\",\n    \"top\": 543.296875,\n    \"bottom\": 578.09375\n   },\n   {\n    \"text\": \"\u6362\u4e2a\u6784\u56fe\",\n    \"top\": 543.296875,\n    \"bottom\": 578.09375\n   }\n  ]\n }\n}\n",
+  "stderr": "",
+  "stdout_sha256": "c7ee1f01084167b1bad41859d9f583e07d039a28cfe03a2e3cf5487090e6568c"
+}

@@ -1,0 +1,8 @@
+# ui chat 19:47:57
+HTTP/1.0 409 Conflict
+Server: BaseHTTP/0.6 Python/3.13.15
+Date: Mon, 19 Oct 2026 10:47:57 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 69
+
+{"error": {"code": "evicted", "message": "模型已被台面收回"}}

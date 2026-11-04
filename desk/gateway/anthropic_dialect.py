@@ -4,8 +4,10 @@ from __future__ import annotations
 import json
 from typing import Iterable, Iterator
 
-from .errors import REASON_INVALID_REQUEST, GatewayReject
+from .errors import REASON_INVALID_REQUEST, REASON_UPSTREAM_ERROR, GatewayReject
 
+# Anthropic tool blocks remain unsupported. Never discard a spontaneous upstream
+# call and pretend the turn succeeded: report an explicit protocol error instead.
 _REJECTED_TOOL_FIELDS = ("tools", "tool_choice")
 _STOP_REASON = {"stop": "end_turn", "length": "max_tokens"}
 
@@ -81,6 +83,9 @@ def parse_request(body) -> dict:
 
 def message_response(result: dict, model: str, message_id: str) -> dict:
     """Convert a completed backend result to an Anthropic message response."""
+    if result.get("tool_calls") or result.get("finish_reason") == "tool_calls":
+        raise GatewayReject(REASON_UPSTREAM_ERROR, 502,
+                            "tool calls require the OpenAI /v1/chat/completions endpoint")
     content = []
     if result.get("reasoning"):
         content.append({"type": "thinking", "thinking": result["reasoning"]})
@@ -134,6 +139,8 @@ def stream_events(events: Iterable[tuple], message_id: str, model: str) -> Itera
 
     try:
         for kind, payload in events:
+            if kind == "tool_calls" or (kind == "finish" and payload["finish_reason"] == "tool_calls"):
+                raise RuntimeError("tool calls require the OpenAI /v1/chat/completions endpoint")
             if kind == "finish":
                 if open_type is not None:
                     yield stop()

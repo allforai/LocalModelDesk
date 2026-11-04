@@ -1,0 +1,16 @@
+{
+  "schema": "capture_evidence/v1",
+  "command": [
+    "python3",
+    "-m",
+    "pytest",
+    "tests/e2e/test_image_sessions.py",
+    "-q",
+    "-k",
+    "running_in_one_session or model_missing_with_runtime"
+  ],
+  "exit_code": 0,
+  "stdout": "..                                                                       [100%]\n2 passed, 12 deselected in 4.92s\n",
+  "stderr": "",
+  "stdout_sha256": "62e4850eb27f9d4b4f7359e92a5d6dd03690c825c433584b57ccb6945f679206"
+}

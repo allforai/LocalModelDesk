@@ -1,0 +1,6 @@
+=== 19:47:34
+state holder= {'kind': 'llm', 'label': 'qwen27', 'display': 'Qwen3.8 27B 越狱 8bit', 'since': 1792406612.6725929, 'phase': 'held'} holders= [{'kind': 'llm', 'label': 'qwen27', 'display': 'Qwen3.8 27B 越狱 8bit', 'since': 1792406612.6725929, 'phase': 'held'}] media_busy= False
+llm {"status": "loaded", "model_key": "superqwen", "error": null, "loaded_at": 1792406701.660347} loaded_model= {'key': 'superqwen', 'name': 'SuperQwen3.8 27B 越狱 4bit', 'hf_repo': 'Jiunsong/SuperQwen3.8-27b-abliterated-MLX-4bit', 'served_id': 'Jiunsong/SuperQwen3.8-27b-abliterated-MLX-4bit', 'vision': True, 'quant': '4bit', 'params': '27B', 'gb': 16.1} active_chats= 0 ui_recent= False loaded_by= ui
+=== 19:47:40
+state holder= {'kind': 'llm', 'label': 'qwen27', 'display': 'Qwen3.8 27B 越狱 8bit', 'since': 1792406612.6725929, 'phase': 'held'} holders= [{'kind': 'llm', 'label': 'qwen27', 'display': 'Qwen3.8 27B 越狱 8bit', 'since': 1792406612.6725929, 'phase': 'held'}] media_busy= False
+llm {"status": "loaded", "model_key": "qwen27", "error": null, "loaded_at": 1792406856.62719} loaded_model= {'key': 'qwen27', 'name': 'Qwen3.8 27B 越狱 8bit', 'hf_repo': 'ailexleon/Huihui-Qwen3.8-27B-abliterated-mlx-8Bit', 'served_id': 'ailexleon/Huihui-Qwen3.8-27B-abliterated-mlx-8Bit', 'vision': True, 'quant': '8bit', 'params': '27B', 'gb': 29.5} active_chats= 0 ui_recent= False loaded_by= agent

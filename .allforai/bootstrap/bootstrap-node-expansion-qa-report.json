@@ -1,0 +1,89 @@
+{
+  "status": "failed",
+  "checked_at": "2026-09-23T18:08:25Z",
+  "nodes_checked": 6,
+  "reverse_reasoning_findings": [],
+  "dimension_elevation_findings": [],
+  "node_completion_findings": [
+    {
+      "node_id": "image-session-design",
+      "code": "missing_quality_questions",
+      "section": "Guidance #7 (四态)",
+      "finding": "Section heading promises '四态' (four states) but enumerates six distinct states (empty session list / no attempts yet / generating / failed-or-cancelled / model-or-runtime-unavailable / busy-with-another-job). The visual-acceptance-criteria.json states[] list is built off this section, so an undercounted label risks an under-listed states[] array even though the prose itself is complete.",
+      "evidence": "\"7. **四态**：会话列表空、会话内无尝试、生成中...失败/取消...模型缺失/运行环境不可用...另一个媒体作业占用时的忙碌原因。\"",
+      "severity": "warning",
+      "repair": "Rename the heading (e.g. '状态清单') or fold to a true four-state model; re-check visual-acceptance-criteria.json enumerates every state actually listed in prose."
+    },
+    {
+      "node_id": "image-session-design",
+      "code": "missing_document_contract",
+      "section": "workflow.json node entry (top-level fields)",
+      "finding": "This node's responsibilities include 'documentation' and it writes a new fact document (docs/superpowers/specs/2026-09-24-image-sessions-design.md), but the workflow node carries no `required_documents` field. This project's own tooling (.allforai/bootstrap/scripts/evidence_freshness.py) reads `node.get('required_documents', [])` as one of its two document sources for dependency and freshness tracking. Practical impact is muted here because the same document is already listed under `exit_artifacts` with validation_commands (which evidence_freshness.py also scans), so dependency/freshness tracking is not actually broken — but the schema's dedicated document-contract field is empty, which is exactly the condition the audit skill names as `missing_document_contract`.",
+      "evidence": "grep for `required_documents` across .allforai/bootstrap/*.json and node-specs/*.md returns zero hits in workflow.json; evidence_freshness.py lines 305-306 and 358 read node.get('required_documents', [])",
+      "severity": "warning",
+      "repair": "Add `required_documents: [{\"path\": \"docs/superpowers/specs/2026-09-24-image-sessions-design.md\", \"document_verification\": [\"grep -q '在这张基础上改' ...\", \"grep -q '换个构图' ...\", \"grep -q '/api/image-sessions' ...\"]}]` to the image-session-design workflow node, reusing the existing exit_artifacts validation_commands as the argv."
+    }
+  ],
+  "attention_management_findings": [
+    {
+      "node_id": "image-session-pane",
+      "code": "missing_attention_contract",
+      "section": "source_inputs vs Must-read inputs",
+      "finding": "The node's Attention Contract prose (Must-read inputs, Stop Conditions) requires `.allforai/image-sessions/backend-report.json` to exist and be `status: passed` before this node may proceed ('后端 backend-report.json 为 passed... 任一缺失 → blocked'). The structured `source_inputs` array — the field the execution harness uses for bootstrap-context-compression pull-mode reading — does not list this file at all, only the design doc and local-requirements.json plus static frontend source files. A pull-mode executor that reads exactly `source_inputs` (as the philosophy prescribes) has no mechanical way to discover or check the backend gate.",
+      "evidence": "\"Must-read inputs：docs/superpowers/specs/2026-09-24-image-sessions-design.md...后端 backend-report.json 为 passed。任一缺失 → blocked。\" vs source_inputs: [\"docs/superpowers/specs/2026-09-24-image-sessions-design.md\", \".allforai/bootstrap/local-requirements.json\", \"desk/static/js/panes/chat.js\", \"desk/static/js/icons.js\", \"desk/static/js/widgets/confirm.js\", \"desk/static/js/widgets/error_block.js\"]",
+      "severity": "blocker",
+      "repair": "Add \".allforai/image-sessions/backend-report.json\" to image-session-pane's source_inputs in workflow.json and node-specs/image-session-pane.md."
+    },
+    {
+      "node_id": "image-session-verify",
+      "code": "missing_attention_contract",
+      "section": "source_inputs vs Must-read inputs",
+      "finding": "source_inputs lists only the design doc and local-requirements.json. The Attention Contract's Must-read inputs additionally require the visual-acceptance-criteria (JSON+MD) and visual-evidence-requirements.json produced by image-session-design, and backend-report.json / pane-report.json produced by upstream nodes, all gating with 'blocked' on absence. None of these five files appear in source_inputs, the field a pull-mode executor is meant to read from exactly.",
+      "evidence": "\"Must-read inputs：...`.allforai/visual-qa/` 下由 image-session-design 产出的视觉验收标准（JSON + MD）与截图证据要求...；上游 backend-report.json、pane-report.json 为 passed。缺失 → blocked。\" vs source_inputs: [\"docs/superpowers/specs/2026-09-24-image-sessions-design.md\", \".allforai/bootstrap/local-requirements.json\"]",
+      "severity": "blocker",
+      "repair": "Add `.allforai/visual-qa/visual-acceptance-criteria.json`, `.allforai/visual-qa/visual-acceptance-criteria.md`, `.allforai/visual-qa/visual-evidence-requirements.json`, `.allforai/image-sessions/backend-report.json`, `.allforai/image-sessions/pane-report.json` to image-session-verify's source_inputs."
+    },
+    {
+      "node_id": "image-session-ship",
+      "code": "missing_attention_contract",
+      "section": "source_inputs vs Must-read inputs",
+      "finding": "source_inputs is a set of repo-wide globs (desk/**, macos/**, packaging/**, two scripts) but omits the single most important gate: `.allforai/verify/image-sessions-verify.json` must be `status: passed` or the node is blocked and must not rebuild. hard_blocked_by already names image-session-verify, so this is lower operational risk than the pane/verify findings, but the structured pull-list still doesn't name the file whose status the node's own Stop Conditions hinge on.",
+      "evidence": "\"Must-read inputs：`.allforai/verify/image-sessions-verify.json` 为 passed（否则 blocked，不重建）\" vs source_inputs: [\"desk/**\", \"macos/**\", \"packaging/**\", \"scripts/build-app.sh\", \"scripts/sign-app.sh\"]",
+      "severity": "warning",
+      "repair": "Add \".allforai/verify/image-sessions-verify.json\" to image-session-ship's source_inputs."
+    }
+  ],
+  "closure_wiring_findings": [],
+  "required_repairs": [
+    {
+      "node_id": "image-session-pane",
+      "action": "regenerate_node_spec_section",
+      "target": "source_inputs",
+      "detail": "Add .allforai/image-sessions/backend-report.json"
+    },
+    {
+      "node_id": "image-session-verify",
+      "action": "regenerate_node_spec_section",
+      "target": "source_inputs",
+      "detail": "Add the four .allforai/visual-qa/ artifacts and .allforai/image-sessions/{backend,pane}-report.json"
+    },
+    {
+      "node_id": "image-session-ship",
+      "action": "regenerate_node_spec_section",
+      "target": "source_inputs",
+      "detail": "Add .allforai/verify/image-sessions-verify.json"
+    },
+    {
+      "node_id": "image-session-design",
+      "action": "regenerate_node_spec_section",
+      "target": "required_documents",
+      "detail": "Declare docs/superpowers/specs/2026-09-24-image-sessions-design.md as a required_documents entry with document_verification argv (reuse existing exit_artifacts validation_commands)"
+    }
+  ],
+  "notes": [
+    "This skill (meta-orchestration/40-qa/bootstrap-node-expansion-qa) ships only SKILL.md; no bundled validator script was found under its directory, so its report could not be run through a skill-provided validator. The bootstrap-wide validators that do exist (.allforai/bootstrap/scripts/validate_bootstrap.py and validate_unattended_readiness.py) were run instead as corroborating evidence and both currently report clean/ready (see below); they check different, more structural things than this audit.",
+    "validate_bootstrap.py .allforai/bootstrap -> {\"errors\": [], \"passed\": true}",
+    "validate_unattended_readiness.py -> {\"status\": \"ready\", \"blockers\": [], \"warnings\": []}",
+    "The required_repair_loops declaration in unattended-run-readiness-spec.json ({qa_node_ids:[image-session-verify], repair_node_id:image-session-repair, closure_node_ids:[image-session-ship], max_attempts:3}) correctly matches the graph edges (repair.hard_blocked_by=[image-session-verify], ship.hard_blocked_by includes image-session-verify) — closure wiring for the QA->repair->closure loop is sound and is not a finding here."
+  ]
+}

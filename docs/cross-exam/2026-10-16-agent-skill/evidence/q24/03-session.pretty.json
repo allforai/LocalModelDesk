@@ -1,0 +1,32 @@
+{
+    "id": "6b0ea7ae359e4c40b76002d6ed879ffa",
+    "kind": "music",
+    "title": "\u76d8\u95ee-\u7eaf\u97f3\u4e50",
+    "title_auto": false,
+    "created": "2026-10-19T19:06:41",
+    "updated": "2026-10-19T19:07:40",
+    "attempts": [
+        {
+            "id": "683b0c3fb831417e867ce7674a1b7c9c",
+            "job_id": 23,
+            "ts": "2026-10-19T19:06:45",
+            "finished": "2026-10-19T19:07:40",
+            "status": "done",
+            "op": "generate",
+            "params": {
+                "caption": "\u8f7b\u5feb\u7684\u94a2\u7434\u80cc\u666f\u4e50",
+                "lyrics": "[instrumental]",
+                "duration": 20,
+                "seed": 2129844388
+            },
+            "continues": null,
+            "refs": {},
+            "output": "music3-20261019-190645-c2c3561a.wav",
+            "joined_output": null,
+            "joined_error": null,
+            "error": null,
+            "base": null,
+            "output_missing": false
+        }
+    ]
+}

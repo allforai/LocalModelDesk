@@ -1,0 +1,3207 @@
+{
+ "node_id": "image-session-verify",
+ "round": 2,
+ "criteria": ".allforai/visual-qa/visual-acceptance-criteria.md",
+ "requirements": ".allforai/visual-qa/visual-evidence-requirements.json",
+ "capture_note": "Required files are captured under .allforai/verify/screens (harness, real Chromium) and .allforai/verify/evidence/real (packaged app, real model) instead of .allforai/visual-qa/evidence/, which belongs to the design node.",
+ "batches": [
+  ".allforai/verify/visual-acceptance-batches/batch-A-harness.md",
+  ".allforai/verify/visual-acceptance-batches/batch-B-real-app.md"
+ ],
+ "coverage": [
+  {
+   "state_id": "first-entry-auto-session",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/first-entry-auto-session-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "first-entry-auto-session",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/first-entry-auto-session-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "empty-session",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/empty-session-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "empty-session",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/empty-session-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "running",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/running-wide.png",
+    ".allforai/verify/evidence/real/real-running-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "running",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/running-narrow.png",
+    ".allforai/verify/evidence/real/real-running-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "running-other-session",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/running-other-session-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "running-other-session",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/running-other-session-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "timeline-three-rounds",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/timeline-three-rounds-wide.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "timeline-three-rounds",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+    ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "attempt-selected-actions",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/attempt-selected-actions-wide.png",
+    ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "attempt-selected-actions",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/attempt-selected-actions-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "refine-prefill",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/refine-prefill-wide.png",
+    ".allforai/verify/evidence/real/real-refine-prefill-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "refine-prefill",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/refine-prefill-narrow.png",
+    ".allforai/verify/evidence/real/real-refine-prefill-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "attempt-failed",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/attempt-failed-wide.png",
+    ".allforai/verify/evidence/real/real-attempt-failed-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "attempt-failed",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/attempt-failed-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-failed-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "attempt-cancelled",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/attempt-cancelled-wide.png",
+    ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "attempt-cancelled",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/attempt-cancelled-narrow.png",
+    ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "attempt-interrupted",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/attempt-interrupted-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "attempt-interrupted",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/attempt-interrupted-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "attempt-file-missing",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/attempt-file-missing-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "attempt-file-missing",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/attempt-file-missing-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "model-missing",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/model-missing-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "model-missing",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/model-missing-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "runtime-unavailable",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/runtime-unavailable-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "runtime-unavailable",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/runtime-unavailable-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "busy-other-media",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/busy-other-media-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "busy-other-media",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/busy-other-media-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "rename",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/rename-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "rename",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/rename-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "delete-confirm",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/delete-confirm-wide.png",
+    ".allforai/verify/evidence/real/real-delete-confirm-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "delete-confirm",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/delete-confirm-narrow.png",
+    ".allforai/verify/evidence/real/real-delete-confirm-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "delete-confirm-running",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/delete-confirm-running-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "delete-confirm-running",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/delete-confirm-running-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "library-after-delete",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/library-after-delete-wide.png",
+    ".allforai/verify/evidence/real/real-library-after-delete-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "library-after-delete",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/library-after-delete-narrow.png",
+    ".allforai/verify/evidence/real/real-library-after-delete-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "session-list-load-failed",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/session-list-load-failed-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "session-list-load-failed",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/session-list-load-failed-narrow.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "corrupt-session",
+   "viewport": "wide",
+   "captures": [
+    ".allforai/verify/screens/corrupt-session-wide.png"
+   ],
+   "inspected_by_both": true
+  },
+  {
+   "state_id": "corrupt-session",
+   "viewport": "narrow",
+   "captures": [
+    ".allforai/verify/screens/corrupt-session-narrow.png"
+   ],
+   "inspected_by_both": true
+  }
+ ],
+ "missing_required": [],
+ "not_inspected_by_both": [],
+ "screenshots": [
+  {
+   "path": ".allforai/verify/screens/attempt-cancelled-narrow.png",
+   "state": "attempt-cancelled",
+   "capture_id": "attempt-cancelled",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 72534,
+   "record": ".allforai/verify/screens/attempt-cancelled-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64215",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-cancelled-wide.png",
+   "state": "attempt-cancelled",
+   "capture_id": "attempt-cancelled",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 77338,
+   "record": ".allforai/verify/screens/attempt-cancelled-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64215",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-failed-narrow.png",
+   "state": "attempt-failed",
+   "capture_id": "attempt-failed",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 66449,
+   "record": ".allforai/verify/screens/attempt-failed-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64215",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-failed-wide.png",
+   "state": "attempt-failed",
+   "capture_id": "attempt-failed",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 71189,
+   "record": ".allforai/verify/screens/attempt-failed-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64215",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-file-missing-narrow.png",
+   "state": "attempt-file-missing",
+   "capture_id": "attempt-file-missing",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 77969,
+   "record": ".allforai/verify/screens/attempt-file-missing-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64630",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-file-missing-wide.png",
+   "state": "attempt-file-missing",
+   "capture_id": "attempt-file-missing",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 93267,
+   "record": ".allforai/verify/screens/attempt-file-missing-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64630",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-interrupted-narrow.png",
+   "state": "attempt-interrupted",
+   "capture_id": "attempt-interrupted",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 75439,
+   "record": ".allforai/verify/screens/attempt-interrupted-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64630",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-interrupted-wide.png",
+   "state": "attempt-interrupted",
+   "capture_id": "attempt-interrupted",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 84628,
+   "record": ".allforai/verify/screens/attempt-interrupted-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64630",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-selected-actions-narrow.png",
+   "state": "attempt-selected-actions",
+   "capture_id": "attempt-selected-actions",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 80406,
+   "record": ".allforai/verify/screens/attempt-selected-actions-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64123",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "fail",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/attempt-selected-actions-wide.png",
+   "state": "attempt-selected-actions",
+   "capture_id": "attempt-selected-actions",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 83686,
+   "record": ".allforai/verify/screens/attempt-selected-actions-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64123",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/busy-other-media-narrow.png",
+   "state": "busy-other-media",
+   "capture_id": "busy-other-media",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 57765,
+   "record": ".allforai/verify/screens/busy-other-media-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64843",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "fail",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/busy-other-media-wide.png",
+   "state": "busy-other-media",
+   "capture_id": "busy-other-media",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 64329,
+   "record": ".allforai/verify/screens/busy-other-media-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64843",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/corrupt-session-narrow.png",
+   "state": "corrupt-session",
+   "capture_id": "corrupt-session",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 63371,
+   "record": ".allforai/verify/screens/corrupt-session-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64770",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/corrupt-session-wide.png",
+   "state": "corrupt-session",
+   "capture_id": "corrupt-session",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 67928,
+   "record": ".allforai/verify/screens/corrupt-session-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64770",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/delete-confirm-narrow.png",
+   "state": "delete-confirm",
+   "capture_id": "delete-confirm",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 67448,
+   "record": ".allforai/verify/screens/delete-confirm-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64448",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/delete-confirm-running-narrow.png",
+   "state": "delete-confirm-running",
+   "capture_id": "delete-confirm-running",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 72001,
+   "record": ".allforai/verify/screens/delete-confirm-running-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64448",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/delete-confirm-running-wide.png",
+   "state": "delete-confirm-running",
+   "capture_id": "delete-confirm-running",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 78835,
+   "record": ".allforai/verify/screens/delete-confirm-running-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64448",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/delete-confirm-wide.png",
+   "state": "delete-confirm",
+   "capture_id": "delete-confirm",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 73117,
+   "record": ".allforai/verify/screens/delete-confirm-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64448",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/empty-session-narrow.png",
+   "state": "empty-session",
+   "capture_id": "empty-session",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 56893,
+   "record": ".allforai/verify/screens/empty-session-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64123",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/empty-session-wide.png",
+   "state": "empty-session",
+   "capture_id": "empty-session",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 61610,
+   "record": ".allforai/verify/screens/empty-session-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64123",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/first-entry-auto-session-narrow.png",
+   "state": "first-entry-auto-session",
+   "capture_id": "first-entry-auto-session",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 55400,
+   "record": ".allforai/verify/screens/first-entry-auto-session-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64053",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/first-entry-auto-session-wide.png",
+   "state": "first-entry-auto-session",
+   "capture_id": "first-entry-auto-session",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 59963,
+   "record": ".allforai/verify/screens/first-entry-auto-session-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64053",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/library-after-delete-narrow.png",
+   "state": "library-after-delete",
+   "capture_id": "library-after-delete",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 37287,
+   "record": ".allforai/verify/screens/library-after-delete-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": true,
+    "blank_images": 0,
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "preview_natural_width": 1024,
+    "preview_gap": 16
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:65323",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/library-after-delete-wide.png",
+   "state": "library-after-delete",
+   "capture_id": "library-after-delete",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 44976,
+   "record": ".allforai/verify/screens/library-after-delete-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": true,
+    "blank_images": 0,
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "preview_natural_width": 1024,
+    "preview_gap": 16
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:65323",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/model-missing-narrow.png",
+   "state": "model-missing",
+   "capture_id": "model-missing",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 62327,
+   "record": ".allforai/verify/screens/model-missing-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:49921",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/model-missing-wide.png",
+   "state": "model-missing",
+   "capture_id": "model-missing",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 67111,
+   "record": ".allforai/verify/screens/model-missing-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:49921",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/refine-prefill-narrow.png",
+   "state": "refine-prefill",
+   "capture_id": "refine-prefill",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 85005,
+   "record": ".allforai/verify/screens/refine-prefill-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64123",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "fail",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/refine-prefill-wide.png",
+   "state": "refine-prefill",
+   "capture_id": "refine-prefill",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 88557,
+   "record": ".allforai/verify/screens/refine-prefill-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64123",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/rename-narrow.png",
+   "state": "rename",
+   "capture_id": "rename",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 58777,
+   "record": ".allforai/verify/screens/rename-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64448",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "fail",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/rename-wide.png",
+   "state": "rename",
+   "capture_id": "rename",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 63825,
+   "record": ".allforai/verify/screens/rename-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64448",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/running-narrow.png",
+   "state": "running",
+   "capture_id": "running",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 66234,
+   "record": ".allforai/verify/screens/running-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64215",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/running-other-session-narrow.png",
+   "state": "running-other-session",
+   "capture_id": "running-other-session",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 71754,
+   "record": ".allforai/verify/screens/running-other-session-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:49751",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "fail",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/running-other-session-new-empty-narrow.png",
+   "state": "running-other-session-new-empty",
+   "capture_id": "running-other-session-new-empty",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 61979,
+   "record": ".allforai/verify/screens/running-other-session-new-empty-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64297",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/running-other-session-new-empty-wide.png",
+   "state": "running-other-session-new-empty",
+   "capture_id": "running-other-session-new-empty",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 68606,
+   "record": ".allforai/verify/screens/running-other-session-new-empty-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64297",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/running-other-session-wide.png",
+   "state": "running-other-session",
+   "capture_id": "running-other-session",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 76374,
+   "record": ".allforai/verify/screens/running-other-session-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:49751",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/running-wide.png",
+   "state": "running",
+   "capture_id": "running",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 70877,
+   "record": ".allforai/verify/screens/running-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64215",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/runtime-unavailable-narrow.png",
+   "state": "runtime-unavailable",
+   "capture_id": "runtime-unavailable",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 63717,
+   "record": ".allforai/verify/screens/runtime-unavailable-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:49680",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/runtime-unavailable-wide.png",
+   "state": "runtime-unavailable",
+   "capture_id": "runtime-unavailable",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 68596,
+   "record": ".allforai/verify/screens/runtime-unavailable-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:49680",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/session-list-load-failed-narrow.png",
+   "state": "session-list-load-failed",
+   "capture_id": "session-list-load-failed",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 46376,
+   "record": ".allforai/verify/screens/session-list-load-failed-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64770",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/session-list-load-failed-wide.png",
+   "state": "session-list-load-failed",
+   "capture_id": "session-list-load-failed",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 50758,
+   "record": ".allforai/verify/screens/session-list-load-failed-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64770",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/timeline-three-rounds-narrow.png",
+   "state": "timeline-three-rounds",
+   "capture_id": "timeline-three-rounds",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 83631,
+   "record": ".allforai/verify/screens/timeline-three-rounds-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64123",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "fail",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/timeline-three-rounds-top-narrow.png",
+   "state": "timeline-three-rounds-top",
+   "capture_id": "timeline-three-rounds-top",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 96139,
+   "record": ".allforai/verify/screens/timeline-three-rounds-top-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64123",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/timeline-three-rounds-top-wide.png",
+   "state": "timeline-three-rounds-top",
+   "capture_id": "timeline-three-rounds-top",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 97793,
+   "record": ".allforai/verify/screens/timeline-three-rounds-top-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64123",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/timeline-three-rounds-wide.png",
+   "state": "timeline-three-rounds",
+   "capture_id": "timeline-three-rounds",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 86233,
+   "record": ".allforai/verify/screens/timeline-three-rounds-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64123",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/verify-after-delete-narrow.png",
+   "state": "verify-after-delete",
+   "capture_id": "verify-after-delete",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 56540,
+   "record": ".allforai/verify/screens/verify-after-delete-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:65323",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "fail",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/verify-after-delete-wide.png",
+   "state": "verify-after-delete",
+   "capture_id": "verify-after-delete",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 61526,
+   "record": ".allforai/verify/screens/verify-after-delete-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:65323",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/verify-failed-and-cancelled-narrow.png",
+   "state": "verify-failed-and-cancelled",
+   "capture_id": "verify-failed-and-cancelled",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 74979,
+   "record": ".allforai/verify/screens/verify-failed-and-cancelled-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:49230",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/verify-failed-and-cancelled-wide.png",
+   "state": "verify-failed-and-cancelled",
+   "capture_id": "verify-failed-and-cancelled",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 79929,
+   "record": ".allforai/verify/screens/verify-failed-and-cancelled-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:49230",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/verify-four-attempts-narrow.png",
+   "state": "verify-four-attempts",
+   "capture_id": "verify-four-attempts",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 63150,
+   "record": ".allforai/verify/screens/verify-four-attempts-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64936",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "fail",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/verify-four-attempts-wide.png",
+   "state": "verify-four-attempts",
+   "capture_id": "verify-four-attempts",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 67951,
+   "record": ".allforai/verify/screens/verify-four-attempts-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:64936",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/verify-selected-full-size-narrow.png",
+   "state": "verify-selected-full-size",
+   "capture_id": "verify-selected-full-size",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 70904,
+   "record": ".allforai/verify/screens/verify-selected-full-size-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:50169",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "fail",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/verify-selected-full-size-wide.png",
+   "state": "verify-selected-full-size",
+   "capture_id": "verify-selected-full-size",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 76207,
+   "record": ".allforai/verify/screens/verify-selected-full-size-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:50083",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/verify-switch-back-narrow.png",
+   "state": "verify-switch-back",
+   "capture_id": "verify-switch-back",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 63142,
+   "record": ".allforai/verify/screens/verify-switch-back-narrow.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:65142",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "fail",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/screens/verify-switch-back-wide.png",
+   "state": "verify-switch-back",
+   "capture_id": "verify-switch-back",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-A-harness",
+   "exists": true,
+   "bytes": 67938,
+   "record": ".allforai/verify/screens/verify-switch-back-wide.json",
+   "dom_checks": {
+    "seed_word_in_main_flow": false,
+    "seed_texts": [],
+    "blank_images": 0,
+    "blank_srcs": [],
+    "horizontal_scroll": false,
+    "clipped_buttons": [],
+    "clipped_titles": [],
+    "overlaps": [],
+    "outside_viewport": 0,
+    "foreign_panes": false
+   },
+   "served_by": {
+    "host": "http://127.0.0.1:65142",
+    "process": "desk.testing.launch_test_harness",
+    "mock_layers": [
+     "FakeMediaExecutor (desk/testing/scripts.py MediaScript)",
+     "FakeLlmBackend",
+     "FakeMemoryReader",
+     "FixedClock"
+    ]
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-after-delete-narrow.png",
+   "state": "after-delete",
+   "capture_id": "real-after-delete",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 248407,
+   "record": ".allforai/verify/evidence/real/real-after-delete-narrow.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-after-delete-wide.png",
+   "state": "after-delete",
+   "capture_id": "real-after-delete",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 375941,
+   "record": ".allforai/verify/evidence/real/real-after-delete-wide.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-after-restart-narrow.png",
+   "state": "after-restart",
+   "capture_id": "real-after-restart",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 265006,
+   "record": ".allforai/verify/evidence/real/real-after-restart-narrow.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-after-restart-wide.png",
+   "state": "after-restart",
+   "capture_id": "real-after-restart",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 397321,
+   "record": ".allforai/verify/evidence/real/real-after-restart-wide.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.png",
+   "state": "attempt-cancelled",
+   "capture_id": "real-attempt-cancelled",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 313181,
+   "record": ".allforai/verify/evidence/real/real-attempt-cancelled-narrow.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-attempt-cancelled-wide.png",
+   "state": "attempt-cancelled",
+   "capture_id": "real-attempt-cancelled",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 429399,
+   "record": ".allforai/verify/evidence/real/real-attempt-cancelled-wide.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-attempt-failed-narrow.png",
+   "state": "attempt-failed",
+   "capture_id": "real-attempt-failed",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 244499,
+   "record": ".allforai/verify/evidence/real/real-attempt-failed-narrow.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-attempt-failed-wide.png",
+   "state": "attempt-failed",
+   "capture_id": "real-attempt-failed",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 369703,
+   "record": ".allforai/verify/evidence/real/real-attempt-failed-wide.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.png",
+   "state": "attempt-selected-actions",
+   "capture_id": "real-attempt-selected-actions",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 447146,
+   "record": ".allforai/verify/evidence/real/real-attempt-selected-actions-narrow.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.png",
+   "state": "attempt-selected-actions",
+   "capture_id": "real-attempt-selected-actions",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 746911,
+   "record": ".allforai/verify/evidence/real/real-attempt-selected-actions-wide.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-delete-confirm-narrow.png",
+   "state": "delete-confirm",
+   "capture_id": "real-delete-confirm",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 324745,
+   "record": ".allforai/verify/evidence/real/real-delete-confirm-narrow.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "fail"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-delete-confirm-wide.png",
+   "state": "delete-confirm",
+   "capture_id": "real-delete-confirm",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 634136,
+   "record": ".allforai/verify/evidence/real/real-delete-confirm-wide.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "fail"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-library-after-delete-narrow.png",
+   "state": "library-after-delete",
+   "capture_id": "real-library-after-delete",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 1984961,
+   "record": ".allforai/verify/evidence/real/real-library-after-delete-narrow.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-library-after-delete-wide.png",
+   "state": "library-after-delete",
+   "capture_id": "real-library-after-delete",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 2069936,
+   "record": ".allforai/verify/evidence/real/real-library-after-delete-wide.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-refine-prefill-narrow.png",
+   "state": "refine-prefill",
+   "capture_id": "real-refine-prefill",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 394082,
+   "record": ".allforai/verify/evidence/real/real-refine-prefill-narrow.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-refine-prefill-wide.png",
+   "state": "refine-prefill",
+   "capture_id": "real-refine-prefill",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 661710,
+   "record": ".allforai/verify/evidence/real/real-refine-prefill-wide.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-running-narrow.png",
+   "state": "running",
+   "capture_id": "real-running",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 185624,
+   "record": ".allforai/verify/evidence/real/real-running-narrow.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-running-wide.png",
+   "state": "running",
+   "capture_id": "real-running",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 227856,
+   "record": ".allforai/verify/evidence/real/real-running-wide.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.png",
+   "state": "timeline-three-rounds",
+   "capture_id": "real-timeline-three-rounds",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 453127,
+   "record": ".allforai/verify/evidence/real/real-timeline-three-rounds-narrow.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-top-narrow.png",
+   "state": "timeline-three-rounds-top",
+   "capture_id": "real-timeline-three-rounds-top",
+   "viewport": "narrow",
+   "size": [
+    900,
+    700
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 430455,
+   "record": ".allforai/verify/evidence/real/real-timeline-three-rounds-top-narrow.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-top-wide.png",
+   "state": "timeline-three-rounds-top",
+   "capture_id": "real-timeline-three-rounds-top",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 664595,
+   "record": ".allforai/verify/evidence/real/real-timeline-three-rounds-top-wide.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  },
+  {
+   "path": ".allforai/verify/evidence/real/real-timeline-three-rounds-wide.png",
+   "state": "timeline-three-rounds",
+   "capture_id": "real-timeline-three-rounds",
+   "viewport": "wide",
+   "size": [
+    1280,
+    800
+   ],
+   "batch": "batch-B-real-app",
+   "exists": true,
+   "bytes": 757650,
+   "record": ".allforai/verify/evidence/real/real-timeline-three-rounds-wide.json",
+   "dom_checks": null,
+   "served_by": {
+    "host": "127.0.0.1:8791 (desk HTTP) + 127.0.0.1:8792 (in-app visual probe)",
+    "process": "isolated packaged app <scratchpad>/verify-bundle/LocalModelDesk.app built by scripts/build-app.sh from the current tree; data root <scratchpad>/real-data-r2; model image-models/qwen-image-2.1-heretic",
+    "mock_layers": [],
+    "fixtures": []
+   },
+   "inspected_by_reviewer_1": true,
+   "inspected_by_reviewer_2": true,
+   "verdicts": {
+    "reviewer_1": "pass",
+    "reviewer_2": "pass"
+   }
+  }
+ ]
+}
