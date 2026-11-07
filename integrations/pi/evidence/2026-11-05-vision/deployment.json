@@ -1,0 +1,17 @@
+{
+  "app": "dist/LocalModelDesk.app",
+  "source_files_matched": 171,
+  "provider_sha256": "2e63c186915d7df49d9ca032856972981203e363cf9021db97a8d66f3c356dd5",
+  "default_settings_unchanged": true,
+  "default_settings_sha256": "773f75b107a75d7fc03e798493e8b89f32fa6daa977a5412ee23c0da54c5a32e",
+  "backup": "/tmp/lmdesk-before-vision-deploy",
+  "developer_id_signed": true,
+  "notarized": false,
+  "deployed_app_verify_passed": true,
+  "deployed_real_pi_models_passed": [
+    "superqwen",
+    "qwen27",
+    "gemma"
+  ],
+  "deployed_ui_vision_passed": true
+}

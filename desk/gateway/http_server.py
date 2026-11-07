@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import time
+import threading
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -32,11 +33,12 @@ class GatewayHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, address, backend, *, now=time.time, new_id=_new_id):
+    def __init__(self, address, backend, *, now=time.time, new_id=_new_id, sse_heartbeat_seconds=15):
         super().__init__(address, _Handler)
         self.backend = backend
         self.now = now
         self.new_id = new_id
+        self.sse_heartbeat_seconds = sse_heartbeat_seconds
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -69,13 +71,35 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache")
         self.send_header("Connection", "close")
         self.end_headers()
-        try:
-            for frame in frames:
+        # Tool arguments may take minutes before the dialect emits a frame.
+        # SSE comments keep client body-idle timers alive without adding tokens.
+        stopped = threading.Event()
+        write_lock = threading.Lock()
+
+        def write(frame):
+            with write_lock:
                 self.wfile.write(frame)
                 self.wfile.flush()
+
+        def keep_alive():
+            while not stopped.wait(self.server.sse_heartbeat_seconds):
+                try:
+                    write(b": keep-alive\n\n")
+                except OSError:
+                    stopped.set()
+
+        heartbeat = threading.Thread(target=keep_alive, daemon=True)
+        heartbeat.start()
+        try:
+            for frame in frames:
+                if stopped.is_set():
+                    break
+                write(frame)
         except (BrokenPipeError, ConnectionResetError):
             pass
         finally:
+            stopped.set()
+            heartbeat.join(timeout=1)
             close = getattr(frames, "close", None)
             if close is not None:
                 close()

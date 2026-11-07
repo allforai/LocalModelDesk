@@ -1,0 +1,51 @@
+{
+  "thinking_off": {
+    "elapsed": 3.93,
+    "response": {
+      "id": "chatcmpl-5bfc4368de104e8e8b895e78669f6d0b",
+      "object": "chat.completion",
+      "created": 1793825768,
+      "model": "glm",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "391"
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 18,
+        "completion_tokens": 3,
+        "total_tokens": 21
+      }
+    }
+  },
+  "thinking_on": {
+    "elapsed": 6.21,
+    "response": {
+      "id": "chatcmpl-5587b1dc120044c7b4f34e7818cc356b",
+      "object": "chat.completion",
+      "created": 1793825775,
+      "model": "glm",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "391",
+            "reasoning_content": "1.  **Analyze the Request:** The user wants to know the product of 17 and 23. The constraint is to give the answer \"briefly\".\n\n2.  **Identify the Calculation:**\n    *   $17 \\times 23$\n\n3.  **Determine the Method:**\n    *   *Method A: Standard Multiplication*\n        *   $17 \\times 3 = 51$\n        *   $17 \\times 20 = 340$\n        *   $51 + 340 = 391$\n    *   *Method B: Distributive Property (Mental Math)*\n        *   $17 \\times 23 = (20 - 3) \\times 23 = 460 - 69 = 391$\n    *   *Method C: Cross Multiplication*\n        *   $10 \\times 20 = 200$\n        *   $10 \\times 3 = 30$\n        *   $7 \\times 20 = 140$\n        *   $7 \\times 3 = 21$\n        *   $200 + 30 + 140 + 21 = 391$\n\n4.  **Verify the Result:**\n    *   $17 \\times 20 = 340$\n    *   $17 \\times 3 = 51$\n    *   $340 + 51 = 391$\n    *   Check: $23 \\times 10 = 230$, $23 \\times 7 = 161$. $230 + 161 = 391$. Correct.\n\n5.  **Format the Output:** The user asked for the answer briefly.\n    *   \"391\" is the most brief.\n    *   \"391\" is sufficient.\n\n6.  **Final Output Generation:** 391."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 18,
+        "completion_tokens": 383,
+        "total_tokens": 401
+      }
+    }
+  }
+}

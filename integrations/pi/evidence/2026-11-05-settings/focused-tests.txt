@@ -1,0 +1,37 @@
+........................................................................ [ 94%]
+....                                                                     [100%]
+76 passed in 10.51s
+✔ 状态和按钮跟后端能力走，忙时禁止重复提交 (0.302334ms)
+✔ 名称含版本和用途，命令保留稳定 key (0.087792ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 47.454375
+✔ native tools and real usage pass through; no prompt protocol (120.527917ms)
+✔ switch loads with origin agent, then sends native request (1019.392917ms)
+✔ memory refusal never loads or sends inference (30.246209ms)
+✔ cancel while loading is aborted, not an error or fake success (14.601833ms)
+✔ load timeout also bounds a hung control-plane HTTP request (43.104584ms)
+✔ native call IDs and Unicode tool results survive the follow-up (13.409334ms)
+✔ media and releasable budget cause waiting, never forced eviction (3018.466375ms)
+✔ failed load reports the desk's error; no inference or cloud fallback (1029.722042ms)
+✔ tool allowlist is applied to native declarations (28.786792ms)
+✔ autoload off skips control plane entirely (14.976417ms)
+✔ managed receipt routes both public endpoints without loading at registration (11.493666ms)
+✔ explicit environment endpoints override installed defaults (11.657417ms)
+✔ corrupt managed config fails clearly rather than silently using the wrong endpoint (7.980875ms)
+✔ all five stable IDs carry full version and use-case names (6.723834ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5381.046209
+........                                                                 [100%]
+8 passed in 6.63s

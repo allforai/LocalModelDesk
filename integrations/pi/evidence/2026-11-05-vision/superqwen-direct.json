@@ -1,0 +1,46 @@
+{
+  "id": "chatcmpl-9db93cda-846c-48ec-b807-179c01a2745e",
+  "object": "chat.completion",
+  "created": 1793825532,
+  "model": "superqwen",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "There are two shapes in the image: a red square on the left and a blue circle on the right.",
+        "reasoning_content": null,
+        "reasoning": null,
+        "tool_calls": null,
+        "tool_call_id": null,
+        "name": null
+      },
+      "logprobs": null
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 171,
+    "completion_tokens": 23,
+    "total_tokens": 194,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "prompt_n": 171,
+    "cache_n": 0,
+    "predicted_n": 23,
+    "prompt_ms": 1702.7707090601325,
+    "prompt_per_token_ms": 9.957723444796097,
+    "prompt_per_second": 100.42456044735805,
+    "predicted_ms": 722.4549175748094,
+    "predicted_per_token_ms": 31.411083372817803,
+    "predicted_per_second": 31.835896525153593,
+    "peak_memory": 16.747133886,
+    "draft_kind": null,
+    "draft_rounds": null,
+    "draft_n": null,
+    "draft_n_accepted": null
+  }
+}

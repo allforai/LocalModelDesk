@@ -1,0 +1,97 @@
+[
+  {
+    "key": "glm",
+    "architecture": [
+      "Glm4MoeLiteForCausalLM"
+    ],
+    "text_model_type": "glm4_moe_lite",
+    "declared_text_context": 202752,
+    "vision_config_present": false,
+    "vision_tensor_count": 0,
+    "template_has_thinking_switch": true,
+    "sha256": {
+      "config.json": "0fe8ece3ae8c6fe95c3a4e6f2931b8afdc23073e23c5dd6563058974b68ebc6e",
+      "chat_template.jinja": "d63ad536c3c81880043e22ec7fd08db42b4d8fb7c89c7138bc562bfa25281375",
+      "model.safetensors.index.json": "c0983f660f1861cc40fc5ff1f90197eac76e549a34a1e70ab399e4a45443c248"
+    },
+    "full_context_load_tested": false,
+    "model_max_output_verified": false,
+    "request_output_quota": 8192
+  },
+  {
+    "key": "superqwen",
+    "architecture": [
+      "Qwen3_5ForConditionalGeneration"
+    ],
+    "text_model_type": "qwen3_5_text",
+    "declared_text_context": 262144,
+    "vision_config_present": true,
+    "vision_tensor_count": 333,
+    "template_has_thinking_switch": true,
+    "sha256": {
+      "config.json": "58164814a4b00b7e1b831e211c4c9ee3d94b0442cd2e2defbb3f5ed007f573ee",
+      "chat_template.jinja": "aa07fc58b417897503023d501753b46c31d6fe2aa61790d1bdbfeb196108202e",
+      "model.safetensors.index.json": "13b840162b4cb35c66fef7df072f7dbb4717908204364f5e5d9f9655a2758fa8"
+    },
+    "full_context_load_tested": false,
+    "model_max_output_verified": false,
+    "request_output_quota": 8192
+  },
+  {
+    "key": "qwen27",
+    "architecture": [
+      "Qwen3_5ForConditionalGeneration"
+    ],
+    "text_model_type": "qwen3_5_text",
+    "declared_text_context": 262144,
+    "vision_config_present": true,
+    "vision_tensor_count": 333,
+    "template_has_thinking_switch": true,
+    "sha256": {
+      "config.json": "8f80874ac3ad8fa386d3f6dc0ea85377f703376e009a03dee0360e08e289a25d",
+      "chat_template.jinja": "0af1e396568d92bf10507fb58260f62ed6a72fd07ccaab53dc680dd4eb334a02",
+      "model.safetensors.index.json": "4301ca600788afb2a45c0aa367140d6144ecf617d0a51a8187fc6755d65301f8"
+    },
+    "full_context_load_tested": false,
+    "model_max_output_verified": false,
+    "request_output_quota": 8192
+  },
+  {
+    "key": "gemma",
+    "architecture": [
+      "Gemma4ForConditionalGeneration"
+    ],
+    "text_model_type": "gemma4_text",
+    "declared_text_context": 262144,
+    "vision_config_present": true,
+    "vision_tensor_count": 358,
+    "template_has_thinking_switch": true,
+    "sha256": {
+      "config.json": "79c4d6b3046f276ba183640f8d04eb4f96781209669901bbf0642951084aa83a",
+      "chat_template.jinja": "2dfbfc7d538912f4ea11d29d85b4e25d7bc26386e53f57529f1d707c28b5828c",
+      "model.safetensors.index.json": "be6491b58db1476c86c89cde314fb9d8536f92fd6d34db13cbc638e29afe92a3"
+    },
+    "full_context_load_tested": false,
+    "model_max_output_verified": false,
+    "request_output_quota": 8192
+  },
+  {
+    "key": "qwen35",
+    "architecture": [
+      "Qwen3_5MoeForConditionalGeneration"
+    ],
+    "text_model_type": "qwen3_5_moe_text",
+    "declared_text_context": 262144,
+    "vision_config_present": false,
+    "vision_tensor_count": 0,
+    "template_has_thinking_switch": true,
+    "sha256": {
+      "config.json": "2c31bb6ea1f9f9e8865172f971e3eb4633ac4e274342d18cec81d6730c56a074",
+      "chat_template.jinja": "55d4931433fe502b794226ee7f4d206a6bdd436ac9f80eb7d8ebb4c639f9ea0c",
+      "model.safetensors.index.json": "83c641a791aa957df7d280eef1b0c8faf7a2ec9b19dd3355fb13abae8ae0ed15"
+    },
+    "full_context_load_tested": false,
+    "model_max_output_verified": false,
+    "request_output_quota": 8192
+  }
+]

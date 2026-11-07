@@ -1,0 +1,40 @@
+{
+  "app": "dist/LocalModelDesk.app",
+  "backup": "/tmp/lmdesk-settings-backup.p8OaZd",
+  "provider_sha256": "9bb75310258083c814b0006fcfb55e150edbb42692fc88536f992456e1534301",
+  "source_files_match": 170,
+  "installed_state": "installed",
+  "check": {
+    "ok": true,
+    "message": "扩展已安装，控制面与网关可达；在 pi 执行 /reload，再用 /model 选择 lmdesk。尚未加载模型，pi 的第一条请求会按需加载"
+  },
+  "models": [
+    {
+      "key": "qwen35",
+      "version": "Qwen3.6 35B-A3B 8bit",
+      "use_case": "最推荐编程"
+    },
+    {
+      "key": "qwen27",
+      "version": "Qwen3.8 27B 8bit",
+      "use_case": "擅长写作"
+    },
+    {
+      "key": "superqwen",
+      "version": "SuperQwen3.8 27B 4bit",
+      "use_case": "擅长对话·省内存"
+    },
+    {
+      "key": "glm",
+      "version": "GLM 4.7 Flash 30B-A3B 8bit",
+      "use_case": "快速问答"
+    },
+    {
+      "key": "gemma",
+      "version": "Gemma 4 31B 8bit",
+      "use_case": "擅长看图（台面）·pi仅文本"
+    }
+  ],
+  "pi_default_settings_unchanged": true,
+  "real_brew_install_executed": false
+}

@@ -13,8 +13,9 @@ FIXED_ID = "fixedfixedfixedfixedfixedfixed00"
 
 
 @contextlib.contextmanager
-def serve(backend, *, now=lambda: FIXED_NOW, new_id=lambda: FIXED_ID):
-    server = GatewayHTTPServer(("127.0.0.1", 0), backend, now=now, new_id=new_id)
+def serve(backend, *, now=lambda: FIXED_NOW, new_id=lambda: FIXED_ID, sse_heartbeat_seconds=15):
+    server = GatewayHTTPServer(("127.0.0.1", 0), backend, now=now, new_id=new_id,
+                               sse_heartbeat_seconds=sse_heartbeat_seconds)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:

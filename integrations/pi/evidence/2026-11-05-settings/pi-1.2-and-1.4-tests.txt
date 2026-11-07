@@ -1,0 +1,44 @@
+✔ native tools and real usage pass through; no prompt protocol (121.74925ms)
+✔ switch loads with origin agent, then sends native request (1013.838958ms)
+✔ memory refusal never loads or sends inference (11.056291ms)
+✔ cancel while loading is aborted, not an error or fake success (9.974541ms)
+✔ load timeout also bounds a hung control-plane HTTP request (41.435708ms)
+✔ native call IDs and Unicode tool results survive the follow-up (10.363833ms)
+✔ media and releasable budget cause waiting, never forced eviction (3014.267083ms)
+✔ failed load reports the desk's error; no inference or cloud fallback (1012.132042ms)
+✔ tool allowlist is applied to native declarations (10.828125ms)
+✔ autoload off skips control plane entirely (9.861625ms)
+✔ managed receipt routes both public endpoints without loading at registration (8.85225ms)
+✔ explicit environment endpoints override installed defaults (9.303833ms)
+✔ corrupt managed config fails clearly rather than silently using the wrong endpoint (7.279166ms)
+✔ all five stable IDs carry full version and use-case names (7.141458ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5297.344083
+✔ native tools and real usage pass through; no prompt protocol (124.982375ms)
+✔ switch loads with origin agent, then sends native request (1015.41175ms)
+✔ memory refusal never loads or sends inference (10.738042ms)
+✔ cancel while loading is aborted, not an error or fake success (9.587041ms)
+✔ load timeout also bounds a hung control-plane HTTP request (40.287709ms)
+✔ native call IDs and Unicode tool results survive the follow-up (9.993542ms)
+✔ media and releasable budget cause waiting, never forced eviction (3012.652292ms)
+✔ failed load reports the desk's error; no inference or cloud fallback (1011.8785ms)
+✔ tool allowlist is applied to native declarations (11.208458ms)
+✔ autoload off skips control plane entirely (8.476584ms)
+✔ managed receipt routes both public endpoints without loading at registration (7.947334ms)
+✔ explicit environment endpoints override installed defaults (13.197125ms)
+✔ corrupt managed config fails clearly rather than silently using the wrong endpoint (9.078875ms)
+✔ all five stable IDs carry full version and use-case names (7.128917ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5304.018541

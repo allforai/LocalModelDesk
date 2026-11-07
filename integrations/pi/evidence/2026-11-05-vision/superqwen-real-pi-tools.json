@@ -1,0 +1,129 @@
+{
+  "argv": [
+    "/opt/homebrew/bin/pi",
+    "--print",
+    "--mode",
+    "json",
+    "--offline",
+    "--no-session",
+    "--tools",
+    "read",
+    "--no-mcp",
+    "--no-skills",
+    "--no-context-files",
+    "--no-themes",
+    "--no-prompt-templates",
+    "--no-extensions",
+    "-e",
+    "/Users/aa/LocalModelDesk/integrations/pi/lmdesk.ts",
+    "--model",
+    "lmdesk/superqwen",
+    "--thinking",
+    "off",
+    "--system-prompt",
+    "Describe the attached image accurately and briefly.",
+    "@/tmp/lmdesk-vision-control.png",
+    "First use the read tool to read /tmp/lmdesk-vision-fact.txt. Then give the verification code from that file and describe the attached image briefly."
+  ],
+  "exit_code": 0,
+  "elapsed": 7.71,
+  "assistant_messages": [
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "toolCall",
+          "id": "62d09682-eade-46ea-bbbf-8a6d6fa5fcb1",
+          "name": "read",
+          "arguments": {
+            "path": "/tmp/lmdesk-vision-fact.txt"
+          }
+        }
+      ],
+      "api": "openai-completions",
+      "provider": "lmdesk",
+      "model": "superqwen",
+      "usage": {
+        "input": 609,
+        "output": 32,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 641,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1793826242518,
+      "responseId": "chatcmpl-0c449c0dd6414a77823c22d145e756f6",
+      "rawStopReason": "tool_calls",
+      "durationMs": 1841,
+      "thinkingLevel": "off"
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Verification code: **VLM-73492**\n\nThe attached image shows two solid shapes on a plain white background: a dark green upright triangle on the left and a bright yellow rectangle on the right."
+        }
+      ],
+      "api": "openai-completions",
+      "provider": "lmdesk",
+      "model": "superqwen",
+      "usage": {
+        "input": 669,
+        "output": 45,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 714,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "stop",
+      "timestamp": 1793826244363,
+      "responseId": "chatcmpl-69ba492cd1884a7ca6f7487c926a308c",
+      "rawStopReason": "stop",
+      "durationMs": 2228,
+      "thinkingLevel": "off"
+    }
+  ],
+  "stderr": "",
+  "tool_events": [
+    {
+      "type": "tool_execution_start",
+      "toolCallId": "62d09682-eade-46ea-bbbf-8a6d6fa5fcb1",
+      "toolName": "read",
+      "args": {
+        "path": "/tmp/lmdesk-vision-fact.txt"
+      }
+    },
+    {
+      "type": "tool_execution_end",
+      "toolCallId": "62d09682-eade-46ea-bbbf-8a6d6fa5fcb1",
+      "toolName": "read",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Verification code: VLM-73492\n"
+          }
+        ],
+        "structuredContent": "Verification code: VLM-73492\n"
+      },
+      "isError": false,
+      "durationMs": 1
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+✔ native tools and real usage pass through; no prompt protocol (168.3115ms)
+✔ switch loads with origin agent, then sends native request (1015.789625ms)
+✔ memory refusal never loads or sends inference (20.887833ms)
+✔ cancel while loading is aborted, not an error or fake success (12.525166ms)
+✔ load timeout also bounds a hung control-plane HTTP request (41.919584ms)
+✔ native call IDs and Unicode tool results survive the follow-up (12.308292ms)
+✔ media and releasable budget cause waiting, never forced eviction (3018.562959ms)
+✔ failed load reports the desk's error; no inference or cloud fallback (1021.395041ms)
+✔ tool allowlist is applied to native declarations (19.622084ms)
+✔ autoload off skips control plane entirely (14.321792ms)
+✔ managed receipt routes both public endpoints without loading at registration (9.69925ms)
+✔ explicit environment endpoints override installed defaults (11.401917ms)
+✔ corrupt managed config fails clearly rather than silently using the wrong endpoint (7.699167ms)
+✔ all five stable IDs carry full version and use-case names (7.330083ms)
+✔ vision models retain image blocks through Pi real converter (1013.636292ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6605.088334

@@ -1,0 +1,133 @@
+{
+  "argv": [
+    "/opt/homebrew/bin/pi",
+    "--print",
+    "--mode",
+    "json",
+    "--offline",
+    "--no-session",
+    "--tools",
+    "read",
+    "--no-mcp",
+    "--no-skills",
+    "--no-context-files",
+    "--no-themes",
+    "--no-prompt-templates",
+    "--no-extensions",
+    "-e",
+    "/Users/aa/LocalModelDesk/integrations/pi/lmdesk.ts",
+    "--model",
+    "lmdesk/qwen27",
+    "--thinking",
+    "off",
+    "--system-prompt",
+    "Describe the attached image accurately and briefly.",
+    "@/tmp/lmdesk-vision-control.png",
+    "First use the read tool to read /tmp/lmdesk-vision-fact.txt. Then give the verification code from that file and describe the attached image briefly."
+  ],
+  "exit_code": 0,
+  "elapsed": 11.88,
+  "assistant_messages": [
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "I'll start by reading the requested text file."
+        },
+        {
+          "type": "toolCall",
+          "id": "0b1a8c2d-937f-43f5-9276-f8e977f81686",
+          "name": "read",
+          "arguments": {
+            "path": "/tmp/lmdesk-vision-fact.txt"
+          }
+        }
+      ],
+      "api": "openai-completions",
+      "provider": "lmdesk",
+      "model": "qwen27",
+      "usage": {
+        "input": 609,
+        "output": 43,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 652,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1793826251110,
+      "responseId": "chatcmpl-5c924f6bade94d82840ab618f697f817",
+      "rawStopReason": "tool_calls",
+      "durationMs": 3398,
+      "thinkingLevel": "off"
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "**Verification code:** VLM-73492\n\n**Image description:** A white background containing two simple geometric shapes side by side — a solid green triangle on the left (pointing up) and a solid yellow rectangle on the right."
+        }
+      ],
+      "api": "openai-completions",
+      "provider": "lmdesk",
+      "model": "qwen27",
+      "usage": {
+        "input": 680,
+        "output": 51,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 731,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "stop",
+      "timestamp": 1793826254511,
+      "responseId": "chatcmpl-044a72a302c6418b846f7a364e6f9937",
+      "rawStopReason": "stop",
+      "durationMs": 3962,
+      "thinkingLevel": "off"
+    }
+  ],
+  "stderr": "",
+  "tool_events": [
+    {
+      "type": "tool_execution_start",
+      "toolCallId": "0b1a8c2d-937f-43f5-9276-f8e977f81686",
+      "toolName": "read",
+      "args": {
+        "path": "/tmp/lmdesk-vision-fact.txt"
+      }
+    },
+    {
+      "type": "tool_execution_end",
+      "toolCallId": "0b1a8c2d-937f-43f5-9276-f8e977f81686",
+      "toolName": "read",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Verification code: VLM-73492\n"
+          }
+        ],
+        "structuredContent": "Verification code: VLM-73492\n"
+      },
+      "isError": false,
+      "durationMs": 1
+    }
+  ]
+}

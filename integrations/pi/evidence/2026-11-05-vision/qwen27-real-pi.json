@@ -1,0 +1,65 @@
+{
+  "argv": [
+    "/opt/homebrew/bin/pi",
+    "--print",
+    "--mode",
+    "json",
+    "--offline",
+    "--no-session",
+    "--no-tools",
+    "--no-mcp",
+    "--no-skills",
+    "--no-context-files",
+    "--no-themes",
+    "--no-prompt-templates",
+    "--no-extensions",
+    "-e",
+    "/Users/aa/.pi/agent/extensions/lmdesk.ts",
+    "--model",
+    "lmdesk/qwen27",
+    "--thinking",
+    "off",
+    "--system-prompt",
+    "Describe the attached image accurately and briefly.",
+    "@/tmp/lmdesk-vision-control.png",
+    "What shapes and colors are shown?"
+  ],
+  "exit_code": 0,
+  "elapsed": 9.38,
+  "assistant_messages": [
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "The image contains two distinct geometric shapes against a white background:\n\n1.  **On the left:** A solid green triangle.\n2.  **On the right:** A solid yellow rectangle."
+        }
+      ],
+      "api": "openai-completions",
+      "provider": "lmdesk",
+      "model": "qwen27",
+      "usage": {
+        "input": 201,
+        "output": 41,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 242,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "stop",
+      "timestamp": 1793826488790,
+      "responseId": "chatcmpl-0887d1e45f7044779ba0880b4839cf18",
+      "rawStopReason": "stop",
+      "durationMs": 2849,
+      "thinkingLevel": "off"
+    }
+  ],
+  "stderr": ""
+}

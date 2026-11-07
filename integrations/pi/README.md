@@ -99,3 +99,5 @@ PI_PACKAGE=/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent \
 - 开发环境：`uv venv .venv-vision --python .venv-desk/bin/python`，然后 `uv pip install --python .venv-vision/bin/python --excludes packaging/excludes-vision.txt -r packaging/requirements-vision.txt`。正式 app 内嵌独立 `pylibs/vision`。
 
 真实响应及限制见 `vision-verification.md`。
+
+公共网关在流式响应中每 15 秒发送 SSE 注释保活，避免长时间思考或生成工具参数时触发客户端的响应体空闲超时；注释不计入模型输出。

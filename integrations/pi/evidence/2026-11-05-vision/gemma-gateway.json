@@ -1,0 +1,51 @@
+{
+  "thinking_off": {
+    "elapsed": 2.39,
+    "response": {
+      "id": "chatcmpl-94519f87f0f34c4ab37c38e4758968cf",
+      "object": "chat.completion",
+      "created": 1793826157,
+      "model": "gemma",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "The image contains a red square on the left and a blue circle on the right, set against a white background."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 293,
+        "completion_tokens": 24,
+        "total_tokens": 317
+      }
+    }
+  },
+  "thinking_on": {
+    "elapsed": 12.19,
+    "response": {
+      "id": "chatcmpl-997ddeda9c934cad9a0149d639028ab1",
+      "object": "chat.completion",
+      "created": 1793826169,
+      "model": "gemma",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "The image features a red square and a blue circle.",
+            "reasoning_content": "*   Image content: A red square and a blue circle on a white background.\n    *   Shapes: Square, Circle.\n    *   Colors: Red, Blue.\n    *   Goal: Describe shapes and colors briefly.\n\n    *   Shape 1: Square, Color: Red.\n    *   Shape 2: Circle, Color: Blue.\n\n    *   \"A red square and a blue circle.\" (Very brief)\n    *   \"There is a red square on the left and a blue circle on the right.\" (More descriptive)\n    *   \"The image features a red square and a blue circle.\" (Formal)\n\n    *   \"A red square and a blue circle.\""
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 295,
+        "completion_tokens": 163,
+        "total_tokens": 458
+      }
+    }
+  }
+}
