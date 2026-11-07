@@ -137,3 +137,12 @@ test("没有 skill 时 wireMessages 的结果和以前一模一样", () => {
   const messages = [{ role: "user", content: "问" }];
   assert.deepEqual(wireMessages(messages), wireMessages(messages, null));
 });
+
+test("图片随原文进入请求，摘要替代历史后不会重复发送旧图", () => {
+  const image = "data:image/png;base64,aGVsbG8=";
+  const messages = [{ role: "user", content: "看图", images: [image] }];
+  assert.deepEqual(wireMessages(messages)[0].content, [
+    { type: "text", text: "看图" }, { type: "image_url", image_url: { url: image } },
+  ]);
+  assert.equal(wireMessages([{ role: "summary", content: "图片摘要", replaced_through: 1 }, ...messages]).length, 1);
+});

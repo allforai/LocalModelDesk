@@ -4,6 +4,7 @@ import json
 from urllib.request import Request, urlopen
 
 from desk.testing import TestHarness, launch_test_harness
+from desk.resources.catalog import CATALOG
 
 
 def _get(url: str):
@@ -33,7 +34,7 @@ def test_launch_test_harness_serves_real_routes_on_ephemeral_ports(tmp_path):
 
         status, catalog = _get(harness.base_url + "/api/resources/catalog")
         assert status == 200
-        assert len(catalog) == 8
+        assert len(catalog) == len(CATALOG)
         image = next(entry for entry in catalog if entry["key"] == "qwen-image")
         assert image["group"] == "image"
         assert len(image["sources"]) == 2

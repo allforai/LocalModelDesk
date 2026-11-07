@@ -12,6 +12,8 @@ from desk.app import DeskApp, Response
 from desk.agent_cli.version import read_version
 from desk.agent_skill.routes import build_precheck_routes, build_routes as build_agent_skill_routes
 from desk.agent_skill.service import AgentSkillService
+from desk.pi_integration.service import PiIntegrationService
+from desk.pi_integration.routes import build_routes as build_pi_integration_routes
 from desk.arbiter.core import Arbiter
 from desk.budget.budget import Budget
 from desk.budget.device import GpuCapacity
@@ -111,10 +113,13 @@ class TestHarness:
     routes: list[tuple[str, str]]
     reveal_calls: list[list[str]]
     _closed: bool = False
+    pi_integration: PiIntegrationService | None = None
     _unsubscribe: Callable[[], None] | None = None
 
     def close(self) -> None:
         if not self._closed:
+            if self.pi_integration is not None:
+                self.pi_integration.close()
             if self._unsubscribe is not None:
                 self._unsubscribe()
                 self._unsubscribe = None
@@ -217,6 +222,10 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, skills, a
         return Response(result.status, result.body, result.headers)
 
     agent_skill = AgentSkillService(roots.resources_root, roots.mode, paths.user_home())
+    pi_integration = PiIntegrationService(
+        roots.resources_root, roots.mode, paths.user_home(),
+        gateway_status=gateway.status, control_url=lambda: f"http://127.0.0.1:{app.port}",
+    )
     table = [
         ("GET", "/api/config", lambda _req: config_payload(roots)),
         ("PUT", "/api/config", lambda req: config.update_config(roots, **req.body).to_json()),
@@ -248,6 +257,7 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, skills, a
           for method, path, handler in build_skills_routes(skills)),
         *build_precheck_routes(llm, media),
         *build_agent_skill_routes(agent_skill),
+        *build_pi_integration_routes(pi_integration),
         ("GET", "/api/state", lambda _req: {
             **arbiter.desk_state(), "version": read_version(roots.resources_root),
             "agent_skill_stale": agent_skill.stale()}),
@@ -260,7 +270,7 @@ def _mount_routes(app: DeskApp, roots, resources, llm, media, library, skills, a
         ("GET", "/api/gateway/config", lambda _req: gateway.handle_config_request("GET")[1]),
     ]
     app.add_routes(table)
-    return [(method, path) for method, path, _handler in table]
+    return [(method, path) for method, path, _handler in table], pi_integration
 
 
 def launch_test_harness(
@@ -397,7 +407,7 @@ def launch_test_harness(
         lambda: config.read_config(roots).to_json(),
     )
     budget_payload = budget if budget is not None else DEFAULT_BUDGET_PAYLOAD
-    route_specs = _mount_routes(app, roots, resources, llm, media, library, skills, arbiter, gateway, budget_payload)
+    route_specs, pi_integration = _mount_routes(app, roots, resources, llm, media, library, skills, arbiter, gateway, budget_payload)
     app.start_background()
     if configured and gateway_enabled:
         gateway.start_from_config()
@@ -406,5 +416,5 @@ def launch_test_harness(
         chat_script, media_script, download_control, clock,
         f"http://127.0.0.1:{app.port}", roots.data_root, roots.models_root,
         roots.outputs_root, gateway_port, seeded, route_specs, reveal_calls,
-        _unsubscribe=llm.close,
+        _unsubscribe=llm.close, pi_integration=pi_integration,
     )

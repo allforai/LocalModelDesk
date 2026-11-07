@@ -208,6 +208,9 @@ class Budget:
             measured = self._m.media_peak(kind)
             need = measured if measured else self._media_estimate(kind, params or {})
             return Workload(kind, key, int(need), "measured" if measured else "predicted")
+        if key == "qwen38-flash-next":
+            from ..llm.omlx import RESERVATION_GIB
+            return Workload(kind, key, RESERVATION_GIB * 1024**3, "unavailable")
         chat = self.for_chat(key, config or {}, weights_gb or 0.0)
         per_token = self._per_token(key, config or {}, weights_gb or 0.0)[0] or 0
         weights = int((weights_gb or 0.0) * GIB_F)
@@ -223,6 +226,9 @@ class Budget:
         return (predicted, "predicted") if predicted else (None, "unavailable")
 
     def for_chat(self, key, config, weights_gb) -> ChatBudget:
+        if key == "qwen38-flash-next":
+            from ..llm.omlx import CONTEXT
+            return ChatBudget(CONTEXT, int(CONTEXT * COMPACT_FRACTION), "unavailable", CONTEXT)
         window = declared_window(config)
         per_token, source = self._per_token(key, config, weights_gb)
         if per_token is None:
@@ -247,6 +253,8 @@ class Budget:
 
     # ---- mlx-lm 限额参数 ---------------------------------------------
     def launch_args(self, key, config, weights_gb) -> list[str]:
+        if key == "qwen38-flash-next":
+            return []
         per_token, source = self._per_token(key, config, weights_gb)
         if per_token is None:
             return []       # 算不出来就不传：一个猜出来的上限比不传更危险

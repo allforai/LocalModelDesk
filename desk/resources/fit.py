@@ -38,7 +38,11 @@ def model_fit(entry: ModelEntry, budget: Budget | None, models_root, *, config_e
     悄悄报成"没有"）。
     """
     if entry.group == GROUP_CHAT:
-        needed = int(entry.gb * GIB)
+        if entry.backend == "omlx":
+            from ..llm.omlx import RESERVATION_GIB
+            needed = RESERVATION_GIB * GIB
+        else:
+            needed = int(entry.gb * GIB)
     else:
         needed = estimate_bytes(entry.group, {})
     capacity = budget.capacity_bytes() if budget is not None else None

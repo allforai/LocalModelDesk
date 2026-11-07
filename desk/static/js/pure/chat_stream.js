@@ -53,6 +53,8 @@ export function wireMessages(messages, skillMessage = null) {
     .filter((message) => !(message.role === "assistant" && message.interrupted && !(message.content ?? "").trim()))
     .map((message) => message.role === "summary"
       ? { role: "system", content: SUMMARY_PREFIX + (message.content ?? "") }
-      : { role: message.role, content: message.content ?? "" });
+      : { role: message.role, content: message.images?.length
+        ? [{ type: "text", text: message.content ?? "" }, ...message.images.map((url) => ({ type: "image_url", image_url: { url } }))]
+        : message.content ?? "" });
   return skillMessage ? [skillMessage, ...history] : history;
 }

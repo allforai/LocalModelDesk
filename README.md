@@ -112,3 +112,5 @@ xcrun notarytool store-credentials LocalModelDesk \
 ## 许可
 
 MIT License。见 [LICENSE](LICENSE)。
+
+Qwen3.8 Flash Next 的独立 oMLX 接入、安装方法与未验证范围见 [运行时说明](docs/qwen38-flash-next.md)。

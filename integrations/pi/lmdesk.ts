@@ -15,9 +15,34 @@ import {
 } from "@earendil-works/pi-ai";
 import { openAICompletionsApi } from "@earendil-works/pi-ai/compat";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
-const GATEWAY = (process.env.LMDESK_GATEWAY || "http://127.0.0.1:8770/v1").replace(/\/+$/, "");
-const DESK = (process.env.LMDESK_DESK_URL || `http://127.0.0.1:${process.env.LMD_SHELL_PORT || 8766}`).replace(/\/+$/, "");
+// Settings installs an exact provider copy plus this managed connection receipt.
+// Keep explicit environment overrides; never touch Pi's default model/settings.
+function installedDefaults(): { gateway_url?: string; desk_url?: string } {
+  try {
+    const config = JSON.parse(readFileSync(join(homedir(), ".pi/agent/localmodeldesk.json"), "utf8"));
+    if (config.owner !== "LocalModelDesk" || config.format !== 1 ||
+        typeof config.gateway_url !== "string" || typeof config.desk_url !== "string") {
+      throw new Error("invalid managed connection configuration");
+    }
+    for (const value of [config.gateway_url, config.desk_url]) {
+      const url = new URL(value);
+      if (url.protocol !== "http:" || url.username || url.password) throw new Error("invalid local endpoint");
+    }
+    return config;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return {};
+    throw new Error("台面 pi 连接配置无效；请在台面设置中重新安装或更新 pi 接入");
+  }
+}
+const defaults = installedDefaults();
+const GATEWAY = (process.env.LMDESK_GATEWAY || defaults.gateway_url || "http://127.0.0.1:8770/v1").replace(/\/+$/, "");
+const DESK = (process.env.LMDESK_DESK_URL ||
+  (process.env.LMD_SHELL_PORT ? `http://127.0.0.1:${process.env.LMD_SHELL_PORT}` : defaults.desk_url) ||
+  "http://127.0.0.1:8766").replace(/\/+$/, "");
 const AUTOLOAD = process.env.LMDESK_AUTOLOAD !== "0";
 const LOAD_TIMEOUT = positiveNumber("LMDESK_LOAD_TIMEOUT_MS", 45 * 60 * 1000);
 const MAX_TOKENS = positiveNumber("LMDESK_MAX_TOKENS", 8192);
@@ -25,12 +50,24 @@ const ALLOWLIST = (process.env.LMDESK_TOOLS || "").split(",").map((s) => s.trim(
 const COST = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
 const native = openAICompletionsApi();
 const MODELS = [
-  ["qwen35", "Qwen3.6 35B-A3B 8bit"],
-  ["qwen27", "Qwen3.8 27B 8bit"],
-  ["superqwen", "SuperQwen3.8 27B 4bit"],
-  ["glm", "GLM 4.7 Flash 8bit"],
-  ["gemma", "Gemma 4 31B 8bit (文本)"],
+  ["qwen38-flash-next", "Qwen3.8 Flash Next oQ5e MTP · 综合主力候选·编程与看图"],
+  // Keep IDs stable. Names mirror desk/pi_integration/models.json (contract-tested).
+  ["qwen35", "Qwen3.6 35B-A3B 8bit · 最推荐编程"],
+  ["qwen27", "Qwen3.8 27B 8bit · 擅长写作"],
+  ["superqwen", "SuperQwen3.8 27B 4bit · 擅长对话·省内存"],
+  ["glm", "GLM 4.7 Flash 30B-A3B 8bit · 快速问答"],
+  ["gemma", "Gemma 4 31B 8bit · 擅长看图"],
 ];
+// Local checkpoint config.json text_config.max_position_embeddings, not a tested
+// full-window promise. Actual memory allowance is shown by the desk budget API.
+const CAPABILITIES: Record<string, { context: number; vision: boolean }> = {
+  "qwen38-flash-next": { context: 262144, vision: true },
+  qwen35: { context: 262144, vision: false },
+  qwen27: { context: 262144, vision: true },
+  superqwen: { context: 262144, vision: true },
+  glm: { context: 202752, vision: false },
+  gemma: { context: 262144, vision: true },
+};
 
 function positiveNumber(name: string, fallback: number): number {
   const value = Number(process.env[name] ?? fallback);
@@ -157,7 +194,13 @@ function streamNative(model: Model<any>, context: TranscriptContext, options?: S
           supportsStrictMode: false,
         },
       };
-      const inner = native.streamSimple(upstream, codingContext(context), options);
+      const inner = native.streamSimple(upstream, codingContext(context), {
+        ...options,
+        async onPayload(payload, target) {
+          const replacement = await options?.onPayload?.(payload, target);
+          return { ...(replacement ?? payload), enable_thinking: !!options?.reasoning && options.reasoning !== "off" };
+        },
+      });
       for await (const event of inner) stream.push(event);
       stream.end();
     } catch (error) {
@@ -184,8 +227,9 @@ export default function (pi: ExtensionAPI) {
   pi.registerProvider("lmdesk", {
     baseUrl: GATEWAY, api: "lmdesk-native-tools", apiKey: "lmdesk",
     models: MODELS.map(([id, name]) => ({
-      id, name: `${name} (本机)`, reasoning: true, input: ["text"], cost: COST,
-      contextWindow: 131072, maxTokens: MAX_TOKENS,
+      id, name: `${name} (本机)`, reasoning: true,
+      input: CAPABILITIES[id].vision ? ["text", "image"] : ["text"], cost: COST,
+      contextWindow: CAPABILITIES[id].context, maxTokens: MAX_TOKENS,
     })),
     streamSimple(model, context, options) {
       const result = streamNative(model, context, options, (text) => {

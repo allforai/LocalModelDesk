@@ -25,12 +25,26 @@ class ModelEntry:
     quant: str | None = None
     params: str | None = None
     sources: tuple[dict, ...] = ()
+    backend: str = "mlx-lm"
+    abliterated: bool = False
+    tools: bool = False
+    context_window: int | None = None
+    disk_bytes: int | None = None
+    runtime_note: str | None = None
 
     def to_json(self) -> dict:
         return asdict(self)
 
 
 CATALOG: tuple[ModelEntry, ...] = (
+    ModelEntry("qwen38-flash-next", "Qwen3.8 Flash Next 越狱 · oQ5e MTP", GROUP_CHAT,
+               "mlx-community/Qwen3.8-Flash-Next-Uncensored-oQ5e-mtp",
+               "llms/mlx-community/Qwen3.8-Flash-Next-Uncensored-oQ5e-mtp",
+               128.54 * 10**9 / 1024**3, vision=True, quant="oQ5e", params="180B-A6B",
+               sources=({"repo": "mlx-community/Qwen3.8-Flash-Next-Uncensored-oQ5e-mtp", "revision": "c7d915c693e37fa11810d600b617adb4c36ff596", "target": "."},),
+               backend="omlx", abliterated=True, tools=True, context_window=262144,
+               disk_bytes=128540000000,
+               runtime_note="独立 oMLX · SSD n-gram offload · M5 Max 128GB 短请求实测约84 GiB，调度预留100 GiB · 完整窗口未实测"),
     ModelEntry("qwen-image", "Qwen-Image 2.1 + Heretic · MLX BF16", GROUP_IMAGE,
                BASE, "image-models/qwen-image-2.1-heretic", 30.9,
                quant="BF16", sources=(

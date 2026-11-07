@@ -20,7 +20,7 @@ from .gateway.desk_backend import DeskGatewayBackend
 from .gateway.service import GatewayService
 from .library import LibraryService
 from .library import http as library_http
-from .llm.backend import MlxLmBackend
+from .llm.omlx import LocalBackend
 from .llm.routes import build_routes as build_llm_routes
 from .llm.service import LlmService
 from .llm.state import DEFAULT_LLM_PORT
@@ -33,6 +33,8 @@ from .resources.service import ResourcesService
 from .skills.routes import build_routes as build_skills_routes
 from .skills.service import SkillsService
 from .ui import StaticAssets
+from .pi_integration.service import PiIntegrationService
+from .pi_integration.routes import build_routes as build_pi_integration_routes
 
 log = logging.getLogger(__name__)
 
@@ -60,6 +62,7 @@ class ProductionRuntime:
     llm: LlmService
     media: MediaService
     resources: ResourcesService
+    pi_integration: PiIntegrationService | None = None
     _closed: bool = False
 
     @property
@@ -84,6 +87,8 @@ class ProductionRuntime:
         if self._closed:
             return
         self._closed = True
+        if self.pi_integration is not None:
+            self.pi_integration.close()
         self.gateway.stop()
         self.resources.close()
         self.media.close()
@@ -113,7 +118,7 @@ def _budget_payload(budget, llm, resources, roots) -> dict:
     return budget.snapshot_with_chat(loaded["key"], config, loaded["gb"])
 
 
-def _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway, budget) -> None:
+def _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway, budget) -> PiIntegrationService:
     app.add_routes(foundation_routes.build_routes())
 
     for method, pattern, handler in build_resource_routes(resources):
@@ -158,6 +163,11 @@ def _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway, 
     app.add_routes(build_precheck_routes(llm, media))
     agent_skill = AgentSkillService(roots.resources_root, roots.mode, paths.user_home())
     app.add_routes(build_agent_skill_routes(agent_skill))
+    pi_integration = PiIntegrationService(
+        roots.resources_root, roots.mode, paths.user_home(),
+        gateway_status=gateway.status, control_url=lambda: f"http://127.0.0.1:{app.port}",
+    )
+    app.add_routes(build_pi_integration_routes(pi_integration))
     app.add_routes([
         ("GET", "/api/state", lambda _req: {
             **arbiter.desk_state(), "version": read_version(roots.resources_root),
@@ -174,6 +184,7 @@ def _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway, 
         )),
     ])
     app.static_assets = StaticAssets(roots.static_dir)
+    return pi_integration
 
 
 def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntime:
@@ -201,7 +212,13 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
     )
     library = LibraryService(roots)
     llm = LlmService(
-        MlxLmBackend(), arbiter, resources, paths, port=DEFAULT_LLM_PORT, budget=budget
+        LocalBackend(
+            resolve_paths,
+            vision_python=(roots.venv_python if roots.mode == "bundle" else
+                           roots.resources_root / ".venv-vision/bin/python"),
+            vision_env=({"PYTHONPATH": str(roots.resources_root / "pylibs/vision")}
+                        if roots.mode == "bundle" else {"PYTHONPATH": ""}),
+        ), arbiter, resources, paths, port=DEFAULT_LLM_PORT, budget=budget
     )
     arbiter.set_owned_pid_provider(llm.owned_pids)
     media = MediaService(
@@ -216,6 +233,6 @@ def build_runtime(host: str = "127.0.0.1", port: int = 8766) -> ProductionRuntim
     gateway = GatewayService(DeskGatewayBackend(llm, arbiter), _gateway_config_reader())
     gateway.on_rollback = lambda cfg: config.update_config(roots, gateway=cfg)
     app = DeskApp(host, port)
-    _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway, budget)
+    pi_integration = _mount_routes(app, roots, resources, llm, media, library, arbiter, gateway, budget)
     app.capabilities = capabilities.probe_capabilities(roots)
-    return ProductionRuntime(app, gateway, llm, media, resources)
+    return ProductionRuntime(app, gateway, llm, media, resources, pi_integration)

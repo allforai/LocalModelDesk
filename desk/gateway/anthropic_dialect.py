@@ -5,6 +5,7 @@ import json
 from typing import Iterable, Iterator
 
 from .errors import REASON_INVALID_REQUEST, REASON_UPSTREAM_ERROR, GatewayReject
+from ..llm.content import normalize_content
 
 # Anthropic tool blocks remain unsupported. Never discard a spontaneous upstream
 # call and pretend the turn succeeded: report an explicit protocol error instead.
@@ -61,7 +62,20 @@ def parse_request(body) -> dict:
         if isinstance(content, str):
             text = content
         elif isinstance(content, list):
-            text = _text_from_blocks(content, f"messages[{index}].content")
+            blocks = []
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "image":
+                    source = block.get("source") or {}
+                    if not isinstance(source, dict) or source.get("type") != "base64":
+                        raise _bad("images require a base64 source")
+                    blocks.append({"type": "image_url", "image_url": {
+                        "url": f'data:{source.get("media_type")};base64,{source.get("data")}'}})
+                else:
+                    blocks.append(block)
+            try:
+                text = normalize_content(blocks, message["role"])
+            except ValueError as exc:
+                raise _bad(str(exc)) from exc
         else:
             raise _bad(f"messages[{index}].content must be a string or an array of content blocks")
         parsed.append({"role": message["role"], "content": text})

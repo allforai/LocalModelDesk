@@ -83,6 +83,13 @@ class ManifestStore:
         self._fetcher = fetcher
 
     def get(self, entry: ModelEntry, refresh: bool = False) -> Manifest:
+        if entry.key == "qwen38-flash-next":
+            data = json.loads(Path(__file__).with_name("qwen38-manifest.json").read_text())
+            return Manifest(repo=entry.hf_repo,
+                            files=tuple(ManifestFile(**f, repo=entry.hf_repo,
+                                                     revision=data["revision"], source_path=f["path"])
+                                        for f in data["files"]),
+                            fetched_at="2026-11-06T00:00:00Z", source="pinned")
         if entry.key == "qwen-image":
             from ..media.image_model import files
             return Manifest(repo=entry.hf_repo, files=tuple(ManifestFile(**f) for f in files()),

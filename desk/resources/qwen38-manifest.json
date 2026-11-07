@@ -1,0 +1,157 @@
+{
+  "revision": "c7d915c693e37fa11810d600b617adb4c36ff596",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "size": 1570
+    },
+    {
+      "path": "LICENSE",
+      "size": 3235
+    },
+    {
+      "path": "README.md",
+      "size": 11023
+    },
+    {
+      "path": "chat_template.jinja",
+      "size": 8952
+    },
+    {
+      "path": "config.json",
+      "size": 253909
+    },
+    {
+      "path": "generation_config.json",
+      "size": 202
+    },
+    {
+      "path": "merges.txt",
+      "size": 3353259
+    },
+    {
+      "path": "model-00001-of-00025.safetensors",
+      "size": 5250095602
+    },
+    {
+      "path": "model-00002-of-00025.safetensors",
+      "size": 5100032599
+    },
+    {
+      "path": "model-00003-of-00025.safetensors",
+      "size": 5100032601
+    },
+    {
+      "path": "model-00004-of-00025.safetensors",
+      "size": 5100032593
+    },
+    {
+      "path": "model-00005-of-00025.safetensors",
+      "size": 5100032595
+    },
+    {
+      "path": "model-00006-of-00025.safetensors",
+      "size": 5100032600
+    },
+    {
+      "path": "model-00007-of-00025.safetensors",
+      "size": 5100032650
+    },
+    {
+      "path": "model-00008-of-00025.safetensors",
+      "size": 5000977139
+    },
+    {
+      "path": "model-00009-of-00025.safetensors",
+      "size": 5222300450
+    },
+    {
+      "path": "model-00010-of-00025.safetensors",
+      "size": 5190455020
+    },
+    {
+      "path": "model-00011-of-00025.safetensors",
+      "size": 5190455018
+    },
+    {
+      "path": "model-00012-of-00025.safetensors",
+      "size": 5190455021
+    },
+    {
+      "path": "model-00013-of-00025.safetensors",
+      "size": 5190455047
+    },
+    {
+      "path": "model-00014-of-00025.safetensors",
+      "size": 5190455031
+    },
+    {
+      "path": "model-00015-of-00025.safetensors",
+      "size": 5190455047
+    },
+    {
+      "path": "model-00016-of-00025.safetensors",
+      "size": 5190455043
+    },
+    {
+      "path": "model-00017-of-00025.safetensors",
+      "size": 5190455051
+    },
+    {
+      "path": "model-00018-of-00025.safetensors",
+      "size": 5190455043
+    },
+    {
+      "path": "model-00019-of-00025.safetensors",
+      "size": 5190455051
+    },
+    {
+      "path": "model-00020-of-00025.safetensors",
+      "size": 5190455043
+    },
+    {
+      "path": "model-00021-of-00025.safetensors",
+      "size": 5190455045
+    },
+    {
+      "path": "model-00022-of-00025.safetensors",
+      "size": 5190455043
+    },
+    {
+      "path": "model-00023-of-00025.safetensors",
+      "size": 5190455041
+    },
+    {
+      "path": "model-00024-of-00025.safetensors",
+      "size": 5190455047
+    },
+    {
+      "path": "model-00025-of-00025.safetensors",
+      "size": 4613737661
+    },
+    {
+      "path": "model.safetensors.index.json",
+      "size": 405177
+    },
+    {
+      "path": "oq_imatrix_report.json",
+      "size": 67389
+    },
+    {
+      "path": "preprocessor_config.json",
+      "size": 390
+    },
+    {
+      "path": "tokenizer.json",
+      "size": 12809320
+    },
+    {
+      "path": "tokenizer_config.json",
+      "size": 17928
+    },
+    {
+      "path": "vocab.json",
+      "size": 6722759
+    }
+  ]
+}

@@ -74,6 +74,10 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     ["agentSkillStatus", [], "/api/agent-skill", "GET"],
     ["agentSkillApply", [["claude", "pi"]], "/api/agent-skill", "POST", { targets: ["claude", "pi"] }],
     ["agentSkillCheck", [], "/api/agent-skill/check", "POST", {}],
+    ["piIntegrationStatus", [], "/api/pi-integration", "GET"],
+    ["piIntegrationApply", ["install"], "/api/pi-integration", "POST", { action: "install" }],
+    ["piIntegrationApply", ["remove"], "/api/pi-integration", "POST", { action: "remove" }],
+    ["piIntegrationCheck", [], "/api/pi-integration/check", "POST", {}],
   ];
   const names = [
     "readConfig", "writeConfig", "resetConfig", "completeFirstRun", "adoptLegacyModels", "discoverModels", "listCatalog", "verifyAllModels",
@@ -82,6 +86,7 @@ test("每个 api 消费项恰有一个公开函数，且以合同签名发出正
     "serveOutput", "revealOutput", "listHistory", "listChatSessions", "createChatSession", "updateChatSession", "deleteChatSession", "gatewayConfig",
     "listSkills", "rescanSkills", "previewSkill", "installSkill", "discardSkill",
     "agentSkillStatus", "agentSkillApply", "agentSkillCheck",
+    "piIntegrationStatus", "piIntegrationApply", "piIntegrationCheck",
     "listMediaSessions", "createMediaSession", "getMediaSession", "renameMediaSession", "deleteMediaSession",
   ];
   assert.deepEqual(Object.keys(api).sort(), [...names, "uploadMediaInput", "DeskApiError"].sort());

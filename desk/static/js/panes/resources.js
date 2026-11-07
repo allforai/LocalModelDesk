@@ -114,6 +114,11 @@ export function createResourcesPane(root, ctx = {}) {
       meta.textContent = [`预计 ${view.sizeText} · 占用 ${view.diskText}`, view.note, view.fitDetail].filter(Boolean).join(" · ");
     }
     li.append(head, meta);
+    if (entry.runtime_note) {
+      const note = doc.createElement("p"); note.className = "hint";
+      note.textContent = `${entry.abliterated ? "Abliterated · " : ""}${entry.tools ? "原生工具 · 编程 · 图片理解 · " : ""}磁盘 ${entry.disk_bytes / 1e9} GB · ${entry.runtime_note}`;
+      li.append(note);
+    }
     if (entry.sources?.length) {
       const sources = doc.createElement("details");
       sources.className = "res-sources";

@@ -9,7 +9,9 @@ from typing import Any
 
 from ..arbiter.state import still_holds
 from .backend import BackendHttpError
+from .omlx import MODEL_ALIAS
 from .sampling import model_sampling_defaults
+from .content import normalize_content, has_images, uses_vision
 from .state import (
     DEFAULT_CHAT_MAX_TOKENS,
     DEFAULT_LLM_PORT,
@@ -166,6 +168,12 @@ class LlmService:
             model_dir = Path(roots.models_root) / entry.relpath
             if not model_dir.is_dir():
                 raise LlmRejected(ERR_MODEL_DIR_MISSING, f"模型目录不存在: {model_dir}")
+            validate = getattr(self._backend, "validate_entry", None)
+            if validate:
+                try:
+                    validate(entry, model_dir)
+                except (OSError, ValueError, TimeoutError) as exc:
+                    raise LlmRejected("runtime_unavailable", str(exc)) from exc
             previous = (self._state, self._entry, self._loaded_by)
             swap_token = self._token if self._state.status == STATUS_LOADED else None
             if swap_token is not None:
@@ -279,13 +287,25 @@ class LlmService:
             extra_args = self._budget.launch_args(
                 entry.key, _read_model_config(model_dir), entry.gb
             )
-        proc = self._backend.spawn(python, model_dir, self._port, log_path, extra_args=extra_args)
+        try:
+            proc = self._backend.spawn(python, model_dir, self._port, log_path, extra_args=extra_args)
+        except OSError as exc:
+            with self._lock:
+                if generation != self._load_generation:
+                    return
+                token, self._token = self._token, None
+                self._state = LlmState(status=STATUS_ERROR, model_key=entry.key,
+                                       error=LlmError(ERR_BACKEND_EXITED, f"无法启动模型运行环境: {exc}"))
+            if token is not None:
+                self._arbiter.release_heavy(token)
+            return
         with self._lock:
             if generation != self._load_generation:
                 proc.terminate()
                 return
             self._proc = proc
-        deadline = time.monotonic() + self._load_timeout_s
+        timeout = max(self._load_timeout_s, 900) if getattr(entry, "backend", "") == "omlx" else self._load_timeout_s
+        deadline = time.monotonic() + timeout
         while True:
             return_code = proc.poll()
             if return_code is not None:
@@ -301,7 +321,7 @@ class LlmService:
                         model_key=entry.key,
                         error=LlmError(
                             ERR_BACKEND_EXITED,
-                            f"mlx-lm 进程退出，退出码 {return_code}",
+                            f"{getattr(entry, 'backend', 'mlx-lm')} 进程退出，退出码 {return_code}",
                             log_tail,
                         ),
                     )
@@ -317,7 +337,14 @@ class LlmService:
                     )
                     self._entry = entry
                 return
-            if time.monotonic() >= deadline:
+            startup_error = getattr(self._backend, "startup_error", None)
+            if startup_error or time.monotonic() >= deadline:
+                proc.terminate()
+                try:
+                    proc.wait(self._term_grace_s)
+                except Exception:
+                    proc.kill()
+                    proc.wait(self._term_grace_s)
                 log_tail = self._backend.log_tail(log_path)
                 with self._lock:
                     if generation != self._load_generation:
@@ -329,8 +356,8 @@ class LlmService:
                         status=STATUS_ERROR,
                         model_key=entry.key,
                         error=LlmError(
-                            ERR_LOAD_TIMEOUT,
-                            f"mlx-lm 超过 {self._load_timeout_s:.0f}s 未就绪",
+                            ERR_BACKEND_EXITED if startup_error else ERR_LOAD_TIMEOUT,
+                            startup_error or f"{getattr(entry, 'backend', 'mlx-lm')} 超过 {timeout:.0f}s 未就绪",
                             log_tail,
                         ),
                     )
@@ -505,6 +532,15 @@ class LlmService:
                 ERR_MODEL_MISMATCH,
                 f"请求模型 {requested_model!r} 与驻留模型 {entry.key!r} 不符",
             )
+        try:
+            messages = request["messages"]
+            for message in messages:
+                message["content"] = normalize_content(message.get("content"), message.get("role"))
+        except (ValueError, TypeError, KeyError, AttributeError) as exc:
+            raise LlmRejected("invalid_request", f"消息格式无效: {exc}") from exc
+        model_dir = Path(self._paths.resolve_paths().models_root) / entry.relpath
+        if has_images(messages) and getattr(entry, "backend", "") != "omlx" and not uses_vision(model_dir):
+            raise LlmRejected("invalid_request", "当前模型没有视觉权重，请选择支持图片的模型")
         return entry
 
     def _upstream_payload(self, request: dict[str, Any], entry: Any) -> dict[str, Any]:
@@ -513,11 +549,31 @@ class LlmService:
         # and download a second model from the Hub instead of using the
         # already resident local path.
         payload: dict[str, Any] = {"model": "default_model", "messages": request["messages"]}
-        for key in ("temperature", "top_p", "top_k", "max_tokens", "tools", "tool_choice"):
+        for key in ("temperature", "top_p", "top_k", "max_tokens", "tools", "tool_choice", "presence_penalty"):
             if request.get(key) is not None:
                 payload[key] = request[key]
         payload.setdefault("max_tokens", DEFAULT_CHAT_MAX_TOKENS)
         model_dir = Path(self._paths.resolve_paths().models_root) / entry.relpath
+        if uses_vision(model_dir):
+            # mlx-vlm caches by exact local path; it has no mlx-lm default_model alias.
+            payload["model"] = str(model_dir)
+        if "enable_thinking" in request:
+            if not isinstance(request["enable_thinking"], bool):
+                raise LlmRejected("invalid_request", "enable_thinking 必须为布尔值")
+            if uses_vision(model_dir):
+                payload["enable_thinking"] = request["enable_thinking"]
+            else:
+                payload["chat_template_kwargs"] = {"enable_thinking": request["enable_thinking"]}
+        if getattr(entry, "backend", "") == "omlx":
+            payload["model"] = MODEL_ALIAS
+            payload.pop("enable_thinking", None)
+            if "enable_thinking" in request:
+                payload["chat_template_kwargs"] = {"enable_thinking": request["enable_thinking"]}
+            thinking = request.get("enable_thinking", True)
+            payload.setdefault("temperature", 1.0 if thinking else .7)
+            payload.setdefault("top_p", .95 if thinking else .8)
+            payload.setdefault("top_k", 20)
+            payload.setdefault("presence_penalty", 0.0 if thinking else 1.5)
         for key, value in model_sampling_defaults(model_dir).items():
             payload.setdefault(key, value)
         return payload
@@ -624,7 +680,8 @@ class LlmService:
         if usage is None or finish_reason is None:
             yield self._interruption_event("上游流终止但缺 usage/finish_reason")
             return
-        if self._budget is not None:
+        model_dir = Path(self._paths.resolve_paths().models_root) / entry.relpath
+        if self._budget is not None and not uses_vision(model_dir):
             log_path = self._log_path(self._paths.resolve_paths())
             log_text = self._backend.log_tail(log_path, 200)
             # 缓存里存的是 prompt + 生成的全部 token，所以分母用 total_tokens；

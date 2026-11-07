@@ -107,6 +107,10 @@ def validate_update_fields(fields: dict) -> None:
     call it before it resolves roots (which itself reads the config file)."""
     def bad(field: str, reason: str) -> None:
         raise ConfigInvalidError(f"invalid {field}: {reason}", field=field, reason=reason)
+    if "omlx_python" in fields:
+        value = fields["omlx_python"]
+        if not isinstance(value, str) or (value and not Path(value).is_absolute()):
+            bad("omlx_python", "must be an absolute Python path or empty for default")
     if "config_version" in fields:
         value = fields["config_version"]
         if not isinstance(value, int) or isinstance(value, bool):

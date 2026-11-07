@@ -3,9 +3,12 @@ import * as api from "../api.js";
 import { baseUrls } from "../pure/base_url.js";
 import { confirmDialog } from "../widgets/confirm.js";
 import { createAgentSkillSection } from "./agent_skill.js";
+import { createPiIntegrationSection } from "./pi_integration.js";
 
 export function createSettingsPane(root, ctx = {}) {
   const els = {
+    omlxPython: root.querySelector("[data-settings-omlx-python]"),
+    omlxSave: root.querySelector("[data-settings-omlx-save]"),
     enabled: root.querySelector("[data-settings-enabled]"),
     host: root.querySelector("[data-settings-host]"),
     port: root.querySelector("[data-settings-port]"),
@@ -27,6 +30,8 @@ export function createSettingsPane(root, ctx = {}) {
   };
   const agentSkillRoot = root.querySelector("[data-agent-skill]");
   const agentSkill = agentSkillRoot ? createAgentSkillSection(agentSkillRoot) : null;
+  const piRoot = root.querySelector("[data-pi-integration]");
+  const piIntegration = piRoot ? createPiIntegrationSection(piRoot, ctx) : null;
   let urls = { openai: "", anthropic: "" };
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
@@ -82,6 +87,7 @@ export function createSettingsPane(root, ctx = {}) {
     try {
       await api.writeConfig({ gateway });
       render(await api.gatewayConfig(true));
+      piIntegration?.init();
     } catch (error) { setError(error.message); }
   }
 
@@ -127,6 +133,12 @@ export function createSettingsPane(root, ctx = {}) {
     } catch (error) { setError(error.message); }
   }
 
+  els.omlxSave?.addEventListener("click", async () => {
+    try {
+      await api.writeConfig({ omlx_python: els.omlxPython.value.trim() });
+      setError("oMLX 路径已保存，下次加载生效");
+    } catch (error) { setError(error.message); }
+  });
   els.save.addEventListener("click", save);
   els.copyOpenai.addEventListener("click", () => copy(urls.openai));
   els.copyAnthropic.addEventListener("click", () => copy(urls.anthropic));
@@ -136,9 +148,11 @@ export function createSettingsPane(root, ctx = {}) {
 
   async function init() {
     agentSkill?.init();
+    piIntegration?.init();
     try {
       const [gateway, config] = await Promise.all([api.gatewayConfig(), api.readConfig()]);
       render(gateway);
+      if (els.omlxPython) els.omlxPython.value = config.omlx_python ?? "";
       if (els.modelsRoot) els.modelsRoot.value = config.models_root ?? "";
     }
     catch (error) { setError(error.message); }

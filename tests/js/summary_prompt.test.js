@@ -76,3 +76,10 @@ test("摘要内容只在「更早的摘要」出现一次，不会被当成对�
   const occurrences = text.split("上一份摘要").length - 1;
   assert.equal(occurrences, 1, "摘要文本被重复贴了不止一次");
 });
+
+test("压缩图片会话时把原图交给摘要模型", () => {
+  const url = "data:image/png;base64,aA==";
+  const result = buildSummaryRequest([{ role: "user", content: "检查截图", images: [url] }]);
+  assert.equal(result[0].content[0].type, "text");
+  assert.deepEqual(result[0].content[1], { type: "image_url", image_url: { url } });
+});

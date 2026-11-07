@@ -94,12 +94,21 @@ if [[ ! -x "$PYBIN" ]]; then
   fail "V5 缺内嵌解释器或不可执行: $PYBIN"
 fi
 for path in "$RES/desk" "$RES/desk/resources/fetch_cli.py" "$RES/pylibs/desk" "$RES/pylibs/music" "$RES/pylibs/h3" \
-            "$RES/pylibs/image" "$RES/desk/media/image_cli.py" "$RES/desk/media/image_model.py" \
-            "$RES/bundle.json" "$RES/AppIcon.icns"; do
+            "$RES/pylibs/image" "$RES/pylibs/vision" "$RES/desk/media/image_cli.py" "$RES/desk/media/image_model.py" \
+            "$RES/bundle.json" "$RES/AppIcon.icns" "$RES/desk/pi_integration/bundled/lmdesk.ts" \
+            "$RES/desk/pi_integration/models.json"; do
   if [[ ! -e "$path" ]]; then
     fail "V5 缺结构项: $path"
   fi
 done
+
+# The executable Pi provider must be present and match the reviewed source.
+PI_PROVIDER="$RES/desk/pi_integration/bundled/lmdesk.ts"
+if [[ ! -s "$PI_PROVIDER" ]]; then
+  fail "V5 pi 本地编程扩展缺失或为空"
+elif [[ -f "$SOURCE_ROOT/integrations/pi/lmdesk.ts" ]] && ! cmp -s "$PI_PROVIDER" "$SOURCE_ROOT/integrations/pi/lmdesk.ts"; then
+  fail "V5 pi 扩展与规范源码不一致"
+fi
 
 # V6: imports use the embedded interpreter with user site-packages disabled.
 if [[ -x "$PYBIN" ]]; then
@@ -111,6 +120,7 @@ if [[ -x "$PYBIN" ]]; then
   }
   v6 ".:pylibs/desk" "import desk"
   v6 "pylibs/desk" "import mlx_lm"
+  v6 "pylibs/vision" "from mlx_vlm import load; import mlx_vlm.server; from cryptography.fernet import Fernet; f = Fernet(Fernet.generate_key()); assert f.decrypt(f.encrypt(b'verify')) == b'verify'"
   v6 "pylibs/music" "import mlx_minimax_music3"
   v6 "pylibs/h3" "import mlx_h3.cli"
   v6 "pylibs/image" "import mlx.core; from mflux.models.qwen21.variants.txt2img.qwen_image_21 import QwenImage21"
