@@ -20,6 +20,7 @@ from .state import (
 
 
 _REJECTION_STATUS = {
+    "invalid_request": 400,
     ERR_KEY_REQUIRED: 400,
     ERR_MODEL_NOT_FOUND: 404,
     ERR_MODEL_DIR_MISSING: 404,

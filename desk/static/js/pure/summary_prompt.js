@@ -52,5 +52,9 @@ export function buildSummaryRequest(head) {
   parts.push(`# 对话记录\n${transcript}`);
   parts.push(`# 用户原话（这一节必须原样抄进表里）\n${quotes}`);
   parts.push(TEMPLATE);
-  return [{ role: "user", content: parts.join("\n\n") }];
+  const images = list.flatMap((m) => m.images ?? []);
+  const text = parts.join("\n\n");
+  return [{ role: "user", content: images.length
+    ? [{ type: "text", text }, ...images.map((url) => ({ type: "image_url", image_url: { url } }))]
+    : text }];
 }

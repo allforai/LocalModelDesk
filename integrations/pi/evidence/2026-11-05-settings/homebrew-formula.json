@@ -1,0 +1,94 @@
+{
+  "formulae": [
+    {
+      "name": "pi-coding-agent",
+      "full_name": "pi-coding-agent",
+      "tap": "homebrew/core",
+      "oldnames": [],
+      "aliases": [],
+      "versioned_formulae": [],
+      "desc": "AI agent toolkit",
+      "license": "MIT",
+      "homepage": "https://pi.dev/",
+      "versions": {
+        "stable": "1.4.0",
+        "head": null,
+        "bottle": true
+      },
+      "urls": {
+        "stable": {
+          "url": "https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-1.4.0.tgz",
+          "tag": null,
+          "revision": null,
+          "using": null,
+          "checksum": "d155c16ef6fa00960fbf58b2911536e80b05f33700e0b14fbd08967ede0c7428"
+        }
+      },
+      "patches": [],
+      "local_patch_checksums": {},
+      "revision": 0,
+      "version_scheme": 0,
+      "compatibility_version": null,
+      "autobump": true,
+      "no_autobump_message": null,
+      "skip_livecheck": false,
+      "bottle": {
+        "stable": {
+          "rebuild": 0,
+          "root_url": "https://ghcr.io/v2/homebrew/core",
+          "files": {
+            "arm64_tahoe": {
+              "cellar": ":any_skip_relocation",
+              "url": "https://ghcr.io/v2/homebrew/core/pi-coding-agent/blobs/sha256:0073d0dd9c788c7d9df34c19a175b906f9dc63f72961c43e320ef3343f4c618b",
+              "sha256": "0073d0dd9c788c7d9df34c19a175b906f9dc63f72961c43e320ef3343f4c618b"
+            }
+          }
+        }
+      },
+      "pour_bottle_only_if": null,
+      "keg_only": false,
+      "keg_only_reason": null,
+      "options": [],
+      "build_dependencies": [],
+      "dependencies": [
+        "node"
+      ],
+      "test_dependencies": [],
+      "recommended_dependencies": [],
+      "optional_dependencies": [],
+      "no_linkage_dependencies": [],
+      "uses_from_macos": [],
+      "uses_from_macos_bounds": [],
+      "requirements": [],
+      "conflicts_with": [],
+      "conflicts_with_reasons": [],
+      "link_overwrite": [],
+      "caveats": null,
+      "installed": [],
+      "linked_keg": null,
+      "pinned": false,
+      "outdated": false,
+      "deprecated": false,
+      "deprecation_date": null,
+      "deprecation_reason": null,
+      "deprecation_replacement_formula": null,
+      "deprecation_replacement_cask": null,
+      "deprecate_args": null,
+      "disabled": false,
+      "disable_date": null,
+      "disable_reason": null,
+      "disable_replacement_formula": null,
+      "disable_replacement_cask": null,
+      "disable_args": null,
+      "post_install_steps": [],
+      "post_install_defined": false,
+      "service": null,
+      "tap_git_head": "d9f0da31916a087dbdd6471646d7a17f0fa3c155",
+      "ruby_source_path": "Formula/p/pi-coding-agent.rb",
+      "ruby_source_checksum": {
+        "sha256": "79e5a34e04ba7484fb44f9fad24cf50c2291333fdaca276b6be803aa9fdcba56"
+      }
+    }
+  ],
+  "casks": []
+}

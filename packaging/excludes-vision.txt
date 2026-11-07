@@ -1,0 +1,5 @@
+# This runtime serves only local PNG/JPEG/WebP chat, not video, audio resampling,
+# training. These aggregate optional dependencies
+# are not imported by the three image-model paths; verify with real inference.
+opencv-python
+scipy

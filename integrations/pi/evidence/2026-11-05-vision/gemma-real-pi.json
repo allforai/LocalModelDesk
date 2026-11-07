@@ -1,0 +1,65 @@
+{
+  "argv": [
+    "/opt/homebrew/bin/pi",
+    "--print",
+    "--mode",
+    "json",
+    "--offline",
+    "--no-session",
+    "--no-tools",
+    "--no-mcp",
+    "--no-skills",
+    "--no-context-files",
+    "--no-themes",
+    "--no-prompt-templates",
+    "--no-extensions",
+    "-e",
+    "/Users/aa/.pi/agent/extensions/lmdesk.ts",
+    "--model",
+    "lmdesk/gemma",
+    "--thinking",
+    "off",
+    "--system-prompt",
+    "Describe the attached image accurately and briefly.",
+    "@/tmp/lmdesk-vision-control.png",
+    "What shapes and colors are shown?"
+  ],
+  "exit_code": 0,
+  "elapsed": 9.08,
+  "assistant_messages": [
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "The image shows a green triangle on the left and a yellow rectangle on the right."
+        }
+      ],
+      "api": "openai-completions",
+      "provider": "lmdesk",
+      "model": "gemma",
+      "usage": {
+        "input": 377,
+        "output": 18,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 395,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "stop",
+      "timestamp": 1793826498212,
+      "responseId": "chatcmpl-6643121011674bc48dc71e81441cf222",
+      "rawStopReason": "stop",
+      "durationMs": 2509,
+      "thinkingLevel": "off"
+    }
+  ],
+  "stderr": ""
+}

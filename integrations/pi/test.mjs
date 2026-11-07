@@ -6,11 +6,17 @@ import test from "node:test";
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 
 const root = process.env.PI_PACKAGE || "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent";
 const require = createRequire(path.join(root, "package.json"));
 const { createJiti } = require("jiti");
-const ai = path.join(root, "node_modules/@earendil-works/pi-ai/dist");
+// npm may hoist Pi AI, while global/Homebrew installs may nest it.
+const ai = require.resolve.paths("@earendil-works/pi-ai")
+  .map((base) => path.join(base, "@earendil-works/pi-ai/dist"))
+  .find((base) => existsSync(path.join(base, "index.js")));
+assert.ok(ai, "Pi AI package must be installed alongside the tested Pi");
 const { normalizeContext } = await import(pathToFileURL(path.join(ai, "index.js")));
 const source = path.join(import.meta.dirname, "lmdesk.ts");
 const tools = [{ name: "read", description: "Read a file", parameters: {
@@ -30,17 +36,29 @@ function sse() {
   { headers: { "content-type": "text/event-stream" } });
 }
 
-async function fixture(t, { env = {}, status, media, precheck, load, gateway } = {}) {
+async function fixture(t, { env = {}, receipt, status, media, precheck, load, gateway } = {}) {
   const previous = { ...process.env };
-  Object.assign(process.env, { LMDESK_AUTOLOAD: "1", LMDESK_LOAD_TIMEOUT_MS: "10000", LMDESK_TOOLS: "", ...env });
+  const home = mkdtempSync(path.join(tmpdir(), "lmdesk-pi-test-"));
+  if (receipt !== undefined) {
+    mkdirSync(path.join(home, ".pi/agent"), { recursive: true });
+    writeFileSync(path.join(home, ".pi/agent/localmodeldesk.json"), typeof receipt === "string" ? receipt : JSON.stringify(receipt));
+  }
+  for (const name of ["LMDESK_GATEWAY", "LMDESK_DESK_URL", "LMD_SHELL_PORT"]) delete process.env[name];
+  Object.assign(process.env, { HOME: home, LMDESK_AUTOLOAD: "1", LMDESK_LOAD_TIMEOUT_MS: "10000", LMDESK_TOOLS: "", ...env });
   const oldFetch = globalThis.fetch;
-  t.after(() => { globalThis.fetch = oldFetch; process.env = previous; });
+  t.after(() => {
+    globalThis.fetch = oldFetch;
+    // Preserve Node's native env proxy: replacing process.env breaks os.homedir().
+    for (const key of Object.keys(process.env)) if (!(key in previous)) delete process.env[key];
+    Object.assign(process.env, previous);
+    rmSync(home, { recursive: true, force: true });
+  });
   let selected = "qwen35";
   const calls = [];
   globalThis.fetch = async (input, init) => {
     const url = new URL(typeof input === "string" ? input : input.url);
     const body = init?.body ? JSON.parse(init.body) : undefined;
-    calls.push({ path: url.pathname, body });
+    calls.push({ path: url.pathname, url: url.href, body });
     if (url.pathname === "/api/llm/status") return status
       ? status({ selected, calls, signal: init.signal })
       : response({ state: { status: "loaded", model_key: selected } });
@@ -68,7 +86,7 @@ async function fixture(t, { env = {}, status, media, precheck, load, gateway } =
     for await (const event of stream) events.push(event);
     return { events, message: await stream.result() };
   };
-  return { calls, run };
+  return { calls, run, config, model };
 }
 
 test("native tools and real usage pass through; no prompt protocol", async (t) => {
@@ -189,4 +207,57 @@ test("autoload off skips control plane entirely", async (t) => {
   const f = await fixture(t, { env: { LMDESK_AUTOLOAD: "0" } });
   assert.equal((await f.run()).message.stopReason, "toolUse");
   assert.deepEqual(f.calls.map((c) => c.path), ["/v1/chat/completions"]);
+});
+
+const installed = { owner: "LocalModelDesk", format: 1, gateway_url: "http://127.0.0.1:18770/v1", desk_url: "http://127.0.0.1:18766" };
+test("managed receipt routes both public endpoints without loading at registration", async (t) => {
+  const f = await fixture(t, { receipt: installed });
+  assert.equal(f.config.baseUrl, installed.gateway_url);
+  assert.equal((await f.run()).message.stopReason, "toolUse");
+  assert.ok(f.calls.some((c) => c.url === installed.desk_url + "/api/llm/status"));
+  assert.ok(f.calls.some((c) => c.url === installed.gateway_url + "/chat/completions"));
+});
+
+test("explicit environment endpoints override installed defaults", async (t) => {
+  const f = await fixture(t, { receipt: installed, env: { LMDESK_GATEWAY: "http://127.0.0.1:19770/v1", LMD_SHELL_PORT: "19766" } });
+  await f.run();
+  assert.equal(f.config.baseUrl, "http://127.0.0.1:19770/v1");
+  assert.ok(f.calls.some((c) => c.url === "http://127.0.0.1:19766/api/llm/status"));
+});
+
+test("corrupt managed config fails clearly rather than silently using the wrong endpoint", async (t) => {
+  await assert.rejects(fixture(t, { receipt: "{broken" }), /pi 连接配置无效/);
+});
+
+test("all five stable IDs carry full version and use-case names", async (t) => {
+  const f = await fixture(t);
+  assert.deepEqual(f.config.models.map((m) => m.id), ["qwen35", "qwen27", "superqwen", "glm", "gemma"]);
+  const names = Object.fromEntries(f.config.models.map((m) => [m.id, m.name]));
+  assert.match(names.qwen35, /35B-A3B.*最推荐编程/);
+  assert.match(names.qwen27, /27B.*擅长写作/);
+  assert.match(names.superqwen, /SuperQwen3.8 27B.*省内存/);
+  assert.match(names.glm, /GLM 4.7 Flash 30B-A3B/);
+  assert.match(names.gemma, /Gemma 4 31B.*看图/);
+  assert.deepEqual(f.config.models.filter((m) => m.input.includes("image")).map((m) => m.id), ["qwen27", "superqwen", "gemma"]);
+  const metadata = JSON.parse(readFileSync(path.join(import.meta.dirname, "../../desk/pi_integration/models.json"), "utf8"));
+  for (const row of metadata) {
+    const actual = f.config.models.find((m) => m.id === row.key);
+    assert.equal(actual.contextWindow, row.context_window);
+    assert.deepEqual(actual.input, row.input);
+  }
+});
+
+
+test("vision models retain image blocks through Pi real converter", async (t) => {
+  const f = await fixture(t);
+  Object.assign(f.model, f.config.models.find((m) => m.id === "superqwen"));
+  const ctx = normalizeContext({ systemPrompt: "Describe images.", messages: [{ role: "user", content: [
+    { type: "text", text: "What is shown?" }, { type: "image", mimeType: "image/png", data: "aGVsbG8=" },
+  ], timestamp: 1 }] });
+  await f.run({ reasoning: "off" }, ctx);
+  const req = f.calls.find((c) => c.path === "/v1/chat/completions").body;
+  assert.equal(req.enable_thinking, false);
+  assert.ok(req.messages.some((m) => Array.isArray(m.content) && m.content.some((b) => b.type === "image_url")));
+  assert.equal(f.config.models.find((m) => m.id === "glm").contextWindow, 202752);
+  assert.equal(f.config.models.find((m) => m.id === "gemma").contextWindow, 262144);
 });

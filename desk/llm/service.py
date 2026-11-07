@@ -10,6 +10,7 @@ from typing import Any
 from ..arbiter.state import still_holds
 from .backend import BackendHttpError
 from .sampling import model_sampling_defaults
+from .content import normalize_content, has_images, uses_vision
 from .state import (
     DEFAULT_CHAT_MAX_TOKENS,
     DEFAULT_LLM_PORT,
@@ -279,7 +280,18 @@ class LlmService:
             extra_args = self._budget.launch_args(
                 entry.key, _read_model_config(model_dir), entry.gb
             )
-        proc = self._backend.spawn(python, model_dir, self._port, log_path, extra_args=extra_args)
+        try:
+            proc = self._backend.spawn(python, model_dir, self._port, log_path, extra_args=extra_args)
+        except OSError as exc:
+            with self._lock:
+                if generation != self._load_generation:
+                    return
+                token, self._token = self._token, None
+                self._state = LlmState(status=STATUS_ERROR, model_key=entry.key,
+                                       error=LlmError(ERR_BACKEND_EXITED, f"无法启动模型运行环境: {exc}"))
+            if token is not None:
+                self._arbiter.release_heavy(token)
+            return
         with self._lock:
             if generation != self._load_generation:
                 proc.terminate()
@@ -505,6 +517,15 @@ class LlmService:
                 ERR_MODEL_MISMATCH,
                 f"请求模型 {requested_model!r} 与驻留模型 {entry.key!r} 不符",
             )
+        try:
+            messages = request["messages"]
+            for message in messages:
+                message["content"] = normalize_content(message.get("content"), message.get("role"))
+        except (ValueError, TypeError, KeyError, AttributeError) as exc:
+            raise LlmRejected("invalid_request", f"消息格式无效: {exc}") from exc
+        model_dir = Path(self._paths.resolve_paths().models_root) / entry.relpath
+        if has_images(messages) and not uses_vision(model_dir):
+            raise LlmRejected("invalid_request", "当前模型没有视觉权重，请选择支持图片的模型")
         return entry
 
     def _upstream_payload(self, request: dict[str, Any], entry: Any) -> dict[str, Any]:
@@ -518,6 +539,16 @@ class LlmService:
                 payload[key] = request[key]
         payload.setdefault("max_tokens", DEFAULT_CHAT_MAX_TOKENS)
         model_dir = Path(self._paths.resolve_paths().models_root) / entry.relpath
+        if uses_vision(model_dir):
+            # mlx-vlm caches by exact local path; it has no mlx-lm default_model alias.
+            payload["model"] = str(model_dir)
+        if "enable_thinking" in request:
+            if not isinstance(request["enable_thinking"], bool):
+                raise LlmRejected("invalid_request", "enable_thinking 必须为布尔值")
+            if uses_vision(model_dir):
+                payload["enable_thinking"] = request["enable_thinking"]
+            else:
+                payload["chat_template_kwargs"] = {"enable_thinking": request["enable_thinking"]}
         for key, value in model_sampling_defaults(model_dir).items():
             payload.setdefault(key, value)
         return payload
@@ -624,7 +655,8 @@ class LlmService:
         if usage is None or finish_reason is None:
             yield self._interruption_event("上游流终止但缺 usage/finish_reason")
             return
-        if self._budget is not None:
+        model_dir = Path(self._paths.resolve_paths().models_root) / entry.relpath
+        if self._budget is not None and not uses_vision(model_dir):
             log_path = self._log_path(self._paths.resolve_paths())
             log_text = self._backend.log_tail(log_path, 200)
             # 缓存里存的是 prompt + 生成的全部 token，所以分母用 total_tokens；

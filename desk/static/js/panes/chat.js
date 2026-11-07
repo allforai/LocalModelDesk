@@ -32,6 +32,8 @@ export function createChatPane(root, ctx = {}) {
     agentSwitchClose: root.querySelector("[data-agent-switch-close]"),
     messages: root.querySelector("[data-messages]"),
     input: root.querySelector("[data-chat-input]"),
+    imageInput: root.querySelector("[data-chat-images]"),
+    imageList: root.querySelector("[data-chat-image-list]"),
     sendBtn: root.querySelector("[data-send]"),
     error: root.querySelector("[data-chat-error]"),
     loadHint: root.querySelector("[data-load-hint]"),
@@ -54,6 +56,7 @@ export function createChatPane(root, ctx = {}) {
   let sessions = [];
   let currentId = null;
   let streaming = false;
+  let pendingImages = [];
   let sessionsTick = 0;
   let modelName = "";
   let lastLoadedKey = null;
@@ -457,6 +460,13 @@ export function createChatPane(root, ctx = {}) {
       const bubble = doc.createElement("div");
       bubble.className = "bubble";
       bubble.textContent = message.content ?? "";
+      for (const url of message.images ?? []) {
+        const img = doc.createElement("img");
+        img.src = url;
+        img.alt = "对话图片";
+        img.className = "chat-image";
+        bubble.append(img);
+      }
       wrap.append(bubble);
       els.messages.append(wrap);
       els.messages.scrollTop = els.messages.scrollHeight;
@@ -612,6 +622,8 @@ export function createChatPane(root, ctx = {}) {
         ],
       });
       const select = async () => {
+        pendingImages = [];
+        els.imageList?.replaceChildren();
         currentId = session.id;
         renderSessionList();
         renderMessages();
@@ -643,13 +655,21 @@ export function createChatPane(root, ctx = {}) {
     if (streaming) return;
     const text = els.input.value.trim();
     const session = current();
-    if (!text || !session) return;
+    if ((!text && !pendingImages.length) || !session) return;
+    if (pendingImages.length && !catalog.find((m) => m.key === lastLoadedKey)?.vision) {
+      setError("请先加载支持图片的模型：Gemma、Qwen27 或 SuperQwen");
+      return;
+    }
     setError("");
     session.messages = session.messages ?? [];
     if (session.messages.length === 0) els.messages.replaceChildren();
-    session.messages.push({ role: "user", content: text });
+    const message = { role: "user", content: text };
+    if (pendingImages.length) message.images = [...pendingImages];
+    session.messages.push(message);
+    pendingImages = [];
+    if (els.imageList) els.imageList.replaceChildren();
     els.input.value = "";
-    messageNode({ role: "user", content: text });
+    messageNode(message);
     await streamReply(session);
   }
 
@@ -678,7 +698,8 @@ export function createChatPane(root, ctx = {}) {
       // promptTokens——它若没计入 sentChars，比值会被悄悄带偏，且没有任何迹象。
       const { resolved } = currentResolution();
       const wired = wireMessages(session.messages, skillSystemMessage(resolved));
-      sentChars = JSON.stringify(wired).length;
+      // Base64 bytes are not text tokens. Image turns cannot calibrate a text ratio.
+      sentChars = session.messages.some((m) => m.images?.length) ? 0 : JSON.stringify(wired).length;
       const body = await api.chatStream(wired, { signal: streamAbort.signal });
       for await (const line of sseDataLines(body)) {
         state = reduceChunk(state, line);
@@ -902,6 +923,37 @@ export function createChatPane(root, ctx = {}) {
   (ctx.window ?? globalThis).addEventListener?.("pagehide", saveLiveTurnOnPageHide);
 
   els.sendBtn.addEventListener("click", () => (streaming ? streamAbort?.abort() : send()));
+  els.imageInput?.addEventListener("change", async () => {
+    try {
+      for (const file of els.imageInput.files ?? []) {
+        if (pendingImages.length >= 2) throw new Error("每轮最多两张图片");
+        if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 3 * 1024 * 1024) {
+          throw new Error("请选择 3 MiB 以内的 PNG、JPEG 或 WebP 图片");
+        }
+        const url = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error("图片读取失败"));
+          reader.readAsDataURL(file);
+        });
+        pendingImages.push(url);
+      }
+      setError("");
+    } catch (error) { setError(error.message); }
+    finally {
+      els.imageInput.value = "";
+      els.imageList.replaceChildren();
+      for (const url of pendingImages) {
+        const remove = doc.createElement("button");
+        remove.type = "button";
+        remove.textContent = "移除图片";
+        const img = doc.createElement("img"); img.src = url; img.alt = "待发送图片"; img.className = "chat-image";
+        remove.prepend(img);
+        remove.addEventListener("click", () => { pendingImages = pendingImages.filter((v) => v !== url); remove.remove(); });
+        els.imageList.append(remove);
+      }
+    }
+  });
   // R-skill-09：发现是显式的——启动时扫一次，外加一个「重新扫描」按钮。没有文件
   // 监听，用户在编辑器里改完 SKILL.md 要有办法让台面看见，不能只靠重启。
   els.skillRescan?.addEventListener("click", () => refreshSkills(true).catch((error) => setError(`重新扫描失败：${error.message}`)));
@@ -921,6 +973,8 @@ export function createChatPane(root, ctx = {}) {
     try {
       const created = await api.createChatSession();
       els.input.value = ""; // 新会话从空输入框开始
+      pendingImages = [];
+      els.imageList?.replaceChildren();
       await refreshSessions(created.id);
       els.input.focus?.();
     } catch (error) { setError(error.message); }

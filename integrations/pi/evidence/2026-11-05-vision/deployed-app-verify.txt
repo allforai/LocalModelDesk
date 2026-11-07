@@ -1,0 +1,2 @@
+提示：已用 Developer ID 签名但未公证（spctl: Unnotarized Developer ID）；分发到其他机器前需 notarytool 公证
+verify-app: OK (dist/LocalModelDesk.app)

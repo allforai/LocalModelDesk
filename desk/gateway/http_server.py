@@ -130,6 +130,9 @@ class _Handler(BaseHTTPRequestHandler):
     def _chat(self, dialect_mod):
         parsed = dialect_mod.parse_request(self._read_json_body())
         loaded = guard.admit(self.server.backend, parsed["model"])
+        from ..llm.content import has_images
+        if has_images(parsed["chat_request"]["messages"]) and not loaded.get("vision"):
+            raise GatewayReject(REASON_INVALID_REQUEST, 400, "resident model does not support images")
         model_out = parsed["model"] or loaded["served_id"]
 
         if parsed["stream"]:

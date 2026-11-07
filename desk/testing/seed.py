@@ -93,6 +93,10 @@ def build_bundle_resources(tmp_path: Path, *, image_runtime: bool = False) -> Pa
     else:
         (res / "desk" / "static").mkdir()
         (res / "desk" / "static" / "index.html").write_text("<!doctype html>", encoding="utf-8")
+    provider = Path(__file__).resolve().parents[2] / "integrations/pi/lmdesk.ts"
+    bundled = res / "desk/pi_integration/bundled/lmdesk.ts"
+    bundled.parent.mkdir(parents=True)
+    shutil.copyfile(provider, bundled)
     (res / "python" / "bin").mkdir(parents=True)
     (res / "python" / "bin" / "python3.13").symlink_to(Path(sys.executable))
     for package in ("pylibs/desk", "pylibs/h3/mlx_h3", "pylibs/music/mlx_minimax_music3", "pylibs/image"):

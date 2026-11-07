@@ -18,7 +18,7 @@ SKIP_DIRS = {
     # 仓库里但不是产品代码，一律跳过。不跳过的话，「目录表只许有一份」这类全仓库
     # 不变式会把副本或草稿当成第二份而误报——`.worktrees/` 上面真踩过一次
     # （2026-09-23，三条测试同时变红）。
-    ".allforai", ".codex", ".venv-image", "image-models",
+    ".allforai", ".codex", ".venv-image", ".venv-vision", "image-models",
     ".worktrees", ".superpowers",
 }
 TEXT_SUFFIXES = {

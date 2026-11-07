@@ -62,6 +62,7 @@ def test_icon_source_is_1024_png():
 def test_requirements_locks_are_pinned():
     tops = {
         "desk": "mlx-lm==0.31.3",
+        "vision": "mlx-vlm==0.7.12",
         "music": "mlx-minimax-music3==0.0.1a0",
         "h3": "mlx-h3==0.0.1a3",
     }
@@ -167,6 +168,8 @@ def verify(app, source_root):
 def add_image_fixture(resources):
     """Packaging validator fixture only; never image-runtime acceptance evidence."""
     for relative, content in {
+        "desk/pi_integration/bundled/lmdesk.ts": "// bundled pi provider fixture\n",
+        "desk/pi_integration/models.json": "[]\n",
         "desk/media/image_cli.py": "",
         "desk/media/image_model.py": "",
         "pylibs/image/mlx/core.py": "",
@@ -190,12 +193,20 @@ def test_verify_passes_clean_fixture(tmp_path):
     fetch_cli.write_text("")
     for libdir, package in {
         "desk": "mlx_lm",
+        "vision": "mlx_vlm",
         "music": "mlx_minimax_music3",
         "h3": "mlx_h3",
     }.items():
         init = resources / "pylibs" / libdir / package / "__init__.py"
         init.parent.mkdir(parents=True)
         init.write_text("")
+        if libdir == "vision":
+            init.write_text("def load():\n    pass\n")
+            (init.parent / "server.py").write_text("")
+            crypto = resources / "pylibs/vision/cryptography"
+            crypto.mkdir()
+            (crypto / "__init__.py").write_text("")
+            (crypto / "fernet.py").write_text("class Fernet:\n @staticmethod\n def generate_key(): return b'key'\n def __init__(self, key): pass\n def encrypt(self, value): return value\n def decrypt(self, value): return value\n")
     cli = resources / "pylibs" / "h3" / "mlx_h3" / "cli.py"
     cli.write_text("def main():\n    pass\n")
     hf = resources / "pylibs" / "desk" / "huggingface_hub" / "cli" / "hf.py"
@@ -350,12 +361,20 @@ def test_install_to_tmp_dest(tmp_path):
     fetch_cli.write_text("")
     for libdir, package in {
         "desk": "mlx_lm",
+        "vision": "mlx_vlm",
         "music": "mlx_minimax_music3",
         "h3": "mlx_h3",
     }.items():
         init = resources / "pylibs" / libdir / package / "__init__.py"
         init.parent.mkdir(parents=True)
         init.write_text("")
+        if libdir == "vision":
+            init.write_text("def load():\n    pass\n")
+            (init.parent / "server.py").write_text("")
+            crypto = resources / "pylibs/vision/cryptography"
+            crypto.mkdir()
+            (crypto / "__init__.py").write_text("")
+            (crypto / "fernet.py").write_text("class Fernet:\n @staticmethod\n def generate_key(): return b'key'\n def __init__(self, key): pass\n def encrypt(self, value): return value\n def decrypt(self, value): return value\n")
     (resources / "pylibs" / "h3" / "mlx_h3" / "cli.py").write_text("")
     hf = resources / "pylibs" / "desk" / "huggingface_hub" / "cli" / "hf.py"
     hf.parent.mkdir(parents=True)
@@ -608,3 +627,19 @@ def test_build_ships_lmdesk_launcher_using_embedded_python():
     assert "-m desk.agent_cli" in build
     assert 'python3.13" -s -P -m desk.agent_cli' in build
     assert 'chmod 755 "$RES/bin/lmdesk"' in build
+
+
+def test_openssl_defaults_relocate_without_shifting_binary_offsets():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('relocate_openssl', REPO / 'scripts/relocate-openssl.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    old = b'/opt/homebrew/etc/openssl@3/cert.pem\0'
+    source = b'\xfe\xed\xfa\xcf\0' + old + b'UNCHANGED_MACHINE_CODE'
+    out = module.relocate(source)
+    assert len(out) == len(source)
+    assert out[:5] == source[:5] and out[-22:] == source[-22:]
+    assert b'/etc/ssl/cert.pem\0' in out
+    import pytest
+    with pytest.raises(ValueError, match='unexpected Homebrew'):
+        module.relocate(b'unknown:/opt/homebrew/other\0')

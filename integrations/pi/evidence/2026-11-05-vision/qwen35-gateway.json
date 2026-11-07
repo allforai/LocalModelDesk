@@ -1,0 +1,51 @@
+{
+  "thinking_off": {
+    "elapsed": 4.22,
+    "response": {
+      "id": "chatcmpl-a5d8e9eff0d14282b801e5415f315d2e",
+      "object": "chat.completion",
+      "created": 1793825780,
+      "model": "qwen35",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "17 × 23 = 391"
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 27,
+        "completion_tokens": 12,
+        "total_tokens": 39
+      }
+    }
+  },
+  "thinking_on": {
+    "elapsed": 0.86,
+    "response": {
+      "id": "chatcmpl-ced79b757af445ad80d45744437b1f4f",
+      "object": "chat.completion",
+      "created": 1793825781,
+      "model": "qwen35",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "\n\n391",
+            "reasoning_content": "I'm calculating 17 times 23 by breaking it down: 17 times 20 gives 340, and 17 times 3 gives 51, so adding those together yields 391.\n"
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 25,
+        "completion_tokens": 57,
+        "total_tokens": 82
+      }
+    }
+  }
+}

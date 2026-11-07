@@ -5,6 +5,7 @@ import json
 from typing import Iterable, Iterator
 
 from .errors import REASON_INVALID_REQUEST, GatewayReject
+from ..llm.content import normalize_content
 
 DEFAULT_MAX_TOKENS = 2048
 # `functions`/`function_call` are the retired pre-tools API. `tools`/`tool_choice` are
@@ -47,13 +48,10 @@ def _parse_message(index: int, message: object) -> dict:
     if not isinstance(message, dict) or not isinstance(message.get("role"), str):
         raise _bad(f"messages[{index}] must be an object with a string 'role'")
     role, content, tool_calls = message["role"], message.get("content"), message.get("tool_calls")
-    # OpenAI clients (including Pi) can wrap plain text in content blocks.
-    # The desk's current chat transport is text-only; never silently drop images.
-    if isinstance(content, list):
-        if not all(isinstance(block, dict) and block.get("type") == "text"
-                   and isinstance(block.get("text"), str) for block in content):
-            raise _bad(f"messages[{index}].content supports only text blocks")
-        content = "".join(block["text"] for block in content)
+    try:
+        content = normalize_content(content, role)
+    except ValueError as exc:
+        raise _bad(f"messages[{index}].content: {exc}") from exc
     if role == "tool":
         if not isinstance(content, str):
             raise _bad(f"messages[{index}] ('tool') needs a string 'content'")
@@ -74,7 +72,7 @@ def _parse_message(index: int, message: object) -> dict:
             "content": content if content is not None else "",
             "tool_calls": _parse_tool_calls(index, tool_calls),
         }
-    if not isinstance(content, str):
+    if not isinstance(content, (str, list)):
         raise _bad(f"messages[{index}] must be an object with string 'role' and string 'content'")
     return {"role": role, "content": content}
 
@@ -136,6 +134,9 @@ def parse_request(body: object) -> dict:
     if not isinstance(max_tokens, int) or isinstance(max_tokens, bool) or max_tokens < 1:
         raise _bad("'max_tokens' must be a positive integer")
     model = body.get("model")
+    thinking = body.get("enable_thinking")
+    if thinking is not None and not isinstance(thinking, bool):
+        raise _bad("'enable_thinking' must be a boolean")
     if model is not None and not isinstance(model, str):
         raise _bad("'model' must be a string")
     return {
@@ -148,6 +149,7 @@ def parse_request(body: object) -> dict:
             "top_p": body.get("top_p"),
             "tools": _parse_tools(body.get("tools")),
             "tool_choice": _parse_tool_choice(body.get("tool_choice")),
+            **({"enable_thinking": thinking} if thinking is not None else {}),
         },
     }
 

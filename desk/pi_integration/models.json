@@ -1,0 +1,60 @@
+[
+  {
+    "key": "qwen35",
+    "version": "Qwen3.6 35B-A3B 8bit",
+    "use_case": "最推荐编程",
+    "recommended": true,
+    "note": "已验证原生工具调用的读文件、改代码、运行测试闭环；不代表任务成功率排名。 配置上下文 262144 tokens，实际额度取决于内存；8192 是默认输出配额，不代表模型最大输出。",
+    "context_window": 262144,
+    "input": [
+      "text"
+    ]
+  },
+  {
+    "key": "qwen27",
+    "version": "Qwen3.8 27B 8bit",
+    "use_case": "擅长写作",
+    "recommended": false,
+    "note": "建议用于长文、改写、总结；尚未做同条件写作对比。 配置上下文 262144 tokens，实际额度取决于内存；8192 是默认输出配额，不代表模型最大输出。",
+    "context_window": 262144,
+    "input": [
+      "text",
+      "image"
+    ]
+  },
+  {
+    "key": "superqwen",
+    "version": "SuperQwen3.8 27B 4bit",
+    "use_case": "擅长对话·省内存",
+    "recommended": false,
+    "note": "建议用于日常对话；目录权重约 16.1 GB，实际内存还包括上下文缓存。 配置上下文 262144 tokens，实际额度取决于内存；8192 是默认输出配额，不代表模型最大输出。",
+    "context_window": 262144,
+    "input": [
+      "text",
+      "image"
+    ]
+  },
+  {
+    "key": "glm",
+    "version": "GLM 4.7 Flash 30B-A3B 8bit",
+    "use_case": "快速问答",
+    "recommended": false,
+    "note": "建议用于短问答；未做同条件速度对比，不标为响应最快。 配置上下文 202752 tokens，实际额度取决于内存；8192 是默认输出配额，不代表模型最大输出。",
+    "context_window": 202752,
+    "input": [
+      "text"
+    ]
+  },
+  {
+    "key": "gemma",
+    "version": "Gemma 4 31B 8bit",
+    "use_case": "擅长看图",
+    "recommended": false,
+    "note": "支持台面和 pi 图片输入；配置上下文 262144 tokens，实际额度取决于内存；8192 是默认输出配额，不代表模型最大输出。",
+    "context_window": 262144,
+    "input": [
+      "text",
+      "image"
+    ]
+  }
+]

@@ -47,6 +47,9 @@ xcrun swiftc -O "$REPO"/macos/*.swift \
 
 echo "==> [2/9] Copy desk package"
 rsync -a --exclude '__pycache__' --exclude '.pytest_cache' "$REPO/desk/" "$RES/desk/"
+# The settings installer must work from the app alone, without a checkout.
+mkdir -p "$RES/desk/pi_integration/bundled"
+cp "$REPO/integrations/pi/lmdesk.ts" "$RES/desk/pi_integration/bundled/lmdesk.ts"
 
 mkdir -p "$RES/bin"
 cat > "$RES/bin/lmdesk" <<'SH'
@@ -94,11 +97,15 @@ install_name_tool -id "@rpath/libpython3.13.dylib" "$LIBPYTHON"
 
 echo "==> [4/9] Install dependency libraries"
 mkdir -p "$RES/requirements"
-for name in desk music h3 image; do
+for name in desk music h3 image vision; do
   dependency_args=()
   if [[ "$name" == image ]]; then
     dependency_args=(--excludes "$REPO/packaging/excludes-image.txt")
     cp "$REPO/packaging/excludes-image.txt" "$RES/requirements/"
+  fi
+  if [[ "$name" == vision ]]; then
+    dependency_args=(--excludes "$REPO/packaging/excludes-vision.txt")
+    cp "$REPO/packaging/excludes-vision.txt" "$RES/requirements/"
   fi
   uv pip install --python "$RES/python/bin/python3.13" --target "$RES/pylibs/$name" \
     --no-compile-bytecode ${dependency_args[@]+"${dependency_args[@]}"} -r "$REPO/packaging/requirements-$name.txt"
@@ -106,6 +113,10 @@ for name in desk music h3 image; do
   find "$RES/pylibs/$name" -type d -name __pycache__ -prune -exec rm -rf {} +
   cp "$REPO/packaging/requirements-$name.txt" "$RES/requirements/"
 done
+
+# The wheel statically bundles OpenSSL but embeds its build's Homebrew defaults.
+# Relocate only those exact C strings, preserving binary size, before codesigning.
+"$RES/python/bin/python3.13" -s "$REPO/scripts/relocate-openssl.py" "$RES/pylibs/vision"
 
 # Generated runtime and dependency metadata can retain source or build-host
 # paths. Rewrite text files only, before any nested Mach-O files are signed.

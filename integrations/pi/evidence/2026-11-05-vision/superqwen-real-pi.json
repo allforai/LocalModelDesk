@@ -1,0 +1,65 @@
+{
+  "argv": [
+    "/opt/homebrew/bin/pi",
+    "--print",
+    "--mode",
+    "json",
+    "--offline",
+    "--no-session",
+    "--no-tools",
+    "--no-mcp",
+    "--no-skills",
+    "--no-context-files",
+    "--no-themes",
+    "--no-prompt-templates",
+    "--no-extensions",
+    "-e",
+    "/Users/aa/.pi/agent/extensions/lmdesk.ts",
+    "--model",
+    "lmdesk/superqwen",
+    "--thinking",
+    "off",
+    "--system-prompt",
+    "Describe the attached image accurately and briefly.",
+    "@/tmp/lmdesk-vision-control.png",
+    "What shapes and colors are shown?"
+  ],
+  "exit_code": 0,
+  "elapsed": 7.99,
+  "assistant_messages": [
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "The image contains two shapes on a white background: a dark green triangle on the left and a bright yellow rectangle on the right."
+        }
+      ],
+      "api": "openai-completions",
+      "provider": "lmdesk",
+      "model": "superqwen",
+      "usage": {
+        "input": 201,
+        "output": 27,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 228,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "stop",
+      "timestamp": 1793826479571,
+      "responseId": "chatcmpl-d57d55daef48411181e99fcae39a8cc0",
+      "rawStopReason": "stop",
+      "durationMs": 2691,
+      "thinkingLevel": "off"
+    }
+  ],
+  "stderr": ""
+}

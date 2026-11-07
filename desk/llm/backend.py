@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import http.client
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import Iterator, Protocol
+from .content import uses_vision
 
 
 class BackendHttpError(Exception):
@@ -44,19 +46,32 @@ class LlmBackend(Protocol):
 class MlxLmBackend:
     """Launches ``mlx_lm server`` and reads its diagnostic log."""
 
+    def __init__(self, *, vision_python=None, vision_env=None):
+        self.vision_python = vision_python
+        self.vision_env = vision_env
+        self._vision_ports = set()
+
     def spawn(
         self, python: Path, model_path: Path, port: int, log_path: Path,
         extra_args: list[str] | None = None,
     ) -> BackendProcess:
         log_path.parent.mkdir(parents=True, exist_ok=True)
+        vision = uses_vision(model_path)
+        if vision:
+            self._vision_ports.add(port)
+        else:
+            self._vision_ports.discard(port)
+        if vision and self.vision_python is not None:
+            python = self.vision_python
         argv = [
-            str(python), "-s", "-m", "mlx_lm", "server",
+            str(python), "-s", "-m", *(["mlx_vlm.server"] if vision else ["mlx_lm", "server"]),
             "--model", str(model_path), "--host", "127.0.0.1",
             "--port", str(port),
-            *(extra_args or []),
+            *(["--max-num-seqs", "1", "--vision-cache-size", "1"] if vision else (extra_args or [])),
         ]
         with log_path.open("ab") as log_file:
-            return subprocess.Popen(argv, stdout=log_file, stderr=log_file)
+            env = {**os.environ, **self.vision_env} if vision and self.vision_env is not None else None
+            return subprocess.Popen(argv, stdout=log_file, stderr=log_file, env=env)
 
     def log_tail(self, log_path: Path, max_lines: int = 40) -> str:
         """Return the final log lines without masking a missing-log failure."""
@@ -70,8 +85,13 @@ class MlxLmBackend:
         conn = http.client.HTTPConnection("127.0.0.1", port, timeout=1.0)
         try:
             conn.request("GET", "/v1/models")
-            return conn.getresponse().status == 200
-        except OSError:
+            response = conn.getresponse()
+            if response.status != 200:
+                return False
+            if port in self._vision_ports:
+                return any(m.get("loaded") for m in json.loads(response.read()).get("data", []))
+            return True
+        except (OSError, ValueError):
             return False
         finally:
             conn.close()

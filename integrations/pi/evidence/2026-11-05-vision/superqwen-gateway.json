@@ -1,0 +1,51 @@
+{
+  "thinking_off": {
+    "elapsed": 1.87,
+    "response": {
+      "id": "chatcmpl-e84207adfbd548248b4bd0c541343635",
+      "object": "chat.completion",
+      "created": 1793826132,
+      "model": "superqwen",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "The image displays two distinct geometric shapes on a plain white background. On the left is a solid red square. To its right is a solid blue circle. Both shapes are simple, flat, and have no outlines or textures."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 164,
+        "completion_tokens": 46,
+        "total_tokens": 210
+      }
+    }
+  },
+  "thinking_on": {
+    "elapsed": 3.57,
+    "response": {
+      "id": "chatcmpl-2169c621280245b6b895323568eae460",
+      "object": "chat.completion",
+      "created": 1793826135,
+      "model": "superqwen",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "A red square on the left and a blue circle on the right, both on a white background.",
+            "reasoning_content": "The user wants a brief description of shapes and colors. Looking at the image: there are two distinct geometric figures on a white background. On the left is a red square. On the right is a blue circle. The instruction is to be brief, so I should avoid unnecessary elaboration and just state the two shapes with their colors and positions. No need for lengthy reasoning in the final output."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 162,
+        "completion_tokens": 103,
+        "total_tokens": 265
+      }
+    }
+  }
+}

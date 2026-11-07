@@ -3,6 +3,7 @@ import * as api from "../api.js";
 import { baseUrls } from "../pure/base_url.js";
 import { confirmDialog } from "../widgets/confirm.js";
 import { createAgentSkillSection } from "./agent_skill.js";
+import { createPiIntegrationSection } from "./pi_integration.js";
 
 export function createSettingsPane(root, ctx = {}) {
   const els = {
@@ -27,6 +28,8 @@ export function createSettingsPane(root, ctx = {}) {
   };
   const agentSkillRoot = root.querySelector("[data-agent-skill]");
   const agentSkill = agentSkillRoot ? createAgentSkillSection(agentSkillRoot) : null;
+  const piRoot = root.querySelector("[data-pi-integration]");
+  const piIntegration = piRoot ? createPiIntegrationSection(piRoot, ctx) : null;
   let urls = { openai: "", anthropic: "" };
 
   const setError = (text) => { els.error.textContent = text ?? ""; };
@@ -82,6 +85,7 @@ export function createSettingsPane(root, ctx = {}) {
     try {
       await api.writeConfig({ gateway });
       render(await api.gatewayConfig(true));
+      piIntegration?.init();
     } catch (error) { setError(error.message); }
   }
 
@@ -136,6 +140,7 @@ export function createSettingsPane(root, ctx = {}) {
 
   async function init() {
     agentSkill?.init();
+    piIntegration?.init();
     try {
       const [gateway, config] = await Promise.all([api.gatewayConfig(), api.readConfig()]);
       render(gateway);
