@@ -5,8 +5,8 @@ import { agentSwitchNotice } from "../../desk/static/js/pure/agent_switch.js";
 const p = (key, by, name = key) => ({ state: { status: "loaded", model_key: key }, loaded_model: { name }, loaded_by: by });
 
 test("agent 换了模型才提示", () => {
-  assert.equal(agentSwitchNotice("glm", p("qwen27", "agent", "Qwen 27B")), "模型已被 agent 切换为 Qwen 27B");
-  assert.equal(agentSwitchNotice("glm", p("qwen27", "ui")), null);
+  assert.equal(agentSwitchNotice("glm", p("superqwen", "agent", "SuperQwen 27B")), "模型已被 agent 切换为 SuperQwen 27B");
+  assert.equal(agentSwitchNotice("glm", p("superqwen", "ui")), null);
   assert.equal(agentSwitchNotice("glm", p("glm", "agent")), null);
   assert.equal(agentSwitchNotice(undefined, p("glm", "agent")), null, "页面第一次拿到状态不提示");
   assert.equal(agentSwitchNotice(null, p("glm", "agent")), "模型已被 agent 切换为 glm", "从没加载到 agent 加载要提示");

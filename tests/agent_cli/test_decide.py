@@ -29,14 +29,14 @@ def test_chat_with_the_resident_model_submits_even_when_busy():
 
 
 @pytest.mark.parametrize("kw", [dict(media_running=True), dict(active_chats=1),
-                                dict(ui_chat_recent=True, llm_status="loaded", llm_model="qwen27")])
+                                dict(ui_chat_recent=True, llm_status="loaded", llm_model="superqwen")])
 def test_chat_needing_a_swap_waits_while_busy(kw):
     assert decide("chat", "glm", snap(**kw)).action == "wait"
 
 
 def test_chat_swaps_when_idle_and_precheck_ok():
     assert decide("chat", "glm", snap()).action == "swap"
-    assert decide("chat", "glm", snap(llm_status="loaded", llm_model="qwen27")).action == "swap"
+    assert decide("chat", "glm", snap(llm_status="loaded", llm_model="superqwen")).action == "swap"
 
 
 def test_recent_ui_chat_without_a_loaded_model_does_not_block():

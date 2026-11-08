@@ -3,7 +3,7 @@ from playwright.sync_api import expect
 
 from desk.testing import launch_test_harness
 
-CHAT, OTHER = "glm", "qwen27"   # 同 Task 8
+CHAT, OTHER = "glm", "superqwen"   # 同 Task 8
 
 
 def test_notice_appears_after_agent_swap_and_closes(page, tmp_path):

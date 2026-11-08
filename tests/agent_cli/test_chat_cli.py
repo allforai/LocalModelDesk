@@ -6,7 +6,7 @@ from desk.testing.scripts import ChatScript, Delta, Done
 from tests.agent_cli.cli_helpers import popen_cli, run_cli
 
 CHAT = "glm"      # 与 Task 4 确认过的对话模型 key 一致
-OTHER = "qwen27"  # 另一个对话模型；若目录里没有，换成目录中第二个 group=chat 的 key
+OTHER = "superqwen"  # 另一个对话模型；若目录里没有，换成目录中第二个 group=chat 的 key
 
 
 def test_status_json_reports_desk_and_versions(tmp_path):

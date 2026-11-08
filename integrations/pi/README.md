@@ -28,11 +28,11 @@
 - 不改 pi 的 `settings.json`、`models.json`、默认模型、账号、技能或台面模型/会话；移除接入不会卸载 Homebrew 安装的 pi。
 - 移除时需确认；已有 pi 会话还需 `/reload` 才会卸下扩展。
 
-界面列出 5 个模型，key 保持 `qwen35/qwen27/superqwen/glm/gemma`。
+界面列出 5 个模型，key 保持 `qwen38-flash-next/qwen35/superqwen/glm/gemma`。
 名称带完整版本和建议用途，pi 的 `/model` 每行仍显示 key，选中后 **Model Name** 显示用途；也可搜索名称。
 用途元数据在 `desk/pi_integration/models.json`，有测试确保扩展名与之同步。
 “最推荐编程”基于 qwen35 已验证工具闭环，不是全模型横评排名；写作、对话与短问答是场景建议。
-Gemma、Qwen27、SuperQwen 在台面与 pi 中都支持图片输入；GLM、Qwen35 保持纯文本。
+Flash-Next、Gemma、SuperQwen 在台面与 pi 中都支持图片输入；GLM、Qwen35 保持纯文本。
 
 默认用户目录为 `~/.pi/agent`；使用 `PI_CODING_AGENT_DIR` 自定义目录时，请手动安装到对应的 extensions 目录。
 

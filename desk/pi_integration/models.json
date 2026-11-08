@@ -11,18 +11,6 @@
     ]
   },
   {
-    "key": "qwen27",
-    "version": "Qwen3.8 27B 8bit",
-    "use_case": "擅长写作",
-    "recommended": false,
-    "note": "建议用于长文、改写、总结；尚未做同条件写作对比。 配置上下文 262144 tokens，实际额度取决于内存；8192 是默认输出配额，不代表模型最大输出。",
-    "context_window": 262144,
-    "input": [
-      "text",
-      "image"
-    ]
-  },
-  {
     "key": "superqwen",
     "version": "SuperQwen3.8 27B 4bit",
     "use_case": "擅长对话·省内存",

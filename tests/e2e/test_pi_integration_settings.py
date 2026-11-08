@@ -19,7 +19,7 @@ def test_install_versions_copy_check_remove(page, context, tmp_path, monkeypatch
     with launch_test_harness(tmp_path) as h:
         h.pi_integration._which = lambda _: "/fake/pi"
         section = open_section(page, h)
-        expect(section.locator("[data-pi-model]")).to_have_count(6)
+        expect(section.locator("[data-pi-model]")).to_have_count(5)
         for key, version in (("glm", "GLM 4.7"), ("superqwen", "SuperQwen3.8"), ("gemma", "Gemma 4 31B")):
             expect(section.locator(f'[data-pi-model="{key}"] strong')).to_contain_text(version)
         expect(section.locator('[data-pi-model="qwen35"] strong')).to_contain_text("最推荐编程")
@@ -91,5 +91,5 @@ def test_narrow_settings_models_do_not_overflow(page, tmp_path, monkeypatch):
     with launch_test_harness(tmp_path) as h:
         page.set_viewport_size({"width": 720, "height": 520})
         section = open_section(page, h)
-        expect(section.locator("[data-pi-model]")).to_have_count(6)
+        expect(section.locator("[data-pi-model]")).to_have_count(5)
         assert page.locator("#pane-settings").evaluate("el => el.scrollWidth <= el.clientWidth")

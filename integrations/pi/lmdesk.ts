@@ -53,7 +53,6 @@ const MODELS = [
   ["qwen38-flash-next", "Qwen3.8 Flash Next oQ5e MTP · 综合主力候选·编程与看图"],
   // Keep IDs stable. Names mirror desk/pi_integration/models.json (contract-tested).
   ["qwen35", "Qwen3.6 35B-A3B 8bit · 最推荐编程"],
-  ["qwen27", "Qwen3.8 27B 8bit · 擅长写作"],
   ["superqwen", "SuperQwen3.8 27B 4bit · 擅长对话·省内存"],
   ["glm", "GLM 4.7 Flash 30B-A3B 8bit · 快速问答"],
   ["gemma", "Gemma 4 31B 8bit · 擅长看图"],
@@ -63,7 +62,6 @@ const MODELS = [
 const CAPABILITIES: Record<string, { context: number; vision: boolean }> = {
   "qwen38-flash-next": { context: 262144, vision: true },
   qwen35: { context: 262144, vision: false },
-  qwen27: { context: 262144, vision: true },
   superqwen: { context: 262144, vision: true },
   glm: { context: 202752, vision: false },
   gemma: { context: 262144, vision: true },
