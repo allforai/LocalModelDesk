@@ -46,6 +46,18 @@
     ]
   },
   {
+    "key": "arete",
+    "version": "Arete-27B 4bit",
+    "use_case": "价值观对齐·看图",
+    "recommended": false,
+    "note": "NousResearch Arete-27B（Qwen3.8-27B 价值观对齐 SFT，非 abliteration）；社区 MLX 4bit 转换，目录约 16.1 GB。配置上下文 262144 tokens，实际额度取决于内存；8192 是默认输出配额，不代表模型最大输出。",
+    "context_window": 262144,
+    "input": [
+      "text",
+      "image"
+    ]
+  },
+  {
     "key": "qwen38-flash-next",
     "version": "Qwen3.8 Flash Next oQ5e MTP",
     "use_case": "综合主力候选·编程与看图",

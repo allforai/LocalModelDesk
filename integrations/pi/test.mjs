@@ -229,15 +229,16 @@ test("corrupt managed config fails clearly rather than silently using the wrong 
   await assert.rejects(fixture(t, { receipt: "{broken" }), /pi 连接配置无效/);
 });
 
-test("all five stable IDs carry full version and use-case names", async (t) => {
+test("all six stable IDs carry full version and use-case names", async (t) => {
   const f = await fixture(t);
-  assert.deepEqual(f.config.models.map((m) => m.id), ["qwen38-flash-next", "qwen35", "superqwen", "glm", "gemma"]);
+  assert.deepEqual(f.config.models.map((m) => m.id), ["qwen38-flash-next", "qwen35", "superqwen", "glm", "gemma", "arete"]);
   const names = Object.fromEntries(f.config.models.map((m) => [m.id, m.name]));
   assert.match(names.qwen35, /35B-A3B.*最推荐编程/);
   assert.match(names.superqwen, /SuperQwen3.8 27B.*省内存/);
   assert.match(names.glm, /GLM 4.7 Flash 30B-A3B/);
   assert.match(names.gemma, /Gemma 4 31B.*看图/);
-  assert.deepEqual(f.config.models.filter((m) => m.input.includes("image")).map((m) => m.id), ["qwen38-flash-next", "superqwen", "gemma"]);
+  assert.match(names.arete, /Arete-27B 4bit.*价值/);
+  assert.deepEqual(f.config.models.filter((m) => m.input.includes("image")).map((m) => m.id), ["qwen38-flash-next", "superqwen", "gemma", "arete"]);
   const metadata = JSON.parse(readFileSync(path.join(import.meta.dirname, "../../desk/pi_integration/models.json"), "utf8"));
   for (const row of metadata) {
     const actual = f.config.models.find((m) => m.id === row.key);

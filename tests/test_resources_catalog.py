@@ -13,21 +13,22 @@ GOLDEN = [
     ("superqwen", "chat", "Jiunsong/SuperQwen3.8-27b-abliterated-MLX-4bit", "llms/Jiunsong/SuperQwen3.8-27b-abliterated-MLX-4bit", 16.1),
     ("gemma", "chat", "thdekerk/Huihui-gemma-4-31B-it-v2-MLX-8bit", "llms/thdekerk/Huihui-gemma-4-31B-it-v2-MLX-8bit", 33.8),
     ("qwen35", "chat", "mlx-community/Huihui-Qwen3.6-35B-A3B-Claude-4.7-Opus-abliterated-mlx-8bit", "llms/mlx-community/Huihui-Qwen3.6-35B-A3B-Claude-4.7-Opus-abliterated-mlx-8bit", 36.8),
+    ("arete", "chat", "Duckets/Arete-27B-MLX-4bit", "llms/Duckets/Arete-27B-MLX-4bit", 16.08),
 ]
 
 
-def test_exactly_eight_entries_matching_golden_list():
+def test_exactly_nine_entries_matching_golden_list():
     assert [(e.key, e.group, e.hf_repo, e.relpath, e.gb) for e in CATALOG] == GOLDEN
 
 
 def test_keys_unique_and_group_distribution():
     keys = [e.key for e in CATALOG]
-    assert len(set(keys)) == 8
+    assert len(set(keys)) == 9
     groups = [e.group for e in CATALOG]
     assert groups.count("video") == 1
     assert groups.count("music") == 1
     assert groups.count("image") == 1
-    assert groups.count("chat") == 5
+    assert groups.count("chat") == 6
 
 
 def test_chat_entries_carry_quant_params_gb():
@@ -49,7 +50,7 @@ def test_list_catalog_returns_fresh_list():
     listed = list_catalog()
     assert listed == list(CATALOG)
     listed.append("junk")
-    assert len(CATALOG) == 8
+    assert len(CATALOG) == 9
 
 
 def test_entry_lookup_and_unknown_key():

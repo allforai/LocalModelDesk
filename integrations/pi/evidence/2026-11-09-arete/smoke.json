@@ -1,0 +1,58 @@
+{
+  "date": "2026-11-09",
+  "model": {
+    "key": "arete",
+    "hf_repo": "Duckets/Arete-27B-MLX-4bit",
+    "revision": "bd3f7163ded581ead599600681f3400e7e5634e0",
+    "quant": "4bit",
+    "params": "27B",
+    "vision": true,
+    "expected_bytes": 16081491879,
+    "state": "present",
+    "percent": 100.0,
+    "gaps": []
+  },
+  "desk": {
+    "loaded": {
+      "key": "arete",
+      "name": "Arete-27B 价值观对齐 4bit",
+      "hf_repo": "Duckets/Arete-27B-MLX-4bit",
+      "served_id": "Duckets/Arete-27B-MLX-4bit",
+      "vision": true,
+      "quant": "4bit",
+      "params": "27B",
+      "gb": 16.08
+    },
+    "status": "loaded",
+    "loaded_by": "agent"
+  },
+  "evidence": {
+    "extension_repo_sha256": "64daa4cb2bb537387f2bf41883efbec1d80da870b039db3d0046c2a642574be6",
+    "extension_installed_sha256": "64daa4cb2bb537387f2bf41883efbec1d80da870b039db3d0046c2a642574be6",
+    "catalog_arete_present": true
+  },
+  "text": {
+    "seconds": 0.96,
+    "content": "7 × 5 = 35\n\n长方形的面积等于长与宽的乘积，所以面积为35。",
+    "usage": {
+      "prompt_tokens": 38,
+      "completion_tokens": 25,
+      "total_tokens": 63
+    }
+  },
+  "vision": {
+    "image": "solid red 128x128 png (sha256 055d1ada7cad2203)",
+    "seconds": 0.39,
+    "content": "红色",
+    "usage": {
+      "prompt_tokens": 90,
+      "completion_tokens": 2,
+      "total_tokens": 92
+    }
+  },
+  "pi": {
+    "command": "pi --model lmdesk/arete -p '用一句话回答：法国的首都是哪里？'",
+    "exit": 0,
+    "stdout": "巴黎。"
+  }
+}

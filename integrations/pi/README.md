@@ -28,7 +28,7 @@
 - 不改 pi 的 `settings.json`、`models.json`、默认模型、账号、技能或台面模型/会话；移除接入不会卸载 Homebrew 安装的 pi。
 - 移除时需确认；已有 pi 会话还需 `/reload` 才会卸下扩展。
 
-界面列出 5 个模型，key 保持 `qwen38-flash-next/qwen35/superqwen/glm/gemma`。
+界面列出 6 个模型，key 保持 `qwen38-flash-next/qwen35/superqwen/glm/gemma/arete`。
 名称带完整版本和建议用途，pi 的 `/model` 每行仍显示 key，选中后 **Model Name** 显示用途；也可搜索名称。
 用途元数据在 `desk/pi_integration/models.json`，有测试确保扩展名与之同步。
 “最推荐编程”基于 qwen35 已验证工具闭环，不是全模型横评排名；写作、对话与短问答是场景建议。
@@ -92,7 +92,7 @@ PI_PACKAGE=/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent \
 
 - Qwen27、SuperQwen、Gemma 保留视觉权重，使用独立的 mlx-vlm 0.7.12 环境；台面对话和 pi 都能传图片。GLM、Qwen35 的本地包没有视觉权重，图片请求会明确拒绝。
 - 本地配置的文本上下文：GLM 202752 tokens，其余四个 262144 tokens。这是配置声明，并非满窗实测承诺；实际内存额度看 `/api/budget`。
-- 五个模型的 thinking 开/关均已用真实推理核实。pi 的 off 关闭 thinking，其余档位开启；目前没有把 low/medium/high 解释为已验证的分级思考能力。
+- 已有五个模型（qwen38-flash-next/qwen35/superqwen/glm/gemma）的 thinking 开/关均已用真实推理核实；Arete-27B 尚未做这项核实。pi 的 off 关闭 thinking，其余档位开启；目前没有把 low/medium/high 解释为已验证的分级思考能力。
 - `LMDESK_MAX_TOKENS=8192` 是默认输出配额，可修改；没有证据表明 8192 是底模最大输出。
 - 网关只接收 base64 PNG/JPEG/WebP data URL，单图最多 5 MiB、整个网关请求最多 10 MiB；台面上传每轮最多两张、单图 3 MiB。不会下载远程图片或读取图片 URL 指向的本地文件。
 - 图片随会话保存并参与后续对话；含图片的会话不参与自动文本字符/token 比例校准和自动摘要，避免将 base64 体积误算为文本。

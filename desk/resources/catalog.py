@@ -73,6 +73,14 @@ CATALOG: tuple[ModelEntry, ...] = (
                "mlx-community/Huihui-Qwen3.6-35B-A3B-Claude-4.7-Opus-abliterated-mlx-8bit",
                "llms/mlx-community/Huihui-Qwen3.6-35B-A3B-Claude-4.7-Opus-abliterated-mlx-8bit",
                36.8, quant="8bit", params="35B-A3B"),
+    # NousResearch Arete-27B is a values-alignment SFT of Qwen3.8-27B, not an
+    # abliteration; vision tower is kept, only the LM weights were retrained.
+    # Duckets' and vaultai's 4-bit MLX conversions are byte-identical mirrors; the
+    # entry is named after the more-downloaded one.
+    ModelEntry("arete", "Arete-27B 价值观对齐 4bit", GROUP_CHAT,
+               "Duckets/Arete-27B-MLX-4bit",
+               "llms/Duckets/Arete-27B-MLX-4bit",
+               16.08, vision=True, quant="4bit", params="27B"),
 )
 
 

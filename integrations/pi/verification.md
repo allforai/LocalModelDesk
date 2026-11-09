@@ -61,3 +61,23 @@
 已有 pi：先 `/reload`，再 `/model` 选择 `lmdesk/qwen35`；第一条请求会按需自动加载。
 台面已运行时不需要再手动 `lmdesk ask`。pi 的原有默认模型未修改。
 配置和重跑命令见 [README](README.md)。
+
+## 2026-11-09 追加：Arete-27B（第 6 个聊天模型）
+
+模型：`Duckets/Arete-27B-MLX-4bit`（NousResearch Arete-27B 的社区 MLX 4bit 转换，revision
+`bd3f7163ded581ead599600681f3400e7e5634e0`，16.08 GB，带视觉塔），catalog key `arete`，
+`relpath=llms/Duckets/Arete-27B-MLX-4bit`。只做了下面这些核实，**不把 scope 外的东西算进已验收**：
+
+| 检查 | 结果 |
+| --- | --- |
+| 权重完整度（`verify_tree` 对 HF manifest） | `state=present`，100%，16,081,491,879 / 16,081,491,879 字节，`gaps=()` |
+| 台面加载 | `/api/llm/status` 报 `loaded_model.key=arete`，走 `mlx_vlm.server`（视觉后端） |
+| 文本推理（网关 `/v1/chat/completions`） | 面积题正确（7×5=35），真实 usage 38/25/63 |
+| 图片推理 | 128×128 纯红 PNG → 回答「红色」，usage 90/2/92 |
+| pi 往返 | `pi --model lmdesk/arete -p '…法国的首都是哪里？'` → 「巴黎。」，exit 0 |
+| 扩展同步 | 仓库与已安装 `~/.pi/agent/extensions/lmdesk.ts` SHA-256 均为 `64daa4cb…`；`state=installed` |
+
+未核实：thinking 各档位、原生工具调用闭环、262144 完整上下文、长时稳定性、视频输入。因此
+`catalog.py` 的 `tools`/`abliterated` 保持 False，README 的 thinking 已核实一句仍只指原五个模型。
+原始数据见 [`evidence/2026-11-09-arete/smoke.json`](evidence/2026-11-09-arete/smoke.json)。
+本次部署：`dist/LocalModelDesk.app` 序贯替换为重签名构建（旧包保留为 `dist/LocalModelDesk.app.old`），未公证。

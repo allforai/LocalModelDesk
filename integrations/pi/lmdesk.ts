@@ -56,6 +56,7 @@ const MODELS = [
   ["superqwen", "SuperQwen3.8 27B 4bit · 擅长对话·省内存"],
   ["glm", "GLM 4.7 Flash 30B-A3B 8bit · 快速问答"],
   ["gemma", "Gemma 4 31B 8bit · 擅长看图"],
+  ["arete", "Arete-27B 4bit · 价值观对齐·看图"],
 ];
 // Local checkpoint config.json text_config.max_position_embeddings, not a tested
 // full-window promise. Actual memory allowance is shown by the desk budget API.
@@ -65,6 +66,7 @@ const CAPABILITIES: Record<string, { context: number; vision: boolean }> = {
   superqwen: { context: 262144, vision: true },
   glm: { context: 202752, vision: false },
   gemma: { context: 262144, vision: true },
+  arete: { context: 262144, vision: true },
 };
 
 function positiveNumber(name: string, fallback: number): number {
